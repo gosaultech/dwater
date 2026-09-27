@@ -1,0 +1,8 @@
+# damned_waters/.gitignore
+game/.godot/
+pipeline_out/
+tools/telemetry/*.db*
+**/__pycache__/
+reference/
+builds/
+game/assets/characters/*/*.glb

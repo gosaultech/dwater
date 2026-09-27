@@ -1,0 +1,49 @@
+{
+  "_file": "damned_waters/game/data/characters/verdronkene.json: real-model manifest for the Drowned. Until assets/characters/verdronkene/verdronkene.glb exists, the procedural placeholder is used.",
+  "model": "res://assets/characters/verdronkene/verdronkene.glb",
+  "height_m": 1.74,
+  "clips": {
+    "idle": "Idle",
+    "shamble": "Walk",
+    "stagger": "Idle",
+    "dead": "Idle"
+  },
+  "clip_speed": {
+    "walk": 1.5
+  },
+  "bones": {
+    "head": "mixamorig:Head",
+    "right_hand": "mixamorig:RightHand",
+    "arms": {
+      "right": [
+        "mixamorig:RightArm",
+        "mixamorig:RightForeArm",
+        "mixamorig:RightHand"
+      ],
+      "left": [
+        "mixamorig:LeftArm",
+        "mixamorig:LeftForeArm",
+        "mixamorig:LeftHand"
+      ]
+    },
+    "hips": "mixamorig:Hips",
+    "foot": "mixamorig:LeftFoot",
+    "toe": "mixamorig:LeftToeBase"
+  },
+  "animation_sources": [
+    "res://assets/animations/zombie_walk.glb",
+    "res://assets/animations/zombie_attack.glb",
+    "res://assets/animations/zombie_death.glb",
+    "res://assets/animations/locomotion.glb"
+  ],
+  "zombify": {
+    "tint": [
+      0.62,
+      0.72,
+      0.64
+    ],
+    "wet": 0.8,
+    "roughness": 0.4
+  },
+  "arms": "Arms reach via the pose overlay until zombie clips are installed"
+}

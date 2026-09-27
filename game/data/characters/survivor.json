@@ -1,0 +1,48 @@
+{
+  "_file": "damned_waters/game/data/characters/survivor.json: real-model manifest for the player. Drop survivor.glb in assets/characters/survivor/ (MetaHuman / Character Creator / Mixamo rig) and the game uses it; otherwise the procedural placeholder is used.",
+  "model": "res://assets/characters/survivor/survivor.glb",
+  "height_m": 1.78,
+  "clips": {
+    "idle": "Idle",
+    "walk": "Walk",
+    "run": "Run"
+  },
+  "clip_speed": {
+    "walk": 1.5,
+    "run": 3.9
+  },
+  "bones": {
+    "head": "mixamorig:Head",
+    "right_hand": "mixamorig:RightHand",
+    "arms": {
+      "right": [
+        "mixamorig:RightArm",
+        "mixamorig:RightForeArm",
+        "mixamorig:RightHand"
+      ],
+      "left": [
+        "mixamorig:LeftArm",
+        "mixamorig:LeftForeArm",
+        "mixamorig:LeftHand"
+      ]
+    },
+    "hips": "mixamorig:Hips",
+    "foot": "mixamorig:LeftFoot",
+    "toe": "mixamorig:LeftToeBase"
+  },
+  "gun": {
+    "offset": [
+      0.0,
+      0.1,
+      0.03
+    ],
+    "rot_deg": [
+      0,
+      0,
+      0
+    ]
+  },
+  "animation_sources": [
+    "res://assets/animations/locomotion.glb"
+  ]
+}

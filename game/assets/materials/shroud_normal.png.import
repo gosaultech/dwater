@@ -1,0 +1,15 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+
+[deps]
+
+source_file="res://assets/materials/shroud_normal.png"
+
+[params]
+
+compress/mode=0
+mipmaps/generate=true
+compress/normal_map=1
+detect_3d/compress_to=0

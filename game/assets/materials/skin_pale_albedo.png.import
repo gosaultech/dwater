@@ -1,0 +1,14 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+
+[deps]
+
+source_file="res://assets/materials/skin_pale_albedo.png"
+
+[params]
+
+compress/mode=0
+mipmaps/generate=true
+detect_3d/compress_to=0

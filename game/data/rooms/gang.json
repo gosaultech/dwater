@@ -1,0 +1,496 @@
+{
+  "_file": "damned_waters/game/data/rooms/gang.json \u2014 RoomSpec for the entrance hall. Single source of truth for Blender (render) and Godot (collision, cameras, triggers). Units: metres, Godot axes (Y up, north = -Z).",
+  "id": "gang",
+  "display_name": "Entrance Hall",
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      2.1,
+      10.0
+    ]
+  },
+  "height": 3.6,
+  "materials": {
+    "floor": "marble_checker",
+    "wall": "plaster",
+    "wainscot": "delft_tiles",
+    "wainscot_height": 1.15,
+    "ceiling": "plaster"
+  },
+  "ceiling_beams": {
+    "axis": "x",
+    "spacing": 1.25
+  },
+  "footsteps": "marble",
+  "ambience": "amb_house",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.018,
+      0.022,
+      0.032
+    ],
+    "strength": 0.6
+  },
+  "exterior": "south",
+  "walls": {
+    "south": {
+      "openings": [
+        {
+          "kind": "door",
+          "center": 1.05,
+          "width": 1.05,
+          "height": 2.55
+        },
+        {
+          "kind": "window",
+          "center": 1.05,
+          "width": 1.05,
+          "sill": 2.72,
+          "height": 0.62
+        }
+      ]
+    },
+    "west": {
+      "openings": [
+        {
+          "kind": "door",
+          "center": 6.8,
+          "width": 0.95,
+          "height": 2.45
+        }
+      ]
+    },
+    "north": {
+      "openings": [
+        {
+          "kind": "door",
+          "center": 0.6,
+          "width": 0.8,
+          "height": 2.05
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "stairs",
+      "pos": [
+        1.6,
+        0.0,
+        3.55
+      ],
+      "yaw": 0,
+      "size": [
+        0.85,
+        3.6,
+        3.3
+      ]
+    },
+    {
+      "type": "clock",
+      "pos": [
+        1.88,
+        0.0,
+        6.3
+      ],
+      "yaw": -90,
+      "size": [
+        0.5,
+        2.2,
+        0.4
+      ]
+    },
+    {
+      "type": "side_table",
+      "pos": [
+        0.25,
+        0.0,
+        3.6
+      ],
+      "yaw": 90,
+      "size": [
+        0.9,
+        0.8,
+        0.4
+      ]
+    },
+    {
+      "type": "vase",
+      "pos": [
+        0.25,
+        0.8,
+        3.3
+      ],
+      "collide": false
+    },
+    {
+      "type": "coat_rack",
+      "pos": [
+        1.8,
+        0.0,
+        9.45
+      ],
+      "size": [
+        0.4,
+        1.8,
+        0.4
+      ]
+    },
+    {
+      "type": "painting",
+      "pos": [
+        2.08,
+        1.8,
+        8.0
+      ],
+      "yaw": -90,
+      "size": [
+        0.7,
+        0.9,
+        0.05
+      ],
+      "collide": false
+    },
+    {
+      "type": "painting",
+      "pos": [
+        0.02,
+        1.8,
+        2.2
+      ],
+      "yaw": 90,
+      "size": [
+        0.6,
+        0.8,
+        0.05
+      ],
+      "collide": false
+    },
+    {
+      "type": "painting",
+      "pos": [
+        0.02,
+        1.9,
+        5.0
+      ],
+      "yaw": 90,
+      "size": [
+        0.5,
+        0.6,
+        0.05
+      ],
+      "collide": false
+    },
+    {
+      "type": "pendant_lamp",
+      "pos": [
+        1.0,
+        2.75,
+        7.4
+      ],
+      "collide": false
+    }
+  ],
+  "lights": [
+    {
+      "kind": "point",
+      "pos": [
+        1.0,
+        2.68,
+        7.4
+      ],
+      "color": [
+        1.0,
+        0.6,
+        0.3
+      ],
+      "blender_power": 30,
+      "radius": 0.04,
+      "godot_energy": 1.4,
+      "range": 7.0,
+      "flicker": true
+    },
+    {
+      "kind": "area",
+      "pos": [
+        1.05,
+        3.9,
+        11.4
+      ],
+      "look_at": [
+        0.9,
+        0.0,
+        6.0
+      ],
+      "size": 1.4,
+      "color": [
+        0.5,
+        0.66,
+        1.0
+      ],
+      "blender_power": 420,
+      "godot_energy": 0.5,
+      "range": 9.0
+    },
+    {
+      "kind": "spot",
+      "pos": [
+        0.55,
+        3.35,
+        1.3
+      ],
+      "look_at": [
+        0.6,
+        0.0,
+        0.05
+      ],
+      "spot_angle": 80,
+      "color": [
+        0.55,
+        0.68,
+        1.0
+      ],
+      "blender_power": 220,
+      "godot_energy": 0.4,
+      "range": 5.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        1.85,
+        3.25,
+        9.75
+      ],
+      "look_at": [
+        0.6,
+        0.8,
+        3.2
+      ],
+      "fov": 58,
+      "zone": {
+        "min": [
+          0.0,
+          2.6
+        ],
+        "max": [
+          2.1,
+          5.7
+        ]
+      }
+    },
+    {
+      "id": "b",
+      "pos": [
+        0.35,
+        3.25,
+        5.2
+      ],
+      "look_at": [
+        1.3,
+        0.3,
+        9.6
+      ],
+      "fov": 58,
+      "zone": {
+        "min": [
+          0.0,
+          5.3
+        ],
+        "max": [
+          2.1,
+          10.0
+        ]
+      }
+    },
+    {
+      "id": "c",
+      "pos": [
+        0.25,
+        2.55,
+        4.9
+      ],
+      "look_at": [
+        0.75,
+        0.7,
+        0.0
+      ],
+      "fov": 52,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          2.1,
+          3.0
+        ]
+      }
+    }
+  ],
+  "spawns": {
+    "start": {
+      "pos": [
+        1.0,
+        0.0,
+        8.7
+      ],
+      "yaw": 0
+    },
+    "from_voorkamer": {
+      "pos": [
+        0.75,
+        0.0,
+        6.8
+      ],
+      "yaw": -90
+    },
+    "from_kelder": {
+      "pos": [
+        0.6,
+        0.0,
+        0.9
+      ],
+      "yaw": 180
+    }
+  },
+  "interactables": [
+    {
+      "id": "front_door",
+      "kind": "examine",
+      "pos": [
+        1.05,
+        1.0,
+        9.8
+      ],
+      "radius": 1.0,
+      "text": "The front door. Canal water seeps under it. Outside, the street is gone."
+    },
+    {
+      "id": "door_voorkamer",
+      "kind": "door",
+      "pos": [
+        0.15,
+        1.0,
+        6.8
+      ],
+      "radius": 0.9,
+      "target_room": "voorkamer",
+      "target_spawn": "from_gang"
+    },
+    {
+      "id": "door_kelder",
+      "kind": "door",
+      "pos": [
+        0.6,
+        1.0,
+        0.15
+      ],
+      "radius": 0.9,
+      "target_room": "kelder",
+      "target_spawn": "from_gang",
+      "lock": "cellar_key",
+      "locked_text": "The cellar door is locked. The keyhole is crusted green.",
+      "unlock_text": "You used the Cellar Key. The lock gives with a wet crack."
+    },
+    {
+      "id": "stairs",
+      "kind": "examine",
+      "pos": [
+        1.6,
+        1.0,
+        5.35
+      ],
+      "radius": 0.9,
+      "text": "A wardrobe has fallen across the stairs. There's no way up."
+    },
+    {
+      "id": "clock",
+      "kind": "examine",
+      "pos": [
+        1.8,
+        1.2,
+        6.3
+      ],
+      "radius": 0.9,
+      "text": "A grandfather clock. It stopped at 02:14."
+    },
+    {
+      "id": "ehbo",
+      "kind": "pickup",
+      "item": "first_aid",
+      "count": 1,
+      "pos": [
+        0.25,
+        0.86,
+        3.85
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "shells_gang",
+      "kind": "pickup",
+      "item": "shotgun_shells",
+      "count": 6,
+      "pos": [
+        1.75,
+        0.02,
+        7.0
+      ],
+      "radius": 0.9
+    }
+  ],
+  "enemies": [
+    {
+      "id": "zwerver",
+      "kind": "verdronkene",
+      "pos": [
+        0.6,
+        0.0,
+        1.6
+      ],
+      "yaw": 0
+    },
+    {
+      "id": "pieter",
+      "kind": "verdronkene",
+      "pos": [
+        1.0,
+        0.0,
+        9.1
+      ],
+      "yaw": 0,
+      "requires_flag": "heard_thud"
+    },
+    {
+      "id": "buurman",
+      "kind": "verdronkene",
+      "pos": [
+        1.5,
+        0.0,
+        7.9
+      ],
+      "yaw": 20,
+      "requires_flag": "heard_thud"
+    },
+    {
+      "id": "trapkind",
+      "kind": "kelderkind",
+      "pos": [
+        0.5,
+        0.0,
+        4.6
+      ],
+      "yaw": 180,
+      "requires_flag": "heard_thud"
+    }
+  ],
+  "render": {
+    "exposure": 0.25
+  }
+}
