@@ -1,8 +1,8 @@
 # damned_waters/engine/CMakeLists.txt
 # Purpose: the Damned Waters C++ engine (raylib 5.5, C++17).
 # Dependencies are fetched and pinned (like Bumper Ball Maze):
-#   raylib 5.5, nlohmann/json 3.11.3, GoogleTest 1.14. SQLite: system package
-#   when present (macOS SDK / libsqlite3-dev), else the amalgamation.
+#   raylib 5.5, nlohmann/json 3.11.3, GoogleTest 1.14. SQLite and GoogleTest: the system
+#   package when present (macOS SDK / libsqlite3-dev, libgtest-dev), else fetched.
 # Build:  cmake -S engine -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j
 cmake_minimum_required(VERSION 3.20)
 project(damned_waters LANGUAGES C CXX)
@@ -35,7 +35,8 @@ target_include_directories(dw_core PUBLIC include)
 target_link_libraries(dw_core PUBLIC nlohmann_json::nlohmann_json SQLite::SQLite3 raylib)
 target_compile_definitions(dw_core PUBLIC DW_REPO_ROOT="${CMAKE_SOURCE_DIR}/..")
 
-add_executable(damned_waters src/main.cpp src/game.cpp src/character.cpp src/mesh_builder.cpp src/shaders.cpp)
+set(DW_CAST src/character.cpp src/cast_survivor.cpp src/cast_drowned.cpp src/mesh_builder.cpp)
+add_executable(damned_waters src/main.cpp src/game.cpp src/shaders.cpp ${DW_CAST})
 target_link_libraries(damned_waters PRIVATE dw_core raylib)
 if(MSVC)
     target_compile_options(damned_waters PRIVATE /W4)
@@ -44,9 +45,12 @@ else()
 endif()
 
 if(DW_BUILD_TESTS)
-    FetchContent_Declare(googletest URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz)
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
+    find_package(GTest 1.14 QUIET)
+    if(NOT GTest_FOUND)
+        FetchContent_Declare(googletest URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz)
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+        FetchContent_MakeAvailable(googletest)
+    endif()
     add_executable(dw_tests tests/test_core.cpp src/mesh_builder.cpp)
     target_link_libraries(dw_tests PRIVATE dw_core GTest::gtest_main)
     enable_testing()

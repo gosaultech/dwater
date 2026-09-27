@@ -12,7 +12,7 @@
 
 namespace dw {
 
-struct Actor { float x = 0, z = 0, yaw = 0, speed = 0; std::string pose = "idle"; };
+struct Actor { float x = 0, z = 0, yaw = 0, speed = 0; Pose pose = Pose::Idle; };
 
 class Game {
 public:
@@ -24,11 +24,14 @@ public:
     void present() const;           // post-process to the window + HUD
     int capture_count() const { return 4; }
     std::string stage(int i);       // pose a capture setup; returns its name
+    // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
+    void model_sheet(const std::string& dir);
     bool debug = false;
 
 private:
     void cut_to(const std::string& id);
     void upload_lights();
+    void upload_studio_lights();
     void move_player(float dt);
     void update_enemy(float dt);
     void collide(float& x, float& z, float r) const;

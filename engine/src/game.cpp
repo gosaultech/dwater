@@ -137,7 +137,7 @@ void Game::collide(float& x, float& z, float r) const {
 void Game::move_player(float dt) {
     Actor& p = player_;
     p.speed = 0;
-    if (health_ <= 0) { p.pose = "dead"; return; }
+    if (health_ <= 0) { p.pose = Pose::Dead; return; }
     if (IsKeyPressed(KEY_T)) tank_ = !tank_;
     const float ix = float(IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) - float(IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT));
     const float iy = float(IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) - float(IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN));
@@ -145,14 +145,14 @@ void Game::move_player(float dt) {
         qt_ = std::min(1.0f, qt_ + dt / 0.3f);
         p.yaw = qt_from_ + kPi * ease_out(qt_);
         if (qt_ >= 1) qt_ = -1;
-        p.pose = "idle";
+        p.pose = Pose::Idle;
         return;
     }
     if (IsKeyPressed(KEY_Q)) { qt_ = 0; qt_from_ = p.yaw; return; }
-    if (hurt_t_ > 0) { p.pose = "hurt"; return; }
+    if (hurt_t_ > 0) { p.pose = Pose::Hurt; return; }
     if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) || IsKeyDown(KEY_K)) {
         p.yaw -= ix * 1.9f * dt;
-        p.pose = "aim";
+        p.pose = Pose::Aim;
         return;
     }
     const float speed = IsKeyDown(KEY_LEFT_SHIFT) ? 3.8f : 1.9f;
@@ -184,7 +184,7 @@ void Game::move_player(float dt) {
     p.z += mz * dt;
     collide(p.x, p.z, 0.28f);
     p.speed = std::sqrt(mx * mx + mz * mz);
-    p.pose = p.speed > 2.6f ? "run" : p.speed > 0.1f ? "walk" : "idle";
+    p.pose = p.speed > 2.6f ? Pose::Run : p.speed > 0.1f ? Pose::Walk : Pose::Idle;
 }
 
 void Game::update_enemy(float dt) {
@@ -201,19 +201,19 @@ void Game::update_enemy(float dt) {
             e.yaw = step_yaw(e.yaw, want, 2.2f * dt);
             float align = std::clamp(std::cos(wrap_pi(want - e.yaw)), 0.2f, 1.0f);
             e.speed = 0.85f * align;
-            e.pose = "shamble";
+            e.pose = Pose::Shamble;
             break;
         }
         case EState::Attack: {
             bool striking = brain_.t >= brain_.windup;
             if (!striking) e.yaw = step_yaw(e.yaw, want, 1.4f * dt);
             e.speed = striking ? 2.0f : 0.0f;
-            e.pose = striking ? "strike" : "windup";
+            e.pose = striking ? Pose::Strike : Pose::Windup;
             break;
         }
-        case EState::Alert: e.yaw = step_yaw(e.yaw, want, 1.2f * dt); e.pose = "idle"; break;
-        case EState::Recovery: e.pose = "shamble"; break;
-        default: e.pose = "idle";
+        case EState::Alert: e.yaw = step_yaw(e.yaw, want, 1.2f * dt); e.pose = Pose::Idle; break;
+        case EState::Recovery: e.pose = Pose::Shamble; break;
+        default: e.pose = Pose::Idle;
     }
     V2 fw = forward_from_yaw(e.yaw);
     e.x += fw.x * e.speed * dt;
@@ -253,12 +253,12 @@ void Game::update(float dt) {
 }
 
 std::string Game::stage(int i) {
-    struct S { float px, pz, pyaw; const char* ppose; float pspeed, ex, ez, eyaw; const char* epose; float espeed; const char* name; };
+    struct S { float px, pz, pyaw; Pose ppose; float pspeed, ex, ez, eyaw; Pose epose; float espeed; const char* name; };
     static const S setups[] = {
-        {1.0f, 7.2f, kPi, "aim", 0, 1.1f, 8.85f, 0.0f, "windup", 0, "front_door_windup"},
-        {0.62f, 2.45f, kPi, "idle", 0, 0.55f, 1.0f, kPi, "shamble", 0.6f, "cellar_door_behind_you"},
-        {0.75f, 4.6f, 0.0f, "walk", 1.9f, 0.6f, 2.0f, kPi, "shamble", 0.7f, "hall_approach"},
-        {1.35f, 0.45f, kPi, "idle", 0, 0.6f, 2.2f, kPi, "idle", 0, "drowned_portrait"},
+        {1.0f, 7.2f, kPi, Pose::Aim, 0, 1.1f, 8.85f, 0.0f, Pose::Windup, 0, "front_door_windup"},
+        {0.62f, 2.45f, kPi, Pose::Idle, 0, 0.55f, 1.0f, kPi, Pose::Shamble, 0.6f, "cellar_door_behind_you"},
+        {0.75f, 4.6f, 0.0f, Pose::Walk, 1.9f, 0.6f, 2.0f, kPi, Pose::Shamble, 0.7f, "hall_approach"},
+        {1.35f, 0.45f, kPi, Pose::Idle, 0, 0.6f, 2.2f, kPi, Pose::Idle, 0, "drowned_portrait"},
     };
     const S& s = setups[i];
     player_ = {s.px, s.pz, s.pyaw, s.pspeed, s.ppose};
@@ -267,6 +267,85 @@ std::string Game::stage(int i) {
     for (int f = 0; f < 90; ++f) { time_ += 1.0f / 60; animate(1.0f / 60); }
     upload_lights();
     return s.name;
+}
+
+void Game::upload_studio_lights() {
+    // Neutral three-point rig for judging a model: warm key front-left, cold fill, cold rim behind.
+    const Vector4 pos[3] = {{-1.3f, 2.7f, -1.7f, 8.0f}, {1.6f, 1.2f, -1.3f, 8.0f}, {0.4f, 2.5f, 1.9f, 8.0f}};
+    const Vector4 col[3] = {{1.0f * 3.6f, 0.78f * 3.6f, 0.55f * 3.6f, 0}, {0.45f, 0.55f, 0.8f, 0}, {0.6f * 3.2f, 0.7f * 3.2f, 1.0f * 3.2f, 0}};
+    const Vector4 dir[3] = {};
+    const int n = 3;
+    SetShaderValue(char_, l_count_, &n, SHADER_UNIFORM_INT);
+    SetShaderValueV(char_, l_pos_, pos, SHADER_UNIFORM_VEC4, 3);
+    SetShaderValueV(char_, l_col_, col, SHADER_UNIFORM_VEC4, 3);
+    SetShaderValueV(char_, l_dir_, dir, SHADER_UNIFORM_VEC4, 3);
+    const float top[3] = {0.05f, 0.055f, 0.07f}, bot[3] = {0.02f, 0.018f, 0.015f}, rim[3] = {0.1f, 0.12f, 0.16f};
+    const float fog[3] = {0, 0, 0}, fogr[2] = {50.0f, 60.0f};
+    SetShaderValue(char_, l_top_, top, SHADER_UNIFORM_VEC3);
+    SetShaderValue(char_, l_bot_, bot, SHADER_UNIFORM_VEC3);
+    SetShaderValue(char_, l_rim_, rim, SHADER_UNIFORM_VEC3);
+    SetShaderValue(char_, l_fog_, fog, SHADER_UNIFORM_VEC3);
+    SetShaderValue(char_, l_fogr_, fogr, SHADER_UNIFORM_VEC2);
+}
+
+void Game::model_sheet(const std::string& dir) {
+    struct View { const char* name; float orbit_deg, elev_deg, dist, target_y, fovy; bool head; };
+    static const View views[] = {
+        {"front", 0, 8, 2.9f, 1.0f, 40, false},       {"three_quarter", 38, 10, 2.9f, 1.0f, 40, false},
+        {"side", 90, 6, 2.9f, 1.0f, 40, false},       {"back", 180, 10, 2.9f, 1.0f, 40, false},
+        {"head_front", 0, 4, 0.62f, 0, 30, true},     {"head_three_quarter", 38, 8, 0.62f, 0, 30, true},
+        {"head_side", 82, 4, 0.62f, 0, 30, true},     {"head_game_angle", 15, 40, 0.8f, 0, 30, true},
+    };
+    struct Subject { const char* name; Kind kind; int variant; Pose pose; };
+    static const Subject subjects[] = {{"drowned", Kind::Drowned, 0, Pose::Idle}, {"drowned_windup", Kind::Drowned, 0, Pose::Windup},
+                                       {"drowned_b", Kind::Drowned, 1, Pose::Shamble}, {"survivor", Kind::Survivor, 0, Pose::Idle}};
+    upload_studio_lights();
+    for (const auto& sub : subjects) {
+        Character c = Character::make(sub.kind, sub.variant);
+        c.place({0, 0, 0}, 0);
+        for (int f = 0; f < 150; ++f) c.animate(sub.pose, sub.pose == Pose::Shamble ? 0.7f : 0.0f, 1.0f / 60);
+        Image sheet = GenImageColor(4 * 400, 2 * 560, Color{10, 10, 12, 255});
+        for (int v = 0; v < 8; ++v) {
+            const View& w = views[v];
+            // Bodies orbit the feet; heads orbit the skull, starting from wherever the face points.
+            Vector3 at{0, w.target_y, 0};
+            float a = w.orbit_deg * DEG2RAD, e = w.elev_deg * DEG2RAD;
+            if (w.head) {
+                at = c.head_point();
+                Vector3 f = c.face_dir();
+                a += std::atan2(f.x, -f.z);
+            }
+            Camera3D cam{};
+            cam.position = {at.x + w.dist * std::sin(a) * std::cos(e), at.y + w.dist * std::sin(e), at.z - w.dist * std::cos(a) * std::cos(e)};
+            cam.target = at;
+            cam.up = {0, 1, 0};
+            cam.fovy = w.fovy;
+            cam.projection = CAMERA_PERSPECTIVE;
+            BeginTextureMode(rt_);
+            ClearBackground(Color{16, 16, 19, 255});
+            BeginMode3D(cam);
+            SetShaderValue(char_, l_cam_, &cam.position, SHADER_UNIFORM_VEC3);
+            rlDisableBackfaceCulling();
+            c.draw(char_mat_);
+            rlEnableBackfaceCulling();
+            EndMode3D();
+            EndTextureMode();
+            Image img = LoadImageFromTexture(rt_.texture);
+            ImageFlipVertical(&img);
+            // Crop a portrait strip from the middle of the frame (full height for bodies).
+            const Rectangle src{float(W) / 2 - 257, 0, 514, float(H)};
+            ImageCrop(&img, src);
+            ImageResize(&img, 400, 560);
+            ImageDraw(&sheet, img, {0, 0, 400, 560}, {float(v % 4) * 400, float(v / 4) * 560, 400, 560}, WHITE);
+            ImageDrawText(&sheet, w.name, (v % 4) * 400 + 10, (v / 4) * 560 + 8, 18, Color{170, 160, 140, 255});
+            UnloadImage(img);
+        }
+        ExportImage(sheet, (dir + "/sheet_" + sub.name + ".png").c_str());
+        UnloadImage(sheet);
+        c.unload();
+        TraceLog(LOG_INFO, "sheet %s", sub.name);
+    }
+    upload_lights();
 }
 
 void Game::render() {
