@@ -246,6 +246,17 @@ def survivor(data: Path) -> dwc.Character:
                                      lambda t: 0.085 - 0.018 * t)
         return out
 
+    def jeans_tint(bb, ids, P):   # worn: paler down the front of the thighs and at the knees, darker behind them
+        V = bb.V[ids]
+        fade = np.zeros(len(ids))
+        for sd in ("l", "r"):
+            h, k = jp[f"hip_{sd}"], jp[f"kne_{sd}"]
+            front = V[:, 2] < h[2]
+            thigh = np.exp(-((V[:, 0] - h[0]) / 0.05) ** 2 - ((V[:, 1] - (h[1] + k[1]) / 2) / 0.12) ** 2)
+            knee = np.exp(-((V[:, 0] - k[0]) / 0.045) ** 2 - ((V[:, 1] - k[1]) / 0.05) ** 2)
+            fade += front * (0.8 * thigh + 0.5 * knee) - 0.35 * (V[:, 2] > k[2]) * np.exp(-((V[:, 1] - k[1]) / 0.04) ** 2)
+        return np.array([34, 40, 54.0]) * (1 + 0.55 * np.clip(fade, -0.5, 1))[:, None]
+
     def denim_folds(bb, ids, P, N):
         y = bb.V[ids, 1]
         stack = np.clip((0.2 - y) / 0.12, 0, 1) * 0.0045 * np.sin(y * 95.0 + np.sin(bb.V[ids, 0] * 60) * 1.5)
@@ -348,7 +359,7 @@ def survivor(data: Path) -> dwc.Character:
     front_open = lambda P: (P[:, 2] < torso_c[1] - 0.02) & (np.abs(P[:, 0]) < open_w(P[:, 1]) - 0.03)   # well inside the trim line
     garments = [
         gm.Garment("jeans", MAT["denim"], (34, 40, 54), lambda bb: (legs | (torso & (bb.V[:, 1] < waist_y + 0.03))) & ~hand & (bb.V[:, 1] > 0.07),
-                   0.006, 3, straight_leg, denim_folds, trim=jeans_trim),
+                   0.006, 3, straight_leg, denim_folds, trim=jeans_trim, tint=jeans_tint),
         gm.Garment("hoodie", MAT["knit"], (214, 202, 176), lambda bb: upper_to(bb, hem_hoodie - 0.03, cuff_hoodie - 0.03) & (bb.V[:, 1] < collar_y + 0.03),
                    by_arm(0.013, 0.0105), 4, None, knit_bulk, hem=0.005, tension=12, trim=hoodie_trim),
         gm.Garment("jacket", MAT["leather"], (20, 19, 20), lambda bb: upper_to(bb, hem_jacket - 0.03, cuff_jacket - 0.03) & (bb.V[:, 1] < collar_y + 0.01)
@@ -369,6 +380,36 @@ def survivor(data: Path) -> dwc.Character:
     strap_lo, strap_w = jp["chest"][1] - 0.13, 0.024
     strap_in = lambda P: np.minimum(strap_w - np.abs(np.abs(P[:, 0]) - strap_x(P[:, 1])), P[:, 1] - strap_lo)   # > 0 on the webbing
     parts.append(gm.clip_overlay(b, jacket, "straps", MAT["cloth"], (66, 68, 54), strap_in, lift=0.008, hem=0.005))
+    # The jacket's details: a fold-down collar, zip tape down both front edges, slash hand pockets.
+    parts.append(gm.collar(b, jacket, "collar", MAT["leather"], (21, 20, 21), jp["neck"], above=jp["neck"][1] - 0.06))
+    front = lambda P: P[:, 2] < torso_c[1] - 0.04
+    zip_in = lambda P: np.where(front(P), np.minimum.reduce([0.0065 - np.abs(np.abs(P[:, 0]) - open_w(P[:, 1]) - 0.0065),
+                                                            P[:, 1] - hem_jacket - 0.004, jp["neck"][1] - 0.045 - P[:, 1]]), -1.0)
+    parts.append(gm.clip_overlay(b, jacket, "zips", MAT["metal"], (46, 46, 48), zip_in, lift=0.0015, hem=0.002))
+
+    def slash_pockets(P):   # welts 1.6 cm by 13 cm, leaning out toward the hips as they rise
+        best = np.full(len(P), -1.0)
+        for sx in (-1.0, 1.0):
+            c = np.array([0.112 * sx, hem_jacket + 0.1])
+            d = np.array([0.38 * sx, 1.0]) / np.hypot(0.38, 1.0)
+            rel = P[:, :2] - c
+            u, v = rel @ d, rel @ np.array([d[1], -d[0]])
+            best = np.maximum(best, np.where(front(P), np.minimum(0.065 - np.abs(u), 0.008 - np.abs(v)), -1.0))
+        return best
+    parts.append(gm.clip_overlay(b, jacket, "pockets", MAT["leather"], (15, 14, 15), slash_pockets, lift=0.004, hem=0.004))
+    # Jeans: back pockets (a V at the bottom, as on five-pocket jeans).
+    jeans = next(p for p in parts if p.name == "jeans")
+
+    def back_pockets(P):
+        best = np.full(len(P), -1.0)
+        for sx in (-1.0, 1.0):
+            cx, top = 0.078 * sx, jp["pelvis"][1] - 0.035
+            dx = np.abs(P[:, 0] - cx)
+            bottom = top - 0.13 - 0.025 * np.clip(1 - dx / 0.066, 0, 1)
+            s = np.minimum.reduce([0.066 - dx, top - P[:, 1], P[:, 1] - bottom])
+            best = np.maximum(best, np.where(P[:, 2] > jp["pelvis"][2] + 0.03, s, -1.0))
+        return best
+    parts.append(gm.clip_overlay(b, jeans, "back_pockets", MAT["denim"], (30, 35, 48), back_pockets, lift=0.002, hem=0.0025))
     for sd in ("l", "r"):   # boots, and the feet they hide
         parts.append(gm.shoe(b, sd, f"boot_{sd}", MAT["leather"], (26, 24, 24), MAT["rubber"], (16, 15, 15)))
         feet = np.isin(b.dominant[b.body_quads], [J[f"ank_{sd}"]]).all(axis=1) & (V[b.body_quads][:, :, 1].max(axis=1) < 0.12)

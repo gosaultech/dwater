@@ -47,6 +47,11 @@ in vec3 vWorld; in vec3 vNormal; in vec3 vRestN; in vec3 vSurf; in vec4 vColor; 
 uniform vec3 u_camPos; uniform int u_lightCount;
 uniform vec4 u_lightPos[8]; uniform vec4 u_lightCol[8]; uniform vec4 u_lightDir[8];
 uniform vec3 u_ambTop; uniform vec3 u_ambBottom; uniform vec3 u_rim; uniform vec3 u_fog; uniform vec2 u_fogRange;
+// Shadows: depth maps of the characters seen from up to two lights (bound as the material's maps 1
+// and 2), each light's view-projection, and which light each belongs to (-1 = none this frame).
+uniform sampler2D texture1; uniform sampler2D texture2;
+uniform mat4 u_shadowVP[2]; uniform int u_shadowLight[2];
+uniform int u_depthOnly;   // 1 while drawing those depth maps: nothing to shade
 out vec4 finalColor;
 
 float hash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
@@ -58,6 +63,19 @@ float noise(vec3 x) {
 float fbm(vec3 p) { float a = 0.5, s = 0.0; for (int i = 0; i < 5; i++) { s += a * noise(p); p *= 2.03; a *= 0.5; } return s; }
 float ridge(vec3 p) { return 1.0 - abs(noise(p) * 2.0 - 1.0); }   // 1 along thin winding lines
 vec3 lin(vec3 c) { return pow(c, vec3(2.2)); }
+// How much of a light reaches P (0 = in shadow): compare P's depth from the light with the nearest
+// character surface the light sees there, over a 3 x 3 patch so shadow edges are soft.
+float shadowIn(sampler2D sm, mat4 vp, vec3 P) {
+    vec4 q = vp * vec4(P, 1.0);
+    if (q.w <= 0.0) return 1.0;
+    vec3 c = q.xyz / q.w * 0.5 + 0.5;
+    if (c.x <= 0.0 || c.x >= 1.0 || c.y <= 0.0 || c.y >= 1.0 || c.z >= 1.0) return 1.0;
+    vec2 t = 1.25 / vec2(textureSize(sm, 0));
+    float lit = 0.0;
+    for (int x = -1; x <= 1; x++)
+        for (int y = -1; y <= 1; y++) lit += step(c.z - 0.0012, texture(sm, c.xy + vec2(x, y) * t).r);
+    return lit / 9.0;
+}
 // Filmic tone curve (the ACES fit): mid-grey stays put, highlights roll off softly instead of
 // clipping, as in the Cycles-rendered rooms the characters stand in.
 vec3 filmic(vec3 x) { x *= 0.72; return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
@@ -88,8 +106,14 @@ vec3 bumpN(vec3 N, float h, float k) {
 }
 
 void main() {
+    if (u_depthOnly == 1) {   // a shadow map: only depth matters (thinned hair casts thinned shadows)
+        if (vMat == 8 && vAux > 0.0 && hash(floor(vec3(vSurf.x * 1400.0, vSurf.y * 380.0, vSurf.z * 1400.0))) < vAux) discard;
+        finalColor = vec4(1.0);
+        return;
+    }
     vec3 N = normalize(vNormal);
     if (!gl_FrontFacing) N = -N;   // cloth is single-skinned: light both sides
+    vec3 Ng = N;                    // the true surface normal, before any bump: shadow lookups push out along it
     vec3 V = normalize(u_camPos - vWorld);
     vec3 p = vSurf;
     vec3 albedo = lin(vColor.rgb);
@@ -238,7 +262,7 @@ void main() {
         float tw = mix(0.5, sin(ang * 2.0 + p.y * 560.0) * 0.5 + 0.5, aa);    // two plies wrapping round
         float fuzz = fbm(cyl), lumps = fbm(vec3(p.z * 3.1, p.y * 45.0, 0.5));
         albedo *= mix(0.62, 1.1, tw * 0.45 + fuzz * 0.55) * mix(0.8, 1.14, lumps);
-        albedo *= mix(0.45, 1.0, sqrt(max(dot(N, V), 0.0)));   // round, not flat: the sides of each rope fall into shadow
+        albedo *= mix(0.6, 1.0, sqrt(max(dot(N, V), 0.0)));    // round, not flat: the sides of each rope fall into shadow
         h = tw * 0.55 + fuzz * 0.45; bk = 0.0012; spec = 0.02; gloss = 10.0; wrap = 0.3; rim = 0.06;
         // Hair sheen runs across the strand (Kajiya-Kay): find the strand's direction from how the
         // "along" coordinate changes over the surface.
@@ -264,6 +288,8 @@ void main() {
             if (type == 1) att *= smoothstep(u_lightDir[i].w, mix(u_lightDir[i].w, 1.0, 0.3), dot(-L, normalize(u_lightDir[i].xyz)));
         }
         vec3 lc = u_lightCol[i].rgb * att;
+        if (i == u_shadowLight[0]) lc *= 0.06 + 0.94 * shadowIn(texture1, u_shadowVP[0], vWorld + Ng * 0.012);
+        else if (i == u_shadowLight[1]) lc *= 0.06 + 0.94 * shadowIn(texture2, u_shadowVP[1], vWorld + Ng * 0.012);
         float ndl = dot(N, L);
         col += albedo * max((ndl + wrap) / (1.0 + wrap), 0.0) * lc * vAo;
         col += sss * (0.5 - 0.5 * ndl) * lc * 0.35;                                  // light bleeding through flesh
@@ -278,17 +304,45 @@ void main() {
     finalColor = vec4(pow(filmic(max(col, 0.0)), vec3(1.0 / 2.2)), 1.0);
 })";
 
+// The plate also RECEIVES the characters' shadows: each pixel's painted depth gives its position in
+// the room, which is looked up in the lights' shadow maps (the room itself was lit in Cycles, so
+// only the characters are in those maps). Shadowed pixels lose that light's share of brightness.
 const char* PLATE_FS = R"(#version 330
 in vec2 fragTexCoord;
 uniform sampler2D texture0; uniform sampler2D u_depth;
 uniform float u_near; uniform float u_far; uniform float u_depthMax;
+uniform mat4 u_invView; uniform vec2 u_tanHalf;          // the camera: pixel + depth -> room position
+uniform sampler2D u_shadow0; uniform sampler2D u_shadow1;
+uniform mat4 u_shadowVP[2]; uniform vec4 u_shadowL[2];   // light position (xyz) and shadow strength (w, 0 = off)
 out vec4 finalColor;
 float decode(vec2 rg) { return (floor(rg.r * 255.0 + 0.5) * 256.0 + floor(rg.g * 255.0 + 0.5)) / 65535.0; }
+float castShadow(sampler2D sm, mat4 vp, vec4 L, vec3 P, vec3 N) {
+    vec3 toL = L.xyz - P;
+    float dist = length(toL);
+    toL /= dist;
+    vec4 q = vp * vec4(P + toL * 0.03, 1.0);                // nudged toward the light: floors don't shadow themselves
+    if (q.w <= 0.0) return 0.0;
+    vec3 c = q.xyz / q.w * 0.5 + 0.5;
+    if (c.x <= 0.0 || c.x >= 1.0 || c.y <= 0.0 || c.y >= 1.0 || c.z >= 1.0) return 0.0;
+    vec2 t = 1.6 / vec2(textureSize(sm, 0));
+    float hidden = 0.0;
+    for (int x = -1; x <= 1; x++)
+        for (int y = -1; y <= 1; y++) hidden += 1.0 - step(c.z - 0.0015, texture(sm, c.xy + vec2(x, y) * t).r);
+    float facing = min(1.0, abs(dot(N, toL)) * 1.6);       // how squarely this surface faces the light
+    return hidden / 9.0 * facing * min(1.0, 2.2 / (1.0 + dist * dist * 0.35)) * L.w;
+}
 void main() {
-    finalColor = vec4(texture(texture0, fragTexCoord).rgb, 1.0);
+    vec3 col = texture(texture0, fragTexCoord).rgb;
     float d = max(decode(texture(u_depth, fragTexCoord).rg) * u_depthMax, u_near * 1.01);
     float zn = (u_far + u_near) / (u_far - u_near) - (2.0 * u_far * u_near) / ((u_far - u_near) * d);
     gl_FragDepth = zn * 0.5 + 0.5;
+    vec2 ndc = vec2(fragTexCoord.x * 2.0 - 1.0, 1.0 - fragTexCoord.y * 2.0);
+    vec3 P = (u_invView * vec4(ndc.x * d * u_tanHalf.x, ndc.y * d * u_tanHalf.y, -d, 1.0)).xyz;
+    vec3 N = normalize(cross(dFdx(P), dFdy(P)) + vec3(0.0, 1e-6, 0.0));
+    float dark = 0.0;
+    if (u_shadowL[0].w > 0.0) dark += castShadow(u_shadow0, u_shadowVP[0], u_shadowL[0], P, N);
+    if (u_shadowL[1].w > 0.0) dark += castShadow(u_shadow1, u_shadowVP[1], u_shadowL[1], P, N);
+    finalColor = vec4(col * (1.0 - clamp(dark, 0.0, 0.82)), 1.0);
 })";
 
 const char* BLOB_FS = R"(#version 330

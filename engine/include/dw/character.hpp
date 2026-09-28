@@ -42,7 +42,7 @@ public:
     void place(Vector3 pos, float yaw) { pos_ = pos; yaw_ = yaw; }
     // Ease toward `pose`, step the dangles, then rebuild the skin.
     void animate(Pose pose, float speed, float dt, float aim_pitch = 0.0f);
-    void draw(const Material& m) const;
+    void draw(const Material& m, bool shadow_caster = false) const;   // shadow_caster: for a light's depth map
     void unload();
     Vector3 joint(int j) const { return {W_[j].m12, W_[j].m13, W_[j].m14}; }
     Vector3 head_point() const { return Vector3Transform(head_c_, W_[J_HEAD]); }        // centre of the skull

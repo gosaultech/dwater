@@ -584,7 +584,7 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
     }
 }
 
-void Character::draw(const Material& m) const {
+void Character::draw(const Material& m, bool shadow_caster) const {
     static unsigned shader = 0;
     static int skin_loc = -1;
     if (shader != m.shader.id) { shader = m.shader.id; skin_loc = GetShaderLocation(m.shader, "u_skin"); }
@@ -597,6 +597,7 @@ void Character::draw(const Material& m) const {
     for (const auto& r : rigid_) DrawMesh(r.mesh, m, W_[r.joint]);
     for (const auto& d : dyn_) DrawMesh(d.mesh, m, MatrixIdentity());
     for (const auto& d : dangles_) DrawMesh(d.mesh, m, MatrixIdentity());
+    if (shadow_caster) return;   // hair lets light through: its shadow would black out the face
     for (const auto& s : strands_) DrawMesh(s.mesh, m, MatrixIdentity());
 }
 

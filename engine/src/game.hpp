@@ -4,6 +4,7 @@
 #ifndef DW_GAME_HPP
 #define DW_GAME_HPP
 #include <raylib.h>
+#include <initializer_list>
 #include <map>
 #include <string>
 #include "dw/character.hpp"
@@ -32,9 +33,23 @@ public:
     bool debug = false;
 
 private:
+    // Real shadows from up to two lights at a time (whichever light the characters most): each
+    // light gets a depth map of the characters seen from it; the character shader reads it for
+    // self-shadowing, the plate shader for shadows cast onto the painted room.
+    struct ShadowMap {
+        RenderTexture2D rt{};           // depth only
+        Matrix vp = MatrixIdentity();   // world -> the light's clip space
+        int light = -1;                 // index into the light arrays, -1 = unused this frame
+    };
+    static constexpr int SHADOW_RES = 1024;
+    void init_shadows();
+    void render_shadows(std::initializer_list<const Character*> casters);
+    void bind_shadows();                // shadow uniforms for the character and plate shaders
+
     void cut_to(const std::string& id);
     void upload_lights();
     void upload_studio_lights();
+    void set_lights(const Vector4* pos, const Vector4* col, const Vector4* dir, int n);   // uploads and remembers them
     void move_player(float dt);
     void update_enemy(float dt);
     void collide(float& x, float& z, float r) const;
@@ -58,6 +73,11 @@ private:
     bool holding_ = false;
     int l_cam_ = -1, l_count_ = -1, l_pos_ = -1, l_col_ = -1, l_dir_ = -1, l_top_ = -1, l_bot_ = -1, l_rim_ = -1, l_fog_ = -1, l_fogr_ = -1;
     int l_depth_ = -1, l_near_ = -1, l_far_ = -1, l_dmax_ = -1, l_blob_ = -1, l_time_ = -1, l_res_ = -1;
+    ShadowMap shadows_[2];
+    Vector4 light_pos_[8]{}, light_col_[8]{}, light_dir_[8]{};
+    int light_n_ = 0;
+    int l_depthOnly_ = -1, l_shVP_[2]{-1, -1}, l_shLight_ = -1;                              // character shader
+    int l_pInvView_ = -1, l_pTan_ = -1, l_pSh0_ = -1, l_pSh1_ = -1, l_pShVP_[2]{-1, -1}, l_pShL_ = -1;   // plate shader
 };
 
 }  // namespace dw

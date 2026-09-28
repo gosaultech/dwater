@@ -100,8 +100,8 @@ Character build_survivor() {
     locs.n = 14;
     locs.sides = 8;
     locs.mat = MAT_LOCS;
-    locs.col = {34, 25, 19, 255};
-    locs.tip = {78, 56, 38, 255};   // sun-bleached ends
+    locs.col = {46, 33, 24, 255};
+    locs.tip = {98, 70, 46, 255};   // sun-bleached ends
     unsigned h = 0x2545F491u;
     auto rnd = [&h]() { h ^= h << 13; h ^= h >> 17; h ^= h << 5; return float(h & 0xFFFF) / 65535.0f; };
     const Vector3 crown{0.0f, skA.y + skR * 0.95f, 0.018f};
@@ -131,7 +131,7 @@ Character build_survivor() {
         // Which way the loc heads over the scalp from point p: away from the crown; at the front, out
         // to the sides (the face stays clear); forelocks forward and down over the brow.
         auto away = [&](Vector3 p) {
-            if (forelock) return Vector3Normalize({0.3f * side, -0.55f, -0.8f});
+            if (forelock) return Vector3Normalize({0.8f * side, -0.6f, -0.45f});   // across the brow toward the temple
             Vector3 w = on_skull(p, Vector3Subtract(p, crown));
             if (front) w = on_skull(p, Vector3Add(Vector3Scale(w, 0.55f), {side * 1.0f, -0.25f, 0.2f}));
             return w;

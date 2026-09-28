@@ -213,6 +213,52 @@ def clip_overlay(b: Body, base: dwc.Part, name: str, mat: int, color: tuple, ins
     return _finish(b, name, mat, P + N * lift, N, src, np.tile(rgba(color), (len(P), 1)), T, hem)
 
 
+def collar(b: Body, base: dwc.Part, name: str, mat: int, color: tuple, neck: Vec, above: float, stand: float = 0.024,
+           fall: float = 0.05, point: float = 0.07, samples: int = 64) -> dwc.Part:
+    """A fold-down collar sewn to a garment's neckline (its open edge above height `above`). Round
+    the back of the neck it stands `stand` metres, rolls over, and lies `fall` metres wide on the
+    shoulders; at the front its ends turn down the opening as pointed collar tips `point` long."""
+    src0, tris0, P0, N0 = base.shell
+    rv = np.unique(rim_edges(tris0))
+    rv = rv[P0[rv, 1] > above]
+    d = P0[rv][:, [0, 2]] - neck[[0, 2]]
+    rv = rv[np.argsort(np.arctan2(d[:, 0], d[:, 1]))]                 # round the neck: front left, back, front right
+    B, Nb, S = P0[rv], N0[rv], src0[rv]
+    seg = np.linalg.norm(np.diff(B, axis=0), axis=1)
+    s = np.concatenate([[0], np.cumsum(seg)])
+    t = np.linspace(0, s[-1], samples)                                  # even spacing along the neckline
+    B = np.stack([np.interp(t, s, B[:, k]) for k in range(3)], 1)
+    Nb = np.stack([np.interp(t, s, Nb[:, k]) for k in range(3)], 1)
+    S = S[np.clip(np.searchsorted(s, t), 0, len(S) - 1)]
+    for _ in range(3):                                                  # smooth away the cut's small wobbles
+        B[1:-1] = (B[:-2] + 2 * B[1:-1] + B[2:]) / 4
+    Nb /= np.maximum(np.linalg.norm(Nb, axis=1, keepdims=True), 1e-9)
+    radial = np.column_stack([B[:, 0] - neck[0], np.zeros(len(B)), B[:, 2] - neck[2]])
+    radial /= np.maximum(np.linalg.norm(radial, axis=1, keepdims=True), 1e-9)
+    up = np.array([0, 1.0, 0])
+    u = np.linspace(-1, 1, samples)
+    tip = np.clip((np.abs(u) - 0.75) / 0.25, 0, 1) ** 1.5             # 0 round the back, 1 at the collar's points
+    base_row = B + Nb * 0.002
+    roll = B + up * stand * (1 - 0.6 * tip)[:, None] + radial * 0.006
+    edge = B + radial * (fall * 0.8) + Nb * 0.014 - up * (0.012 + point * tip)[:, None]   # lying on the shoulders' slope
+    P = np.concatenate([base_row, roll, edge])
+    n = samples
+    tris = []
+    for i in range(n - 1):
+        for r0, r1 in ((0, n), (n, 2 * n)):
+            a, c = r0 + i, r1 + i
+            tris += [[a, c, a + 1], [c, c + 1, a + 1]]
+    tris = np.array(tris, np.int64)
+    from body import tri_normals
+    N = tri_normals(P, tris)
+    if np.mean(np.einsum("ij,ij->i", N, np.concatenate([radial] * 3))) < 0:   # face away from the neck
+        tris, N = tris[:, ::-1], -N
+    src = np.concatenate([S, S, S])
+    m = len(P)
+    return dwc.Part(name, P.astype(np.float32), N.astype(np.float32), np.tile(rgba(color), (m, 1)), np.full(m, mat, np.uint8),
+                    b.region[src].astype(np.uint8), b.jid[src].astype(np.uint8), b.jw[src].astype(np.float32), tris)
+
+
 def build(b: Body, g: Garment) -> tuple[dwc.Part, np.ndarray]:
     """Returns the garment part and the body quads (mask) it hides."""
     sel_v = fill_holes(b, g.select(b))

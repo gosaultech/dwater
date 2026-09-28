@@ -6,7 +6,9 @@
 #include "game.hpp"
 
 #include <rlgl.h>
+#include <algorithm>
 #include <cmath>
+#include <vector>
 #include <cstdio>
 
 #include "dw/shaders.hpp"
@@ -61,6 +63,7 @@ bool Game::init(const std::string& room_id) {
     l_time_ = GetShaderLocation(post_, "u_time");
     l_res_ = GetShaderLocation(post_, "u_res");
     rt_ = LoadRenderTexture(W, H);
+    init_shadows();
     near_ = float(rlGetCullDistanceNear());
     far_ = float(rlGetCullDistanceFar());
     hero_ = Character::make(Kind::Survivor);
@@ -83,6 +86,127 @@ void Game::shutdown() {
     UnloadMesh(blob_mesh_);
     UnloadShader(plate_); UnloadShader(char_); UnloadShader(blob_); UnloadShader(post_);
     UnloadRenderTexture(rt_);
+    for (auto& sm : shadows_) {
+        rlUnloadTexture(sm.rt.depth.id);
+        rlUnloadTexture(sm.rt.texture.id);
+        rlUnloadFramebuffer(sm.rt.id);
+    }
+}
+
+void Game::init_shadows() {
+    for (auto& sm : shadows_) {
+        RenderTexture2D& t = sm.rt;
+        t.id = rlLoadFramebuffer();
+        t.texture.id = rlLoadTexture(nullptr, SHADOW_RES, SHADOW_RES, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8, 1);   // unused; some drivers want one
+        t.texture.width = t.texture.height = SHADOW_RES;
+        t.texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+        t.texture.mipmaps = 1;
+        t.depth.id = rlLoadTextureDepth(SHADOW_RES, SHADOW_RES, false);   // a texture, so shaders can read it
+        t.depth.width = t.depth.height = SHADOW_RES;
+        t.depth.format = 19;
+        t.depth.mipmaps = 1;
+        rlEnableFramebuffer(t.id);
+        rlFramebufferAttach(t.id, t.texture.id, RL_ATTACHMENT_COLOR_CHANNEL0, RL_ATTACHMENT_TEXTURE2D, 0);
+        rlFramebufferAttach(t.id, t.depth.id, RL_ATTACHMENT_DEPTH, RL_ATTACHMENT_TEXTURE2D, 0);
+        if (!rlFramebufferComplete(t.id)) TraceLog(LOG_WARNING, "shadows: framebuffer incomplete");
+        rlDisableFramebuffer();
+    }
+    l_depthOnly_ = GetShaderLocation(char_, "u_depthOnly");
+    l_shLight_ = GetShaderLocation(char_, "u_shadowLight");
+    l_pInvView_ = GetShaderLocation(plate_, "u_invView");
+    l_pTan_ = GetShaderLocation(plate_, "u_tanHalf");
+    l_pSh0_ = GetShaderLocation(plate_, "u_shadow0");
+    l_pSh1_ = GetShaderLocation(plate_, "u_shadow1");
+    l_pShL_ = GetShaderLocation(plate_, "u_shadowL");
+    for (int k = 0; k < 2; ++k) {
+        l_shVP_[k] = GetShaderLocation(char_, TextFormat("u_shadowVP[%d]", k));
+        l_pShVP_[k] = GetShaderLocation(plate_, TextFormat("u_shadowVP[%d]", k));
+    }
+    bind_shadows();
+}
+
+void Game::set_lights(const Vector4* pos, const Vector4* col, const Vector4* dir, int n) {
+    light_n_ = n;
+    for (int i = 0; i < 8; ++i) { light_pos_[i] = pos[i]; light_col_[i] = col[i]; light_dir_[i] = dir[i]; }
+    SetShaderValue(char_, l_count_, &n, SHADER_UNIFORM_INT);
+    SetShaderValueV(char_, l_pos_, pos, SHADER_UNIFORM_VEC4, 8);
+    SetShaderValueV(char_, l_col_, col, SHADER_UNIFORM_VEC4, 8);
+    SetShaderValueV(char_, l_dir_, dir, SHADER_UNIFORM_VEC4, 8);
+}
+
+// Pick the (up to) two lights that light the characters most, and draw the characters' depth as
+// each of those lights sees them: a perspective view from the light, framing all the characters.
+void Game::render_shadows(std::initializer_list<const Character*> casters) {
+    for (auto& sm : shadows_) sm.light = -1;
+    if (casters.size() == 0 || light_n_ == 0) return;
+    Vector3 c{};
+    for (const Character* ch : casters) c = Vector3Add(c, ch->joint(J_PELVIS));
+    c = Vector3Scale(c, 1.0f / float(casters.size()));
+    float r = 0;
+    for (const Character* ch : casters) r = std::max(r, Vector3Distance(ch->joint(J_PELVIS), c));
+    r += 1.15f;   // a character reaches about a metre from its hips (hair, raised arms)
+    struct Pick { int i; float e; };
+    std::vector<Pick> picks;
+    for (int i = 0; i < light_n_; ++i) {
+        const Vector4 p = light_pos_[i], col = light_col_[i];
+        if (int(col.w + 0.5f) == 2) continue;                       // suns: none indoors
+        const float dist = Vector3Distance({p.x, p.y, p.z}, c);
+        if (dist < 0.5f) continue;                                    // a light among the characters can't frame them
+        const float x = std::clamp(1.0f - std::pow(dist / std::max(p.w, 1e-3f), 4.0f), 0.0f, 1.0f);
+        const float e = (col.x + col.y + col.z) * x * x / (1.0f + dist * dist * 0.35f);
+        if (e > 0.02f) picks.push_back({i, e});
+    }
+    std::sort(picks.begin(), picks.end(), [](const Pick& a, const Pick& b) { return a.e > b.e; });
+    const double keep_near = rlGetCullDistanceNear(), keep_far = rlGetCullDistanceFar();
+    for (size_t k = 0; k < picks.size() && k < 2; ++k) {
+        const Vector4 p = light_pos_[picks[k].i];
+        const Vector3 lp{p.x, p.y, p.z};
+        const float dist = Vector3Distance(lp, c);
+        Camera3D lc{};
+        lc.position = lp;
+        lc.target = c;
+        lc.up = std::fabs(Vector3Normalize(Vector3Subtract(c, lp)).y) > 0.95f ? Vector3{0, 0, 1} : Vector3{0, 1, 0};
+        lc.fovy = 2.0f * std::atan(r / dist) * RAD2DEG * 1.05f;
+        lc.projection = CAMERA_PERSPECTIVE;
+        if (lc.fovy > 165.0f) continue;                               // a hanging lamp right overhead needs a wide view
+        rlSetClipPlanes(std::max(0.05, double(dist - r - 0.3f)), double(dist + r + 0.5f));   // tight: precise depth
+        const unsigned t1 = char_mat_.maps[MATERIAL_MAP_METALNESS].texture.id, t2 = char_mat_.maps[MATERIAL_MAP_NORMAL].texture.id;
+        char_mat_.maps[MATERIAL_MAP_METALNESS].texture.id = 0;         // never sample a map while drawing into it
+        char_mat_.maps[MATERIAL_MAP_NORMAL].texture.id = 0;
+        BeginTextureMode(shadows_[k].rt);
+        ClearBackground(WHITE);
+        BeginMode3D(lc);
+        shadows_[k].vp = MatrixMultiply(rlGetMatrixModelview(), rlGetMatrixProjection());
+        const int one = 1, zero = 0;
+        SetShaderValue(char_, l_depthOnly_, &one, SHADER_UNIFORM_INT);
+        rlDisableBackfaceCulling();
+        for (const Character* ch : casters) ch->draw(char_mat_, true);
+        rlEnableBackfaceCulling();
+        SetShaderValue(char_, l_depthOnly_, &zero, SHADER_UNIFORM_INT);
+        EndMode3D();
+        EndTextureMode();
+        char_mat_.maps[MATERIAL_MAP_METALNESS].texture.id = t1;
+        char_mat_.maps[MATERIAL_MAP_NORMAL].texture.id = t2;
+        rlSetClipPlanes(keep_near, keep_far);
+        shadows_[k].light = picks[k].i;
+    }
+}
+
+void Game::bind_shadows() {
+    int which[2];
+    Vector4 pl[2];
+    for (int k = 0; k < 2; ++k) {
+        const ShadowMap& sm = shadows_[k];
+        which[k] = sm.light;
+        const Vector4 p = sm.light >= 0 ? light_pos_[sm.light] : Vector4{0, 0, 0, 0};
+        pl[k] = {p.x, p.y, p.z, sm.light >= 0 ? 1.0f : 0.0f};
+        SetShaderValueMatrix(char_, l_shVP_[k], sm.vp);
+        SetShaderValueMatrix(plate_, l_pShVP_[k], sm.vp);
+    }
+    SetShaderValueV(char_, l_shLight_, which, SHADER_UNIFORM_INT, 2);
+    SetShaderValueV(plate_, l_pShL_, pl, SHADER_UNIFORM_VEC4, 2);
+    char_mat_.maps[MATERIAL_MAP_METALNESS].texture = shadows_[0].rt.depth;   // the shader's texture1
+    char_mat_.maps[MATERIAL_MAP_NORMAL].texture = shadows_[1].rt.depth;      // the shader's texture2
 }
 
 void Game::cut_to(const std::string& id) {
@@ -116,10 +240,7 @@ void Game::upload_lights() {
             dir[n] = {d.x, d.y, d.z, std::cos(half)};
         }
     }
-    SetShaderValue(char_, l_count_, &n, SHADER_UNIFORM_INT);
-    SetShaderValueV(char_, l_pos_, pos, SHADER_UNIFORM_VEC4, 8);
-    SetShaderValueV(char_, l_col_, col, SHADER_UNIFORM_VEC4, 8);
-    SetShaderValueV(char_, l_dir_, dir, SHADER_UNIFORM_VEC4, 8);
+    set_lights(pos, col, dir, n);
     const float top[3] = {0.03f, 0.034f, 0.046f}, bot[3] = {0.011f, 0.009f, 0.007f}, rim[3] = {0.1f, 0.12f, 0.16f};
     const float fog[3] = {0.006f, 0.007f, 0.009f}, fogr[2] = {5.0f, 16.0f};
     SetShaderValue(char_, l_top_, top, SHADER_UNIFORM_VEC3);
@@ -271,14 +392,10 @@ std::string Game::stage(int i) {
 
 void Game::upload_studio_lights() {
     // Neutral three-point rig for judging a model: warm key front-left, cold fill, cold rim behind.
-    const Vector4 pos[3] = {{-1.3f, 2.7f, -1.7f, 8.0f}, {1.6f, 1.2f, -1.3f, 8.0f}, {0.4f, 2.5f, 1.9f, 8.0f}};
-    const Vector4 col[3] = {{1.0f * 3.6f, 0.78f * 3.6f, 0.55f * 3.6f, 0}, {0.45f, 0.55f, 0.8f, 0}, {0.6f * 3.2f, 0.7f * 3.2f, 1.0f * 3.2f, 0}};
-    const Vector4 dir[3] = {};
-    const int n = 3;
-    SetShaderValue(char_, l_count_, &n, SHADER_UNIFORM_INT);
-    SetShaderValueV(char_, l_pos_, pos, SHADER_UNIFORM_VEC4, 3);
-    SetShaderValueV(char_, l_col_, col, SHADER_UNIFORM_VEC4, 3);
-    SetShaderValueV(char_, l_dir_, dir, SHADER_UNIFORM_VEC4, 3);
+    const Vector4 pos[8] = {{-1.3f, 2.7f, -1.7f, 8.0f}, {1.6f, 1.2f, -1.3f, 8.0f}, {0.4f, 2.5f, 1.9f, 8.0f}};
+    const Vector4 col[8] = {{1.0f * 3.9f, 0.78f * 3.9f, 0.55f * 3.9f, 0}, {0.9f, 1.0f, 1.3f, 0}, {0.6f * 3.2f, 0.7f * 3.2f, 1.0f * 3.2f, 0}};
+    const Vector4 dir[8] = {};
+    set_lights(pos, col, dir, 3);
     const float top[3] = {0.05f, 0.055f, 0.07f}, bot[3] = {0.02f, 0.018f, 0.015f}, rim[3] = {0.1f, 0.12f, 0.16f};
     const float fog[3] = {0, 0, 0}, fogr[2] = {50.0f, 60.0f};
     SetShaderValue(char_, l_top_, top, SHADER_UNIFORM_VEC3);
@@ -307,6 +424,8 @@ void Game::model_sheet(const std::string& dir) {
         Character c = Character::make(sub.kind, sub.variant);
         c.place({0, 0, 0}, 0);
         for (int f = 0; f < 150; ++f) c.animate(sub.pose, sub.pose == Pose::Shamble ? 0.7f : 0.0f, 1.0f / 60);
+        render_shadows({&c});
+        bind_shadows();
         Image sheet = GenImageColor(4 * 400, kRows * 560, Color{10, 10, 12, 255});
         for (int v = 0; v < kViews; ++v) {
             const View& w = views[v];
@@ -360,6 +479,8 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     Character c = Character::make(w == "survivor" ? Kind::Survivor : Kind::Drowned, 0);
     c.place({0, 0, 0}, 0);
     for (int f = 0; f < 150; ++f) c.animate(Pose::Idle, 0.0f, 1.0f / 60);
+    render_shadows({&c});
+    bind_shadows();
     const float a = orbit * DEG2RAD, e = elev * DEG2RAD;
     Camera3D cam{};
     cam.position = {tx + dist * std::sin(a) * std::cos(e), ty + dist * std::sin(e), -dist * std::cos(a) * std::cos(e)};
@@ -387,12 +508,19 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
 
 void Game::render() {
     const auto& plate = plates_.at(shot_);
+    render_shadows({&hero_, &drowned_});
+    bind_shadows();
+    SetShaderValueMatrix(plate_, l_pInvView_, MatrixInvert(MatrixLookAt(cam_.position, cam_.target, cam_.up)));
+    const float th = std::tan(cam_.fovy * 0.5f * DEG2RAD), tan_half[2] = {th * float(W) / float(H), th};
+    SetShaderValue(plate_, l_pTan_, tan_half, SHADER_UNIFORM_VEC2);
     BeginTextureMode(rt_);
     ClearBackground(BLACK);
     rlEnableDepthTest();
     rlEnableDepthMask();
     BeginShaderMode(plate_);
     SetShaderValueTexture(plate_, l_depth_, plate.second);
+    SetShaderValueTexture(plate_, l_pSh0_, shadows_[0].rt.depth);
+    SetShaderValueTexture(plate_, l_pSh1_, shadows_[1].rt.depth);
     const float dmax = depth::MAX_M;
     SetShaderValue(plate_, l_near_, &near_, SHADER_UNIFORM_FLOAT);
     SetShaderValue(plate_, l_far_, &far_, SHADER_UNIFORM_FLOAT);
@@ -407,7 +535,7 @@ void Game::render() {
     rlEnableBackfaceCulling();
     rlDisableDepthMask();
     BeginBlendMode(BLEND_ALPHA);
-    const float strength = 0.55f;
+    const float strength = 0.35f;   // contact darkening under the feet; the lights cast the real shadows
     SetShaderValue(blob_, l_blob_, &strength, SHADER_UNIFORM_FLOAT);
     for (const Actor* a : {&player_, &enemy_})
         DrawMesh(blob_mesh_, blob_mat_, MatrixMultiply(MatrixScale(0.85f, 1, 0.85f), MatrixTranslate(a->x, 0.012f, a->z)));
