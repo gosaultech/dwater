@@ -15,10 +15,27 @@ from typing import Callable
 import numpy as np
 
 import dwc
-from body import Body, quad_normals
+from body import J, Body, quad_normals
 from parts import rgba
 
 Vec = np.ndarray
+
+
+def dense_weights(b: Body, src: np.ndarray) -> np.ndarray:
+    """The joint weights of body vertices as dense rows (a column per engine joint), so a point
+    between two vertices can take a blend of both. Cut edges need it: a vertex that took one end's
+    weights would tear away from its neighbours when a joint turns far (a jaw hanging open)."""
+    W = np.zeros((len(src), len(J)))
+    np.add.at(W, (np.repeat(np.arange(len(src)), 4), b.jid[src].ravel()), b.jw[src].ravel())
+    return W
+
+
+def top4(W: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Dense joint weights back to the four strongest influences, renormalised (the engine's format)."""
+    jid = np.argsort(-W, axis=1, kind="stable")[:, :4]
+    jw = np.take_along_axis(W, jid, axis=1)
+    jw = jw / np.maximum(jw.sum(axis=1, keepdims=True), 1e-9)
+    return jid.astype(np.uint8), jw.astype(np.float32)
 
 
 def adjacency(quads: np.ndarray, n: int) -> list[np.ndarray]:
@@ -130,11 +147,13 @@ def _offsets(b: Body, g: Garment, ids: np.ndarray) -> np.ndarray:
     return np.asarray(g.offset(b, ids), float) if callable(g.offset) else np.full(len(ids), float(g.offset))
 
 
-def clip(P: Vec, N: Vec, src: np.ndarray, tris: np.ndarray, s: np.ndarray):
+def clip(P: Vec, N: Vec, src: np.ndarray, tris: np.ndarray, s: np.ndarray, W: np.ndarray):
     """Keep the part of a triangle mesh where the field s >= 0, cutting triangles exactly along s = 0.
-    New vertices on the cut take the interpolated position and normal and the nearer end's body vertex
-    (for its joint weights); a cut edge shared by two triangles gets one vertex. Returns (P, N, src, tris)."""
-    P, N, src = list(P), list(N), list(src)
+    New vertices on the cut interpolate position, normal and joint weights W (dense_weights) and take
+    the nearer end's body vertex as their source (colour, region); a cut edge shared by two triangles
+    gets one vertex. Returns (P, N, src, tris, W, on_cut): on_cut marks the vertices made on the cut."""
+    n0 = len(P)
+    P, N, src, W = list(P), list(N), list(src), list(W)
     out, cache = [], {}
 
     def cut(a, c):
@@ -146,6 +165,7 @@ def clip(P: Vec, N: Vec, src: np.ndarray, tris: np.ndarray, s: np.ndarray):
             P.append(P[a] + (P[c] - P[a]) * t)
             N.append(n / max(np.linalg.norm(n), 1e-9))
             src.append(src[a] if t < 0.5 else src[c])
+            W.append(W[a] + (W[c] - W[a]) * t)
         return cache[key]
 
     keep = s >= 0
@@ -166,7 +186,7 @@ def clip(P: Vec, N: Vec, src: np.ndarray, tris: np.ndarray, s: np.ndarray):
         out += [[poly[0], poly[k], poly[k + 1]] for k in range(1, len(poly) - 1)]
     out = np.array(out, np.int64).reshape(-1, 3)
     used, T = np.unique(out, return_inverse=True)
-    return np.array(P)[used], np.array(N)[used], np.array(src)[used], T.reshape(out.shape)
+    return np.array(P)[used], np.array(N)[used], np.array(src)[used], T.reshape(out.shape), np.array(W)[used], used >= n0
 
 
 def rim_edges(tris: np.ndarray) -> np.ndarray:
@@ -176,41 +196,117 @@ def rim_edges(tris: np.ndarray) -> np.ndarray:
     return e[first[counts == 1]]
 
 
-def hem_strip(P: Vec, N: Vec, src: np.ndarray, col: np.ndarray, aux: np.ndarray, tris: np.ndarray, depth: float):
-    """Fold every open edge back toward the body by `depth`, so edges read as cloth, not paper."""
-    rim = rim_edges(tris)
-    if depth <= 0 or not len(rim):
-        return P, N, src, col, aux, tris
+def fold_edges(P: Vec, N: Vec, tris: np.ndarray, depth, edges: np.ndarray | None = None, carry: tuple = ()):
+    """Fold open edges back into the body by `depth` (metres, or one per vertex), so edges read as
+    cloth, not paper, and a tear shows a wall of flesh. edges: which open edges (default: all).
+    carry: per-vertex arrays copied onto the folded vertices. Returns (P, N, tris, carry, folded)."""
+    rim = rim_edges(tris) if edges is None else edges
+    if not len(rim) or np.all(np.asarray(depth) <= 0):
+        return P, N, tris, carry, np.zeros(len(P), bool)
     rv = np.unique(rim)
     inner = np.full(len(P), -1, np.int64)
     inner[rv] = len(P) + np.arange(len(rv))
     a, c = rim[:, 0], rim[:, 1]
     strip = np.concatenate([np.stack([c, a, inner[a]], 1), np.stack([c, inner[a], inner[c]], 1)])
-    return (np.vstack([P, P[rv] - N[rv] * depth]), np.vstack([N, -N[rv]]), np.concatenate([src, src[rv]]),
-            np.vstack([col, col[rv]]), np.concatenate([aux, aux[rv]]), np.vstack([tris, strip]))
+    d = np.broadcast_to(np.asarray(depth, float), (len(P),))[rv][:, None]
+    folded = np.zeros(len(P) + len(rv), bool)
+    folded[len(P):] = True
+    return (np.vstack([P, P[rv] - N[rv] * d]), np.vstack([N, -N[rv]]), np.vstack([tris, strip]),
+            tuple(np.concatenate([x, x[rv]]) for x in carry), folded)
 
 
 def _finish(b: Body, name: str, mat: int, P: Vec, N: Vec, src: np.ndarray, col: np.ndarray, tris: np.ndarray, hem: float,
-            mats: Callable | None = None, aux: np.ndarray | None = None) -> dwc.Part:
-    shell = (src.copy(), tris.copy(), P.copy(), N.copy())
+            W: np.ndarray, mats: Callable | None = None, aux: np.ndarray | None = None) -> dwc.Part:
+    shell = (src.copy(), tris.copy(), P.copy(), N.copy(), W.copy())
     aux = np.zeros(len(P)) if aux is None else np.asarray(aux, float)
-    P, N, src, col, aux, tris = hem_strip(P, N, src, col, aux, tris, hem)
+    P, N, tris, (src, col, aux, W), _ = fold_edges(P, N, tris, hem, carry=(src, col, aux, W))
     m = mats(b, src, P).astype(np.uint8) if mats else np.full(len(P), mat, np.uint8)
+    jid, jw = top4(W)
     part = dwc.Part(name, P.astype(np.float32), N.astype(np.float32), col.astype(np.uint8), m,
-                    b.region[src].astype(np.uint8), b.jid[src].astype(np.uint8), b.jw[src].astype(np.float32), tris.astype(np.int64),
-                    aux.astype(np.float32))
+                    b.region[src].astype(np.uint8), jid, jw, tris.astype(np.int64), aux.astype(np.float32))
     part.shell = shell   # the outer surface before the hem: other cloth can be laid on it (clip_overlay)
     return part
 
 
+def subdivide(P: Vec, N: Vec, src: np.ndarray, tris: np.ndarray, W: np.ndarray, pick: np.ndarray):
+    """Split the picked triangles four ways (a vertex at each edge's midpoint), for pieces smaller
+    than the body's own faces (a lanyard, a tie). Midpoints blend their ends' joint weights W and
+    take one end's body vertex. A picked triangle's unpicked neighbour keeps its edge whole, so pick
+    a margin beyond the piece: the seam then falls where the piece is cut away anyway.
+    Returns (P, N, src, tris, W)."""
+    P, N, src, W = list(P), list(N), list(src), list(W)
+    cache, out = {}, [t for t in tris[~pick].tolist()]
+
+    def mid(a, c):
+        key = (min(a, c), max(a, c))
+        if key not in cache:
+            n = N[a] + N[c]
+            cache[key] = len(P)
+            P.append((P[a] + P[c]) * 0.5)
+            N.append(n / max(np.linalg.norm(n), 1e-9))
+            src.append(src[a])
+            W.append((W[a] + W[c]) * 0.5)
+        return cache[key]
+
+    for a, c, e in tris[pick].tolist():
+        ac, ce, ea = mid(a, c), mid(c, e), mid(e, a)
+        out += [[a, ac, ea], [ac, c, ce], [ea, ce, e], [ac, ce, ea]]
+    return np.array(P), np.array(N), np.array(src), np.array(out, np.int64).reshape(-1, 3), np.array(W)
+
+
 def clip_overlay(b: Body, base: dwc.Part, name: str, mat: int, color: tuple, inside: Callable[[Vec], np.ndarray],
-                 lift: float, hem: float = 0.004) -> dwc.Part:
+                 lift: float, hem: float = 0.004, detail: int = 0, tint: Callable[[Vec], np.ndarray] | None = None) -> dwc.Part:
     """A piece cut from another garment's surface along a smooth boundary (webbing straps, a patch):
     inside(P) is positive inside the piece and crosses zero at its edge, so the edges are exact
-    curves instead of the stairs of the body's mesh. The piece is lifted `lift` off its base."""
-    src0, tris0, P0, N0 = base.shell
-    P, N, src, T = clip(P0, N0, src0, tris0, inside(P0))
-    return _finish(b, name, mat, P + N * lift, N, src, np.tile(rgba(color), (len(P), 1)), T, hem)
+    curves instead of the stairs of the body's mesh. The piece is lifted `lift` off its base.
+    detail: times to subdivide the faces near the piece first (narrow pieces, painted patterns);
+    tint(P) -> (n, 3) colours paints it (stripes on a tie)."""
+    src0, tris0, P0, N0, W0 = base.shell
+    for _ in range(detail):
+        s = inside(P0)
+        span = np.linalg.norm(P0[tris0[:, 0]] - P0[tris0[:, 1]], axis=1)   # about one face of margin
+        P0, N0, src0, tris0, W0 = subdivide(P0, N0, src0, tris0, W0, s[tris0].max(axis=1) > -1.5 * span)
+    P, N, src, T, W, _ = clip(P0, N0, src0, tris0, inside(P0), W0)
+    col = np.tile(rgba(color), (len(P), 1))
+    if tint:
+        col[:, :3] = np.clip(tint(P), 0, 255).astype(np.uint8)
+    return _finish(b, name, mat, P + N * lift, N, src, col, T, hem, W)
+
+
+def neckline(rim: np.ndarray, P: Vec, above: float) -> np.ndarray:
+    """The open edge that runs round the neck, as a chain of vertices in order along it, from one
+    front end round the back to the other: of the loops (joined open edges) above `above`, the one
+    with the most vertices, walked edge to edge (sorting by angle zig-zags where the edge runs
+    steeply, as down the V of an open collar). Stray bits of edge (a sliver, a tear) are left out."""
+    rim = rim[(P[rim[:, 0], 1] > above) & (P[rim[:, 1], 1] > above)]
+    nbr: dict[int, list[int]] = {}
+    for a, c in rim.tolist():
+        nbr.setdefault(a, []).append(c)
+        nbr.setdefault(c, []).append(a)
+    seen, best = set(), []
+    for v0 in nbr:
+        if v0 in seen:
+            continue
+        comp, stack = [], [v0]
+        while stack:
+            v = stack.pop()
+            if v in seen:
+                continue
+            seen.add(v)
+            comp.append(v)
+            stack += nbr[v]
+        best = comp if len(comp) > len(best) else best
+    ends = [v for v in best if len(nbr[v]) == 1]
+    start = min(ends, key=lambda v: P[v, 0]) if ends else min(best, key=lambda v: P[v, 2] - 0.001 * P[v, 0])   # a closed loop: open it at the front
+    chain, prev = [start], None
+    while True:
+        nxt = [u for u in nbr[chain[-1]] if u != prev and u in set(best) and u not in chain[-2:]]
+        if not nxt or nxt[0] == start:
+            break
+        prev = chain[-1]
+        chain.append(nxt[0])
+    chain = np.array(chain)
+    return chain if P[chain[len(chain) // 4], 0] < P[chain[3 * len(chain) // 4], 0] else chain[::-1]   # front left first
 
 
 def collar(b: Body, base: dwc.Part, name: str, mat: int, color: tuple, neck: Vec, above: float, stand: float = 0.024,
@@ -218,17 +314,15 @@ def collar(b: Body, base: dwc.Part, name: str, mat: int, color: tuple, neck: Vec
     """A fold-down collar sewn to a garment's neckline (its open edge above height `above`). Round
     the back of the neck it stands `stand` metres, rolls over, and lies `fall` metres wide on the
     shoulders; at the front its ends turn down the opening as pointed collar tips `point` long."""
-    src0, tris0, P0, N0 = base.shell
-    rv = np.unique(rim_edges(tris0))
-    rv = rv[P0[rv, 1] > above]
-    d = P0[rv][:, [0, 2]] - neck[[0, 2]]
-    rv = rv[np.argsort(np.arctan2(d[:, 0], d[:, 1]))]                 # round the neck: front left, back, front right
+    src0, tris0, P0, N0, W0 = base.shell
+    rv = neckline(rim_edges(tris0), P0, above)                        # round the neck: front left, back, front right
     B, Nb, S = P0[rv], N0[rv], src0[rv]
     seg = np.linalg.norm(np.diff(B, axis=0), axis=1)
     s = np.concatenate([[0], np.cumsum(seg)])
     t = np.linspace(0, s[-1], samples)                                  # even spacing along the neckline
-    B = np.stack([np.interp(t, s, B[:, k]) for k in range(3)], 1)
-    Nb = np.stack([np.interp(t, s, Nb[:, k]) for k in range(3)], 1)
+    lerp = lambda X: np.stack([np.interp(t, s, X[:, k]) for k in range(X.shape[1])], 1)
+    B, Nb = lerp(B), lerp(Nb)
+    Wc = lerp(W0[rv])                                                   # blended, or neighbours twist apart as the neck turns
     S = S[np.clip(np.searchsorted(s, t), 0, len(S) - 1)]
     for _ in range(3):                                                  # smooth away the cut's small wobbles
         B[1:-1] = (B[:-2] + 2 * B[1:-1] + B[2:]) / 4
@@ -254,9 +348,12 @@ def collar(b: Body, base: dwc.Part, name: str, mat: int, color: tuple, neck: Vec
     if np.mean(np.einsum("ij,ij->i", N, np.concatenate([radial] * 3))) < 0:   # face away from the neck
         tris, N = tris[:, ::-1], -N
     src = np.concatenate([S, S, S])
+    chest = np.zeros_like(Wc)
+    chest[:, J["chest"]] = 1.0
+    jid, jw = top4(np.concatenate([Wc, Wc, 0.5 * Wc + 0.5 * chest]))   # the part lying on the shoulders rides the chest
     m = len(P)
     return dwc.Part(name, P.astype(np.float32), N.astype(np.float32), np.tile(rgba(color), (m, 1)), np.full(m, mat, np.uint8),
-                    b.region[src].astype(np.uint8), b.jid[src].astype(np.uint8), b.jw[src].astype(np.float32), tris)
+                    b.region[src].astype(np.uint8), jid, jw, tris)
 
 
 def build(b: Body, g: Garment) -> tuple[dwc.Part, np.ndarray]:
@@ -291,11 +388,11 @@ def build(b: Body, g: Garment) -> tuple[dwc.Part, np.ndarray]:
         N = quad_normals(P, local)
     tris = np.concatenate([local[:, [0, 1, 2]], local[:, [0, 2, 3]]])
     s = g.trim(b, ids, P) if g.trim else np.ones(len(ids))
-    Pc, Nc, src, T = clip(P, N, ids, tris, s) if g.trim else (P, N, ids, tris)
+    Pc, Nc, src, T, W, _ = clip(P, N, ids, tris, s, dense_weights(b, ids))
     col = np.tile(rgba(g.color), (len(Pc), 1))
     if g.tint:
         col[:, :3] = np.clip(g.tint(b, src, Pc), 0, 255).astype(np.uint8)
-    part = _finish(b, g.name, g.mat, Pc, Nc, src, col, T, g.hem, g.mats, g.aux(b, src, Pc) if g.aux else None)
+    part = _finish(b, g.name, g.mat, Pc, Nc, src, col, T, g.hem, W, g.mats, g.aux(b, src, Pc) if g.aux else None)
     hidden = np.zeros(len(b.body_quads), bool)
     if g.hides_skin:
         # Hide skin only well inside the finished garment: every corner selected, at least 1.2 cm
@@ -309,6 +406,35 @@ def build(b: Body, g: Garment) -> tuple[dwc.Part, np.ndarray]:
         margin[np.unique(q[bad])] = False
         hidden = margin[b.body_quads].all(axis=1) & qmask
     return part, hidden
+
+
+def build_helper(b: Body, group: str, name: str, mat: int, color: tuple, offset: float, trim: Callable | None = None,
+                 tint: Callable | None = None, hem: float = 0.004, smooth: int = 2, loosen: Callable | None = None) -> dwc.Part:
+    """A garment from one of MakeHuman's helper meshes (the skirt): a proxy already fitted round the
+    body and weighted to it, which a body shell can't give (a skirt spans the gap between the legs).
+    Offset outward, smoothed, then trimmed, tinted and hemmed like any garment (trim, tint, loosen:
+    as Garment)."""
+    quads = b.groups[group]
+    ids, local = np.unique(quads, return_inverse=True)
+    local = local.reshape(quads.shape)
+    P0 = b.V[ids]
+    N0 = quad_normals(P0, local)
+    out = P0 - P0.mean(axis=0)
+    out[:, 1] = 0
+    if np.mean(np.einsum("ij,ij->i", N0, out)) < 0:          # face away from the body
+        local, N0 = local[:, ::-1], -N0
+    P = P0 + N0 * offset
+    if loosen:
+        P = loosen(b, ids, P)
+    P = taubin(P, adjacency(local, len(ids)), smooth)
+    N = quad_normals(P, local)
+    tris = np.concatenate([local[:, [0, 1, 2]], local[:, [0, 2, 3]]])
+    s = trim(b, ids, P) if trim else np.ones(len(ids))
+    Pc, Nc, src, T, W, _ = clip(P, N, ids, tris, s, dense_weights(b, ids))
+    col = np.tile(rgba(color), (len(Pc), 1))
+    if tint:
+        col[:, :3] = np.clip(tint(b, src, Pc), 0, 255).astype(np.uint8)
+    return _finish(b, name, mat, Pc, Nc, src, col, T, hem, W)
 
 
 # ── Shaping helpers ──────────────────────────────────────────────────────────────

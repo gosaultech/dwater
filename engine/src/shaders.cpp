@@ -106,6 +106,9 @@ vec3 bumpN(vec3 N, float h, float k) {
 }
 
 void main() {
+    // Hair ribbons (wet long hair) thin out toward their edges and ends into single hairs: streaks
+    // along the ribbon, each dropping out at its own point.
+    if (vMat == 37 && vAux > 0.0 && hash(vec3(floor(fract(vSurf.x) * 26.0), floor(vSurf.y * 7.0), floor(vSurf.z * 50.0))) < smoothstep(0.25, 1.0, vAux) * 1.05) discard;
     if (u_depthOnly == 1) {   // a shadow map: only depth matters (thinned hair casts thinned shadows)
         if (vMat == 8 && vAux > 0.0 && hash(floor(vec3(vSurf.x * 1400.0, vSurf.y * 380.0, vSurf.z * 1400.0))) < vAux) discard;
         finalColor = vec4(1.0);
@@ -147,19 +150,22 @@ void main() {
         vec3 q = p * 15.0 + vec3(fbm(p * 4.0) * 2.2);                                        // warped: vessels wander
         float ves = max(smoothstep(0.9, 0.985, ridge(q)), smoothstep(0.93, 0.99, ridge(q * 2.13 + 7.3)) * 0.7);
         float region = smoothstep(0.38, 0.62, fbm(p * 2.4 + 3.0));                            // marbling comes in patches
-        albedo = mix(albedo, lin(vec3(0.2, 0.18, 0.2)), ves * region * 0.6);
+        albedo = mix(albedo, lin(vec3(0.22, 0.17, 0.24)), ves * region * 0.65);                // under the skin, not on it
         albedo = mix(albedo, lin(vec3(0.28, 0.22, 0.3)), (1.0 - smoothstep(0.1, 0.95, vWorld.y)) * 0.4);   // blood pooled low
-        float sl = fbm(p * 7.0 + 11.7);                                                      // skin slippage
-        float curl = smoothstep(0.615, 0.64, sl) - smoothstep(0.648, 0.67, sl);
-        float raw = smoothstep(0.655, 0.675, sl);
-        albedo = mix(albedo, lin(vec3(0.8, 0.78, 0.7)), curl * 0.8);
-        albedo = mix(albedo, lin(vec3(0.42, 0.19, 0.17)) * mix(0.7, 1.1, fbm(p * 40.0)), raw);
+        // Skin slippage: patches where the outer skin has lifted (pale, loose, wrinkled) and, at
+        // their hearts, come away to the raw layer beneath.
+        float sl = fbm(p * 5.0 + 11.7) + (fbm(p * 34.0) - 0.5) * 0.08;
+        float curl = smoothstep(0.64, 0.66, sl) * (1.0 - smoothstep(0.67, 0.685, sl));
+        float raw = smoothstep(0.675, 0.695, sl) * smoothstep(0.5, 0.58, fbm(p * 16.0 + 3.1)) * 0.9;   // torn through in places
+        float wrk = abs(sin(p.y * 190.0 + fbm(p * 26.0) * 6.0));
+        albedo = mix(albedo, lin(vec3(0.62, 0.62, 0.56)) * mix(0.8, 1.05, wrk), curl * 0.4);
+        albedo = mix(albedo, lin(vec3(0.36, 0.21, 0.19)) * mix(0.7, 1.1, fbm(p * 40.0)), raw * 0.8);   // the dermis: pink-brown, wet
         float bl = smoothstep(0.84, 0.9, noise(p * 62.0)) * (1.0 - raw);                      // gas blisters
         albedo = mix(albedo, lin(vec3(0.62, 0.62, 0.52)), bl * 0.35);
         float wet = max(smoothstep(0.45, 0.66, fbm(p * 5.0 + 7.0)), raw);
-        spec = max(mix(0.05, 0.55, wet), bl * 0.7); gloss = max(mix(10.0, 80.0, wet), bl * 110.0);
-        h = fbm(p * 70.0) * 0.6 + ves * region * 0.4 + bl * 0.9 - raw * 0.4 + curl * 0.5; bk = 0.0022; wrap = 0.4;
-        sss = mix(vec3(0.07, 0.11, 0.07), vec3(0.3, 0.05, 0.04), raw);
+        spec = max(mix(0.04, 0.32, wet), bl * 0.6); gloss = max(mix(10.0, 46.0, wet), bl * 90.0);
+        h = fbm(p * 70.0) * 0.6 + fbm(p * 190.0) * 0.25 - ves * region * 0.1 + bl * 0.9 - raw * 0.5 + curl * wrk * 0.3; bk = 0.0022; wrap = 0.4;
+        sss = mix(vec3(0.07, 0.11, 0.07), vec3(0.14, 0.05, 0.04), raw);
     } else if (mat == 3) {     // coroner's sheet: dirty linen, canal mud, old blood; damp patches
         float st = fbm(p * 6.0);
         albedo = mix(albedo, albedo * vec3(0.5, 0.42, 0.3), smoothstep(0.48, 0.72, st));
@@ -251,7 +257,8 @@ void main() {
         vec3 q = p * 38.0;
         vec3 cell = floor(q);
         float rnd = hash(cell);
-        float petal = length(fract(q) - 0.5 - (rnd - 0.5) * 0.3);
+        vec3 jit = vec3(hash(cell + 7.1), hash(cell + 3.3), hash(cell + 11.9)) - 0.5;   // scattered, not a grid
+        float petal = length(fract(q) - 0.5 - jit * 0.55);
         float flower = 1.0 - smoothstep(0.12, 0.2, petal);
         albedo = mix(albedo, mix(lin(vec3(0.62, 0.52, 0.28)), lin(vec3(0.55, 0.18, 0.2)), step(0.5, rnd)), flower * step(0.35, rnd));
         h = fbm(p * 50.0); bk = 0.001; spec = 0.03; gloss = 8.0; wrap = 0.35;
@@ -269,9 +276,17 @@ void main() {
         vec3 dpx = dFdx(vWorld), dpy = dFdy(vWorld), r1 = cross(dpy, N), r2 = cross(N, dpx);
         vec3 g = (dFdx(p.y) * r1 + dFdy(p.y) * r2) * sign(dot(dpx, r1));
         if (dot(g, g) > 1e-20) { strand = normalize(g); aniso = 0.1; }
+    } else if (mat == 37) {   // soaked long hair: many fine hairs stuck together, dark and glossy (p: across, along, seed)
+        float aa = clamp(1.4 - fwidth(p.x * 60.0) * 1.2, 0.0, 1.0);
+        float fine = mix(0.5, noise(vec3(fract(p.x) * 60.0, p.y * 4.0, p.z * 3.0)), aa);   // the hairs within a clump
+        albedo *= mix(0.62, 1.15, fine) * mix(0.85, 1.1, fbm(vec3(p.z * 2.0, p.y * 30.0, 0.5)));
+        h = fine; bk = 0.0006; spec = 0.18; gloss = 40.0; wrap = 0.25; rim = 0.08;
+        vec3 dpx = dFdx(vWorld), dpy = dFdy(vWorld), r1 = cross(dpy, N), r2 = cross(N, dpx);
+        vec3 g = (dFdx(p.y) * r1 + dFdy(p.y) * r2) * sign(dot(dpx, r1));
+        if (dot(g, g) > 1e-20) { strand = normalize(g); aniso = 0.25; }
     } else if (mat == 24) {   // raw dermis where the outer skin slipped off: wet and pink
-        albedo *= mix(0.7, 1.1, fbm(p * 55.0)); h = fbm(p * 140.0); bk = 0.0008; spec = 0.55; gloss = 65.0; wrap = 0.5;
-        sss = vec3(0.28, 0.05, 0.04);
+        albedo *= mix(0.7, 1.1, fbm(p * 55.0)); h = fbm(p * 140.0); bk = 0.0008; spec = 0.45; gloss = 55.0; wrap = 0.5;
+        sss = vec3(0.16, 0.05, 0.04);
     }
     if (bk > 0.0) N = bumpN(N, h, bk);
 

@@ -26,9 +26,11 @@ public:
     int capture_count() const { return 4; }
     std::string stage(int i);       // pose a capture setup; returns its name
     // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
-    void model_sheet(const std::string& dir);
+    // only: a comma-separated list of subjects to render (empty: all).
+    void model_sheet(const std::string& dir, const std::string& only = "");
     // One full-resolution studio shot, for close inspection. spec = "who,orbit_deg,elev_deg,dist,target_x,target_y,fovy"
-    // (who: survivor | drowned); the camera orbits the point (target_x, target_y, 0).
+    // (who: survivor | drowned[N], optionally @head, @chest or @pelvis); the camera orbits the point
+    // (target_x, target_y, 0), or that joint offset by (target_x, target_y).
     bool studio_view(const std::string& spec, const std::string& png);
     bool debug = false;
 

@@ -14,7 +14,10 @@ from pathlib import Path
 import bake
 import dwc
 import mhdata
-from cast import CAST
+import cast
+import cast_drowned
+
+CAST = {**cast.CAST, **cast_drowned.CAST}
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "engine" / "assets" / "characters"

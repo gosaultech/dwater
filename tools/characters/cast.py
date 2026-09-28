@@ -18,27 +18,6 @@ from parts import MAT, part_from_quads, rgba
 
 
 # ── Shared pieces ────────────────────────────────────────────────────────────────
-def sphere(center, radius, paint, rings=12, segs=16):
-    """UV sphere; paint(dir) -> (mat, rgb); dir (0,0,-1) = the front."""
-    P, C, M = [], [], []
-    for i in range(rings + 1):
-        ph = np.pi * i / rings
-        for j in range(segs):
-            th = 2 * np.pi * j / segs
-            d = np.array([np.sin(ph) * np.sin(th), np.cos(ph), -np.sin(ph) * np.cos(th)])
-            P.append(center + d * radius)
-            m, c = paint(d)
-            M.append(m)
-            C.append(rgba(c))
-    tris = []
-    for i in range(rings):
-        for j in range(segs):
-            a, b = i * segs + j, i * segs + (j + 1) % segs
-            tris += [[a, b, b + segs], [a, b + segs, a + segs]]
-    P = np.array(P)
-    return P, (P - center) / radius, np.array(C), np.array(M, np.uint8), np.array(tris)
-
-
 def rigid_part(name, P, N, C, M, tris, joint, region):
     n = len(P)
     jid = np.zeros((n, 4), np.uint8)
@@ -48,7 +27,38 @@ def rigid_part(name, P, N, C, M, tris, joint, region):
     return dwc.Part(name, P.astype(np.float32), N.astype(np.float32), C, M, np.full(n, region, np.uint8), jid, jw, tris)
 
 
-def eyes(b, sclera, iris, pupil=(10, 8, 8), iris_r=0.44, mat_eye=MAT["eye"], mat_iris=MAT["iris"]):
+def eyeball(center, radius, paint, rings_deg, segs=24):
+    """A sphere whose pole looks forward (-z), with rings at the given angles from the front:
+    rings placed either side of the pupil's and the iris's edges keep them crisp and round."""
+    ph = np.radians(np.asarray(rings_deg, float))
+    P, C, M = [center + np.array([0, 0, -radius])], [], []
+    for a in ph[1:-1]:
+        for j in range(segs):
+            th = 2 * np.pi * j / segs
+            P.append(center + radius * np.array([np.sin(a) * np.cos(th), np.sin(a) * np.sin(th), -np.cos(a)]))
+    P.append(center + np.array([0, 0, radius]))
+    P = np.array(P)
+    for q in P:
+        m, c = paint((q - center) / radius)
+        M.append(m)
+        C.append(rgba(c))
+    k, last = len(ph) - 2, len(P) - 1
+    ring = lambda i, j: 1 + i * segs + j % segs
+    tris = [[0, ring(0, j + 1), ring(0, j)] for j in range(segs)]
+    for i in range(k - 1):
+        for j in range(segs):
+            tris += [[ring(i, j), ring(i, j + 1), ring(i + 1, j + 1)], [ring(i, j), ring(i + 1, j + 1), ring(i + 1, j)]]
+    tris += [[ring(k - 1, j), ring(k - 1, j + 1), last] for j in range(segs)]
+    return P, (P - center) / radius, np.array(C), np.array(M, np.uint8), np.array(tris)
+
+
+def eyes(b, sclera, iris, pupil=(10, 8, 8), iris_r=0.44, mat_eye=MAT["eye"], mat_iris=MAT["iris"], limbus=None, veins=None):
+    """Both eyeballs on MakeHuman's eye helpers. limbus: a darker ring round the iris; veins: the
+    colour the white turns toward its corners (bloodshot)."""
+    pupil_r = iris_r * 0.42
+    deg = lambda r: float(np.degrees(np.arcsin(min(r, 1.0))))
+    rings = sorted({0, deg(pupil_r) * 0.5, deg(pupil_r) - 1.2, deg(pupil_r) + 1.2, deg(iris_r) * 0.75, deg(iris_r) - 1.5,
+                    deg(iris_r) + 0.5, deg(iris_r) + 3, 40, 52, 64, 76, 90, 105, 120, 140, 160, 180})
     out = []
     for side, grp in (("l", "helper-l-eye"), ("r", "helper-r-eye")):
         ids = np.unique(b.groups[grp])
@@ -57,12 +67,17 @@ def eyes(b, sclera, iris, pupil=(10, 8, 8), iris_r=0.44, mat_eye=MAT["eye"], mat
 
         def paint(d):
             rr = np.hypot(d[0], d[1])
-            if d[2] < -0.5 and rr < iris_r * 0.42:
+            if d[2] < -0.5 and rr < pupil_r:
                 return mat_iris, pupil
             if d[2] < -0.5 and rr < iris_r:
+                if limbus is not None and rr > iris_r * 0.8:
+                    return mat_iris, limbus
                 return mat_iris, iris
+            if veins is not None:
+                t = float(np.clip((abs(d[0]) - 0.5) / 0.4, 0, 1)) * 0.4
+                return mat_eye, tuple(np.array(sclera[:3]) * (1 - t) + np.array(veins[:3]) * t)
             return mat_eye, sclera
-        P, N, C, M, T = sphere(c, r, paint)
+        P, N, C, M, T = eyeball(c, r, paint, rings)
         out.append(rigid_part(f"eye_{side}", P, N, C, M, T, J["head"], bm.R_HEAD))
     return out
 
@@ -179,18 +194,22 @@ def scalp_select(b, face, levels=SCALP_LEVELS, margin=0.0):
     return (head_w > 0.5) & (scalp_field(face, b.V, levels) > -margin) & (b.dominant != J["jaw"])
 
 
-def hair_cap(b, face, name, color, levels=SCALP_LEVELS, offset=0.003, extra=None):
+def hair_cap(b, face, name, color, levels=SCALP_LEVELS, offset=0.003, extra=None, fade=0.0, thin=0.0, mat=MAT["hair"]):
     """Short hair as a thin shell over the scalp, cut exactly along the hairline. extra(P) > 0 can
-    carve it further (a slipped scalp, a parting)."""
-    def trim(bb, ids, P):
-        s = scalp_field(face, bb.V[ids], levels)
-        return np.minimum(s, extra(bb.V[ids])) if extra else s
-    return gm.build(b, gm.Garment(name, MAT["hair"], color, lambda bb: scalp_select(bb, face, levels, 0.012), offset, 1, None, None,
-                                  hem=0.0015, hides_skin=False, trim=trim))[0]
+    carve it further (a slipped scalp, a parting). fade: thin out over the last metres before the
+    edge, so it ends in stray hairs; thin: 0..1, how much scalp shows through everywhere."""
+    def field(V):
+        s = scalp_field(face, V, levels)
+        return np.minimum(s, extra(V)) if extra else s
+    aux = None
+    if fade > 0 or thin > 0:
+        aux = lambda bb, ids, P: np.maximum(thin, 1.0 - np.clip(field(bb.V[ids]) / max(fade, 1e-6), 0, 1)) * 0.92
+    return gm.build(b, gm.Garment(name, mat, color, lambda bb: scalp_select(bb, face, levels, 0.012), offset, 1, None, None,
+                                  hem=0.0015, hides_skin=False, trim=lambda bb, ids, P: field(bb.V[ids]), aux=aux))[0]
 
 
-def scalp_anchors(b, sel, count, seed=1):
-    """Farthest-point samples over the scalp: evenly spread roots for locs."""
+def scalp_anchors(b, sel, count, seed=1, prefix="loc"):
+    """Farthest-point samples over the scalp: evenly spread roots for locs (or any hair the engine grows)."""
     ids = np.nonzero(sel & np.isin(np.arange(len(b.V)), b.body_ids))[0]
     rng = np.random.default_rng(seed)
     chosen = [int(rng.choice(ids))]
@@ -200,7 +219,7 @@ def scalp_anchors(b, sel, count, seed=1):
         chosen.append(int(ids[k]))
         d = np.minimum(d, np.linalg.norm(b.V[ids] - b.V[ids[k]], axis=1))
     head = b.joints[J["head"]]
-    return [dwc.Anchor(f"loc{i}", J["head"], (b.V[v] - head).astype(np.float32), b.N[v].astype(np.float32))
+    return [dwc.Anchor(f"{prefix}{i}", J["head"], (b.V[v] - head).astype(np.float32), b.N[v].astype(np.float32))
             for i, v in enumerate(chosen)]
 
 

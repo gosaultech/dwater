@@ -1,6 +1,6 @@
 // damned_waters/engine/tests/test_character_file.cpp
-// Purpose: GoogleTest suite for the .dwc loader: the shipped survivor loads with a
-// full rig and sane skinning, and a damaged file gives an error instead of a crash.
+// Purpose: GoogleTest suite for the .dwc loader: the shipped survivor and Drowned citizens load
+// with a full rig and sane skinning, and a damaged file gives an error instead of a crash.
 #include <gtest/gtest.h>
 #include <cmath>
 #include <cstring>
@@ -50,6 +50,27 @@ TEST(CharacterFile, EveryVertexIsFullySkinned) {
             ASSERT_NEAR(w[0] + w[1] + w[2] + w[3], 1.0f, 1e-3f) << p.name << " vertex " << v;
         }
         for (float x : p.pos) ASSERT_TRUE(std::isfinite(x)) << p.name;
+    }
+}
+
+// The Drowned citizens: each loads, is fully skinned, and every part fits the engine's 16-bit
+// index buffers (a part past 65535 vertices would wrap its indices and tear).
+TEST(CharacterFile, ShippedCitizensLoadAndFitSixteenBitIndices) {
+    for (const char* id : {"office_worker", "pieter", "woman_dress"}) {
+        const CharacterFile f = CharacterFile::load(repo_root() + "/engine/assets/characters/" + id + ".dwc");
+        ASSERT_TRUE(f.ok()) << id << ": " << f.error;
+        EXPECT_EQ(f.joints.size(), 24u) << id;
+        EXPECT_NE(f.part("body"), nullptr) << id;
+        bool tongue = false;
+        for (const auto& a : f.anchors) tongue |= a.name == "tongue";
+        EXPECT_TRUE(tongue) << id;
+        for (const auto& p : f.parts) {
+            EXPECT_LE(p.vertices(), 65535u) << id << "/" << p.name;
+            for (size_t v = 0; v < p.vertices(); ++v) {
+                const float* w = &p.weight[v * 4];
+                ASSERT_NEAR(w[0] + w[1] + w[2] + w[3], 1.0f, 1e-3f) << id << "/" << p.name << " vertex " << v;
+            }
+        }
     }
 }
 

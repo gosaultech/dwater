@@ -45,7 +45,8 @@ enum Mat : int {
     MAT_COTTON = 33,     // t-shirts, shirts
     MAT_PRINT = 34,      // printed dress fabric
     MAT_LOCS = 35,       // locs: twisted, matted hair
-    MAT_LAMP = 36        // a lit lens: glows, ignores the room's light
+    MAT_LAMP = 36,       // a lit lens: glows, ignores the room's light
+    MAT_WETHAIR = 37     // long hair, soaked: dark, clumped, glossy
 };
 
 struct MeshData {

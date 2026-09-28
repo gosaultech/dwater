@@ -2,8 +2,8 @@
 
 <!-- damned_waters/tools/characters/README.md: how the cast is built, and why it's built this way. -->
 
-This pipeline builds the game's people (the survivor, and later the Drowned citizens of
-Amsterdam) from **MakeHuman's CC0 human**. The output is one small binary file per character,
+This pipeline builds the game's people (the survivor and the Drowned citizens of Amsterdam)
+from **MakeHuman's CC0 human**. The output is one small binary file per character,
 `engine/assets/characters/<name>.dwc`. The engine loads that file and skins it on the GPU.
 
 ```bash
@@ -65,7 +65,46 @@ The engine adds what moves or is held, in C++ (`engine/src/cast_*.cpp`):
 
 - physics locs, anchored to scalp points the pipeline exports;
 - the backpack, the flashlight and the pistol, anchored the same way;
-- hoodie drawstrings.
+- hoodie drawstrings;
+- for the Drowned: guts sagging from the split belly, the swollen tongue, loose skin, the tie
+  knot and staff pass, mussels, canal weed, and long wet hair.
+
+## The Drowned citizens
+
+`cast_drowned.py` dresses three ordinary Amsterdammers the way they went into the water;
+`drowned.py` then ruins them the same way for each. Think of it as two passes by two
+departments: wardrobe first, then the make-up effects team.
+
+| Id | Who | Wardrobe | What the canal did |
+|---|---|---|---|
+| `office_worker` | Jeroen, 48, civil servant | Pale blue shirt with the collar open, a loosened burgundy tie, lanyard and staff pass, charcoal trousers and belt, one shoe | Belly split with guts out, torn right cheek, scalp slipping at the front, left hand degloved |
+| `woman_dress` | Sanne, 34 | Teal midi dress with a small flower print, cropped mustard cardigan, barefoot | Long wet hair over her face, torn right cheek, left hand degloved |
+| `pieter` | Pieter, 67, pensioner | Navy cable-knit sweater over a checked shirt collar, faded jeans, white trainers | One eye gone, torn left cheek, belly split through the sweater, right hand degloved |
+
+The engine picks them by variant: `Character::make(Kind::Drowned, 0 | 1 | 2)`.
+
+What makes them read as bodies rather than painted mannequins:
+
+- **Bloat** uses MakeHuman's own morph targets (belly, face, neck, hands) instead of scaling.
+- **Tears are real holes with depth.** Wounds are cut exactly along a ragged outline (like a
+  garment trim), and the cut edge is folded inward into a wall of flesh (`drowned.skin`).
+  The surface keeps its skin material; only the walls are flesh. Materials change per
+  triangle, so a material boundary on the skin would show as jagged shards.
+- **Cut edges blend their skin weights.** A new vertex on a cut takes a mix of both ends'
+  joint weights (`garments.dense_weights` / `top4`), not one end's. The Drowned's jaw hangs
+  open 54 degrees, and copied weights would tear the edge into spikes.
+- **Small things lie on the clothes.** The tie and lanyard are cut from the shirt's outer
+  surface (`clip_overlay`, subdividing first with `detail` for pieces narrower than a face of
+  the body mesh). The knot and pass sit on anchors placed on the shirt (`on_garment`).
+- **A skirt from MakeHuman's skirt proxy** (`garments.build_helper`), because a shell of the
+  body can't bridge the gap between the legs. It is flared toward the hem.
+- **Collars follow the neckline loop** (`garments.neckline` walks the edge and ignores stray
+  slivers), with weights blended along it.
+- **Eyes** are rings round the pupil (`cast.eyeball`), so a clouded iris stays round and crisp.
+
+Sanne's hair is grown in the engine from 220 scalp anchors as flat ribbons ("hair cards")
+rather than tubes. Each ribbon lies against the skull, and its edges and ends are stippled away
+into single hairs by the shader (`MAT_WETHAIR`).
 
 ## Files
 
@@ -74,12 +113,16 @@ The engine adds what moves or is held, in C++ (`engine/src/cast_*.cpp`):
 | `mhdata.py` | Fetches the pinned MakeHuman data. Reads the base mesh (OBJ), morph targets, skeleton and skin weights. Holds the macro-slider maths (`macro_factors`), mirroring MakeHuman's `human.py`. |
 | `rig.py` | Re-poses from the A-pose (linear blend skinning with all 163 bones), converts axes (`to_engine`), finds engine joint positions, and folds the weights (`fold_weights`). |
 | `body.py` | `Body`: one morphed, posed, engine-space human with normals, engine weights, body regions and MakeHuman's own bone weights (for face paint). |
-| `garments.py` | `Garment` and `build()` (clothes as body shells), plus the helpers `adjacency`, `taubin`, `boundary_loops`, `hang_straight` and `knit_rib`, and `shoe()` (a boot built like a cobbler's last). |
+| `garments.py` | `Garment` and `build()` (clothes as body shells); `clip` (exact trims that blend skin weights), `subdivide`, `fold_edges` (hems, tear walls), `clip_overlay`, `collar` and `neckline`, `build_helper` (garments from MakeHuman's proxies); the helpers `adjacency`, `taubin`, `boundary_loops`, `hang_straight` and `knit_rib`; and `shoe()` (a boot built like a cobbler's last). |
 | `parts.py` | The `MAT` table (mirrors `dw::Mat` in `engine/include/dw/mesh_builder.hpp`) and `part_from_quads`. |
-| `cast.py` | The cast: one function per character, its body settings, palette, garments, face paint and anchors. |
+| `cast.py` | The survivor, plus shared pieces: eyes, hair caps, hair patches, brows, lashes, scalp anchors. |
+| `cast_drowned.py` | The Drowned citizens: wardrobe, gore anchors, and the per-character touches. |
+| `drowned.py` | What the canal does to any body: bloat targets, wounds and their flesh walls, drowned skin paint, canal-stained cloth. |
+| `bake.py` | Baked ambient occlusion per vertex (voxel grid and hemisphere rays), stored in the colour alpha. |
 | `dwc.py` | The `.dwc` binary format: `write`, `read`, and the byte layout. |
 | `build_characters.py` | Command line entry point and SQLite build log. |
 | `tests/test_characters.py` | Unit tests: macro weights sum to one, rotations, the axis change, weight folding, mesh helpers, the `.dwc` round trip, and checks on the shipped `survivor.dwc`. |
+| `tests/test_drowned.py` | Unit tests: weight blending on cuts, subdivision, folded edges, the neckline walk, and checks on the shipped citizens (skinning, height, tear walls, gore and hair anchors). |
 
 ## The `.dwc` format
 
@@ -95,7 +138,9 @@ and read by `engine/src/character_file.cpp`.
   - four joint IDs and four weights.
 
   Triangles follow as 16-bit indices, so a part has at most 65535 vertices.
-- **Anchors.** Named points in joint space: loc roots, backpack, flashlight, drawstrings.
+- **Anchors.** Named points in joint space: loc and hair roots, backpack, flashlight,
+  drawstrings, and for the Drowned `guts`, `tongue`, `loose_skin`, `tie`, `badge`,
+  `mussels*` and `weed*`.
 
 The C++ loader bounds-checks every read. A truncated or foreign file gives an error string,
 never a crash (see `engine/tests/test_character_file.cpp`).

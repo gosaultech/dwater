@@ -4,8 +4,10 @@
 //   ./damned_waters                 play (WASD, Shift run, Q quick turn, RMB/K aim, T tank/modern, F3 debug)
 //   ./damned_waters --capture out   stage + screenshot every setup, then exit
 //   ./damned_waters --sheet out     studio turnaround of the cast (model review), then exit
+//                                   (--only pieter,survivor: just those subjects)
 //   ./damned_waters --view survivor,25,10,0.6,0,0.9,30 out.png   one full-resolution studio shot
-//                                   (who, orbit, elevation, distance, target x, target height, fov), then exit
+//                                   (who, orbit, elevation, distance, target x, target height, fov), then exit;
+//                                   who: survivor | drowned[N] [@head | @chest | @pelvis]
 //   ./damned_waters --frames 600    auto-exit (smoke tests)
 #include <raylib.h>
 #include <algorithm>
@@ -15,12 +17,13 @@
 #include "game.hpp"
 
 int main(int argc, char** argv) {
-    std::string capture, sheet, view, view_png, room = "gang";
+    std::string capture, sheet, only, view, view_png, room = "gang";
     long max_frames = -1;
     for (int i = 1; i + 1 < argc; ++i) {
         std::string a = argv[i];
         if (a == "--capture") capture = argv[++i];
         else if (a == "--sheet") sheet = argv[++i];
+        else if (a == "--only") only = argv[++i];
         else if (a == "--view" && i + 2 < argc) { view = argv[++i]; view_png = argv[++i]; }
         else if (a == "--room") room = argv[++i];
         else if (a == "--frames") max_frames = std::stol(argv[++i]);
@@ -41,7 +44,7 @@ int main(int argc, char** argv) {
     if (!view.empty()) {
         if (!game.studio_view(view, view_png)) TraceLog(LOG_ERROR, "bad --view spec: %s", view.c_str());
     } else if (!sheet.empty()) {
-        game.model_sheet(sheet);
+        game.model_sheet(sheet, only);
     } else if (!capture.empty()) {
         for (int i = 0; i < game.capture_count(); ++i) {
             std::string name = game.stage(i);

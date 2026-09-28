@@ -10,6 +10,7 @@
 #include <cmath>
 #include <vector>
 #include <cstdio>
+#include <cstdlib>
 
 #include "dw/shaders.hpp"
 
@@ -405,7 +406,7 @@ void Game::upload_studio_lights() {
     SetShaderValue(char_, l_fogr_, fogr, SHADER_UNIFORM_VEC2);
 }
 
-void Game::model_sheet(const std::string& dir) {
+void Game::model_sheet(const std::string& dir, const std::string& only) {
     struct View { const char* name; float orbit_deg, elev_deg, dist, target_y, fovy; bool head; };
     static const View views[] = {
         {"front", 0, 8, 2.9f, 1.0f, 40, false},       {"three_quarter", 38, 10, 2.9f, 1.0f, 40, false},
@@ -417,10 +418,12 @@ void Game::model_sheet(const std::string& dir) {
     };
     constexpr int kViews = int(sizeof(views) / sizeof(views[0])), kRows = kViews / 4;
     struct Subject { const char* name; Kind kind; int variant; Pose pose; };
-    static const Subject subjects[] = {{"drowned", Kind::Drowned, 0, Pose::Idle}, {"drowned_windup", Kind::Drowned, 0, Pose::Windup},
-                                       {"drowned_b", Kind::Drowned, 1, Pose::Shamble}, {"survivor", Kind::Survivor, 0, Pose::Idle}};
+    static const Subject subjects[] = {{"office_worker", Kind::Drowned, 0, Pose::Idle}, {"woman_dress", Kind::Drowned, 1, Pose::Idle},
+                                       {"pieter", Kind::Drowned, 2, Pose::Idle}, {"drowned_windup", Kind::Drowned, 0, Pose::Windup},
+                                       {"drowned_shamble", Kind::Drowned, 2, Pose::Shamble}, {"survivor", Kind::Survivor, 0, Pose::Idle}};
     upload_studio_lights();
     for (const auto& sub : subjects) {
+        if (!only.empty() && ("," + only + ",").find("," + std::string(sub.name) + ",") == std::string::npos) continue;
         Character c = Character::make(sub.kind, sub.variant);
         c.place({0, 0, 0}, 0);
         for (int f = 0; f < 150; ++f) c.animate(sub.pose, sub.pose == Pose::Shamble ? 0.7f : 0.0f, 1.0f / 60);
@@ -471,20 +474,32 @@ void Game::model_sheet(const std::string& dir) {
 }
 
 bool Game::studio_view(const std::string& spec, const std::string& png) {
-    char who[32] = {};
+    char who[48] = {};
     float orbit = 0, elev = 0, dist = 1, tx = 0, ty = 1, fovy = 30;
-    if (std::sscanf(spec.c_str(), "%31[^,],%f,%f,%f,%f,%f,%f", who, &orbit, &elev, &dist, &tx, &ty, &fovy) != 7) return false;
-    const std::string w = who;
+    if (std::sscanf(spec.c_str(), "%47[^,],%f,%f,%f,%f,%f,%f", who, &orbit, &elev, &dist, &tx, &ty, &fovy) != 7) return false;
+    // who = survivor | drowned[N] (N: the citizen), optionally @head / @chest / @pelvis to orbit that
+    // joint instead (the target is then offset from it by target_x, target_y; @head orbits from the face).
+    std::string w = who, at_joint;
+    if (const auto k = w.find('@'); k != std::string::npos) { at_joint = w.substr(k + 1); w.resize(k); }
+    const bool survivor = w == "survivor";
+    const int variant = !survivor && w.size() > 7 ? std::atoi(w.c_str() + 7) : 0;
     upload_studio_lights();
-    Character c = Character::make(w == "survivor" ? Kind::Survivor : Kind::Drowned, 0);
+    Character c = Character::make(survivor ? Kind::Survivor : Kind::Drowned, variant);
     c.place({0, 0, 0}, 0);
     for (int f = 0; f < 150; ++f) c.animate(Pose::Idle, 0.0f, 1.0f / 60);
     render_shadows({&c});
     bind_shadows();
-    const float a = orbit * DEG2RAD, e = elev * DEG2RAD;
+    float a = orbit * DEG2RAD;
+    const float e = elev * DEG2RAD;
+    Vector3 at{tx, ty, 0};
+    if (!at_joint.empty()) {
+        const Vector3 j = at_joint == "head" ? c.head_point() : c.joint(at_joint == "chest" ? J_CHEST : J_PELVIS);
+        at = {j.x + tx, j.y + ty, j.z};
+        if (at_joint == "head") { const Vector3 f = c.face_dir(); a += std::atan2(f.x, -f.z); }
+    }
     Camera3D cam{};
-    cam.position = {tx + dist * std::sin(a) * std::cos(e), ty + dist * std::sin(e), -dist * std::cos(a) * std::cos(e)};
-    cam.target = {tx, ty, 0};
+    cam.position = {at.x + dist * std::sin(a) * std::cos(e), at.y + dist * std::sin(e), at.z - dist * std::cos(a) * std::cos(e)};
+    cam.target = at;
     cam.up = {0, 1, 0};
     cam.fovy = fovy;
     cam.projection = CAMERA_PERSPECTIVE;

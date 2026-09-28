@@ -32,8 +32,15 @@ cmake -S engine -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ./build/damned_waters                     # play
 ./build/damned_waters --capture /tmp/dw   # stage 4 setups and save screenshots
+./build/damned_waters --sheet /tmp/dw     # studio turnaround of every character (model review)
+./build/damned_waters --sheet /tmp/dw --only pieter,survivor               # just those
+./build/damned_waters --view drowned1@head,0,5,0.5,0,-0.05,30 face.png     # one close-up
 ./build/dw_tests                          # unit tests
 ```
+
+`--view` takes `who,orbit,elevation,distance,target_x,target_y,fov`. `who` is `survivor` or
+`drowned0`..`drowned2` (the office worker, Sanne, Pieter). Add `@head`, `@chest` or `@pelvis`
+to orbit that joint; the target is then an offset from it, and `@head` starts from the face.
 
 Dependencies are fetched on the first configure and pinned: raylib 5.5, nlohmann/json 3.11.3
 and GoogleTest 1.14. SQLite comes from the macOS SDK, or from the amalgamation if the SDK copy
@@ -90,8 +97,8 @@ sqlite3 build/damned_waters.db "SELECT mode, status, runtime_s, frames, worst_fr
 
 ## Next milestones
 
-1. Look pass on the Drowned: make the face in the sheet read from high cameras, and add water drips.
-2. Combat port: pistol and shotgun, kick, dodge, hit-stop.
+1. Combat port: pistol and shotgun, kick, dodge, hit-stop; the three Drowned in the hall.
+2. The cyclist (yellow rain jacket, chain lock) for a later room; water drips on the Drowned.
 3. Rooms `voorkamer` and `kelder`, with doors and transitions.
 4. UI, inventory, saves.
 5. Audio: a C++ synth like Bumper Ball Maze's.

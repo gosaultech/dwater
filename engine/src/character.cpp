@@ -11,6 +11,7 @@
 
 #include "dw/character_file.hpp"
 #include "dw/core.hpp"
+#include "dw/room_spec.hpp"
 
 namespace dw {
 namespace {
@@ -32,7 +33,16 @@ Vector3 closest_on_segment(Vector3 p, Vector3 a, Vector3 b) {
 
 Character build_survivor();
 Character build_drowned(int variant);
-Character Character::make(Kind k, int variant) { return k == Kind::Survivor ? build_survivor() : build_drowned(variant); }
+Character build_citizen(const std::string& id, int variant);
+// The Drowned are townspeople built by tools/characters (.dwc files); until one is built, the
+// procedural corpse stands in for it.
+Character Character::make(Kind k, int variant) {
+    if (k == Kind::Survivor) return build_survivor();
+    static const char* const CITIZENS[] = {"office_worker", "woman_dress", "pieter"};
+    const std::string id = CITIZENS[((variant % 3) + 3) % 3];
+    if (FileExists((repo_root() + "/engine/assets/characters/" + id + ".dwc").c_str())) return build_citizen(id, variant);
+    return build_drowned(variant);
+}
 
 // Procedural detail is sampled in each part's own space; without an offset every part (both
 // hands, both feet...) would start at the same spot in the pattern and share its blotches.
@@ -96,12 +106,13 @@ const Character::Anchor* Character::anchor(const std::string& name) const {
 // Pattern space for strands (read by the shader's locs material): x = around (0..1, plus a
 // per-strand phase), y = metres along the strand, z = a per-strand seed.
 void Character::add_strands(Strands s) {
-    const int count = int(s.anchor.size()), ring = s.sides, row = ring + 1, per = s.n * row + 1;
+    if (s.ribbon) s.sides = 2;   // three vertices across: edge, middle, edge
+    const int count = int(s.anchor.size()), ring = s.sides, row = ring + 1, per = s.n * row + (s.ribbon ? 0 : 1);
     s.p.assign(size_t(count) * s.n, {});
     s.prev = s.p;
     Mesh m{};
     m.vertexCount = count * per;
-    m.triangleCount = count * ((s.n - 1) * ring * 2 + ring);
+    m.triangleCount = count * ((s.n - 1) * ring * 2 + (s.ribbon ? 0 : ring));
     m.vertices = static_cast<float*>(MemAlloc(unsigned(m.vertexCount * 3 * sizeof(float))));
     m.normals = static_cast<float*>(MemAlloc(unsigned(m.vertexCount * 3 * sizeof(float))));
     m.texcoords = static_cast<float*>(MemAlloc(unsigned(m.vertexCount * 2 * sizeof(float))));
@@ -118,20 +129,24 @@ void Character::add_strands(Strands s) {
                 *ix++ = (unsigned short)b; *ix++ = (unsigned short)c; *ix++ = (unsigned short)d;
             }
         const int tip = base + s.n * row, last = base + (s.n - 1) * row;
-        for (int j = 0; j < ring; ++j) {
+        for (int j = 0; j < ring && !s.ribbon; ++j) {
             *ix++ = (unsigned short)(last + j); *ix++ = (unsigned short)tip; *ix++ = (unsigned short)(last + j + 1);
         }
-        const Vector3 o = pattern_offset();
+        Vector3 o = pattern_offset();
+        if (s.ribbon) o.x = std::floor(o.x);   // so the shader finds "across" (0..1) as the fraction
         const float shade = 0.88f + 0.24f * (o.x + 20.0f) / 40.0f;   // no two strands quite the same colour
         for (int v = 0; v < per; ++v) {
             const int idx = base + v, ringi = std::min(v / row, s.n - 1), j = v == per - 1 ? 0 : v % row;
             const float along = v == per - 1 ? float(s.n - 1) * s.seg[k] + s.radius[k] : float(ringi) * s.seg[k];
             m.texcoords[idx * 2] = float(s.mat);
             m.texcoords[idx * 2 + 1] = 0.6f + 0.4f * std::min(1.0f, along / 0.06f);   // shadowed where they leave the scalp
-            m.tangents[idx * 4] = o.x + float(j) / float(ring);
+            m.tangents[idx * 4] = o.x + float(j) / float(ring) * (s.ribbon ? 0.999f : 1.0f);
             m.tangents[idx * 4 + 1] = o.y + along;
             m.tangents[idx * 4 + 2] = o.z;
-            m.tangents[idx * 4 + 3] = 0;
+            // Ribbons: how far toward a thinned-out edge or end (0 in the middle, 1 at the edge).
+            m.tangents[idx * 4 + 3] = s.ribbon ? std::max(std::fabs(float(j) - 1.0f),
+                                                          std::clamp((float(ringi) / float(s.n - 1) - 0.55f) / 0.45f, 0.0f, 1.0f))
+                                               : 0.0f;
             float t = std::clamp((float(ringi) / float(s.n - 1) - 0.45f) / 0.55f, 0.0f, 1.0f);   // the last half fades
             t = s.tip.a > 0 ? t * t * (3 - 2 * t) : 0.0f;
             auto ch = [&](unsigned char a, unsigned char b) {
@@ -180,15 +195,43 @@ void Character::step_strands(float dt) {
                 for (int i = 1; i < s.n; ++i)
                     for (const auto& c : caps) {
                         const Vector3 cq = closest_on_segment(p[i], c.a, c.b), off = Vector3Subtract(p[i], cq);
-                        const float l = Vector3Length(off), r = c.r + s.radius[k];
+                        const float l = Vector3Length(off), r = c.r + (s.ribbon ? 0.003f : s.radius[k]);
                         if (l < r && l > 1e-6f) p[i] = Vector3Add(cq, Vector3Scale(off, r / l));
                     }
             }
         }
         s.live = true;
+        const int ring = s.sides, row = ring + 1, per = s.n * row + (s.ribbon ? 0 : 1);
+        if (s.ribbon) {
+            // Ribbons: across each point, perpendicular to the strand and to the way out from the
+            // skull, so they lie flat against the head and hang flat down the back.
+            const Vector3 A = Vector3Transform(s.axisA, W), B = Vector3Transform(s.axisB, W);
+            for (int k = 0; k < count; ++k) {
+                const Vector3* p = &s.p[size_t(k) * s.n];
+                for (int i = 0; i < s.n; ++i) {
+                    const Vector3 t = Vector3Normalize(Vector3Subtract(p[std::min(i + 1, s.n - 1)], p[std::max(i - 1, 0)]));
+                    Vector3 out = Vector3Subtract(p[i], closest_on_segment(p[i], A, B));
+                    out = Vector3Subtract(out, Vector3Scale(t, Vector3DotProduct(out, t)));
+                    if (Vector3LengthSqr(out) < 1e-10f) out = {0, 0, 1};
+                    out = Vector3Normalize(out);
+                    const Vector3 across = Vector3CrossProduct(t, out);
+                    const float half = s.radius[k] * 0.5f * (1.0f - s.taper * float(i) / float(s.n - 1));
+                    for (int j = 0; j <= ring; ++j) {
+                        const float u = float(j) - 1.0f;   // -1, 0, 1
+                        const Vector3 pos = Vector3Add(Vector3Add(p[i], Vector3Scale(across, u * half)),
+                                                       Vector3Scale(out, (1.0f - u * u) * half * 0.2f));   // cupped a little
+                        const int idx = k * per + i * row + j;
+                        std::memcpy(&s.mesh.vertices[idx * 3], &pos, 12);
+                        std::memcpy(&s.mesh.normals[idx * 3], &out, 12);
+                    }
+                }
+            }
+            UpdateMeshBuffer(s.mesh, 0, s.mesh.vertices, s.mesh.vertexCount * 12, 0);
+            UpdateMeshBuffer(s.mesh, 2, s.mesh.normals, s.mesh.vertexCount * 12, 0);
+            continue;
+        }
         // Rebuild the tubes: a ring per point, slightly lumpy (palm-rolled, not machined), tapering a
         // little to a rounded tip.
-        const int ring = s.sides, row = ring + 1, per = s.n * row + 1;
         for (int k = 0; k < count; ++k) {
             const Vector3* p = &s.p[size_t(k) * s.n];
             Vector3 x{W.m0, W.m1, W.m2};
@@ -199,8 +242,8 @@ void Character::step_strands(float dt) {
                 if (Vector3LengthSqr(x) < 1e-8f) x = Vector3CrossProduct(t, {0, 0, 1});
                 x = Vector3Normalize(x);
                 const Vector3 y = Vector3CrossProduct(t, x);
-                const float lump = 1.0f + 0.09f * std::sin(float(i) * 2.3f + float(k) * 1.7f);
-                const float r = s.radius[k] * lump * (1.0f - 0.22f * float(i) / float(s.n - 1));
+                const float lump = 1.0f + s.lump * std::sin(float(i) * 2.3f + float(k) * 1.7f);
+                const float r = s.radius[k] * lump * (1.0f - s.taper * float(i) / float(s.n - 1));
                 for (int j = 0; j <= ring; ++j) {
                     const float a = 2.0f * PI * float(j % ring) / float(ring);
                     const Vector3 nrm = Vector3Add(Vector3Scale(x, std::cos(a)), Vector3Scale(y, std::sin(a)));
@@ -424,7 +467,7 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         T[J_SPINE] = {-0.3f + gasp * 0.015f, 0.04f, 0.08f};
         T[J_CHEST] = {-0.1f - gasp * 0.03f, 0.05f, 0};
         T[J_NECK] = {0.02f, 0, 0.14f};
-        T[J_HEAD] = {0.3f + sway * 0.05f, 0.12f, 0.42f + sway * 0.08f};
+        T[J_HEAD] = {0.3f - 0.95f * bow_ + sway * 0.05f, 0.12f, (0.42f + sway * 0.08f) * (1.0f - 0.6f * bow_)};
         T[J_JAW] = {-0.95f + gasp * 0.12f, 0.12f, 0.07f};
         T[J_SHO_R] = {0.3f, 0, -0.06f};
         T[J_ELB_R] = {0.3f, 0, 0};

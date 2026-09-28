@@ -79,6 +79,13 @@ private:
         Color col{20, 16, 13, 255};
         Color tip{0, 0, 0, 0};                  // alpha > 0: the colour the ends fade to (sun-bleached tips)
         int mat = 0;
+        float taper = 0.22f;                    // how much thinner the end is than the root (0..1)
+        float lump = 0.09f;                     // how uneven the thickness is along it (palm-rolled locs)
+        // Ribbons instead of tubes (long hair as "cards"): flat strips `radius` wide that lie against
+        // the head, facing away from the skull's axis (axisA-axisB, joint space); their edges and ends
+        // thin out into single hairs (the shader stipples them away).
+        bool ribbon = false;
+        Vector3 axisA{}, axisB{};
     };
 
     void fk();
@@ -105,6 +112,7 @@ private:
     int root_mode_ = 0;                                             // 0 standing, 1 on its back, 2 prone
     float thickness_ = 0.14f;                                       // lying down: how far the back sits above the floor
     float twitch_in_ = 2.0f;                                        // seconds to the next twitch (Drowned)
+    float bow_ = 0.0f;                                              // 0..1: the head hangs forward instead of lolling back (Drowned)
     unsigned rng_ = 1, parts_ = 0;
     Vector3 pos_{};
     std::vector<Rigid> rigid_;
@@ -116,6 +124,7 @@ private:
     std::vector<Strands> strands_;
     friend Character build_survivor();
     friend Character build_drowned(int variant);
+    friend Character build_citizen(const std::string& id, int variant);
 };
 
 }  // namespace dw

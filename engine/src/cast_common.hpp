@@ -68,6 +68,27 @@ inline Matrix align_y(Vector3 up, float spin) {
     return MatrixMultiply(MatrixRotateY(spin), m);
 }
 
+// A cluster of zebra mussels on a surface: small striped shells, packed and half-buried.
+inline void mussels(MeshData& d, Vector3 at, Vector3 normal, int count, float spread, unsigned seed) {
+    const Color dark{34, 26, 18, 255}, light{168, 152, 116, 255};
+    unsigned s = seed * 2654435761u + 1u;
+    auto rnd = [&s]() { s ^= s << 13; s ^= s >> 17; s ^= s << 5; return float(s & 0xFFFF) / 65535.0f; };
+    const Matrix frame = align_y(normal, 0.0f);
+    const Painter stripes = [dark, light](Vector3 q) {   // the zigzag bands that give zebra mussels their name
+        if (q.y < -0.35f) return Paint{MAT_MUSSEL, dark};
+        float z = std::sin(q.z * 22.0f + 3.0f * std::fabs(std::sin(q.x * 6.0f)));
+        return Paint{MAT_MUSSEL, z > 0.3f ? light : dark};
+    };
+    for (int i = 0; i < count; ++i) {
+        float a = rnd() * 2 * PI, r = std::sqrt(rnd()) * spread, len = 0.013f + rnd() * 0.007f;
+        Vector3 local{std::cos(a) * r, -0.002f, std::sin(a) * r};
+        Matrix m = MatrixMultiply(MatrixMultiply(MatrixRotateX((rnd() - 0.5f) * 0.9f), MatrixRotateY(rnd() * 2 * PI)),
+                                  MatrixTranslate(local.x, local.y, local.z));
+        m = MatrixMultiply(m, MatrixMultiply(frame, MatrixTranslate(at.x, at.y, at.z)));
+        MeshBuilder(d).transform(m).ellipsoid({0, 0.004f, 0}, {len * 0.5f, len * 0.42f, len}, 10, 7, {}, stripes);
+    }
+}
+
 // A hand hanging from the wrist: palm faces the body, fingers point down (-Y), thumb forward (-Z).
 struct HandStyle {
     float scale = 1.0f, finger_len = 0.075f;

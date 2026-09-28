@@ -23,28 +23,8 @@ const Color DSKIN{152, 157, 138, 255}, BRUISE{70, 50, 68, 255}, LIVID{100, 80, 9
     SLOUGH{188, 184, 160, 255}, FLESH{104, 24, 22, 255}, GUM{80, 24, 26, 255}, DRIED{58, 14, 12, 255},
     GUTS{170, 124, 118, 255}, TONGUE{64, 32, 50, 255}, TOOTH{198, 178, 130, 255}, TOOTH_BAD{110, 86, 58, 255},
     BONE{216, 206, 180, 255}, EYE{206, 214, 214, 255}, IRIS_GHOST{150, 162, 168, 255}, HAIR{24, 22, 18, 255},
-    COAT{42, 45, 43, 255}, TROUSER{31, 31, 35, 255}, SHELL_DARK{36, 28, 20, 255}, SHELL_LIGHT{198, 184, 148, 255},
+    COAT{42, 45, 43, 255}, TROUSER{31, 31, 35, 255},
     WEED{44, 60, 26, 255}, LEECH{30, 22, 16, 255}, ROT{20, 16, 14, 255};
-
-// A cluster of zebra mussels on a surface: small striped shells, packed and half-buried.
-void mussels(MeshData& d, Vector3 at, Vector3 normal, int count, float spread, unsigned seed) {
-    unsigned s = seed * 2654435761u + 1u;
-    auto rnd = [&s]() { s ^= s << 13; s ^= s >> 17; s ^= s << 5; return float(s & 0xFFFF) / 65535.0f; };
-    const Matrix frame = align_y(normal, 0.0f);
-    const Painter stripes = [](Vector3 q) {   // the zigzag bands that give zebra mussels their name
-        if (q.y < -0.35f) return Paint{MAT_MUSSEL, SHELL_DARK};
-        float z = std::sin(q.z * 16.0f + 3.0f * std::fabs(std::sin(q.x * 5.0f)));
-        return Paint{MAT_MUSSEL, z > -0.1f ? SHELL_LIGHT : SHELL_DARK};
-    };
-    for (int i = 0; i < count; ++i) {
-        float a = rnd() * 2 * PI, r = std::sqrt(rnd()) * spread, len = 0.013f + rnd() * 0.007f;
-        Vector3 local{std::cos(a) * r, -0.002f, std::sin(a) * r};
-        Matrix m = MatrixMultiply(MatrixMultiply(MatrixRotateX((rnd() - 0.5f) * 0.9f), MatrixRotateY(rnd() * 2 * PI)),
-                                  MatrixTranslate(local.x, local.y, local.z));
-        m = MatrixMultiply(m, MatrixMultiply(frame, MatrixTranslate(at.x, at.y, at.z)));
-        MeshBuilder(d).transform(m).ellipsoid({0, 0.004f, 0}, {len * 0.5f, len * 0.42f, len}, 10, 7, {}, stripes);
-    }
-}
 
 // Teeth along an arc (a = angle from the front); some broken, some rotted dark, some gone.
 void teeth(MeshData& d, Vector3 centre, float rx, float rz, float a0, float a1, int n, bool upper, unsigned seed) {

@@ -11,7 +11,8 @@ from body import Body, quad_normals
 # dw::Mat ids (engine/include/dw/mesh_builder.hpp)
 MAT = dict(skin=1, drowned=2, wool=4, cloth=5, denim=6, leather=7, hair=8, eye=9, iris=10, metal=11, flesh=12, void=13,
            leech=14, rot=15, dead_eye=16, tooth=17, bone=18, tongue=19, guts=20, mussel=21, weed=22, slough=23, dermis=24,
-           steel=25, grip=26, wax=27, knit=28, lips=29, brow=30, rubber=31, nylon=32, cotton=33, print=34, locs=35, lamp=36)
+           steel=25, grip=26, wax=27, knit=28, lips=29, brow=30, rubber=31, nylon=32, cotton=33, print=34, locs=35, lamp=36,
+           wethair=37)
 
 
 def rgba(c) -> np.ndarray:
