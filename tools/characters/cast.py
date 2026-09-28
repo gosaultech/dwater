@@ -138,6 +138,41 @@ def scalp_field(face, P, levels=SCALP_LEVELS):
     return rel[:, 1] - np.interp(ang, [0, 0.7, 1.2, 1.6, 2.2, np.pi], levels)
 
 
+def brow_field(face, P):
+    """> 0 inside the eyebrows (m): an arc 1.5-2 cm above each eye, thicker toward the nose."""
+    best = np.full(len(P), -1.0)
+    for e in face.eyes:
+        rel = P - e
+        along = rel[:, 0] * np.sign(e[0])                     # 0 above the eye, + toward the temple
+        a = np.clip(along / 0.03, -1.5, 1.5)
+        yc = 0.017 + 0.004 * np.cos(a * 1.2) - 0.004 * np.clip(along / 0.03, 0, 1)
+        thick = 0.0045 - 0.0018 * np.clip(along / 0.03, 0, 1)
+        f = np.minimum.reduce([thick - np.abs(rel[:, 1] - yc), along + 0.018, 0.034 - along, 0.01 - rel[:, 2]])
+        best = np.maximum(best, f)
+    return best
+
+
+def hair_patch(b, name, color, field, fade, offset=0.0015):
+    """Hair lying on the skin where field(P) > 0 (a goatee, eyebrows), cut exactly along field = 0 and
+    thinning out over its last `fade` metres, so it ends in stray hairs instead of a hard edge."""
+    skin = np.isin(np.arange(len(b.V)), b.body_ids) & (b.weight_of("head", "jaw") > 0.5)
+    return gm.build(b, gm.Garment(name, MAT["hair"], color, lambda bb: skin & (field(bb.V) > -0.005), offset, 1, None, None,
+                                  hem=0.001, hides_skin=False, trim=lambda bb, ids, P: field(bb.V[ids]),
+                                  aux=lambda bb, ids, P: 1.0 - np.clip(field(bb.V[ids]) / fade, 0, 1) * 0.92))[0]
+
+
+def lashes(b, face, color=(10, 8, 7)):
+    """Eyelashes on MakeHuman's lash helpers: dark at the lid, thinning to nothing at their tips."""
+    out = []
+    for side, e in (("l", face.eyes[0]), ("r", face.eyes[1])):
+        for k in (1, 2):
+            p = helper(b, f"lashes_{side}{k}", f"helper-{side}-eyelashes-{k}", MAT["hair"], color, "head")
+            d = np.linalg.norm(p.pos - e, axis=1)
+            p.aux = (np.clip((d - d.min()) / max(d.max() - d.min(), 1e-6), 0, 1) * 0.85).astype(np.float32)
+            out.append(p)
+    return out
+
+
 def scalp_select(b, face, levels=SCALP_LEVELS, margin=0.0):
     """Head vertices above the hairline (see scalp_field), `margin` metres beyond it."""
     head_w = b.weight_of("head", "neck")
@@ -358,14 +393,14 @@ def survivor(data: Path) -> dwc.Character:
         stache = np.minimum.reduce([0.024 - ax, y - 0.008, 0.016 - y, 0.004 - z])
         sides = np.minimum.reduce([ax - 0.019, 0.028 - ax, y + 0.02, 0.012 - y, 0.012 - z])
         return np.maximum.reduce([chin, stache, sides])
-    face_skin = np.isin(np.arange(len(V)), b.body_ids) & (b.weight_of("head", "jaw") > 0.5)
-    parts.append(gm.build(b, gm.Garment("goatee", MAT["hair"], (14, 11, 10), lambda bb: face_skin & (beard_field(bb.V) > -0.006), 0.0025, 1,
-                                        None, None, hem=0.0015, hides_skin=False, trim=lambda bb, ids, P: beard_field(bb.V[ids])))[0])
+    parts.append(hair_patch(b, "goatee", (24, 18, 15), beard_field, fade=0.007, offset=0.0022))
+    parts.append(hair_patch(b, "brows", (16, 12, 10), lambda P: brow_field(f, P), fade=0.0025))
+    parts += lashes(b, f)
     parts += eyes(b, sclera=(196, 186, 172), iris=(40, 24, 16), iris_r=0.5)
     parts.append(helper(b, "teeth_up", "helper-upper-teeth", MAT["tooth"], (230, 224, 206), "head"))
     parts.append(helper(b, "teeth_lo", "helper-lower-teeth", MAT["tooth"], (230, 224, 206), "jaw"))
     parts.append(helper(b, "tongue", "helper-tongue", MAT["tongue"], (150, 80, 82), "jaw"))
-    anchors = scalp_anchors(b, scalp, 84, seed=7)
+    anchors = scalp_anchors(b, scalp, 140, seed=7)   # one loc per section of scalp, about 2 cm apart
     for sx in (-1, 1):   # hoodie drawstrings hang from the neckline
         at = np.array([0.028 * sx, jp["neck"][1] - 0.035, 0])
         near = b.body_ids[np.argmin(np.linalg.norm(V[b.body_ids][:, [0, 1]] - at[[0, 1]], axis=1) + (V[b.body_ids][:, 2] > 0) * 9)]

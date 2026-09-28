@@ -107,6 +107,7 @@ class Garment:
     mats: Callable[[Body, np.ndarray, Vec], np.ndarray] | None = None       # per-vertex material override
     smooth_base: int = 0                          # smooth the skin itself first (boots: no toes under the leather)
     tension: int = 0                              # membrane passes: > 0 stretches the cloth across hollows (see membrane)
+    aux: Callable[[Body, np.ndarray, Vec], np.ndarray] | None = None    # (body, ids, P) -> the spare per-vertex value (dwc.py)
     trim: Callable[[Body, np.ndarray, Vec], np.ndarray] | None = None   # (body, ids, P) -> keep where >= 0, cut exactly
     #   along 0: hems, cuffs, necklines and openings become smooth curves (select a little beyond them)
 
@@ -175,27 +176,29 @@ def rim_edges(tris: np.ndarray) -> np.ndarray:
     return e[first[counts == 1]]
 
 
-def hem_strip(P: Vec, N: Vec, src: np.ndarray, col: np.ndarray, tris: np.ndarray, depth: float):
+def hem_strip(P: Vec, N: Vec, src: np.ndarray, col: np.ndarray, aux: np.ndarray, tris: np.ndarray, depth: float):
     """Fold every open edge back toward the body by `depth`, so edges read as cloth, not paper."""
     rim = rim_edges(tris)
     if depth <= 0 or not len(rim):
-        return P, N, src, col, tris
+        return P, N, src, col, aux, tris
     rv = np.unique(rim)
     inner = np.full(len(P), -1, np.int64)
     inner[rv] = len(P) + np.arange(len(rv))
     a, c = rim[:, 0], rim[:, 1]
     strip = np.concatenate([np.stack([c, a, inner[a]], 1), np.stack([c, inner[a], inner[c]], 1)])
     return (np.vstack([P, P[rv] - N[rv] * depth]), np.vstack([N, -N[rv]]), np.concatenate([src, src[rv]]),
-            np.vstack([col, col[rv]]), np.vstack([tris, strip]))
+            np.vstack([col, col[rv]]), np.concatenate([aux, aux[rv]]), np.vstack([tris, strip]))
 
 
 def _finish(b: Body, name: str, mat: int, P: Vec, N: Vec, src: np.ndarray, col: np.ndarray, tris: np.ndarray, hem: float,
-            mats: Callable | None = None) -> dwc.Part:
+            mats: Callable | None = None, aux: np.ndarray | None = None) -> dwc.Part:
     shell = (src.copy(), tris.copy(), P.copy(), N.copy())
-    P, N, src, col, tris = hem_strip(P, N, src, col, tris, hem)
+    aux = np.zeros(len(P)) if aux is None else np.asarray(aux, float)
+    P, N, src, col, aux, tris = hem_strip(P, N, src, col, aux, tris, hem)
     m = mats(b, src, P).astype(np.uint8) if mats else np.full(len(P), mat, np.uint8)
     part = dwc.Part(name, P.astype(np.float32), N.astype(np.float32), col.astype(np.uint8), m,
-                    b.region[src].astype(np.uint8), b.jid[src].astype(np.uint8), b.jw[src].astype(np.float32), tris.astype(np.int64))
+                    b.region[src].astype(np.uint8), b.jid[src].astype(np.uint8), b.jw[src].astype(np.float32), tris.astype(np.int64),
+                    aux.astype(np.float32))
     part.shell = shell   # the outer surface before the hem: other cloth can be laid on it (clip_overlay)
     return part
 
@@ -246,7 +249,7 @@ def build(b: Body, g: Garment) -> tuple[dwc.Part, np.ndarray]:
     col = np.tile(rgba(g.color), (len(Pc), 1))
     if g.tint:
         col[:, :3] = np.clip(g.tint(b, src, Pc), 0, 255).astype(np.uint8)
-    part = _finish(b, g.name, g.mat, Pc, Nc, src, col, T, g.hem, g.mats)
+    part = _finish(b, g.name, g.mat, Pc, Nc, src, col, T, g.hem, g.mats, g.aux(b, src, Pc) if g.aux else None)
     hidden = np.zeros(len(b.body_quads), bool)
     if g.hides_skin:
         # Hide skin only well inside the finished garment: every corner selected, at least 1.2 cm

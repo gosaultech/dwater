@@ -18,6 +18,7 @@ struct FilePart {
     std::vector<uint8_t> mat, region;                 // per vertex
     std::vector<uint8_t> joint;                       // 4 per vertex
     std::vector<float> weight;                        // 4 per vertex, summing to 1
+    std::vector<float> aux;                           // 1 per vertex: meaning set by the material (hair: edge fade)
     std::vector<uint16_t> index;                      // triangles
     size_t vertices() const { return pos.size() / 3; }
 };

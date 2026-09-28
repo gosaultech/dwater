@@ -126,7 +126,7 @@ def toy_character():
     part = dwc.Part("jeans", rng.random((V, 3)).astype(np.float32), rng.random((V, 3)).astype(np.float32),
                     rng.integers(0, 256, (V, 4), dtype=np.uint8), np.full(V, 7, np.uint8), np.arange(V, dtype=np.uint8),
                     rng.integers(0, 24, (V, 4), dtype=np.uint8), w / w.sum(axis=1, keepdims=True),
-                    np.array([[0, 1, 2], [2, 3, 4]]))
+                    np.array([[0, 1, 2], [2, 3, 4]]), np.linspace(0, 1, V).astype(np.float32))
     anchor = dwc.Anchor("loc7", 4, np.array([0.1, 0.2, 0.3], np.float32), np.array([0, 1, 0], np.float32))
     return dwc.Character(rng.random((24, 3)).astype(np.float32), [part], [anchor])
 
@@ -141,7 +141,7 @@ class DwcTests(unittest.TestCase):
         np.testing.assert_array_equal(back.joints, ch.joints)
         a, b = ch.parts[0], back.parts[0]
         self.assertEqual(b.name, "jeans")
-        for field in ("pos", "nrm", "col", "mat", "region", "joints", "weights", "tris"):
+        for field in ("pos", "nrm", "col", "mat", "region", "joints", "weights", "tris", "aux"):
             np.testing.assert_array_equal(getattr(b, field), getattr(a, field), err_msg=field)
         self.assertEqual((back.anchors[0].name, back.anchors[0].joint), ("loc7", 4))
         np.testing.assert_array_equal(back.anchors[0].pos, ch.anchors[0].pos)

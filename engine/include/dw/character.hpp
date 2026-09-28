@@ -77,6 +77,7 @@ private:
         Mesh mesh{};
         bool live = false;
         Color col{20, 16, 13, 255};
+        Color tip{0, 0, 0, 0};                  // alpha > 0: the colour the ends fade to (sun-bleached tips)
         int mat = 0;
     };
 

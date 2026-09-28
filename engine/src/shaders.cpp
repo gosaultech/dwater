@@ -21,8 +21,9 @@ in vec3 vertexPosition; in vec3 vertexNormal; in vec2 vertexTexCoord; in vec4 ve
 in vec4 vertexBoneIds; in vec4 vertexBoneWeights;
 uniform mat4 mvp; uniform mat4 matModel; uniform mat4 matNormal;
 uniform mat4 boneMatrices[24]; uniform int u_skin;
-out vec3 vWorld; out vec3 vNormal; out vec3 vRestN; out vec3 vSurf; out vec4 vColor; out float vAo; flat out int vMat;
+out vec3 vWorld; out vec3 vNormal; out vec3 vRestN; out vec3 vSurf; out vec4 vColor; out float vAo; out float vAux; flat out int vMat;
 void main() {
+    vAux = vertexTangent.w;   // the material's spare per-vertex value (hair: how thinned-out toward its edge)
     vRestN = vertexNormal;   // before skinning: which way the surface faces in pattern space (knit columns)
     vec4 pos = vec4(vertexPosition, 1.0);
     vec3 nrm = vertexNormal;
@@ -42,7 +43,7 @@ void main() {
 })";
 
 const char* CHAR_FS = R"(#version 330
-in vec3 vWorld; in vec3 vNormal; in vec3 vRestN; in vec3 vSurf; in vec4 vColor; in float vAo; flat in int vMat;
+in vec3 vWorld; in vec3 vNormal; in vec3 vRestN; in vec3 vSurf; in vec4 vColor; in float vAo; in float vAux; flat in int vMat;
 uniform vec3 u_camPos; uniform int u_lightCount;
 uniform vec4 u_lightPos[8]; uniform vec4 u_lightCol[8]; uniform vec4 u_lightDir[8];
 uniform vec3 u_ambTop; uniform vec3 u_ambBottom; uniform vec3 u_rim; uniform vec3 u_fog; uniform vec2 u_fogRange;
@@ -57,6 +58,9 @@ float noise(vec3 x) {
 float fbm(vec3 p) { float a = 0.5, s = 0.0; for (int i = 0; i < 5; i++) { s += a * noise(p); p *= 2.03; a *= 0.5; } return s; }
 float ridge(vec3 p) { return 1.0 - abs(noise(p) * 2.0 - 1.0); }   // 1 along thin winding lines
 vec3 lin(vec3 c) { return pow(c, vec3(2.2)); }
+// Filmic tone curve (the ACES fit): mid-grey stays put, highlights roll off softly instead of
+// clipping, as in the Cycles-rendered rooms the characters stand in.
+vec3 filmic(vec3 x) { x *= 0.72; return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
 // Hand knitting on a plane (metres): u runs across the stitch columns, v up the rows. Columns of
 // "V" stitches, and every 12 columns a 4-column rope cable framed by sunken purl channels.
 // Returns loop height 0..1; `aa` fades it to its average once a stitch is smaller than a pixel.
@@ -91,11 +95,13 @@ void main() {
     vec3 albedo = lin(vColor.rgb);
     float spec = 0.04, gloss = 12.0, wrap = 0.2, h = 0.0, bk = 0.0, rim = 0.2;
     vec3 sss = vec3(0.0);
+    vec3 strand = vec3(0.0); float aniso = 0.0;   // hair: the strand's direction and the strength of its sheen
     float fogf = smoothstep(u_fogRange.x, u_fogRange.y, length(u_camPos - vWorld));
     int mat = vMat;
     // Seen from the inside, a body is meat: a torn scalp, a split, the far side of a cut.
-    bool skinlike = mat == 1 || mat == 2 || mat == 8 || mat == 20 || mat == 23 || mat == 24;
-    if (!gl_FrontFacing && skinlike) { mat = 12; albedo = lin(vec3(0.2, 0.045, 0.04)) * (vMat == 8 ? 0.45 : 1.0); }   // scalp undersides darker
+    bool skinlike = mat == 1 || mat == 2 || mat == 20 || mat == 23 || mat == 24;
+    if (!gl_FrontFacing && skinlike) { mat = 12; albedo = lin(vec3(0.2, 0.045, 0.04)); }
+    if (!gl_FrontFacing && mat == 8) albedo *= 0.5;   // the underside of hair (lashes, a brow's edge) is just darker hair
     if (!gl_FrontFacing && (mat == 3 || mat == 4 || mat == 5 || mat == 6 || mat == 7 || mat == 27 || mat == 28 || mat == 32 ||
                             mat == 33 || mat == 34)) albedo *= 0.35;   // inside a garment
     if (mat == 13) { finalColor = vec4(pow(vec3(0.004, 0.001, 0.001) + u_fog * fogf * 0.5, vec3(1.0 / 2.2)), 1.0); return; }   // voids: throats, wounds
@@ -104,9 +110,12 @@ void main() {
         finalColor = vec4(pow(albedo * (1.2 + 2.2 * face * face), vec3(1.0 / 2.2)), 1.0);
         return;
     }
-    if (mat == 1) {            // living skin: blotchy, faint pores, soft oily sheen; light bleeds through in its own tone
+    if (mat == 1) {            // living skin: blotchy, fine pores, a soft sheen strongest at grazing angles (not plastic)
         albedo *= mix(0.9, 1.06, fbm(p * 40.0));
-        h = fbm(p * 160.0); bk = 0.0008; spec = 0.12; gloss = 28.0; wrap = 0.42; rim = 0.16;
+        float aa = clamp(1.5 - length(fwidth(p)) * 400.0, 0.0, 1.0);
+        h = mix(0.5, fbm(p * 260.0), aa) * 0.6 + fbm(p * 70.0) * 0.4; bk = 0.0009;
+        float fres = pow(1.0 - max(dot(N, V), 0.0), 3.0);
+        spec = 0.045 + 0.12 * fres; gloss = 16.0; wrap = 0.42; rim = 0.16;
         sss = albedo * vec3(1.1, 0.42, 0.3);
     } else if (mat == 2) {     // drowned skin: marbled vessels, slipping skin, blisters, slime where wet
         albedo *= mix(0.86, 1.06, fbm(p * 8.0));
@@ -156,7 +165,8 @@ void main() {
         albedo *= mix(0.85, 1.12, fbm(p * 35.0)) * mix(1.0, 1.22, worn);
         h = pebble * 0.55 + fbm(p * 26.0) * 0.45; bk = 0.0012 * (1.0 - worn * 0.6);
         spec = mix(0.055, 0.14, worn); gloss = mix(9.0, 26.0, worn); wrap = 0.25; rim = 0.22;
-    } else if (mat == 8) {     // hair: tight curls, matte, a soft rim
+    } else if (mat == 8) {     // hair: tight curls, matte, a soft rim; thins out toward its edge (vAux)
+        if (vAux > 0.0 && hash(floor(vec3(p.x * 1400.0, p.y * 380.0, p.z * 1400.0))) < vAux) discard;   // strand-shaped stipple
         float curl = noise(p * 700.0) * 0.6 + noise(p * 260.0) * 0.4;
         albedo *= mix(0.7, 1.15, curl); h = curl; bk = 0.00035; spec = 0.05; gloss = 14.0; wrap = 0.35; rim = 0.35;
     } else if (mat == 9 || mat == 10) { spec = 0.9; gloss = 220.0; wrap = 0.25; rim = 0.1; }   // wet eyes
@@ -197,8 +207,10 @@ void main() {
         float k = knit(p.xy, aa) * w.z + knit(p.zy, aa) * w.x + knit(p.xz, aa) * w.y;
         albedo *= mix(0.66, 1.05, k) * mix(0.93, 1.03, fbm(p * 30.0));
         h = k; bk = 0.0024; spec = 0.02; gloss = 6.0; wrap = 0.55; rim = 0.55;
-    } else if (mat == 29) {   // lips: skin with a moist sheen
-        albedo *= mix(0.9, 1.05, fbm(p * 90.0)); h = fbm(p * 260.0); bk = 0.0006; spec = 0.28; gloss = 45.0; wrap = 0.45;
+    } else if (mat == 29) {   // lips: skin with a faint moist sheen and fine vertical lines
+        float lines = sin(p.x * 2400.0 + fbm(p * 90.0) * 4.0) * 0.5 + 0.5;
+        albedo *= mix(0.9, 1.05, fbm(p * 90.0)) * mix(0.94, 1.02, lines); h = lines * 0.5 + fbm(p * 260.0) * 0.5;
+        bk = 0.0005; spec = 0.12; gloss = 30.0; wrap = 0.45;
         sss = albedo * vec3(1.0, 0.35, 0.3);
     } else if (mat == 30) {   // brows: short dark hairs
         float st = sin(p.x * 900.0 + p.y * 300.0) * 0.5 + 0.5;
@@ -219,14 +231,20 @@ void main() {
         float flower = 1.0 - smoothstep(0.12, 0.2, petal);
         albedo = mix(albedo, mix(lin(vec3(0.62, 0.52, 0.28)), lin(vec3(0.55, 0.18, 0.2)), step(0.5, rnd)), flower * step(0.35, rnd));
         h = fbm(p * 50.0); bk = 0.001; spec = 0.03; gloss = 8.0; wrap = 0.35;
-    } else if (mat == 35) {   // locs: palm-rolled rope, matted and fuzzy, a dull sheen (p: around, along, seed)
+    } else if (mat == 35) {   // locs: palm-rolled rope, matted and fuzzy (p: around, along, seed)
         float ang = 6.2832 * p.x;
         vec3 cyl = vec3(cos(ang) * 1.3, sin(ang) * 1.3, p.y * 160.0 + p.z);
         float aa = clamp(1.4 - fwidth(p.y * 90.0) * 1.5, 0.0, 1.0);
         float tw = mix(0.5, sin(ang * 2.0 + p.y * 560.0) * 0.5 + 0.5, aa);    // two plies wrapping round
         float fuzz = fbm(cyl), lumps = fbm(vec3(p.z * 3.1, p.y * 45.0, 0.5));
-        albedo *= mix(0.7, 1.08, tw * 0.45 + fuzz * 0.55) * mix(0.82, 1.12, lumps);
-        h = tw * 0.5 + fuzz * 0.5; bk = 0.0009; spec = 0.05; gloss = 10.0; wrap = 0.3; rim = 0.06;   // thin tubes are mostly edge: keep the rim faint
+        albedo *= mix(0.62, 1.1, tw * 0.45 + fuzz * 0.55) * mix(0.8, 1.14, lumps);
+        albedo *= mix(0.45, 1.0, sqrt(max(dot(N, V), 0.0)));   // round, not flat: the sides of each rope fall into shadow
+        h = tw * 0.55 + fuzz * 0.45; bk = 0.0012; spec = 0.02; gloss = 10.0; wrap = 0.3; rim = 0.06;
+        // Hair sheen runs across the strand (Kajiya-Kay): find the strand's direction from how the
+        // "along" coordinate changes over the surface.
+        vec3 dpx = dFdx(vWorld), dpy = dFdy(vWorld), r1 = cross(dpy, N), r2 = cross(N, dpx);
+        vec3 g = (dFdx(p.y) * r1 + dFdy(p.y) * r2) * sign(dot(dpx, r1));
+        if (dot(g, g) > 1e-20) { strand = normalize(g); aniso = 0.1; }
     } else if (mat == 24) {   // raw dermis where the outer skin slipped off: wet and pink
         albedo *= mix(0.7, 1.1, fbm(p * 55.0)); h = fbm(p * 140.0); bk = 0.0008; spec = 0.55; gloss = 65.0; wrap = 0.5;
         sss = vec3(0.28, 0.05, 0.04);
@@ -250,10 +268,14 @@ void main() {
         col += albedo * max((ndl + wrap) / (1.0 + wrap), 0.0) * lc * vAo;
         col += sss * (0.5 - 0.5 * ndl) * lc * 0.35;                                  // light bleeding through flesh
         col += spec * pow(max(dot(N, normalize(L + V)), 0.0), gloss) * lc * step(0.0, ndl) * vAo;
+        if (aniso > 0.0) {   // a band of sheen across hair, tinted by the hair's own colour
+            float th = dot(strand, normalize(L + V));
+            col += aniso * pow(sqrt(max(1.0 - th * th, 0.0)), 48.0) * lc * step(0.0, ndl) * vAo * (vec3(0.2) + albedo * 4.0);
+        }
     }
     col += pow(1.0 - max(dot(N, V), 0.0), 4.0) * rim * u_rim * vAo;
     col = mix(col, u_fog, fogf * 0.6);
-    finalColor = vec4(pow(max(col, 0.0), vec3(1.0 / 2.2)), 1.0);
+    finalColor = vec4(pow(filmic(max(col, 0.0)), vec3(1.0 / 2.2)), 1.0);
 })";
 
 const char* PLATE_FS = R"(#version 330

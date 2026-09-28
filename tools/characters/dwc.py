@@ -3,14 +3,16 @@
 # engine needs to draw and skin one character, written by build_characters.py and
 # read by engine/src/character_file.cpp. Little-endian, no padding surprises:
 #
-#   char[4] "DWC1"   u32 version (1)
+#   char[4] "DWC1"   u32 version (2; version 1 files, without aux, still load)
 #   u32 joint_count, then joint_count x f32[3]      rest-pose joint positions (m, engine axes)
 #   u32 part_count, then per part:
 #       char[24] name  u32 vertex_count  u32 index_count
 #       f32[3] position x V   f32[3] normal x V
-#       u8[4]  colour   x V   (sRGB albedo)
+#       u8[4]  colour   x V   (sRGB albedo; alpha = baked ambient occlusion, 255 = open)
 #       u8     material x V   (dw::Mat)       u8 region x V   (dw::Region)
 #       u8[4]  joint ids x V  f32[4] joint weights x V (sum to 1)
+#       f32    aux x V        (version 2: one spare value per vertex whose meaning depends on the
+#                              material; for hair, how far toward the edge the strands thin out)
 #       u16    index x I      (triangles, counter-clockwise from outside)
 #   u32 anchor_count, then per anchor:
 #       char[24] name  u8 joint  u8[3] pad  f32[3] position (joint space)  f32[3] direction (joint space)
@@ -24,7 +26,7 @@ from pathlib import Path
 
 import numpy as np
 
-MAGIC, VERSION = b"DWC1", 1
+MAGIC, VERSION = b"DWC1", 2
 
 
 @dataclass
@@ -38,13 +40,17 @@ class Part:
     joints: np.ndarray         # (V,4) uint8
     weights: np.ndarray        # (V,4) float32
     tris: np.ndarray           # (T,3) int
+    aux: np.ndarray | None = None   # (V,) float32, the spare per-vertex value (None = all zero)
+
+    def aux_or_zero(self) -> np.ndarray:
+        return np.zeros(len(self.pos), np.float32) if self.aux is None else np.asarray(self.aux, np.float32)
 
     def validate(self):
         v = len(self.pos)
         assert v <= 65535, f"{self.name}: {v} vertices (max 65535)"
         for a, shape in ((self.nrm, (v, 3)), (self.col, (v, 4)), (self.joints, (v, 4)), (self.weights, (v, 4))):
             assert a.shape == shape, (self.name, a.shape, shape)
-        assert self.mat.shape == (v,) and self.region.shape == (v,)
+        assert self.mat.shape == (v,) and self.region.shape == (v,) and self.aux_or_zero().shape == (v,)
         assert len(self.tris) == 0 or (self.tris.min() >= 0 and self.tris.max() < v), self.name
         assert np.all(np.isfinite(self.pos)) and np.all(np.isfinite(self.nrm)), self.name
 
@@ -79,6 +85,7 @@ def write(path: Path, ch: Character) -> None:
         out += np.asarray(p.pos, "<f4").tobytes() + np.asarray(p.nrm, "<f4").tobytes()
         out += np.asarray(p.col, "u1").tobytes() + np.asarray(p.mat, "u1").tobytes() + np.asarray(p.region, "u1").tobytes()
         out += np.asarray(p.joints, "u1").tobytes() + np.asarray(p.weights, "<f4").tobytes()
+        out += np.asarray(p.aux_or_zero(), "<f4").tobytes()
         out += np.asarray(p.tris, "<u2").tobytes()
     out += struct.pack("<I", len(ch.anchors))
     for a in ch.anchors:
@@ -91,6 +98,8 @@ def write(path: Path, ch: Character) -> None:
 def read(path: Path) -> Character:
     b = Path(path).read_bytes()
     assert b[:4] == MAGIC, "not a .dwc file"
+    (version,) = struct.unpack_from("<I", b, 4)
+    assert version in (1, 2), f"unsupported .dwc version {version}"
     o = 8
     def take(fmt):
         nonlocal o
@@ -111,8 +120,9 @@ def read(path: Path) -> Character:
         pos, nrm = arr("<f4", nv * 3, (nv, 3)), arr("<f4", nv * 3, (nv, 3))
         col, mat, reg = arr("u1", nv * 4, (nv, 4)), arr("u1", nv, (nv,)), arr("u1", nv, (nv,))
         jid, jw = arr("u1", nv * 4, (nv, 4)), arr("<f4", nv * 4, (nv, 4))
+        aux = arr("<f4", nv, (nv,)) if version >= 2 else None
         tris = arr("<u2", ni, (ni // 3, 3))
-        ch.parts.append(Part(name, pos, nrm, col, mat, reg, jid, jw, tris))
+        ch.parts.append(Part(name, pos, nrm, col, mat, reg, jid, jw, tris, aux))
     (na,) = take("<I")
     for _ in range(na):
         name = b[o:o + 24].split(b"\0")[0].decode(); o += 24

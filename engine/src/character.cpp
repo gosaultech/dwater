@@ -122,16 +122,23 @@ void Character::add_strands(Strands s) {
             *ix++ = (unsigned short)(last + j); *ix++ = (unsigned short)tip; *ix++ = (unsigned short)(last + j + 1);
         }
         const Vector3 o = pattern_offset();
+        const float shade = 0.88f + 0.24f * (o.x + 20.0f) / 40.0f;   // no two strands quite the same colour
         for (int v = 0; v < per; ++v) {
             const int idx = base + v, ringi = std::min(v / row, s.n - 1), j = v == per - 1 ? 0 : v % row;
             const float along = v == per - 1 ? float(s.n - 1) * s.seg[k] + s.radius[k] : float(ringi) * s.seg[k];
             m.texcoords[idx * 2] = float(s.mat);
-            m.texcoords[idx * 2 + 1] = 0.7f + 0.3f * std::min(1.0f, along / 0.05f);   // shadowed where they leave the scalp
+            m.texcoords[idx * 2 + 1] = 0.6f + 0.4f * std::min(1.0f, along / 0.06f);   // shadowed where they leave the scalp
             m.tangents[idx * 4] = o.x + float(j) / float(ring);
             m.tangents[idx * 4 + 1] = o.y + along;
             m.tangents[idx * 4 + 2] = o.z;
             m.tangents[idx * 4 + 3] = 0;
-            m.colors[idx * 4] = s.col.r; m.colors[idx * 4 + 1] = s.col.g; m.colors[idx * 4 + 2] = s.col.b; m.colors[idx * 4 + 3] = 255;
+            float t = std::clamp((float(ringi) / float(s.n - 1) - 0.45f) / 0.55f, 0.0f, 1.0f);   // the last half fades
+            t = s.tip.a > 0 ? t * t * (3 - 2 * t) : 0.0f;
+            auto ch = [&](unsigned char a, unsigned char b) {
+                return (unsigned char)std::clamp((float(a) + (float(b) - float(a)) * t) * shade, 0.0f, 255.0f);
+            };
+            m.colors[idx * 4] = ch(s.col.r, s.tip.r); m.colors[idx * 4 + 1] = ch(s.col.g, s.tip.g);
+            m.colors[idx * 4 + 2] = ch(s.col.b, s.tip.b); m.colors[idx * 4 + 3] = 255;
         }
     }
     UploadMesh(&m, true);
@@ -204,7 +211,7 @@ void Character::step_strands(float dt) {
                 }
             }
             const Vector3 dir = Vector3Normalize(Vector3Subtract(p[s.n - 1], p[s.n - 2]));
-            const Vector3 tip = Vector3Add(p[s.n - 1], Vector3Scale(dir, s.radius[k] * 0.8f));
+            const Vector3 tip = Vector3Add(p[s.n - 1], Vector3Scale(dir, s.radius[k] * 0.4f));   // a blunt, rounded end
             const int idx = k * per + s.n * row;
             std::memcpy(&s.mesh.vertices[idx * 3], &tip, 12);
             std::memcpy(&s.mesh.normals[idx * 3], &dir, 12);
@@ -245,7 +252,7 @@ void Character::add_skinned(const FilePart& p) {
         m.tangents[i * 4] = p.pos[i * 3] + o.x;   // pattern space: the rest pose, so detail sticks to the skin
         m.tangents[i * 4 + 1] = p.pos[i * 3 + 1] + o.y;
         m.tangents[i * 4 + 2] = p.pos[i * 3 + 2] + o.z;
-        m.tangents[i * 4 + 3] = 0.0f;
+        m.tangents[i * 4 + 3] = i < int(p.aux.size()) ? p.aux[i] : 0.0f;   // the material's spare value (see dwc.py)
     }
     for (int j = 0; j < J_COUNT; ++j) m.boneMatrices[j] = MatrixIdentity();
     UploadMesh(&m, false);

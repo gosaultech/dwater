@@ -11,6 +11,7 @@ import sys
 import time
 from pathlib import Path
 
+import bake
 import dwc
 import mhdata
 from cast import CAST
@@ -40,6 +41,7 @@ def main(argv: list[str]) -> int:
         path = OUT / f"{name}.dwc"
         try:
             ch = CAST[name](data)
+            bake.bake_ao(ch)   # contact darkening: armpits, collars, folds
             dwc.write(path, ch)
             status = "ok"
         except Exception:

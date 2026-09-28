@@ -53,7 +53,8 @@ CharacterFile CharacterFile::load(const std::string& path) {
     char magic[4] = {};
     r.take(magic, 4);
     if (std::memcmp(magic, "DWC1", 4) != 0) { f.error = path + ": not a .dwc file"; return f; }
-    if (r.u32() != 1) { f.error = path + ": unsupported version"; return f; }
+    const uint32_t version = r.u32();   // 2 adds a spare value per vertex (aux); 1 still loads
+    if (version != 1 && version != 2) { f.error = path + ": unsupported version"; return f; }
     const uint32_t nj = r.u32();
     if (nj > 64) { f.error = path + ": too many joints"; return f; }
     f.joints.resize(nj);
@@ -71,6 +72,8 @@ CharacterFile CharacterFile::load(const std::string& path) {
         r.vec(p.region, nv);
         r.vec(p.joint, size_t(nv) * 4);
         r.vec(p.weight, size_t(nv) * 4);
+        if (version >= 2) r.vec(p.aux, nv);
+        else p.aux.assign(nv, 0.0f);
         r.vec(p.index, ni);
         for (uint16_t ix : p.index)
             if (ix >= nv) { f.error = path + ": index out of range in " + p.name; return f; }

@@ -87,64 +87,77 @@ Character build_survivor() {
                     {J_NECK, J_HEAD, {0, 0, 0.005f}, {0, 0, 0.01f}, 0.058f},
                     {J_SHO_L, J_SHO_R, {0, 0.035f, 0.02f}, {0, 0.035f, 0.02f}, 0.075f},
                     {J_CHEST, J_CHEST, {0, 0.06f, 0.07f}, {0, 0.06f, 0.07f}, 0.14f},
-                    {J_CHEST, J_CHEST, {-0.07f, 0.03f, -0.1f}, {0.07f, 0.03f, -0.1f}, 0.11f}};   // the front of the hoodie
+                    {J_CHEST, J_CHEST, {-0.07f, 0.03f, -0.1f}, {0.07f, 0.03f, -0.1f}, 0.11f},   // the front of the hoodie
+                    {J_HEAD, J_HEAD, {0, 0.0f, -0.035f}, {0, 0.1f, -0.035f}, 0.08f}};          // the face
     auto axis_at = [&](Vector3 p) { return Vector3{0, skA.y, std::clamp(p.z, skA.z, skB.z)}; };   // nearest point on the skull's axis
-    // Medium locs, pencil-thick, swept back: every loc follows one smooth flow over the scalp
-    // (back over the crown on top, down over the ears at the sides), so neighbours run side by
-    // side instead of crossing, then falls almost straight once it leaves the skull. Two short
-    // ones fall aside over the forehead.
+    // Medium locs grown in sections all over the scalp, like the director's reference (portrait 3):
+    // each root lifts off the scalp (locs have body), flows away from the crown, and falls once it
+    // clears the skull's widest band. Locs rooted higher lie over the ones below, which gives the
+    // head its volume. At the front they part to the sides and frame the face; three fall forward
+    // over the forehead.
     Character::Strands locs;
     locs.joint = J_HEAD;
     locs.n = 14;
-    locs.sides = 7;
+    locs.sides = 8;
     locs.mat = MAT_LOCS;
-    locs.col = {40, 29, 21, 255};
+    locs.col = {34, 25, 19, 255};
+    locs.tip = {78, 56, 38, 255};   // sun-bleached ends
     unsigned h = 0x2545F491u;
     auto rnd = [&h]() { h ^= h << 13; h ^= h >> 17; h ^= h << 5; return float(h & 0xFFFF) / 65535.0f; };
-    // The flow over the scalp at p: back over the crown from the hairline, turning downward only
-    // at the sides and back (never down over the forehead).
-    auto flow = [&](Vector3 p) {
+    const Vector3 crown{0.0f, skA.y + skR * 0.95f, 0.018f};
+    const Vector3 faceA{0, 0.0f, -0.035f}, faceB{0, 0.1f, -0.035f};   // the face, for the forelocks to lie over
+    const float faceR = 0.08f;
+    auto on_skull = [&](Vector3 p, Vector3 w) {   // w laid along the skull's surface at p
         const Vector3 radial = Vector3Normalize(Vector3Subtract(p, axis_at(p)));
-        const float down = std::clamp(1.0f - radial.y * 1.6f, 0.0f, 1.0f) * (1.0f - std::max(-radial.z, 0.0f));
-        Vector3 w = Vector3Add(Vector3Scale({0, 0, 1.0f}, 1.0f - down), Vector3Scale({0, -1.0f, 0.3f}, down));
-        w = Vector3Subtract(w, Vector3Scale(radial, Vector3DotProduct(w, radial)));   // along the skull
+        w = Vector3Subtract(w, Vector3Scale(radial, Vector3DotProduct(w, radial)));
         return Vector3LengthSqr(w) > 1e-8f ? Vector3Normalize(w) : Vector3{0, -1.0f, 0};
+    };
+    auto push_out = [](Vector3 p, Vector3 a, Vector3 b, float r) {   // p moved out of the capsule a-b of radius r
+        const Vector3 ab = Vector3Subtract(b, a);
+        const float t = std::clamp(Vector3DotProduct(Vector3Subtract(p, a), ab) / std::max(Vector3LengthSqr(ab), 1e-8f), 0.0f, 1.0f);
+        const Vector3 q = Vector3Add(a, Vector3Scale(ab, t)), d = Vector3Subtract(p, q);
+        const float l = Vector3Length(d);
+        return l < r ? Vector3Add(q, Vector3Scale(d, r / std::max(l, 1e-5f))) : p;
     };
     int forelocks = 0;
     for (const auto& a : c.anchors_) {
         if (a.name.rfind("loc", 0) != 0) continue;
-        const Vector3 n = Vector3Normalize(a.dir);
-        const bool front = a.pos.z < -0.05f;
-        const bool forelock = front && forelocks < 2 && a.pos.x > 0.0f && a.pos.x < 0.035f && a.pos.y > 0.11f;
-        if (front && !forelock && a.pos.z < -0.085f) continue;   // the hairline itself: covered by the cap, keeps the face clear
+        const Vector3 n = Vector3Normalize(a.dir), p0 = a.pos;
+        const float height = std::clamp((p0.y - skA.y) / skR, 0.0f, 1.0f);   // 1 at the crown, 0 at ear level
+        const bool front = p0.z < -0.035f;
+        const bool forelock = front && forelocks < 3 && p0.x > -0.012f && p0.x < 0.05f && p0.z < -0.055f;
         forelocks += forelock;
-        const float len = forelock ? 0.07f + 0.015f * rnd() : 0.15f + 0.05f * rnd();
+        const float side = p0.x < 0 ? -1.0f : 1.0f;
+        // Which way the loc heads over the scalp from point p: away from the crown; at the front, out
+        // to the sides (the face stays clear); forelocks forward and down over the brow.
+        auto away = [&](Vector3 p) {
+            if (forelock) return Vector3Normalize({0.3f * side, -0.55f, -0.8f});
+            Vector3 w = on_skull(p, Vector3Subtract(p, crown));
+            if (front) w = on_skull(p, Vector3Add(Vector3Scale(w, 0.55f), {side * 1.0f, -0.25f, 0.2f}));
+            return w;
+        };
+        const float len = forelock ? 0.1f + 0.03f * rnd() : 0.16f + 0.06f * rnd();   // the jaw at the front, the neck behind
         const float seg = len / float(locs.n - 1);
-        Vector3 p = Vector3Add(a.pos, Vector3Scale(n, 0.002f));
-        const float radius = 0.0043f + 0.0013f * rnd();
-        const float R = std::max(Vector3Distance(p, axis_at(p)) + 0.002f, skR + radius);   // lie on the scalp, never in it
+        const float radius = 0.0052f + 0.0018f * rnd();
+        const float R = skR + radius + 0.003f + 0.011f * height;   // higher roots lie over lower ones
+        Vector3 p = Vector3Subtract(p0, Vector3Scale(n, 0.003f));      // rooted in the scalp, no gap
         locs.anchor.push_back(p);
         locs.rest.push_back(p);
-        Vector3 dir = forelock ? Vector3Normalize({1.0f, -0.55f, -0.3f}) : flow(p);   // +x: toward the right temple
+        Vector3 dir = Vector3Normalize(Vector3Add(Vector3Scale(n, 0.6f), Vector3Scale(away(p0), 0.6f)));   // the root lifts
         for (int i = 1; i < locs.n; ++i) {
-            if (!forelock) {
-                // Hug the skull until the flow carries the loc past the skull's widest band, then
-                // bend (over a few centimetres, never a kink) into a near-vertical fall.
-                const Vector3 radial = Vector3Normalize(Vector3Subtract(p, axis_at(p)));
-                const float leave = std::clamp((0.25f - radial.y) / 0.35f, 0.0f, 1.0f);
-                const Vector3 fall = Vector3Normalize({radial.x * 0.06f, -1.0f, radial.z * 0.08f});
-                const Vector3 want = Vector3Normalize(Vector3Lerp(flow(p), fall, leave));
-                dir = Vector3Normalize(Vector3Lerp(dir, want, 0.6f));
-            }
+            const Vector3 radial = Vector3Normalize(Vector3Subtract(p, axis_at(p)));
+            const float leave = forelock ? 0.6f : std::clamp((0.3f - radial.y) / 0.4f, 0.0f, 1.0f);
+            const Vector3 fall = Vector3Normalize({radial.x * 0.12f, -1.0f, radial.z * 0.1f});
+            const Vector3 want = Vector3Normalize(Vector3Lerp(away(p), fall, leave));
+            dir = Vector3Normalize(Vector3Lerp(dir, want, i == 1 ? 0.25f : 0.45f));
             p = Vector3Add(p, Vector3Scale(dir, seg));
-            const Vector3 ax = axis_at(p);
-            const float r = Vector3Distance(p, ax);
-            if (r < R) p = Vector3Add(ax, Vector3Scale(Vector3Subtract(p, ax), R / std::max(r, 1e-4f)));
+            p = push_out(p, skA, skB, i < 2 ? skR : R);                 // never inside the skull (or the locs below)
+            p = push_out(p, faceA, faceB, faceR + radius + 0.004f);      // nor the face
             locs.rest.push_back(p);
         }
         locs.seg.push_back(seg);
         locs.radius.push_back(radius);
-        locs.stiff.push_back(forelock ? 0.3f : 0.2f);
+        locs.stiff.push_back(forelock ? 0.28f : 0.22f);
     }
     c.add_strands(std::move(locs));
     MeshData d;
