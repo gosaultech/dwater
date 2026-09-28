@@ -14,22 +14,35 @@
 
 namespace dw::shaders {
 
+// Skinned bodies (u_skin = 1) blend four joint matrices per vertex (GPU skinning); rigid
+// parts and rebuilt tubes (u_skin = 0) use the model matrix alone.
 const char* CHAR_VS = R"(#version 330
 in vec3 vertexPosition; in vec3 vertexNormal; in vec2 vertexTexCoord; in vec4 vertexTangent; in vec4 vertexColor;
+in vec4 vertexBoneIds; in vec4 vertexBoneWeights;
 uniform mat4 mvp; uniform mat4 matModel; uniform mat4 matNormal;
-out vec3 vWorld; out vec3 vNormal; out vec3 vSurf; out vec4 vColor; out float vAo; flat out int vMat;
+uniform mat4 boneMatrices[24]; uniform int u_skin;
+out vec3 vWorld; out vec3 vNormal; out vec3 vRestN; out vec3 vSurf; out vec4 vColor; out float vAo; flat out int vMat;
 void main() {
-    vWorld = (matModel * vec4(vertexPosition, 1.0)).xyz;
-    vNormal = normalize(mat3(matNormal) * vertexNormal);
+    vRestN = vertexNormal;   // before skinning: which way the surface faces in pattern space (knit columns)
+    vec4 pos = vec4(vertexPosition, 1.0);
+    vec3 nrm = vertexNormal;
+    if (u_skin == 1) {
+        mat4 S = boneMatrices[int(vertexBoneIds.x)] * vertexBoneWeights.x + boneMatrices[int(vertexBoneIds.y)] * vertexBoneWeights.y
+               + boneMatrices[int(vertexBoneIds.z)] * vertexBoneWeights.z + boneMatrices[int(vertexBoneIds.w)] * vertexBoneWeights.w;
+        pos = S * pos;
+        nrm = mat3(S) * nrm;
+    }
+    vWorld = (matModel * pos).xyz;
+    vNormal = normalize(mat3(matNormal) * nrm);
     vSurf = vertexTangent.xyz;
     vColor = vertexColor;
     vMat = int(vertexTexCoord.x + 0.5);
     vAo = vertexTexCoord.y;
-    gl_Position = mvp * vec4(vertexPosition, 1.0);
+    gl_Position = mvp * pos;
 })";
 
 const char* CHAR_FS = R"(#version 330
-in vec3 vWorld; in vec3 vNormal; in vec3 vSurf; in vec4 vColor; in float vAo; flat in int vMat;
+in vec3 vWorld; in vec3 vNormal; in vec3 vRestN; in vec3 vSurf; in vec4 vColor; in float vAo; flat in int vMat;
 uniform vec3 u_camPos; uniform int u_lightCount;
 uniform vec4 u_lightPos[8]; uniform vec4 u_lightCol[8]; uniform vec4 u_lightDir[8];
 uniform vec3 u_ambTop; uniform vec3 u_ambBottom; uniform vec3 u_rim; uniform vec3 u_fog; uniform vec2 u_fogRange;
@@ -44,6 +57,22 @@ float noise(vec3 x) {
 float fbm(vec3 p) { float a = 0.5, s = 0.0; for (int i = 0; i < 5; i++) { s += a * noise(p); p *= 2.03; a *= 0.5; } return s; }
 float ridge(vec3 p) { return 1.0 - abs(noise(p) * 2.0 - 1.0); }   // 1 along thin winding lines
 vec3 lin(vec3 c) { return pow(c, vec3(2.2)); }
+// Hand knitting on a plane (metres): u runs across the stitch columns, v up the rows. Columns of
+// "V" stitches, and every 12 columns a 4-column rope cable framed by sunken purl channels.
+// Returns loop height 0..1; `aa` fades it to its average once a stitch is smaller than a pixel.
+float knit(vec2 q, float aa) {
+    vec2 g = q * vec2(95.0, 120.0);                        // chunky yarn: ~10.5 mm columns, ~8 mm rows
+    float cx = fract(g.x) - 0.5;
+    float y = fract(g.y - abs(cx) * 0.9);                  // each stitch is a V: its legs climb outward
+    float st = (1.0 - abs(abs(cx) * 4.0 - 1.0)) * sin(3.14159 * y);
+    float c = mod(g.x, 12.0);
+    if (c > 1.0 && c < 5.0) {                              // the cable: two ropes crossing every 7 rows
+        float cu = (c - 1.0) / 4.0, s = sin(6.2832 * g.y / 7.0) * 0.26;
+        float rope = max(1.0 - abs(cu - 0.5 - s) / 0.24, 1.0 - abs(cu - 0.5 + s) / 0.24);
+        st = clamp(rope, 0.0, 1.0) * (0.8 + 0.2 * sin(3.14159 * fract(g.y * 2.0)));
+    } else if (c < 1.0 || (c > 5.0 && c < 6.0)) st *= 0.3;   // purl channels either side
+    return mix(0.45, st, aa);
+}
 // Surface-gradient bump (Mikkelsen): perturb N by the screen-space slope of a height field.
 vec3 bumpN(vec3 N, float h, float k) {
     vec3 dpx = dFdx(vWorld), dpy = dFdy(vWorld);
@@ -67,11 +96,18 @@ void main() {
     // Seen from the inside, a body is meat: a torn scalp, a split, the far side of a cut.
     bool skinlike = mat == 1 || mat == 2 || mat == 8 || mat == 20 || mat == 23 || mat == 24;
     if (!gl_FrontFacing && skinlike) { mat = 12; albedo = lin(vec3(0.2, 0.045, 0.04)) * (vMat == 8 ? 0.45 : 1.0); }   // scalp undersides darker
-    if (!gl_FrontFacing && (mat == 3 || mat == 4 || mat == 5 || mat == 6 || mat == 27)) albedo *= 0.35;   // inside a coat
+    if (!gl_FrontFacing && (mat == 3 || mat == 4 || mat == 5 || mat == 6 || mat == 7 || mat == 27 || mat == 28 || mat == 32 ||
+                            mat == 33 || mat == 34)) albedo *= 0.35;   // inside a garment
     if (mat == 13) { finalColor = vec4(pow(vec3(0.004, 0.001, 0.001) + u_fog * fogf * 0.5, vec3(1.0 / 2.2)), 1.0); return; }   // voids: throats, wounds
-    if (mat == 1) {            // living skin: blotchy, faint pores, soft oily sheen
-        albedo *= mix(0.88, 1.06, fbm(p * 40.0));
-        h = fbm(p * 160.0); bk = 0.0008; spec = 0.1; gloss = 26.0; wrap = 0.45; sss = vec3(0.5, 0.12, 0.07); rim = 0.12;
+    if (mat == 36) {   // a lit lens: brightest at its centre, facing you
+        float face = max(dot(N, V), 0.0);
+        finalColor = vec4(pow(albedo * (1.2 + 2.2 * face * face), vec3(1.0 / 2.2)), 1.0);
+        return;
+    }
+    if (mat == 1) {            // living skin: blotchy, faint pores, soft oily sheen; light bleeds through in its own tone
+        albedo *= mix(0.9, 1.06, fbm(p * 40.0));
+        h = fbm(p * 160.0); bk = 0.0008; spec = 0.12; gloss = 28.0; wrap = 0.42; rim = 0.16;
+        sss = albedo * vec3(1.1, 0.42, 0.3);
     } else if (mat == 2) {     // drowned skin: marbled vessels, slipping skin, blisters, slime where wet
         albedo *= mix(0.86, 1.06, fbm(p * 8.0));
         albedo = mix(albedo, albedo * vec3(0.92, 1.02, 0.9), smoothstep(0.4, 0.7, fbm(p * 3.0 + 9.0)));   // greening
@@ -113,11 +149,16 @@ void main() {
         float tw = sin((p.x + p.y + p.z) * 900.0) * 0.5 + 0.5;
         albedo *= mix(0.84, 1.08, tw) * mix(0.8, 1.12, fbm(p * 14.0));
         h = tw * 0.25 + fbm(p * 35.0) * 0.75; bk = 0.0015; spec = 0.03; gloss = 8.0; wrap = 0.2;
-    } else if (mat == 7) {     // leather
-        albedo *= mix(0.65, 1.1, fbm(p * 35.0)); h = fbm(p * 70.0); bk = 0.002; spec = 0.25; gloss = 30.0;
-    } else if (mat == 8) {     // hair: strands, damp
-        float strand = sin(p.x * 520.0 + p.z * 300.0 + fbm(p * 25.0) * 8.0) * 0.5 + 0.5;
-        albedo *= mix(0.55, 1.25, strand); h = strand; bk = 0.0012; spec = 0.25; gloss = 45.0; wrap = 0.3;
+    } else if (mat == 7) {     // leather: a soft satin sheen, pebbled grain, a sharper shine only where it's worn smooth
+        float worn = smoothstep(0.5, 0.78, fbm(p * 6.0));
+        float aa = clamp(1.5 - length(fwidth(p)) * 500.0, 0.0, 1.0);
+        float pebble = mix(0.5, noise(p * 900.0) * 0.6 + noise(p * 430.0) * 0.4, aa);
+        albedo *= mix(0.85, 1.12, fbm(p * 35.0)) * mix(1.0, 1.22, worn);
+        h = pebble * 0.55 + fbm(p * 26.0) * 0.45; bk = 0.0012 * (1.0 - worn * 0.6);
+        spec = mix(0.055, 0.14, worn); gloss = mix(9.0, 26.0, worn); wrap = 0.25; rim = 0.22;
+    } else if (mat == 8) {     // hair: tight curls, matte, a soft rim
+        float curl = noise(p * 700.0) * 0.6 + noise(p * 260.0) * 0.4;
+        albedo *= mix(0.7, 1.15, curl); h = curl; bk = 0.00035; spec = 0.05; gloss = 14.0; wrap = 0.35; rim = 0.35;
     } else if (mat == 9 || mat == 10) { spec = 0.9; gloss = 220.0; wrap = 0.25; rim = 0.1; }   // wet eyes
     else if (mat == 11) { albedo *= mix(0.7, 1.0, fbm(p * 50.0)); spec = 0.6; gloss = 60.0; }
     else if (mat == 12) {     // raw flesh: fibres, wet
@@ -149,6 +190,43 @@ void main() {
         float wr = abs(sin(p.y * 170.0 + fbm(p * 30.0) * 5.0));
         albedo *= mix(0.72, 1.06, wr) * mix(0.9, 1.05, fbm(p * 70.0));
         h = wr; bk = 0.0012; spec = 0.35; gloss = 35.0; wrap = 0.5; sss = vec3(0.2, 0.16, 0.12);
+    } else if (mat == 28) {   // chunky cable knit, projected three ways by which way the cloth faces at rest
+        vec3 w = pow(abs(normalize(vRestN)), vec3(6.0));
+        w /= max(w.x + w.y + w.z, 1e-4);
+        float aa = clamp((1.3 - length(fwidth(p)) * 110.0) / 0.8, 0.0, 1.0);
+        float k = knit(p.xy, aa) * w.z + knit(p.zy, aa) * w.x + knit(p.xz, aa) * w.y;
+        albedo *= mix(0.66, 1.05, k) * mix(0.93, 1.03, fbm(p * 30.0));
+        h = k; bk = 0.0024; spec = 0.02; gloss = 6.0; wrap = 0.55; rim = 0.55;
+    } else if (mat == 29) {   // lips: skin with a moist sheen
+        albedo *= mix(0.9, 1.05, fbm(p * 90.0)); h = fbm(p * 260.0); bk = 0.0006; spec = 0.28; gloss = 45.0; wrap = 0.45;
+        sss = albedo * vec3(1.0, 0.35, 0.3);
+    } else if (mat == 30) {   // brows: short dark hairs
+        float st = sin(p.x * 900.0 + p.y * 300.0) * 0.5 + 0.5;
+        albedo *= mix(0.6, 1.1, st); h = st; bk = 0.0005; spec = 0.08; gloss = 20.0;
+    } else if (mat == 31) {   // rubber soles
+        albedo *= mix(0.8, 1.05, fbm(p * 60.0)); spec = 0.05; gloss = 10.0;
+    } else if (mat == 32) {   // nylon: smooth, glossy, crinkled
+        float cr = fbm(p * 24.0);
+        albedo *= mix(0.86, 1.06, cr); h = cr; bk = 0.0022; spec = 0.22; gloss = 30.0; rim = 0.25;
+    } else if (mat == 33) {   // cotton: matte, fine weave
+        float wv = sin(p.x * 1200.0) * sin(p.y * 1200.0);
+        albedo *= mix(0.88, 1.04, fbm(p * 40.0)); h = wv * 0.3 + fbm(p * 60.0) * 0.7; bk = 0.0012; spec = 0.03; gloss = 8.0; wrap = 0.35;
+    } else if (mat == 34) {   // printed fabric: small flowers over the base colour
+        vec3 q = p * 38.0;
+        vec3 cell = floor(q);
+        float rnd = hash(cell);
+        float petal = length(fract(q) - 0.5 - (rnd - 0.5) * 0.3);
+        float flower = 1.0 - smoothstep(0.12, 0.2, petal);
+        albedo = mix(albedo, mix(lin(vec3(0.62, 0.52, 0.28)), lin(vec3(0.55, 0.18, 0.2)), step(0.5, rnd)), flower * step(0.35, rnd));
+        h = fbm(p * 50.0); bk = 0.001; spec = 0.03; gloss = 8.0; wrap = 0.35;
+    } else if (mat == 35) {   // locs: palm-rolled rope, matted and fuzzy, a dull sheen (p: around, along, seed)
+        float ang = 6.2832 * p.x;
+        vec3 cyl = vec3(cos(ang) * 1.3, sin(ang) * 1.3, p.y * 160.0 + p.z);
+        float aa = clamp(1.4 - fwidth(p.y * 90.0) * 1.5, 0.0, 1.0);
+        float tw = mix(0.5, sin(ang * 2.0 + p.y * 560.0) * 0.5 + 0.5, aa);    // two plies wrapping round
+        float fuzz = fbm(cyl), lumps = fbm(vec3(p.z * 3.1, p.y * 45.0, 0.5));
+        albedo *= mix(0.7, 1.08, tw * 0.45 + fuzz * 0.55) * mix(0.82, 1.12, lumps);
+        h = tw * 0.5 + fuzz * 0.5; bk = 0.0009; spec = 0.05; gloss = 10.0; wrap = 0.3; rim = 0.06;   // thin tubes are mostly edge: keep the rim faint
     } else if (mat == 24) {   // raw dermis where the outer skin slipped off: wet and pink
         albedo *= mix(0.7, 1.1, fbm(p * 55.0)); h = fbm(p * 140.0); bk = 0.0008; spec = 0.55; gloss = 65.0; wrap = 0.5;
         sss = vec3(0.28, 0.05, 0.04);

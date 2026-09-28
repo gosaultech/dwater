@@ -7,13 +7,16 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 
+#include "dw/character_file.hpp"
 #include "dw/core.hpp"
 
 namespace dw {
 namespace {
 constexpr int PARENT[J_COUNT] = {-1,      J_PELVIS, J_SPINE, J_CHEST, J_NECK,   J_HEAD,  J_CHEST, J_SHO_L, J_ELB_L,
-                                 J_CHEST, J_SHO_R,  J_ELB_R, J_PELVIS, J_HIP_L, J_KNE_L, J_PELVIS, J_HIP_R, J_KNE_R};
+                                 J_CHEST, J_SHO_R,  J_ELB_R, J_PELVIS, J_HIP_L, J_KNE_L, J_PELVIS, J_HIP_R, J_KNE_R,
+                                 J_WRI_L, J_FING1_L, J_WRI_L, J_WRI_R, J_FING1_R, J_WRI_R};
 enum RootMode { STAND = 0, BACK = 1, PRONE = 2 };
 
 float frand(unsigned& s) {   // xorshift: deterministic per character, no global RNG state
@@ -65,6 +68,190 @@ void Character::add_dangle(int joint, int region, Vector3 anchor, Vector3 rest, 
     dangles_.push_back(std::move(d));
 }
 
+bool Character::load_body(const std::string& path) {
+    const CharacterFile f = CharacterFile::load(path);
+    if (!f.ok() || f.joints.size() != size_t(J_COUNT)) {
+        TraceLog(LOG_ERROR, "character: %s", f.ok() ? "joint count mismatch" : f.error.c_str());
+        return false;
+    }
+    for (int j = 0; j < J_COUNT; ++j) {
+        rest_[j] = {f.joints[j][0], f.joints[j][1], f.joints[j][2]};
+        off_[j] = PARENT[j] < 0 ? rest_[j] : Vector3Subtract(rest_[j], rest_[PARENT[j]]);
+    }
+    pelvis_h_ = rest_[J_PELVIS].y;
+    for (const auto& p : f.parts) add_skinned(p);
+    for (const auto& a : f.anchors)
+        anchors_.push_back({a.name, a.joint, {a.pos[0], a.pos[1], a.pos[2]}, {a.dir[0], a.dir[1], a.dir[2]}});
+    return true;
+}
+
+const Character::Anchor* Character::anchor(const std::string& name) const {
+    for (const auto& a : anchors_)
+        if (a.name == name) return &a;
+    return nullptr;
+}
+
+// Each strand is a tube: n rings of (sides + 1) vertices (the last repeats the first, so the
+// pattern coordinate "around" can run 0..1 without jumping back at a seam), plus a tip vertex.
+// Pattern space for strands (read by the shader's locs material): x = around (0..1, plus a
+// per-strand phase), y = metres along the strand, z = a per-strand seed.
+void Character::add_strands(Strands s) {
+    const int count = int(s.anchor.size()), ring = s.sides, row = ring + 1, per = s.n * row + 1;
+    s.p.assign(size_t(count) * s.n, {});
+    s.prev = s.p;
+    Mesh m{};
+    m.vertexCount = count * per;
+    m.triangleCount = count * ((s.n - 1) * ring * 2 + ring);
+    m.vertices = static_cast<float*>(MemAlloc(unsigned(m.vertexCount * 3 * sizeof(float))));
+    m.normals = static_cast<float*>(MemAlloc(unsigned(m.vertexCount * 3 * sizeof(float))));
+    m.texcoords = static_cast<float*>(MemAlloc(unsigned(m.vertexCount * 2 * sizeof(float))));
+    m.tangents = static_cast<float*>(MemAlloc(unsigned(m.vertexCount * 4 * sizeof(float))));
+    m.colors = static_cast<unsigned char*>(MemAlloc(unsigned(m.vertexCount * 4)));
+    m.indices = static_cast<unsigned short*>(MemAlloc(unsigned(m.triangleCount * 3 * sizeof(unsigned short))));
+    unsigned short* ix = m.indices;
+    for (int k = 0; k < count; ++k) {
+        const int base = k * per;
+        for (int i = 0; i + 1 < s.n; ++i)
+            for (int j = 0; j < ring; ++j) {
+                const int a = base + i * row + j, b = a + 1, c = a + row, d = b + row;
+                *ix++ = (unsigned short)a; *ix++ = (unsigned short)c; *ix++ = (unsigned short)b;
+                *ix++ = (unsigned short)b; *ix++ = (unsigned short)c; *ix++ = (unsigned short)d;
+            }
+        const int tip = base + s.n * row, last = base + (s.n - 1) * row;
+        for (int j = 0; j < ring; ++j) {
+            *ix++ = (unsigned short)(last + j); *ix++ = (unsigned short)tip; *ix++ = (unsigned short)(last + j + 1);
+        }
+        const Vector3 o = pattern_offset();
+        for (int v = 0; v < per; ++v) {
+            const int idx = base + v, ringi = std::min(v / row, s.n - 1), j = v == per - 1 ? 0 : v % row;
+            const float along = v == per - 1 ? float(s.n - 1) * s.seg[k] + s.radius[k] : float(ringi) * s.seg[k];
+            m.texcoords[idx * 2] = float(s.mat);
+            m.texcoords[idx * 2 + 1] = 0.7f + 0.3f * std::min(1.0f, along / 0.05f);   // shadowed where they leave the scalp
+            m.tangents[idx * 4] = o.x + float(j) / float(ring);
+            m.tangents[idx * 4 + 1] = o.y + along;
+            m.tangents[idx * 4 + 2] = o.z;
+            m.tangents[idx * 4 + 3] = 0;
+            m.colors[idx * 4] = s.col.r; m.colors[idx * 4 + 1] = s.col.g; m.colors[idx * 4 + 2] = s.col.b; m.colors[idx * 4 + 3] = 255;
+        }
+    }
+    UploadMesh(&m, true);
+    s.mesh = m;
+    strands_.push_back(std::move(s));
+}
+
+void Character::step_strands(float dt) {
+    const float h = std::clamp(dt, 1e-4f, 1.0f / 20.0f);
+    const Vector3 grav{0, -9.8f * h * h, 0};
+    struct Seg { Vector3 a, b; float r; };
+    std::vector<Seg> caps;
+    for (const auto& c : colliders_) caps.push_back({Vector3Transform(c.oa, W_[c.a]), Vector3Transform(c.ob, W_[c.b]), c.r});
+    for (auto& s : strands_) {
+        const Matrix& W = W_[s.joint];
+        const int count = int(s.anchor.size());
+        for (int k = 0; k < count; ++k) {
+            Vector3* p = &s.p[size_t(k) * s.n];
+            Vector3* q = &s.prev[size_t(k) * s.n];
+            auto rest_at = [&](int i) { return Vector3Transform(s.rest[size_t(k) * s.n + i], W); };
+            if (!s.live)
+                for (int i = 0; i < s.n; ++i) p[i] = q[i] = rest_at(i);
+            p[0] = q[0] = rest_at(0);
+            for (int i = 1; i < s.n; ++i) {
+                const Vector3 v = Vector3Scale(Vector3Subtract(p[i], q[i]), 0.95f);
+                q[i] = p[i];
+                p[i] = Vector3Add(p[i], Vector3Add(v, grav));
+                p[i] = Vector3Lerp(p[i], rest_at(i), s.stiff[k] * (1.0f - 0.45f * float(i) / float(s.n - 1)));   // firm at the root
+            }
+            for (int it = 0; it < 3; ++it) {
+                for (int i = 0; i + 1 < s.n; ++i) {
+                    Vector3 d = Vector3Subtract(p[i + 1], p[i]);
+                    const float L = Vector3Length(d);
+                    if (L < 1e-6f) continue;
+                    const Vector3 corr = Vector3Scale(d, (L - s.seg[k]) / L);
+                    if (i == 0) p[1] = Vector3Subtract(p[1], corr);
+                    else { p[i] = Vector3Add(p[i], Vector3Scale(corr, 0.5f)); p[i + 1] = Vector3Subtract(p[i + 1], Vector3Scale(corr, 0.5f)); }
+                }
+                for (int i = 1; i < s.n; ++i)
+                    for (const auto& c : caps) {
+                        const Vector3 cq = closest_on_segment(p[i], c.a, c.b), off = Vector3Subtract(p[i], cq);
+                        const float l = Vector3Length(off), r = c.r + s.radius[k];
+                        if (l < r && l > 1e-6f) p[i] = Vector3Add(cq, Vector3Scale(off, r / l));
+                    }
+            }
+        }
+        s.live = true;
+        // Rebuild the tubes: a ring per point, slightly lumpy (palm-rolled, not machined), tapering a
+        // little to a rounded tip.
+        const int ring = s.sides, row = ring + 1, per = s.n * row + 1;
+        for (int k = 0; k < count; ++k) {
+            const Vector3* p = &s.p[size_t(k) * s.n];
+            Vector3 x{W.m0, W.m1, W.m2};
+            for (int i = 0; i < s.n; ++i) {
+                const Vector3 t = Vector3Normalize(Vector3Subtract(p[std::min(i + 1, s.n - 1)], p[std::max(i - 1, 0)]));
+                // Parallel transport: carry the previous ring's x down the strand, minus its component along t.
+                x = Vector3Subtract(x, Vector3Scale(t, Vector3DotProduct(x, t)));
+                if (Vector3LengthSqr(x) < 1e-8f) x = Vector3CrossProduct(t, {0, 0, 1});
+                x = Vector3Normalize(x);
+                const Vector3 y = Vector3CrossProduct(t, x);
+                const float lump = 1.0f + 0.09f * std::sin(float(i) * 2.3f + float(k) * 1.7f);
+                const float r = s.radius[k] * lump * (1.0f - 0.22f * float(i) / float(s.n - 1));
+                for (int j = 0; j <= ring; ++j) {
+                    const float a = 2.0f * PI * float(j % ring) / float(ring);
+                    const Vector3 nrm = Vector3Add(Vector3Scale(x, std::cos(a)), Vector3Scale(y, std::sin(a)));
+                    const int idx = k * per + i * row + j;
+                    const Vector3 pos = Vector3Add(p[i], Vector3Scale(nrm, r));
+                    std::memcpy(&s.mesh.vertices[idx * 3], &pos, 12);
+                    std::memcpy(&s.mesh.normals[idx * 3], &nrm, 12);
+                }
+            }
+            const Vector3 dir = Vector3Normalize(Vector3Subtract(p[s.n - 1], p[s.n - 2]));
+            const Vector3 tip = Vector3Add(p[s.n - 1], Vector3Scale(dir, s.radius[k] * 0.8f));
+            const int idx = k * per + s.n * row;
+            std::memcpy(&s.mesh.vertices[idx * 3], &tip, 12);
+            std::memcpy(&s.mesh.normals[idx * 3], &dir, 12);
+        }
+        UpdateMeshBuffer(s.mesh, 0, s.mesh.vertices, s.mesh.vertexCount * 12, 0);
+        UpdateMeshBuffer(s.mesh, 2, s.mesh.normals, s.mesh.vertexCount * 12, 0);
+    }
+}
+
+// Upload one skinned part. Vertex layout as the character shader expects (see mesh_builder.hpp),
+// plus four joint ids and weights; the shader blends the joints' matrices (GPU skinning).
+void Character::add_skinned(const FilePart& p) {
+    const int n = int(p.vertices());
+    auto alloc = [](size_t bytes) { return MemAlloc(static_cast<unsigned int>(bytes)); };
+    Mesh m{};
+    m.vertexCount = n;
+    m.triangleCount = int(p.index.size() / 3);
+    m.vertices = static_cast<float*>(alloc(p.pos.size() * sizeof(float)));
+    m.normals = static_cast<float*>(alloc(p.nrm.size() * sizeof(float)));
+    m.texcoords = static_cast<float*>(alloc(size_t(n) * 2 * sizeof(float)));
+    m.tangents = static_cast<float*>(alloc(size_t(n) * 4 * sizeof(float)));
+    m.colors = static_cast<unsigned char*>(alloc(p.col.size()));
+    m.indices = static_cast<unsigned short*>(alloc(p.index.size() * sizeof(unsigned short)));
+    m.boneIds = static_cast<unsigned char*>(alloc(p.joint.size()));
+    m.boneWeights = static_cast<float*>(alloc(p.weight.size() * sizeof(float)));
+    m.boneCount = J_COUNT;
+    m.boneMatrices = static_cast<Matrix*>(alloc(sizeof(Matrix) * J_COUNT));
+    std::memcpy(m.vertices, p.pos.data(), p.pos.size() * sizeof(float));
+    std::memcpy(m.normals, p.nrm.data(), p.nrm.size() * sizeof(float));
+    std::memcpy(m.colors, p.col.data(), p.col.size());
+    std::memcpy(m.indices, p.index.data(), p.index.size() * sizeof(unsigned short));
+    std::memcpy(m.boneIds, p.joint.data(), p.joint.size());
+    std::memcpy(m.boneWeights, p.weight.data(), p.weight.size() * sizeof(float));
+    const Vector3 o = pattern_offset();
+    for (int i = 0; i < n; ++i) {
+        m.texcoords[i * 2] = float(p.mat[i]);
+        m.texcoords[i * 2 + 1] = float(p.col[i * 4 + 3]) / 255.0f;   // baked occlusion rides in the colour's alpha
+        m.tangents[i * 4] = p.pos[i * 3] + o.x;   // pattern space: the rest pose, so detail sticks to the skin
+        m.tangents[i * 4 + 1] = p.pos[i * 3 + 1] + o.y;
+        m.tangents[i * 4 + 2] = p.pos[i * 3 + 2] + o.z;
+        m.tangents[i * 4 + 3] = 0.0f;
+    }
+    for (int j = 0; j < J_COUNT; ++j) m.boneMatrices[j] = MatrixIdentity();
+    UploadMesh(&m, false);
+    skinned_.push_back({p.name, m});
+}
+
 void Character::fk() {
     // Root: (pitch about a pivot height, then lift) -> yaw -> position. Pitch +x topples the body
     // backward about the pivot; -x pitches it face-down.
@@ -75,7 +262,7 @@ void Character::fk() {
         const Vector3 a = Vector3Add(ang_[j], twitch_[j]);
         Matrix R = MatrixMultiply(MatrixMultiply(MatrixRotateZ(a.z), MatrixRotateX(a.x)), MatrixRotateY(a.y));
         Vector3 o = off_[j];
-        if (j == J_PELVIS) o = {0, pelvis_h_ + bob_, 0};
+        if (j == J_PELVIS) o = {off_[j].x, pelvis_h_ + bob_, off_[j].z};
         Matrix L = MatrixMultiply(R, MatrixTranslate(o.x, o.y, o.z));
         W_[j] = MatrixMultiply(L, PARENT[j] < 0 ? root : W_[PARENT[j]]);
     }
@@ -126,6 +313,9 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     lift_ = Lerp(from_lift_, tl, e);
 
     fk();
+    for (int j = 0; j < J_COUNT; ++j)   // skinning: rest-pose vertex -> joint space -> where the joint is now
+        bones_[j] = MatrixMultiply(MatrixTranslate(-rest_[j].x, -rest_[j].y, -rest_[j].z), W_[j]);
+    for (auto& s : skinned_) std::memcpy(s.mesh.boneMatrices, bones_, sizeof(bones_));
     const Vector3 right{std::cos(yaw_), 0, -std::sin(yaw_)};
     for (auto& d : dyn_) {
         std::vector<Vector3> pts;
@@ -135,6 +325,7 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
         refresh(d.mesh, d.sweep.data);
     }
     step_dangles(dt);
+    step_strands(dt);
 }
 
 void Character::step_dangles(float dt) {
@@ -202,6 +393,18 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         T[s < 0 ? J_ELB_L : J_ELB_R] = {0.2f, 0, 0};
         T[s < 0 ? J_HIP_L : J_HIP_R] = {0.03f, 0, 0.02f * s};
         T[s < 0 ? J_KNE_L : J_KNE_R] = {-0.07f, 0, 0};
+    }
+    for (float s : {-1.0f, 1.0f}) {   // hands: fingers loosely curled toward the palm (palms face the body)
+        const bool L = s < 0;
+        const float in = L ? 1.0f : -1.0f;
+        T[L ? J_FING1_L : J_FING1_R] = {0, 0, (drowned ? 0.5f : 0.25f) * in};
+        T[L ? J_FING2_L : J_FING2_R] = {0, 0, (drowned ? 0.8f : 0.35f) * in};
+        T[L ? J_THUMB_L : J_THUMB_R] = {0, 0, 0.15f * in};
+    }
+    if (!drowned) {   // the right hand grips the pistol
+        T[J_FING1_R] = {0, 0, -1.25f};
+        T[J_FING2_R] = {0, 0, -1.35f};
+        T[J_THUMB_R] = {0, 0, -0.45f};
     }
     T[J_SPINE] = {-0.02f + std::sin(t_ * 1.6f) * 0.012f, 0, 0};
     T[J_CHEST] = {std::sin(t_ * 1.6f + 0.5f) * 0.01f, 0, 0};
@@ -375,15 +578,29 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
 }
 
 void Character::draw(const Material& m) const {
+    static unsigned shader = 0;
+    static int skin_loc = -1;
+    if (shader != m.shader.id) { shader = m.shader.id; skin_loc = GetShaderLocation(m.shader, "u_skin"); }
+    if (!skinned_.empty()) {
+        const int on = 1, off = 0;
+        SetShaderValue(m.shader, skin_loc, &on, SHADER_UNIFORM_INT);
+        for (const auto& s : skinned_) DrawMesh(s.mesh, m, MatrixIdentity());
+        SetShaderValue(m.shader, skin_loc, &off, SHADER_UNIFORM_INT);
+    }
     for (const auto& r : rigid_) DrawMesh(r.mesh, m, W_[r.joint]);
     for (const auto& d : dyn_) DrawMesh(d.mesh, m, MatrixIdentity());
     for (const auto& d : dangles_) DrawMesh(d.mesh, m, MatrixIdentity());
+    for (const auto& s : strands_) DrawMesh(s.mesh, m, MatrixIdentity());
 }
 
 void Character::unload() {
     for (auto& r : rigid_) UnloadMesh(r.mesh);
     for (auto& d : dyn_) UnloadMesh(d.mesh);
     for (auto& d : dangles_) UnloadMesh(d.mesh);
+    for (auto& s : skinned_) UnloadMesh(s.mesh);
+    for (auto& s : strands_) UnloadMesh(s.mesh);
+    skinned_.clear();
+    strands_.clear();
     rigid_.clear();
     dyn_.clear();
     dangles_.clear();

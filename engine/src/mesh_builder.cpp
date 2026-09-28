@@ -130,6 +130,20 @@ void MeshBuilder::ellipsoid(Vector3 c, Vector3 r, int segs, int rings, const Bum
 
 void MeshBuilder::tube(Vector3 a, Vector3 b, float r0, float r1, int sides) { chain({a, b}, {r0, r1}, sides); }
 
+void MeshBuilder::box(Vector3 c, Vector3 half, float k, int segs, int rings) {
+    auto shape = [k](float v) { return (v < 0 ? -1.0f : 1.0f) * std::pow(std::fabs(v), k); };
+    Grid g(rings + 1, std::vector<Vector3>(segs));
+    for (int i = 0; i <= rings; ++i) {
+        float phi = PI * float(i) / rings;
+        for (int j = 0; j < segs; ++j) {
+            float th = TAU * float(j) / segs;
+            Vector3 d{std::sin(phi) * std::sin(th), std::cos(phi), -std::sin(phi) * std::cos(th)};
+            g[i][j] = {c.x + shape(d.x) * half.x, c.y + shape(d.y) * half.y, c.z + shape(d.z) * half.z};
+        }
+    }
+    grid(g);
+}
+
 void MeshBuilder::chain(const std::vector<Vector3>& pts, const std::vector<float>& radii, int sides, float flatten) {
     Grid g;
     Vector3 ref{1, 0, 0};

@@ -1,108 +1,162 @@
 // damned_waters/engine/src/cast_survivor.cpp
-// Purpose: the survivor, built in C++ at startup (no external model files):
-// an ordinary man in a waxed jacket; sculpted face, real eyes, hair, a pistol.
+// Purpose: the survivor. His body, clothes, face and hair cap come from
+// engine/assets/characters/survivor.dwc (built from MakeHuman's CC0 human by
+// tools/characters); here we add what moves or is held: physics locs, the
+// backpack, the flashlight on its strap, and a stainless Beretta M92FS.
 #include <cmath>
 
 #include "cast_common.hpp"
+#include "dw/room_spec.hpp"
 
 namespace dw {
 using namespace cast;
 namespace {
-const Color SKIN{198, 150, 122, 255}, HAIR{36, 27, 20, 255}, JACKET{74, 80, 52, 255}, DENIM{44, 56, 86, 255},
-    BOOT{58, 40, 28, 255}, METAL{30, 30, 32, 255};
+const Color STEEL{186, 188, 190, 255}, BLACK_PARTS{22, 22, 24, 255}, PACK{30, 32, 32, 255}, TRIM{46, 48, 46, 255};
+
+// Beretta M92FS Inox, held in the right hand. Wrist space: the hand hangs along -Y with the thumb
+// toward -Z, so the barrel runs along -Y above the thumb web and the grip goes through the fist
+// toward +Z, raked back toward the wrist. Lengths are real: 217 mm overall, a 125 mm barrel.
+void m92fs(MeshData& d) {
+    MeshBuilder b(d);
+    const float bore_z = -0.062f;                                                   // barrel axis, above the web of the hand
+    b.material(MAT_STEEL).color(STEEL);
+    b.box({0, -0.078f, bore_z + 0.002f}, {0.0145f, 0.05f, 0.0165f}, 0.22f, 20, 12);   // rear slide (full height)
+    b.box({0, -0.183f, bore_z + 0.006f}, {0.0145f, 0.062f, 0.0108f}, 0.22f, 20, 12);  // front slide: the open top
+    b.box({0, -0.176f, bore_z + 0.02f}, {0.0115f, 0.05f, 0.006f}, 0.28f, 16, 8);      // dust cover under it
+    b.tube({0, -0.12f, bore_z - 0.004f}, {0, -0.246f, bore_z - 0.004f}, 0.0074f, 0.0074f, 12);   // the exposed barrel
+    b.box({0, -0.07f, bore_z + 0.03f}, {0.013f, 0.04f, 0.012f}, 0.3f, 16, 10);       // frame over the grip
+    b.material(MAT_METAL).color(BLACK_PARTS);
+    b.tube({0, -0.2475f, bore_z - 0.004f}, {0, -0.2485f, bore_z - 0.004f}, 0.0042f, 0.0042f, 10);  // muzzle
+    b.box({0, -0.236f, bore_z - 0.016f}, {0.0018f, 0.004f, 0.003f}, 0.4f, 8, 6);    // front sight
+    b.box({0, -0.034f, bore_z - 0.017f}, {0.008f, 0.004f, 0.003f}, 0.4f, 8, 6);     // rear sight
+    b.box({0, -0.024f, bore_z + 0.004f}, {0.006f, 0.006f, 0.008f}, 0.5f, 8, 6);     // hammer
+    for (float s : {-1.0f, 1.0f})                                                   // safety / decocker levers
+        b.box({0.0155f * s, -0.04f, bore_z - 0.002f}, {0.0022f, 0.008f, 0.0045f}, 0.5f, 8, 6);
+    // Squared "combat" trigger guard and the trigger.
+    b.chain({{0, -0.086f, bore_z + 0.035f}, {0, -0.13f, bore_z + 0.038f}, {0, -0.138f, bore_z + 0.05f},
+             {0, -0.132f, bore_z + 0.07f}, {0, -0.098f, bore_z + 0.072f}, {0, -0.084f, bore_z + 0.066f}},
+            {0.0032f, 0.0032f, 0.0032f, 0.0032f, 0.0032f, 0.0032f}, 6, 0.6f);
+    b.chain({{0, -0.103f, bore_z + 0.034f}, {0, -0.108f, bore_z + 0.05f}, {0, -0.104f, bore_z + 0.06f}},
+            {0.0026f, 0.0024f, 0.002f}, 6, 0.55f);
+    // The grip: raked back toward the wrist, black checkered panels over steel.
+    const Matrix rake = MatrixMultiply(MatrixRotateX(0.34f), MatrixTranslate(0, -0.052f, bore_z + 0.086f));
+    MeshBuilder g(d);
+    g.transform(rake).material(MAT_STEEL).color(STEEL).box({0, 0, 0}, {0.0135f, 0.026f, 0.058f}, 0.3f, 16, 12);
+    g.material(MAT_GRIP).color(BLACK_PARTS).box({0, 0.001f, 0.004f}, {0.0158f, 0.022f, 0.048f}, 0.26f, 16, 12);
+    g.material(MAT_METAL).color(BLACK_PARTS).box({0, 0.002f, 0.061f}, {0.0145f, 0.028f, 0.005f}, 0.4f, 12, 6);   // magazine base
+}
+
+void backpack(MeshData& d, Vector3 at) {
+    MeshBuilder b(d);
+    const Vector3 c = Vector3Add(at, {0, -0.1f, 0.13f});
+    b.material(MAT_CLOTH).color(PACK).box(c, {0.155f, 0.2f, 0.075f}, 0.45f, 24, 16);   // waxed canvas
+    b.color(TRIM).box(Vector3Add(c, {0, -0.07f, 0.062f}), {0.11f, 0.08f, 0.03f}, 0.4f, 20, 12);   // front pocket
+    b.material(MAT_METAL).color(BLACK_PARTS).tube(Vector3Add(c, {-0.1f, 0.15f, 0.05f}), Vector3Add(c, {0.1f, 0.15f, 0.05f}), 0.0035f, 0.0035f, 6);
+    b.material(MAT_CLOTH).color(TRIM).chain({Vector3Add(c, {-0.04f, 0.2f, -0.01f}), Vector3Add(c, {0, 0.235f, -0.005f}),
+                                             Vector3Add(c, {0.04f, 0.2f, -0.01f})}, {0.008f, 0.008f, 0.008f}, 6, 0.4f);   // top handle
+}
+
+// An angle-head flashlight clipped upright to the backpack strap, its head bent forward so the
+// beam goes where he faces. `at` is in front of the strap (chest space: -Z is forward).
+void flashlight(MeshData& d, Vector3 at) {
+    MeshBuilder b(d);
+    const Color OLIVE{64, 68, 52, 255};
+    auto p = [&at](float x, float y, float z) { return Vector3Add(at, {x, y, z}); };
+    b.material(MAT_METAL).color(OLIVE).tube(p(0, -0.06f, 0.004f), p(0, 0.03f, 0.004f), 0.0135f, 0.0135f, 14);   // the body
+    b.material(MAT_RUBBER).color(BLACK_PARTS).tube(p(0, -0.066f, 0.004f), p(0, -0.058f, 0.004f), 0.0142f, 0.0142f, 14);   // tail cap
+    b.material(MAT_METAL).color(OLIVE).box(p(0, 0.044f, -0.008f), {0.017f, 0.017f, 0.024f}, 0.35f, 12, 10);        // the angled head
+    b.material(MAT_METAL).color(BLACK_PARTS).tube(p(0, 0.044f, -0.03f), p(0, 0.044f, -0.036f), 0.0185f, 0.0185f, 16);   // bezel
+    b.material(MAT_LAMP).color(Color{255, 238, 204, 255}).ellipsoid(p(0, 0.044f, -0.0365f), {0.0155f, 0.0155f, 0.002f}, 14, 6);
+    b.material(MAT_RUBBER).color(BLACK_PARTS).box(p(0.0145f, 0.018f, 0.004f), {0.0035f, 0.007f, 0.006f}, 0.4f, 8, 6);   // switch
+    b.material(MAT_METAL).color(BLACK_PARTS).box(p(0, -0.01f, 0.021f), {0.009f, 0.035f, 0.0025f}, 0.4f, 8, 8);   // clip on the strap
+}
 }  // namespace
 
 Character build_survivor() {
     Character c;
     c.kind = Kind::Survivor;
-    c.pelvis_h_ = 0.95f;
     c.thickness_ = 0.12f;
-    Vector3* o = c.off_;
-    o[J_SPINE] = {0, 0.1f, 0};      o[J_CHEST] = {0, 0.2f, 0};      o[J_NECK] = {0, 0.24f, 0};
-    o[J_HEAD] = {0, 0.09f, -0.005f};
-    for (float s : {-1.0f, 1.0f}) {
-        int sh = s < 0 ? J_SHO_L : J_SHO_R, el = s < 0 ? J_ELB_L : J_ELB_R, wr = s < 0 ? J_WRI_L : J_WRI_R;
-        int hp = s < 0 ? J_HIP_L : J_HIP_R, kn = s < 0 ? J_KNE_L : J_KNE_R, an = s < 0 ? J_ANK_L : J_ANK_R;
-        o[sh] = {0.19f * s, 0.19f, 0};   o[el] = {0.035f * s, -0.28f, 0};   o[wr] = {0.02f * s, -0.25f, -0.02f};
-        o[hp] = {0.095f * s, -0.03f, 0}; o[kn] = {0, -0.42f, 0.01f};        o[an] = {0, -0.41f, -0.005f};
-    }
-    // Torso: jacket from below the belt to the collar; bare neck at the top.
-    c.add_sweep(Sweep(26, 16, Profile{{{0.0f, 0.172f, 0.126f, 0}, {0.15f, 0.168f, 0.12f, 0}, {0.35f, 0.155f, 0.112f, 0.005f},
-                                       {0.55f, 0.17f, 0.12f, 0.01f}, {0.7f, 0.18f, 0.122f, 0.012f}, {0.8f, 0.17f, 0.112f, 0.006f},
-                                       {0.87f, 0.128f, 0.095f, 0}, {0.92f, 0.074f, 0.07f, 0}, {1.0f, 0.058f, 0.058f, 0}}},
-                      MAT_CLOTH, JACKET, 0.8f).tail(0.935f, MAT_SKIN, SKIN),
-                {{J_PELVIS, {0, -0.1f, 0}, R_BODY}, {J_PELVIS, {}, R_BODY}, {J_SPINE, {}, R_BODY}, {J_CHEST, {}, R_BODY},
-                 {J_CHEST, {0, 0.19f, 0}, R_BODY}, {J_NECK, {0, 0.07f, 0}, R_BODY}});
-    for (float s : {-1.0f, 1.0f}) {   // sleeves: deltoid, bicep, narrow elbow, forearm swell, cuff
-        const bool L = s < 0;
-        c.add_sweep(Sweep(22, 12, Profile{{{0.0f, 0.052f, 0.05f, 0}, {0.18f, 0.063f, 0.064f, 0}, {0.4f, 0.055f, 0.057f, 0},
-                                           {0.58f, 0.047f, 0.048f, 0}, {0.7f, 0.05f, 0.047f, 0}, {0.95f, 0.043f, 0.041f, 0},
-                                           {1.0f, 0.036f, 0.032f, 0}}},
-                          MAT_CLOTH, JACKET, 0.62f),
-                    {{J_CHEST, {0.1f * s, 0.18f, 0}, R_BODY}, {L ? J_SHO_L : J_SHO_R, {}, R_BODY},
-                     {L ? J_ELB_L : J_ELB_R, {}, L ? R_UARM_L : R_UARM_R}, {L ? J_WRI_L : J_WRI_R, {}, L ? R_FARM_L : R_FARM_R}});
-        c.add_sweep(Sweep(24, 12, Profile{{{0.0f, 0.1f, 0.1f, 0}, {0.12f, 0.092f, 0.095f, 0}, {0.3f, 0.08f, 0.083f, 0},
-                                           {0.53f, 0.054f, 0.057f, 0}, {0.66f, 0.056f, 0.062f, -0.006f}, {0.86f, 0.044f, 0.046f, 0},
-                                           {1.0f, 0.043f, 0.045f, 0}}},
-                          MAT_DENIM, DENIM, 0.88f),
-                    {{J_PELVIS, {0.065f * s, -0.02f, 0}, R_BODY}, {L ? J_HIP_L : J_HIP_R, {}, R_BODY},
-                     {L ? J_KNE_L : J_KNE_R, {}, L ? R_THIGH_L : R_THIGH_R}, {L ? J_ANK_L : J_ANK_R, {}, L ? R_SHIN_L : R_SHIN_R}});
-    }
-    MeshData d;
-    MeshBuilder(d).material(MAT_DENIM).color(DENIM).ellipsoid({0, -0.03f, 0}, {0.158f, 0.1f, 0.112f}, 18, 10);
-    c.add_rigid(J_PELVIS, R_BODY, d);
-    d = {};   // collar band
-    MeshBuilder(d).material(MAT_CLOTH).color(Color{60, 64, 42, 255}).drape({0, 0.225f, 0.01f}, {0.078f, 0.072f}, {0.104f, 0.094f}, 0.06f, 3, 24, 0, 0);
-    c.add_rigid(J_CHEST, R_BODY, d);
-    // Head: sculpted skull, eyes that catch light, brows, lips, ears, hair.
-    const Vector3 hc{0, 0.105f, 0.005f}, hr{0.082f, 0.108f, 0.098f};
-    d = {};
-    MeshBuilder(d).material(MAT_SKIN).color(SKIN).ellipsoid(hc, hr, 36, 24, features({
-        {{0, -0.05f, -1}, 0.12f, 0.028f}, {{0, 0.24f, -0.97f}, 0.22f, 0.01f}, {{0.34f, 0.1f, -0.93f}, 0.1f, -0.013f},
-        {{-0.34f, 0.1f, -0.93f}, 0.1f, -0.013f}, {{0.55f, -0.1f, -0.8f}, 0.2f, 0.008f}, {{-0.55f, -0.1f, -0.8f}, 0.2f, 0.008f},
-        {{0, -0.31f, -0.94f}, 0.07f, 0.006f}, {{0, -0.39f, -0.93f}, 0.07f, 0.008f}, {{0, -0.62f, -0.82f}, 0.16f, 0.014f},
-        {{0.75f, -0.45f, -0.5f}, 0.2f, 0.006f}, {{-0.75f, -0.45f, -0.5f}, 0.2f, 0.006f}, {{0, 0.2f, 0.95f}, 0.5f, 0.008f}}));
-    for (float s : {-1.0f, 1.0f}) {
-        MeshBuilder b(d);
-        b.material(MAT_EYE).color(Color{218, 210, 198, 255}).ellipsoid({0.028f * s, 0.116f, -0.071f}, {0.0118f, 0.0118f, 0.0118f}, 14, 10);
-        b.material(MAT_IRIS).color(Color{62, 48, 34, 255}).ellipsoid({0.028f * s, 0.116f, -0.0815f}, {0.0068f, 0.0068f, 0.0026f}, 12, 6);
-        b.material(MAT_HAIR).color(HAIR).ellipsoid({0.031f * s, 0.139f, -0.085f}, {0.02f, 0.0045f, 0.008f}, 10, 6);
-        b.material(MAT_SKIN).color(SKIN).ellipsoid({0.083f * s, 0.103f, 0.005f}, {0.012f, 0.027f, 0.018f}, 10, 8);
-    }
-    MeshBuilder(d).material(MAT_SKIN).color(Color{150, 88, 80, 255}).ellipsoid({0, 0.067f, -0.093f}, {0.021f, 0.0065f, 0.008f}, 12, 6);
-    {   // hair: a cap down to an uneven hairline, clumped
-        const Vector3 c0{0, 0.114f, 0.006f}, r0{0.088f, 0.118f, 0.104f};
-        const int rows = 12, cols = 32;
-        Grid g(rows + 1, std::vector<Vector3>(cols));
-        for (int j = 0; j < cols; ++j) {
-            float th = 2 * PI * j / cols;   // 0 = front
-            float thr = -0.1f + 0.56f * std::cos(th) + 0.06f * std::sin(th * 3 + 0.5f) + 0.025f * std::sin(th * 11 + 1.3f);
-            float phi_max = PI / 2 - std::asin(std::clamp(thr, -0.95f, 0.95f));
-            for (int i = 0; i <= rows; ++i) {
-                float phi = phi_max * i / rows;
-                Vector3 dd{std::sin(phi) * std::sin(th), std::cos(phi), -std::sin(phi) * std::cos(th)};
-                float clump = 0.003f + 0.004f * (0.5f + 0.5f * std::sin(th * 17 + phi * 5) * std::sin(phi * 13));
-                g[i][j] = {c0.x + dd.x * (r0.x + clump), c0.y + dd.y * (r0.y + clump), c0.z + dd.z * (r0.z + clump)};
+    if (!c.load_body(repo_root() + "/engine/assets/characters/survivor.dwc")) return c;
+    c.head_c_ = {0, 0.075f, -0.02f};
+    // The skull, fitted to this scalp (tools/characters measures it): a short capsule running front
+    // to back, since a head is longer than it is wide. The locs hug it and collide with it, along
+    // with the neck, shoulders and upper back.
+    const Vector3 skA{0, 0.07f, -0.01f}, skB{0, 0.07f, 0.02f};
+    const float skR = 0.08f;
+    c.colliders_ = {{J_HEAD, J_HEAD, skA, skB, skR},
+                    {J_NECK, J_HEAD, {0, 0, 0.005f}, {0, 0, 0.01f}, 0.058f},
+                    {J_SHO_L, J_SHO_R, {0, 0.035f, 0.02f}, {0, 0.035f, 0.02f}, 0.075f},
+                    {J_CHEST, J_CHEST, {0, 0.06f, 0.07f}, {0, 0.06f, 0.07f}, 0.14f},
+                    {J_CHEST, J_CHEST, {-0.07f, 0.03f, -0.1f}, {0.07f, 0.03f, -0.1f}, 0.11f}};   // the front of the hoodie
+    auto axis_at = [&](Vector3 p) { return Vector3{0, skA.y, std::clamp(p.z, skA.z, skB.z)}; };   // nearest point on the skull's axis
+    // Medium locs, pencil-thick, swept back: every loc follows one smooth flow over the scalp
+    // (back over the crown on top, down over the ears at the sides), so neighbours run side by
+    // side instead of crossing, then falls almost straight once it leaves the skull. Two short
+    // ones fall aside over the forehead.
+    Character::Strands locs;
+    locs.joint = J_HEAD;
+    locs.n = 14;
+    locs.sides = 7;
+    locs.mat = MAT_LOCS;
+    locs.col = {40, 29, 21, 255};
+    unsigned h = 0x2545F491u;
+    auto rnd = [&h]() { h ^= h << 13; h ^= h >> 17; h ^= h << 5; return float(h & 0xFFFF) / 65535.0f; };
+    // The flow over the scalp at p: back over the crown from the hairline, turning downward only
+    // at the sides and back (never down over the forehead).
+    auto flow = [&](Vector3 p) {
+        const Vector3 radial = Vector3Normalize(Vector3Subtract(p, axis_at(p)));
+        const float down = std::clamp(1.0f - radial.y * 1.6f, 0.0f, 1.0f) * (1.0f - std::max(-radial.z, 0.0f));
+        Vector3 w = Vector3Add(Vector3Scale({0, 0, 1.0f}, 1.0f - down), Vector3Scale({0, -1.0f, 0.3f}, down));
+        w = Vector3Subtract(w, Vector3Scale(radial, Vector3DotProduct(w, radial)));   // along the skull
+        return Vector3LengthSqr(w) > 1e-8f ? Vector3Normalize(w) : Vector3{0, -1.0f, 0};
+    };
+    int forelocks = 0;
+    for (const auto& a : c.anchors_) {
+        if (a.name.rfind("loc", 0) != 0) continue;
+        const Vector3 n = Vector3Normalize(a.dir);
+        const bool front = a.pos.z < -0.05f;
+        const bool forelock = front && forelocks < 2 && a.pos.x > 0.0f && a.pos.x < 0.035f && a.pos.y > 0.11f;
+        if (front && !forelock && a.pos.z < -0.085f) continue;   // the hairline itself: covered by the cap, keeps the face clear
+        forelocks += forelock;
+        const float len = forelock ? 0.07f + 0.015f * rnd() : 0.15f + 0.05f * rnd();
+        const float seg = len / float(locs.n - 1);
+        Vector3 p = Vector3Add(a.pos, Vector3Scale(n, 0.002f));
+        const float radius = 0.0043f + 0.0013f * rnd();
+        const float R = std::max(Vector3Distance(p, axis_at(p)) + 0.002f, skR + radius);   // lie on the scalp, never in it
+        locs.anchor.push_back(p);
+        locs.rest.push_back(p);
+        Vector3 dir = forelock ? Vector3Normalize({1.0f, -0.55f, -0.3f}) : flow(p);   // +x: toward the right temple
+        for (int i = 1; i < locs.n; ++i) {
+            if (!forelock) {
+                // Hug the skull until the flow carries the loc past the skull's widest band, then
+                // bend (over a few centimetres, never a kink) into a near-vertical fall.
+                const Vector3 radial = Vector3Normalize(Vector3Subtract(p, axis_at(p)));
+                const float leave = std::clamp((0.25f - radial.y) / 0.35f, 0.0f, 1.0f);
+                const Vector3 fall = Vector3Normalize({radial.x * 0.06f, -1.0f, radial.z * 0.08f});
+                const Vector3 want = Vector3Normalize(Vector3Lerp(flow(p), fall, leave));
+                dir = Vector3Normalize(Vector3Lerp(dir, want, 0.6f));
             }
+            p = Vector3Add(p, Vector3Scale(dir, seg));
+            const Vector3 ax = axis_at(p);
+            const float r = Vector3Distance(p, ax);
+            if (r < R) p = Vector3Add(ax, Vector3Scale(Vector3Subtract(p, ax), R / std::max(r, 1e-4f)));
+            locs.rest.push_back(p);
         }
-        MeshBuilder(d).material(MAT_HAIR).color(HAIR).grid(g);
+        locs.seg.push_back(seg);
+        locs.radius.push_back(radius);
+        locs.stiff.push_back(forelock ? 0.3f : 0.2f);
     }
-    c.add_rigid(J_HEAD, R_HEAD, d);
-    for (float s : {-1.0f, 1.0f}) {
-        d = {};
-        hand(d, s, HandStyle{});
-        if (s > 0) {   // the pistol, held in the right hand
-            MeshBuilder m(d);
-            m.material(MAT_METAL).color(METAL).tube({0, -0.075f, -0.032f}, {0, -0.205f, -0.032f}, 0.015f, 0.014f, 6);
-            m.tube({0, -0.08f, -0.03f}, {0, -0.066f, 0.03f}, 0.012f, 0.012f, 6);
-        }
-        c.add_rigid(s < 0 ? J_WRI_L : J_WRI_R, s < 0 ? R_FARM_L : R_FARM_R, d);
-        d = {};
-        MeshBuilder b(d);
-        b.material(MAT_LEATHER).color(BOOT).ellipsoid({0, -0.045f, -0.045f}, {0.05f, 0.047f, 0.12f}, 16, 10);
-        b.color(Color{28, 20, 14, 255}).ellipsoid({0, -0.083f, -0.045f}, {0.053f, 0.012f, 0.123f}, 16, 6);
-        c.add_rigid(s < 0 ? J_ANK_L : J_ANK_R, s < 0 ? R_SHIN_L : R_SHIN_R, d);
-    }
+    c.add_strands(std::move(locs));
+    MeshData d;
+    m92fs(d);
+    c.add_rigid(J_WRI_R, R_FARM_R, d);
+    if (const auto* a = c.anchor("backpack")) { d = {}; backpack(d, a->pos); c.add_rigid(a->joint, R_BODY, d); }
+    if (const auto* a = c.anchor("flashlight")) { d = {}; flashlight(d, a->pos); c.add_rigid(a->joint, R_BODY, d); }
+    for (const char* name : {"drawstring-1", "drawstring1"})   // the hoodie's cords, swinging; thicker aglets at the ends
+        if (const auto* a = c.anchor(name))
+            c.add_dangle(a->joint, R_BODY, a->pos, {0, -1, -0.15f}, 8, 0.027f,
+                         Profile{{{0, 0.0034f, 0.0034f, 0}, {0.86f, 0.0032f, 0.0032f, 0}, {0.9f, 0.0042f, 0.0042f, 0}, {1, 0.0042f, 0.0042f, 0}}},
+                         MAT_COTTON, Color{196, 186, 166, 255}, 0.93f, 0.02f);
     return c;
 }
 

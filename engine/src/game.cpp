@@ -295,7 +295,10 @@ void Game::model_sheet(const std::string& dir) {
         {"side", 90, 6, 2.9f, 1.0f, 40, false},       {"back", 180, 10, 2.9f, 1.0f, 40, false},
         {"head_front", 0, 4, 0.62f, 0, 30, true},     {"head_three_quarter", 38, 8, 0.62f, 0, 30, true},
         {"head_side", 82, 4, 0.62f, 0, 30, true},     {"head_game_angle", 15, 40, 0.8f, 0, 30, true},
+        {"torso_front", 0, 5, 1.25f, 1.2f, 40, false}, {"torso_three_quarter", 38, 8, 1.25f, 1.2f, 40, false},
+        {"torso_back", 180, 8, 1.25f, 1.2f, 40, false}, {"legs_and_hands", 25, 12, 1.4f, 0.55f, 40, false},
     };
+    constexpr int kViews = int(sizeof(views) / sizeof(views[0])), kRows = kViews / 4;
     struct Subject { const char* name; Kind kind; int variant; Pose pose; };
     static const Subject subjects[] = {{"drowned", Kind::Drowned, 0, Pose::Idle}, {"drowned_windup", Kind::Drowned, 0, Pose::Windup},
                                        {"drowned_b", Kind::Drowned, 1, Pose::Shamble}, {"survivor", Kind::Survivor, 0, Pose::Idle}};
@@ -304,8 +307,8 @@ void Game::model_sheet(const std::string& dir) {
         Character c = Character::make(sub.kind, sub.variant);
         c.place({0, 0, 0}, 0);
         for (int f = 0; f < 150; ++f) c.animate(sub.pose, sub.pose == Pose::Shamble ? 0.7f : 0.0f, 1.0f / 60);
-        Image sheet = GenImageColor(4 * 400, 2 * 560, Color{10, 10, 12, 255});
-        for (int v = 0; v < 8; ++v) {
+        Image sheet = GenImageColor(4 * 400, kRows * 560, Color{10, 10, 12, 255});
+        for (int v = 0; v < kViews; ++v) {
             const View& w = views[v];
             // Bodies orbit the feet; heads orbit the skull, starting from wherever the face points.
             Vector3 at{0, w.target_y, 0};
@@ -346,6 +349,40 @@ void Game::model_sheet(const std::string& dir) {
         TraceLog(LOG_INFO, "sheet %s", sub.name);
     }
     upload_lights();
+}
+
+bool Game::studio_view(const std::string& spec, const std::string& png) {
+    char who[32] = {};
+    float orbit = 0, elev = 0, dist = 1, tx = 0, ty = 1, fovy = 30;
+    if (std::sscanf(spec.c_str(), "%31[^,],%f,%f,%f,%f,%f,%f", who, &orbit, &elev, &dist, &tx, &ty, &fovy) != 7) return false;
+    const std::string w = who;
+    upload_studio_lights();
+    Character c = Character::make(w == "survivor" ? Kind::Survivor : Kind::Drowned, 0);
+    c.place({0, 0, 0}, 0);
+    for (int f = 0; f < 150; ++f) c.animate(Pose::Idle, 0.0f, 1.0f / 60);
+    const float a = orbit * DEG2RAD, e = elev * DEG2RAD;
+    Camera3D cam{};
+    cam.position = {tx + dist * std::sin(a) * std::cos(e), ty + dist * std::sin(e), -dist * std::cos(a) * std::cos(e)};
+    cam.target = {tx, ty, 0};
+    cam.up = {0, 1, 0};
+    cam.fovy = fovy;
+    cam.projection = CAMERA_PERSPECTIVE;
+    BeginTextureMode(rt_);
+    ClearBackground(Color{16, 16, 19, 255});
+    BeginMode3D(cam);
+    SetShaderValue(char_, l_cam_, &cam.position, SHADER_UNIFORM_VEC3);
+    rlDisableBackfaceCulling();
+    c.draw(char_mat_);
+    rlEnableBackfaceCulling();
+    EndMode3D();
+    EndTextureMode();
+    Image img = LoadImageFromTexture(rt_.texture);
+    ImageFlipVertical(&img);
+    const bool ok = ExportImage(img, png.c_str());
+    UnloadImage(img);
+    c.unload();
+    upload_lights();
+    return ok;
 }
 
 void Game::render() {

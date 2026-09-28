@@ -26,6 +26,9 @@ public:
     std::string stage(int i);       // pose a capture setup; returns its name
     // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
     void model_sheet(const std::string& dir);
+    // One full-resolution studio shot, for close inspection. spec = "who,orbit_deg,elev_deg,dist,target_x,target_y,fovy"
+    // (who: survivor | drowned); the camera orbits the point (target_x, target_y, 0).
+    bool studio_view(const std::string& spec, const std::string& png);
     bool debug = false;
 
 private:

@@ -36,7 +36,16 @@ enum Mat : int {
     MAT_DERMIS = 24,     // raw pink skin where the outer layer slipped off
     MAT_STEEL = 25,      // brushed stainless steel
     MAT_GRIP = 26,       // checkered black polymer grips
-    MAT_WAX = 27         // waxed cotton jacket
+    MAT_WAX = 27,        // waxed cotton jacket
+    MAT_KNIT = 28,       // chunky cable knit
+    MAT_LIPS = 29,       // moist lips
+    MAT_BROW = 30,       // eyebrows
+    MAT_RUBBER = 31,     // soles
+    MAT_NYLON = 32,      // rain jacket, backpack
+    MAT_COTTON = 33,     // t-shirts, shirts
+    MAT_PRINT = 34,      // printed dress fabric
+    MAT_LOCS = 35,       // locs: twisted, matted hair
+    MAT_LAMP = 36        // a lit lens: glows, ignores the room's light
 };
 
 struct MeshData {
@@ -68,6 +77,8 @@ public:
               const PaintGrid* paint = nullptr);
     void ellipsoid(Vector3 c, Vector3 r, int segs = 20, int rings = 12, const Bump& bump = {}, const Painter& paint = {});
     void tube(Vector3 a, Vector3 b, float r0, float r1, int sides = 8);
+    // Rounded box (a superellipsoid): k = 1 is an ellipsoid, smaller k is boxier with rounded edges.
+    void box(Vector3 c, Vector3 half, float k = 0.3f, int segs = 20, int rings = 12);
     // Tube through points; flatten < 1 squashes the cross-section (tongues, ribbons).
     void chain(const std::vector<Vector3>& pts, const std::vector<float>& radii, int sides = 8, float flatten = 1.0f);
     // Hanging cloth (coat skirts, sleeves): rings go DOWN from `top`. length(theta) makes the
