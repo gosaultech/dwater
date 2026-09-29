@@ -2,6 +2,7 @@
 // Purpose: combat as pure rules, with no rendering, input or sound, ported from the Godot demo
 // (WeaponDB, Firearm, ItemDB, Inventory, EnemyBrain.take_hit) and extended with RE2-Remake-style
 // dismemberment: a Drowned comes apart region by region (anatomy.hpp).
+// Health is one scale for everybody: the survivor has 100, a Drowned 60, a 9 mm round does 10.
 // Everything here is header-only and allocation-free, so it's unit-tested without a window
 // (tests/test_combat.cpp) and costs nothing per frame.
 // Think of it as the rulebook of a board game: the game loop moves the pieces and draws them,
@@ -18,27 +19,39 @@
 namespace dw {
 
 // ── Items: what fits in the case, and how much of it stacks ────────────────────
-enum Item : int { I_NONE, I_HANDGUN, I_HANDGUN_AMMO, I_SHOTGUN, I_SHELLS, I_FIRST_AID, I_CELLAR_KEY, I_COUNT };
+enum Item : int { I_NONE, I_HANDGUN, I_HANDGUN_AMMO, I_SHOTGUN, I_SHELLS, I_MED_S, I_MED_M, I_MED_L, I_CELLAR_KEY, I_COUNT };
 struct ItemSpec {
     const char* key;    // the id the room data uses ("shotgun_shells")
     const char* name;   // what the status screen shows
     int max_stack;
-    int heal;           // health restored when used (0: not a medicine)
+    int heal;           // health restored when used (0: not a medicine; 100 = back to full)
     const char* desc;
 };
 inline const ItemSpec& item_spec(int i) {
     static const ItemSpec T[I_COUNT] = {
         {"", "", 0, 0, ""},
         {"handgun", "M92FS", 1, 0,
-         "A Beretta M92FS in stainless steel. Police issue: you took it from an officer on the Herengracht. She won't need it."},
+         "A Beretta M92FS Inox, stainless steel. Police issue: you took it from an officer on the Herengracht. She won't need it."},
         {"handgun_ammo", "9mm Rounds", 60, 0, "Pistol ammunition. Make every one count."},
-        {"shotgun", "Jachtgeweer", 1, 0, "A double-barrelled hunting shotgun. Pieter's, from before. Two shells, then pray."},
-        {"shotgun_shells", "Shotgun Shells", 30, 0, "12-gauge shells. At close range they put anything down."},
-        {"first_aid", "EHBO Kit", 1, 60, "A Dutch first aid kit. Bandages, antiseptic, a foil blanket. Restores a lot of health."},
+        {"shotgun", "Remington 870", 1, 0,
+         "A Remington 870 Express Tactical: pump action, black synthetic, six in the tube and one in the chamber. "
+         "From the rack of a police van nose-down in the Prinsengracht."},
+        {"shotgun_shells", "Shotgun Shells", 30, 0, "12-gauge buckshot. At close range it puts anything down."},
+        // Med kits: one to a slot, used from the case (time stands still). Nothing else heals.
+        {"med_small", "Field Dressing", 1, 30, "A pressure bandage in a paper wrapper. Stops the worst of it. Restores some health."},
+        {"first_aid", "EHBO Kit", 1, 60, "A Dutch first aid kit: bandages, antiseptic, a foil blanket. Restores a lot of health."},
+        {"med_large", "EHBO Case", 1, 100,
+         "The big green case off a pharmacy wall: splints, sutures, painkillers. Restores all of your health."},
         {"cellar_key", "Cellar Key", 1, 0, "A heavy iron key, green with verdigris. The paper tag reads 'KELDER'."},
     };
     return T[(i > I_NONE && i < I_COUNT) ? i : I_NONE];
 }
+
+// ── Health ───────────────────────────────────────────────────────────────────────
+// The survivor's tank holds 100. It never refills by itself: only med kits heal (S 30, M 60, L all).
+constexpr float MAX_HEALTH = 100.0f;
+inline bool is_medicine(int item) { return item_spec(item).heal > 0; }
+inline float healed(float hp, int item) { return std::min(MAX_HEALTH, hp + float(item_spec(item).heal)); }
 inline int item_by_key(const char* key) {   // the room data names items by key
     for (int i = I_NONE + 1; i < I_COUNT; ++i) {
         const char *a = item_spec(i).key, *b = key;
@@ -95,12 +108,15 @@ struct WeaponSpec {
     int stagger_power;           // 2 staggers through a Drowned's stagger immunity
     int knockdown_hits;          // this many pellets in one blast floor it (0: never)
     float noise;                 // how far away a Drowned hears it (m)
+    bool single_load;            // a tube: shells go in one at a time (reload_time each) and firing stops the loading
+    float rack_time;             // an empty pump gun: the first shell also has to be racked into the chamber
 };
 inline const WeaponSpec& weapon_spec(Weapon w) {
-    // The balance table. The M92FS holds 15 like the real one; the Jachtgeweer is a double barrel.
+    // The balance table. The M92FS holds 15 like the real one. The Remington 870 Express Tactical
+    // holds 6 in its extended tube and 1 in the chamber; fire_interval includes pumping the next one in.
     static const WeaponSpec T[int(Weapon::Count)] = {
-        {"M92FS", I_HANDGUN, I_HANDGUN_AMMO, 15, 0.42f, 1.4f, 1.0f, 1, 0.0f, 25.0f, 0.12f, 4.0f, 1, 0, 16.0f},
-        {"Jachtgeweer", I_SHOTGUN, I_SHELLS, 2, 0.75f, 2.1f, 0.8f, 8, 6.5f, 12.0f, 0.0f, 1.0f, 2, 5, 22.0f},
+        {"M92FS", I_HANDGUN, I_HANDGUN_AMMO, 15, 0.42f, 1.4f, 10.0f, 1, 0.0f, 25.0f, 0.12f, 4.0f, 1, 0, 16.0f, false, 0.0f},
+        {"Remington 870", I_SHOTGUN, I_SHELLS, 7, 0.8f, 0.5f, 8.0f, 8, 6.5f, 12.0f, 0.0f, 1.0f, 2, 5, 22.0f, true, 0.4f},
     };
     return T[std::clamp(int(w), 0, int(Weapon::Count) - 1)];
 }
@@ -113,27 +129,52 @@ inline float falloff(Weapon w, float dist) {
     return dist <= 4.0f ? 1.0f : dist <= 8.0f ? 0.5f : 0.25f;
 }
 
-// One gun: magazine, rate of fire, reloading. Reserve ammo lives in the Inventory.
+// One gun: magazine (or tube), rate of fire, reloading. Reserve ammo lives in the Inventory.
+// A pistol reloads a whole magazine at once; a pump gun takes its shells one at a time, and you
+// can stop to fire (like a tube you top up between Drowned).
 struct Firearm {
     Weapon id = Weapon::Pistol;
     int mag = 0;
     float cooldown = 0, reloading = 0;
+    int to_load = 0;             // a tube gun: shells still to go in
     const WeaponSpec& spec() const { return weapon_spec(id); }
-    void tick(float dt) { cooldown = std::max(0.0f, cooldown - dt); reloading = std::max(0.0f, reloading - dt); }
+    // Time passes. Returns how many rounds went into the gun just now: a tube gun hands its shells
+    // over one by one, and the caller takes each out of the case.
+    int tick(float dt) {
+        cooldown = std::max(0.0f, cooldown - dt);
+        if (reloading <= 0) return 0;
+        reloading -= dt;
+        if (reloading > 0) return 0;
+        reloading = 0;
+        if (!spec().single_load || to_load <= 0) return 0;
+        ++mag;
+        if (--to_load > 0) reloading = spec().reload_time;   // the next shell
+        return 1;
+    }
     bool is_reloading() const { return reloading > 0; }
-    bool can_fire() const { return mag > 0 && cooldown <= 0 && !is_reloading(); }
+    bool can_fire() const { return mag > 0 && cooldown <= 0 && (!is_reloading() || spec().single_load); }
     bool fire() {
         if (!can_fire()) return false;
+        stop_loading();   // a tube gun fires straight out of a reload
         --mag;
         cooldown = spec().fire_interval;
         return true;
     }
-    int reload(int available) {   // takes rounds from `available`; returns how many went in
-        const int taken = std::min(spec().mag - mag, available);
-        if (taken <= 0 || is_reloading()) return 0;
-        mag += taken;
+    void stop_loading() { if (spec().single_load) { reloading = 0; to_load = 0; } }
+    // Start reloading from `available` rounds. A magazine goes in at once: returns how many it took.
+    // A tube only starts (returns 0): the shells follow through tick(). Into an empty pump gun the
+    // first shell takes a rack as well.
+    int reload(int available) {
+        const int want = std::min(spec().mag - mag, available);
+        if (want <= 0 || is_reloading()) return 0;
+        if (spec().single_load) {
+            to_load = want;
+            reloading = spec().reload_time + (mag == 0 ? spec().rack_time : 0.0f);
+            return 0;
+        }
+        mag += want;
         reloading = spec().reload_time;
-        return taken;
+        return want;
     }
     // One bullet's (or pellet's) damage. roll: 0..1, injected so tests are deterministic; crit is
     // set when it was a critical hit (only possible on the head).
@@ -150,7 +191,9 @@ struct Firearm {
 // The Drowned's life (EnemyBrain::hp) takes a share of every hit: limbs soak damage, the head
 // doesn't. Crits on the head burst it outright.
 struct BodyDamage {
-    static constexpr float LIMIT[R_COUNT] = {1e9f, 4.5f, 1.2f, 3.2f, 2.2f, 3.2f, 2.2f, 3.8f, 2.6f, 3.8f, 2.6f};
+    // How much each part takes before it comes off: a jaw two 9 mm rounds, a forearm or a shin
+    // three, an upper arm or a thigh four; a head only bursts (a crit, or a face full of buckshot).
+    static constexpr float LIMIT[R_COUNT] = {1e9f, 45.0f, 12.0f, 32.0f, 22.0f, 32.0f, 22.0f, 38.0f, 26.0f, 38.0f, 26.0f};
     static constexpr float LIFE[R_COUNT] = {1.0f, 1.5f, 1.2f, 0.6f, 0.5f, 0.6f, 0.5f, 0.6f, 0.5f, 0.6f, 0.5f};
     float hurt[R_COUNT]{};
     bool off[R_COUNT]{};
@@ -186,7 +229,7 @@ inline float limp_speed(Condition c) { return c == Condition::Danger ? 0.7f : c 
 // ── Player verbs: timings (seconds) and reach (metres), from the Godot demo ─────
 namespace verbs {
 constexpr float DODGE_TIME = 0.42f, DODGE_IFRAMES = 0.3f, DODGE_SPEED = 6.2f, DODGE_COOLDOWN = 0.35f;
-constexpr float KICK_TIME = 0.5f, KICK_AT = 0.18f, KICK_RANGE = 1.8f, KICK_DAMAGE = 2.0f;
+constexpr float KICK_TIME = 0.5f, KICK_AT = 0.18f, KICK_RANGE = 1.8f, KICK_DAMAGE = 20.0f;
 constexpr float HURT_TIME = 0.45f, HURT_INVULN = 0.9f;
 constexpr float AIM_RANGE = 14.0f, AIM_CONE_DEG = 100.0f, AIM_TURN = 110.0f * kPi / 180.0f;
 constexpr float QUICK_TURN_TIME = 0.3f;

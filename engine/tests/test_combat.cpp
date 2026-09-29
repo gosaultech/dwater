@@ -1,7 +1,8 @@
 // damned_waters/engine/tests/test_combat.cpp
 // Purpose: GoogleTest suite for the combat rules (combat.hpp) and the enemy brain (core.hpp).
 // Ported from the Godot demo's unit tests (test_firearm, test_inventory, test_enemy_brain), plus
-// the parts that are new here: dismemberment, shot rays, auto-aim, the hall encounter.
+// the parts that are new here: the pump gun's tube, med kits, dismemberment, shot rays, auto-aim,
+// the hall encounter. Health is on one scale: the survivor 100, a Drowned 60, a 9 mm round 10.
 #include <gtest/gtest.h>
 #include <cmath>
 
@@ -42,24 +43,81 @@ TEST(Firearm, TheM92FSHoldsFifteenAndCritsOnlyOnTheHead) {
     Firearm g{Weapon::Pistol, 15};
     EXPECT_EQ(g.spec().mag, 15);
     bool crit = false;
-    EXPECT_FLOAT_EQ(g.damage_for(true, 0.0f, 3.0f, &crit), 4.0f);
+    EXPECT_FLOAT_EQ(g.damage_for(true, 0.0f, 3.0f, &crit), 40.0f);
     EXPECT_TRUE(crit);
-    EXPECT_FLOAT_EQ(g.damage_for(true, 0.99f, 3.0f, &crit), 1.0f);
+    EXPECT_FLOAT_EQ(g.damage_for(true, 0.99f, 3.0f, &crit), 10.0f);
     EXPECT_FALSE(crit);
-    EXPECT_FLOAT_EQ(g.damage_for(false, 0.0f, 3.0f), 1.0f);
+    EXPECT_FLOAT_EQ(g.damage_for(false, 0.0f, 3.0f), 10.0f);
 }
 
-TEST(Firearm, TheShotgunIsTwoShellsAndFallsOff) {
+TEST(Firearm, ACritToTheHeadKillsADrownedOutright) {
+    const Firearm g{Weapon::Pistol, 15};
+    EXPECT_GE(g.damage_for(true, 0.0f, 3.0f) * BodyDamage::LIFE[R_HEAD], EnemyBrain{}.hp);
+}
+
+TEST(Firearm, The870HoldsSixPlusOneAndItsPelletsFallOff) {
     Firearm g{Weapon::Shotgun, weapon_spec(Weapon::Shotgun).mag};
-    EXPECT_EQ(g.mag, 2);
-    EXPECT_FLOAT_EQ(g.damage_for(false, 0.5f, 2.0f), 0.8f);
-    EXPECT_FLOAT_EQ(g.damage_for(false, 0.5f, 6.0f), 0.4f);
+    EXPECT_EQ(g.mag, 7);
+    EXPECT_FLOAT_EQ(g.damage_for(false, 0.5f, 2.0f), 8.0f);
+    EXPECT_FLOAT_EQ(g.damage_for(false, 0.5f, 6.0f), 4.0f);
     EXPECT_FLOAT_EQ(g.damage_for(false, 0.5f, 20.0f), 0.0f);
 }
 
 TEST(Firearm, OnePointBlankBlastDropsADrowned) {
-    const Firearm g{Weapon::Shotgun, 2};
+    const Firearm g{Weapon::Shotgun, 7};
     EXPECT_GE(float(g.spec().pellets) * g.damage_for(false, 0.5f, 1.5f), EnemyBrain{}.hp);
+}
+
+TEST(Firearm, The870LoadsOneShellAtATimeAndRacksTheFirstIntoAnEmptyGun) {
+    Firearm g{Weapon::Shotgun, 0};
+    const WeaponSpec& s = g.spec();
+    EXPECT_EQ(g.reload(3), 0);                             // nothing yet: the shells follow one by one
+    EXPECT_TRUE(g.is_reloading());
+    EXPECT_EQ(g.tick(s.reload_time), 0);                   // the first one also needs a pump
+    EXPECT_EQ(g.tick(s.rack_time), 1);
+    EXPECT_EQ(g.mag, 1);
+    EXPECT_EQ(g.tick(s.reload_time), 1);
+    EXPECT_EQ(g.tick(s.reload_time), 1);
+    EXPECT_EQ(g.mag, 3);
+    EXPECT_FALSE(g.is_reloading());
+    EXPECT_EQ(g.tick(s.reload_time), 0);                   // asked for three, got three
+}
+
+TEST(Firearm, FiringStopsThe870sReloadButNotAPistols) {
+    Firearm g{Weapon::Shotgun, 2};
+    g.reload(5);
+    g.tick(g.spec().reload_time);                          // one shell in
+    EXPECT_EQ(g.mag, 3);
+    EXPECT_TRUE(g.fire());                                 // straight out of the reload
+    EXPECT_EQ(g.mag, 2);
+    EXPECT_FALSE(g.is_reloading());
+    EXPECT_EQ(g.to_load, 0);
+    Firearm p{Weapon::Pistol, 3};
+    p.reload(10);
+    EXPECT_FALSE(p.fire());                                // a magazine change can't be cut short
+}
+
+// ── Health ───────────────────────────────────────────────────────────────────────
+TEST(Health, KitsHealThirtySixtyAndEverythingAndNothingElseHeals) {
+    EXPECT_FLOAT_EQ(healed(40, I_MED_S), 70);
+    EXPECT_FLOAT_EQ(healed(30, I_MED_M), 90);
+    EXPECT_FLOAT_EQ(healed(70, I_MED_M), MAX_HEALTH);      // capped at full
+    EXPECT_FLOAT_EQ(healed(5, I_MED_L), MAX_HEALTH);
+    EXPECT_FLOAT_EQ(healed(40, I_SHELLS), 40);             // ammo isn't medicine
+    EXPECT_TRUE(is_medicine(I_MED_S));
+    EXPECT_FALSE(is_medicine(I_HANDGUN));
+    EXPECT_EQ(item_by_key("first_aid"), I_MED_M);          // the room data's EHBO kit
+    EXPECT_EQ(item_spec(I_MED_L).max_stack, 1);            // one kit to a slot
+}
+
+TEST(Health, FiveBitesKillFromFull) {
+    float hp = MAX_HEALTH;
+    int bites = 0;
+    while (hp > 0) { hp -= 20; ++bites; }
+    EXPECT_EQ(bites, 5);
+    EXPECT_EQ(condition(MAX_HEALTH - 20), Condition::Fine);
+    EXPECT_EQ(condition(MAX_HEALTH - 40), Condition::Caution);   // the second bite starts the limp
+    EXPECT_EQ(condition(MAX_HEALTH - 80), Condition::Danger);
 }
 
 // ── The case ─────────────────────────────────────────────────────────────────────
@@ -73,9 +131,9 @@ TEST(Inventory, AmmoStacksToItsCapThenSpills) {
 
 TEST(Inventory, AFullCaseReportsWhatDidNotFit) {
     Inventory inv;
-    for (int i = 0; i < 8; ++i) inv.add(I_FIRST_AID, 1);
+    for (int i = 0; i < 8; ++i) inv.add(I_MED_M, 1);
     EXPECT_EQ(inv.add(I_CELLAR_KEY, 1), 1);
-    EXPECT_EQ(inv.remove(I_FIRST_AID, 1), 1);
+    EXPECT_EQ(inv.remove(I_MED_M, 1), 1);
     EXPECT_EQ(inv.add(I_CELLAR_KEY, 1), 0);
 }
 
@@ -94,18 +152,24 @@ TEST(EnemyBrain, EveryWindupIsReadable) {
     EXPECT_GE(EnemyBrain{}.windup, 0.5f);                 // the design bible's hard floor
 }
 
+TEST(EnemyBrain, SixBodyShotsKillADrowned) {
+    EnemyBrain b;
+    for (int i = 0; i < 5; ++i) EXPECT_NE(b.take_hit(10.0f), EHit::Died);
+    EXPECT_EQ(b.take_hit(10.0f), EHit::Died);
+}
+
 TEST(EnemyBrain, StaggerImmunityButHeavyHitsAlwaysStagger) {
     EnemyBrain b;
-    EXPECT_EQ(b.take_hit(1.0f), EHit::Staggered);
-    EXPECT_EQ(b.take_hit(1.0f), EHit::Hurt);              // inside the immunity window
-    EXPECT_EQ(b.take_hit(1.0f, 2), EHit::Staggered);      // shotgun and kick go through it
+    EXPECT_EQ(b.take_hit(10.0f), EHit::Staggered);
+    EXPECT_EQ(b.take_hit(10.0f), EHit::Hurt);             // inside the immunity window
+    EXPECT_EQ(b.take_hit(10.0f, 2), EHit::Staggered);     // shotgun and kick go through it
 }
 
 TEST(EnemyBrain, AStaggeredDrownedIsKickableAndAKickFloorsIt) {
     EnemyBrain b;
-    b.take_hit(1.0f);
+    b.take_hit(10.0f);
     EXPECT_TRUE(b.kickable());
-    EXPECT_EQ(b.take_hit(2.0f, 2, true), EHit::Floored);
+    EXPECT_EQ(b.take_hit(verbs::KICK_DAMAGE, 2, true), EHit::Floored);
     EXPECT_FALSE(b.kickable());
     EXPECT_EQ(run(b, b.floor_time + 0.05f, true, 3.0f, EEvent::GotUp), 1);
 }
@@ -133,42 +197,42 @@ TEST(EnemyBrain, StrikesOnceAfterTheTellThenRecovers) {
 TEST(BodyDamage, AnArmComesOffAtTheShoulderWithItsForearm) {
     BodyDamage d;
     int off = -1;
-    for (int i = 0; i < 3; ++i) EXPECT_EQ(d.hit(R_UARM_L, 1.0f), -1);   // three bullets hold
-    off = d.hit(R_UARM_L, 1.0f);
+    for (int i = 0; i < 3; ++i) EXPECT_EQ(d.hit(R_UARM_L, 10.0f), -1);  // three rounds hold
+    off = d.hit(R_UARM_L, 10.0f);
     EXPECT_EQ(off, R_UARM_L);
     EXPECT_TRUE(d.off[R_FARM_L]);                         // the forearm hangs from it
     EXPECT_FALSE(d.off[R_FARM_R]);
     EXPECT_EQ(d.hands(), 1);
-    EXPECT_EQ(d.hit(R_FARM_L, 5.0f), -1);                 // nothing left there to hit
+    EXPECT_EQ(d.hit(R_FARM_L, 50.0f), -1);                // nothing left there to hit
 }
 
 TEST(BodyDamage, AForearmComesOffAtTheElbow) {
     BodyDamage d;
-    d.hit(R_FARM_R, 1.0f);
-    d.hit(R_FARM_R, 1.0f);
-    EXPECT_EQ(d.hit(R_FARM_R, 1.0f), R_FARM_R);
+    d.hit(R_FARM_R, 10.0f);
+    d.hit(R_FARM_R, 10.0f);
+    EXPECT_EQ(d.hit(R_FARM_R, 10.0f), R_FARM_R);
     EXPECT_FALSE(d.off[R_UARM_R]);
 }
 
 TEST(BodyDamage, LosingALegMakesItACrawler) {
     BodyDamage d;
     EXPECT_FALSE(d.lost_leg());
-    d.hit(R_SHIN_L, 3.0f);
+    d.hit(R_SHIN_L, 30.0f);
     EXPECT_TRUE(d.lost_leg());
     EXPECT_FALSE(d.off[R_THIGH_L]);
 }
 
 TEST(BodyDamage, ACritBurstsTheHeadAndTheJawCanBeShotAway) {
     BodyDamage a;
-    EXPECT_EQ(a.hit(R_HEAD, 4.0f, true), R_HEAD);
+    EXPECT_EQ(a.hit(R_HEAD, 40.0f, true), R_HEAD);
     EXPECT_TRUE(a.head_gone());
     EXPECT_TRUE(a.off[R_JAW]);                            // the jaw hangs from the head
     BodyDamage b;
-    EXPECT_EQ(b.hit(R_JAW, 1.0f), -1);
-    EXPECT_EQ(b.hit(R_JAW, 1.0f), R_JAW);
+    EXPECT_EQ(b.hit(R_JAW, 10.0f), -1);
+    EXPECT_EQ(b.hit(R_JAW, 10.0f), R_JAW);
     EXPECT_FALSE(b.head_gone());
     BodyDamage c;
-    EXPECT_EQ(c.hit(R_BODY, 100.0f), -1);                 // the torso never comes off
+    EXPECT_EQ(c.hit(R_BODY, 1000.0f), -1);                // the torso never comes off
 }
 
 TEST(BodyDamage, LimbsSoakDamageAndTheHeadDoesNot) {

@@ -99,6 +99,8 @@ private:
     void fire();
     void reload();
     void switch_gun(int g);
+    void load_shell(bool first_into_empty);      // the 870: one shell went into the tube
+    void work_actions(float dt);                 // the 870's pump and the M92FS's slide, and the brass they throw
     bool common_actions(float ix, float iy);     // dodge, reload, weapon keys: true if one took over this frame
     void start_dodge(float ix, float iy);
     int kickable() const;
@@ -136,12 +138,15 @@ private:
     PMode pmode_ = PMode::Normal;
     float pmode_t_ = 0, invuln_ = 0, dodge_cd_ = 0, aim_pitch_ = 0, manual_pitch_ = 0, aim_snap_ = 0, dead_t_ = 0;
     Vector3 dodge_dir_{}, knock_{};              // the dodge's direction; being knocked back (m/s)
-    int aim_target_ = -1, kick_target_ = -1, gun_ = 0, spent_shells_ = 0;
+    int aim_target_ = -1, kick_target_ = -1, gun_ = 0;
     int aim_leg_ = -1;                           // aiming low: which leg (0 left, 1 right; -1 not chosen yet)
     bool kick_done_ = false;
     Firearm guns_[2];
     Inventory inv_;
-    float step_accum_ = 0, reload_shells_t_ = -1;
+    float step_accum_ = 0;
+    float pump_t_ = -1;                          // the 870: time since the pump began (-1: at rest)
+    bool pump_eject_ = false;                    // ... and whether it throws out a spent hull (not when racking a fresh load)
+    float slide_t_ = -1;                         // the M92FS: time since the slide last cycled (-1: at rest)
     unsigned rng_ = 0x9E3779B9u;
     Stats stats_;
     bool staged_aim_ = false;                    // capture setups hold the aim and the stick from code

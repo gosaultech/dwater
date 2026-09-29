@@ -3,7 +3,10 @@
 # doors, the Drowned, ambience beds) into game/assets/audio/*.wav, plus Godot
 # .import files (PCM = zero decode cost; ambience flagged to loop).
 # Replace any file with a real recording of the same name and nothing else changes.
-#   python3 tools/audio/synth_sfx.py        (needs numpy + scipy)
+#   python3 tools/audio/synth_sfx.py                     (needs numpy + scipy)
+#   python3 tools/audio/synth_sfx.py --only a,b          (write just those; the rest stay untouched)
+# New sounds go at the END of build(): they draw from the shared random generator after all the
+# older ones, so adding one never changes a sound that already exists.
 from __future__ import annotations
 
 import wave
@@ -173,6 +176,18 @@ def build() -> dict[str, tuple[np.ndarray, bool]]:
     strings = sum(bp(signal.sawtooth(2 * np.pi * f * tt3), 150, 1800) * a for f, a in ((73.4, 0.25), (77.8, 0.2), (110.0, 0.12), (116.5, 0.1)))
     stabs = at(L + 1.5, [(b * 60 / 96 * 4, bp(noise(0.4), 400, 3000) * env(round(0.4 * SR), 0.001, 0.08) * 0.4) for b in range(int((L + 1.5) * 96 / 60 / 4))])
     s["boss_theme"] = (loopable(thump + strings * (0.7 + 0.3 * np.sin(2 * np.pi * 0.1 * tt3)) + stabs), True)
+    # ── the Remington 870 and the med kits ──
+    # The pump: steel sliding on steel, a clack as the fore-end hits the back, then again going home.
+    rail = bp(noise(0.09), 900, 4000) * env(round(0.09 * SR), 0.004, 0.03)
+    clack = at(0.03, [(0.0, hp(noise(0.02), 1800) * env(882, 0.0004, 0.005) * 1.6),
+                      (0.0, np.sin(2 * np.pi * 420 * t(0.03)) * env(1323, 0.0005, 0.008) * 0.6)])
+    s["shotgun_pump"] = (tail(at(0.4, [(0.0, rail), (0.085, clack), (0.17, rail * 0.8), (0.24, clack * 1.3)]), 0.4, 0.12, 300, 5000, 0.25), False)
+    # A shell pushed up into the tube: the hull's scrape, the follower's click.
+    s["shell_insert"] = (at(0.2, [(0.0, bp(noise(0.03), 600, 2500) * env(1323, 0.001, 0.012)), (0.05, click * 0.9),
+                                  (0.075, bp(noise(0.02), 1500, 5000) * env(882, 0.0005, 0.004) * 0.6)]), False)
+    # A med kit: a wrapper torn open and a bandage pulled tight.
+    rustle = bp(noise(0.9), 1500, 7000) * (0.5 + 0.5 * np.abs(np.sin(2 * np.pi * 9 * t(0.9)))) * env(round(0.9 * SR), 0.05, 0.4)
+    s["med_use"] = (at(1.0, [(0.0, rustle * 0.6), (0.55, bp(noise(0.25), 2000, 8000) * env(round(0.25 * SR), 0.01, 0.06) * 0.8)]), False)
     return s
 
 
@@ -212,10 +227,14 @@ def write_wav(path: Path, x: np.ndarray, peak_db: float = -1.0) -> None:
 
 
 def main():
+    import sys
+    only = set(sys.argv[sys.argv.index("--only") + 1].split(",")) if "--only" in sys.argv else None
     OUT.mkdir(parents=True, exist_ok=True)
     levels = {"boss_theme": -9.0, "crawler_skitter": -10.0, "dodge": -8.0, "amb_house": -14.0, "amb_cellar": -12.0, "title_drone": -10.0, "step_marble": -8.0,
-              "step_wood": -6.0, "step_water": -8.0, "ui_move": -12.0}
+              "step_wood": -6.0, "step_water": -8.0, "ui_move": -12.0, "shell_insert": -6.0, "med_use": -6.0}
     for name, (x, loop) in build().items():
+        if only is not None and name not in only:
+            continue
         write_wav(OUT / f"{name}.wav", x, levels.get(name, -1.0))
         (OUT / f"{name}.wav.import").write_text(IMPORT.format(name=name, loop=2 if loop else 0))
         print(f"[sfx] {name:14s} {len(x) / SR:5.2f}s {'loop' if loop else ''}")

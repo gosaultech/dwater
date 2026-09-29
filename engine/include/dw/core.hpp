@@ -95,7 +95,7 @@ enum class EEvent { None, Alerted, Pursue, Windup, Strike, Calmed, GotUp };
 enum class EHit { Ignored, Hurt, Staggered, Floored, Died };
 
 struct EnemyBrain {
-    float hp = 6, alert_time = 0.7f, attack_range = 1.25f, windup = 0.85f, strike_window = 0.25f;
+    float hp = 60, alert_time = 0.7f, attack_range = 1.25f, windup = 0.85f, strike_window = 0.25f;
     float recovery = 1.1f, retreat_time = 0.0f, stagger_time = 0.4f, stagger_immunity = 1.2f, floor_time = 2.4f;
     float give_up = 6.0f;
     EState state = EState::Idle;

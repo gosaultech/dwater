@@ -86,7 +86,7 @@ void Game::reset_fight() {
     inv_.add(I_HANDGUN_AMMO, 30);
     inv_.add(I_SHELLS, 4);
     guns_[0] = {Weapon::Pistol, weapon_spec(Weapon::Pistol).mag};
-    guns_[1] = {Weapon::Shotgun, weapon_spec(Weapon::Shotgun).mag};
+    guns_[1] = {Weapon::Shotgun, weapon_spec(Weapon::Shotgun).mag};   // 6 in the tube, 1 in the chamber
     gun_ = 0;
     hero_.set_weapon(0);
     hero_.limp = 0;
@@ -96,8 +96,8 @@ void Game::reset_fight() {
     invuln_ = dodge_cd_ = aim_pitch_ = manual_pitch_ = aim_snap_ = dead_t_ = step_accum_ = 0;
     dodge_dir_ = knock_ = {};
     aim_target_ = kick_target_ = -1;
-    spent_shells_ = 0;
-    reload_shells_t_ = -1;
+    pump_t_ = slide_t_ = -1;
+    hero_.pump = hero_.slide = 0;
     holding_ = false;
 }
 
@@ -138,7 +138,10 @@ float Game::wall_hit(Vector3 o, Vector3 d, float range) const {
 // ── The survivor ───────────────────────────────────────────────────────────────
 
 void Game::update_player(float dt) {
-    for (auto& g : guns_) g.tick(dt);
+    for (int k = 0; k < 2; ++k) {   // the 870 takes its shells one at a time, out of the case
+        const bool was_empty = guns_[k].mag == 0;
+        for (int in = guns_[k].tick(dt); in > 0; --in) load_shell(was_empty && guns_[k].mag == 1);
+    }
     invuln_ = std::max(0.0f, invuln_ - dt);
     dodge_cd_ = std::max(0.0f, dodge_cd_ - dt);
     pmode_t_ += dt;
@@ -150,12 +153,7 @@ void Game::update_player(float dt) {
     if (IsKeyPressed(KEY_T)) tank_ = !tank_;
     const float ix = float(IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) - float(IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) + staged_in_.x;
     const float iy = float(IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) - float(IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) + staged_in_.y;
-    // Breaking the shotgun open: the spent shells drop out a moment into the reload.
-    if (reload_shells_t_ >= 0 && (reload_shells_t_ -= dt) < 0) {
-        const Vector3 right{std::cos(p.yaw), 0, -std::sin(p.yaw)};
-        for (int i = 0; i < spent_shells_; ++i) fx_.casing(hero_.ejection_port(), right, true);
-        spent_shells_ = 0;
-    }
+    work_actions(dt);
     if (pmode_ != PMode::Aim) aim_pitch_ -= aim_pitch_ * smoothing(10.0f, dt);
     switch (pmode_) {
         case PMode::Dead:
@@ -238,7 +236,11 @@ void Game::update_player(float dt) {
             return;
         }
     }
-    if (guns_[gun_].is_reloading()) { p.pose = Pose::Reload; return; }   // he stands still to reload
+    if (guns_[gun_].is_reloading()) {   // he stands still to reload; walking off stops the 870's shells
+        const bool moving = std::fabs(ix) > 0.2f || std::fabs(iy) > 0.2f;
+        if (!moving || !guns_[gun_].spec().single_load) { p.pose = Pose::Reload; return; }
+        guns_[gun_].stop_loading();
+    }
     move_player(dt, ix, iy, limp_speed(cond));
 }
 
@@ -462,8 +464,9 @@ void Game::aim(float dt, float ix, float iy) {
 void Game::fire() {
     Firearm& g = guns_[gun_];
     const WeaponSpec& s = g.spec();
-    if (g.is_reloading() || g.cooldown > 0) return;
+    if ((g.is_reloading() && !g.spec().single_load) || g.cooldown > 0) return;
     if (g.mag <= 0) {   // empty: reload if there's anything to load, else the click
+        if (g.is_reloading()) return;   // the first shell is on its way
         if (inv_.count_of(s.ammo) > 0) reload();
         else { sfx_.play("dry_fire", 0.9f, 0.03f); g.cooldown = 0.3f; }
         return;
@@ -471,12 +474,12 @@ void Game::fire() {
     if (!g.fire()) return;
     ++stats_.shots;
     const bool shotgun = s.pellets > 1;
+    if (shotgun) { pump_t_ = 0; pump_eject_ = true; }   // and then he pumps the next one in
+    else slide_t_ = 0;           // the slide flies back, throws the brass, and runs home (or locks open: empty)
     const Vector3 mz = hero_.muzzle(), aim = shot_dir();
-    const Vector3 right{std::cos(player_.yaw), 0, -std::sin(player_.yaw)};
     sfx_.play(shotgun ? "shotgun" : "gunshot", 1.0f, 0.04f);
     fx_.flash(mz, hero_.barrel_dir(), shotgun);
     hero_.recoil(shotgun ? 0.8f : 0.4f);   // the muzzle climbs about 20 degrees for the shotgun, 10 for the pistol
-    if (!shotgun) fx_.casing(hero_.ejection_port(), right, false);
     noise(player_.x, player_.z, s.noise);
 
     // Every body in the room can be hit, the dead too: a corpse can still be shot apart.
@@ -575,24 +578,59 @@ void Game::cut_off(Enemy& e, int region, Vector3 dir) {
 void Game::reload() {
     Firearm& g = guns_[gun_];
     const WeaponSpec& s = g.spec();
-    const int before = g.mag, taken = g.reload(inv_.count_of(s.ammo));
+    const int taken = g.reload(inv_.count_of(s.ammo));
+    if (s.single_load) return;   // the 870's shells go in one at a time: see load_shell
     if (taken <= 0) return;
     inv_.remove(s.ammo, taken);
-    if (s.pellets > 1) {   // break it open: the fired shells come out
-        spent_shells_ = s.mag - before;
-        reload_shells_t_ = 0.35f;
-        sfx_.play("shotgun_reload", 0.9f, 0.03f);
-    } else {
-        sfx_.play("reload", 0.9f, 0.03f);
+    sfx_.play("reload", 0.9f, 0.03f);
+    slide_t_ = -1;               // a fresh magazine, and the slide runs home
+    hero_.slide = 0;
+}
+
+// The 870: a shell pushed up into the tube, out of the case. Into an empty gun, he racks it too.
+void Game::load_shell(bool first_into_empty) {
+    inv_.remove(I_SHELLS, 1);
+    sfx_.play("shell_insert", 0.8f, 0.06f);
+    if (first_into_empty) { pump_t_ = 0; pump_eject_ = false; }   // rack it into the chamber: no spent hull to throw
+}
+
+// The actions that work between shots. The 870: a beat after the shot he racks the fore-end back
+// (the spent hull flies out to the right) and forward again. The M92FS: the slide slams back and
+// runs home in a blink, throwing the brass; after the last round it stays locked back.
+void Game::work_actions(float dt) {
+    const Vector3 right{std::cos(player_.yaw), 0, -std::sin(player_.yaw)};
+    if (pump_t_ >= 0) {
+        const float t0 = pump_t_;
+        pump_t_ += dt;
+        constexpr float BACK = 0.25f, HOME = 0.52f;
+        if (t0 < BACK && pump_t_ >= BACK) {
+            sfx_.play("shotgun_pump", 0.9f, 0.04f);
+            if (pump_eject_) fx_.casing(hero_.ejection_port(), right, true);
+        }
+        const float k = pump_t_ < BACK ? 0.0f : pump_t_ < BACK + 0.12f ? (pump_t_ - BACK) / 0.12f
+                      : pump_t_ < HOME - 0.12f ? 1.0f : std::max(0.0f, (HOME - pump_t_) / 0.12f);
+        hero_.pump = k;
+        if (pump_t_ >= HOME) { pump_t_ = -1; hero_.pump = 0; }
+    }
+    if (slide_t_ >= 0) {
+        const float t0 = slide_t_;
+        slide_t_ += dt;
+        if (t0 == 0.0f) fx_.casing(hero_.ejection_port(), right, false);
+        const bool locked = guns_[0].mag == 0;   // slide lock: empty, it stays back
+        hero_.slide = slide_t_ < 0.03f ? 1.0f : locked ? 1.0f : std::max(0.0f, 1.0f - (slide_t_ - 0.03f) / 0.05f);
+        if (!locked && slide_t_ > 0.08f) { slide_t_ = -1; hero_.slide = 0; }
     }
 }
 
 void Game::switch_gun(int g) {
-    if (g == gun_ || g < 0 || g > 1 || guns_[gun_].is_reloading()) return;
+    if (g == gun_ || g < 0 || g > 1) return;
+    Firearm& now = guns_[gun_];
+    if (now.is_reloading() && !now.spec().single_load) return;   // not halfway through a magazine change
     if (!inv_.has(weapon_spec(guns_[g].id).item)) return;
+    now.stop_loading();
     gun_ = g;
     hero_.set_weapon(g);
-    sfx_.play("dry_fire", 0.4f, 0.1f);   // the click of the other gun coming up
+    sfx_.play("weapon_switch", 0.7f, 0.05f);
 }
 
 // ── The Drowned ─────────────────────────────────────────────────────────────────

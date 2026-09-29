@@ -77,6 +77,8 @@ public:
     // lies level along the aim with the strong elbow bent at the shoulder.
     static constexpr float SHOTGUN_HOLD = -0.12f;
     float limp = 0;                           // 0..1: how badly the survivor limps (the only sign of his health)
+    float pump = 0;                           // 0..1: the 870's fore-end racked back
+    float slide = 0;                          // 0..1: the M92FS's slide back (1 and staying: locked open, empty)
     float lean = 0;                           // dodge: -1 hops to his left, 1 to his right, 0 straight back
 
 private:
