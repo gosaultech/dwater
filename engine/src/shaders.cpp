@@ -358,12 +358,12 @@ uniform mat4 u_shadowVP[2]; uniform vec4 u_shadowL[2];   // light position (xyz)
 // Lights the painting never saw (a muzzle flash, a flashlight): position + range, colour + kind
 // (w: 0 point, 1 spot), spot direction + cos(half angle). Black = off.
 uniform vec4 u_dynPos[2]; uniform vec4 u_dynCol[2]; uniform vec4 u_dynDir[2];
+uniform int u_dynShadow[2];   // which shadow map holds each of those lights' shadows (-1: none)
 out vec4 finalColor;
 float decode(vec2 rg) { return (floor(rg.r * 255.0 + 0.5) * 256.0 + floor(rg.g * 255.0 + 0.5)) / 65535.0; }
-float castShadow(sampler2D sm, mat4 vp, vec4 L, vec3 P, vec3 N) {
-    vec3 toL = L.xyz - P;
-    float dist = length(toL);
-    toL /= dist;
+// How much of a light at `lp` a character hides from the point P (0..1, softened over 3x3 texels).
+float occluded(sampler2D sm, mat4 vp, vec3 lp, vec3 P) {
+    vec3 toL = normalize(lp - P);
     vec4 q = vp * vec4(P + toL * 0.03, 1.0);                // nudged toward the light: floors don't shadow themselves
     if (q.w <= 0.0) return 0.0;
     vec3 c = q.xyz / q.w * 0.5 + 0.5;
@@ -372,8 +372,14 @@ float castShadow(sampler2D sm, mat4 vp, vec4 L, vec3 P, vec3 N) {
     float hidden = 0.0;
     for (int x = -1; x <= 1; x++)
         for (int y = -1; y <= 1; y++) hidden += 1.0 - step(c.z - 0.0015, texture(sm, c.xy + vec2(x, y) * t).r);
-    float facing = min(1.0, abs(dot(N, toL)) * 1.6);       // how squarely this surface faces the light
-    return hidden / 9.0 * facing * min(1.0, 2.2 / (1.0 + dist * dist * 0.35)) * L.w;
+    return hidden / 9.0;
+}
+// A painted lamp's shadow: how much darker the painting gets (it was lit by that lamp).
+float castShadow(sampler2D sm, mat4 vp, vec4 L, vec3 P, vec3 N) {
+    vec3 toL = L.xyz - P;
+    float dist = length(toL);
+    float facing = min(1.0, abs(dot(N, toL / dist)) * 1.6);   // how squarely this surface faces the light
+    return occluded(sm, vp, L.xyz, P) * facing * min(1.0, 2.2 / (1.0 + dist * dist * 0.35)) * L.w;
 }
 void main() {
     vec3 col = texture(texture0, fragTexCoord).rgb;
@@ -399,6 +405,9 @@ void main() {
         float x = clamp(1.0 - pow(dist / u_dynPos[i].w, 4.0), 0.0, 1.0);
         float att = x * x / (1.0 + dist * dist * 0.9);
         if (u_dynCol[i].w > 0.5) att *= smoothstep(u_dynDir[i].w, mix(u_dynDir[i].w, 1.0, 0.35), dot(-L, normalize(u_dynDir[i].xyz)));
+        // Where a Drowned stands in the way, this light never arrives: its shadow on the painting.
+        if (u_dynShadow[i] == 0) att *= 1.0 - occluded(u_shadow0, u_shadowVP[0], u_dynPos[i].xyz, P);
+        else if (u_dynShadow[i] == 1) att *= 1.0 - occluded(u_shadow1, u_shadowVP[1], u_dynPos[i].xyz, P);
         add += alb * u_dynCol[i].rgb * att * max(dot(Nf, L), 0.0);
     }
     finalColor = vec4(col * (1.0 - clamp(dark, 0.0, 0.82)) + add, 1.0);

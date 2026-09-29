@@ -130,6 +130,7 @@ void Game::init_shadows() {
     l_pSh0_ = GetShaderLocation(plate_, "u_shadow0");
     l_pSh1_ = GetShaderLocation(plate_, "u_shadow1");
     l_pShL_ = GetShaderLocation(plate_, "u_shadowL");
+    l_pDynSh_ = GetShaderLocation(plate_, "u_dynShadow");
     for (int k = 0; k < 2; ++k) {
         l_shVP_[k] = GetShaderLocation(char_, TextFormat("u_shadowVP[%d]", k));
         l_pShVP_[k] = GetShaderLocation(plate_, TextFormat("u_shadowVP[%d]", k));
@@ -146,11 +147,87 @@ void Game::set_lights(const Vector4* pos, const Vector4* col, const Vector4* dir
     SetShaderValueV(char_, l_dir_, dir, SHADER_UNIFORM_VEC4, 8);
 }
 
-// Pick the (up to) two lights that light the characters most, and draw the characters' depth as
-// each of those lights sees them: a perspective view from the light, framing all the characters.
-void Game::render_shadows(const std::vector<const Character*>& casters) {
-    for (auto& sm : shadows_) sm.light = -1;
-    if (casters.size() == 0 || light_n_ == 0) return;
+// Draw the casters' depth as one light sees them, into shadow map k.
+void Game::shadow_pass(int k, const Camera3D& from, double near_d, double far_d, const std::vector<const Character*>& casters) {
+    const double keep_near = rlGetCullDistanceNear(), keep_far = rlGetCullDistanceFar();
+    rlSetClipPlanes(near_d, far_d);   // tight: precise depth
+    const unsigned t1 = char_mat_.maps[MATERIAL_MAP_METALNESS].texture.id, t2 = char_mat_.maps[MATERIAL_MAP_NORMAL].texture.id;
+    char_mat_.maps[MATERIAL_MAP_METALNESS].texture.id = 0;   // never sample a map while drawing into it
+    char_mat_.maps[MATERIAL_MAP_NORMAL].texture.id = 0;
+    BeginTextureMode(shadows_[k].rt);
+    ClearBackground(WHITE);
+    BeginMode3D(from);
+    shadows_[k].vp = MatrixMultiply(rlGetMatrixModelview(), rlGetMatrixProjection());
+    const int one = 1, zero = 0;
+    SetShaderValue(char_, l_depthOnly_, &one, SHADER_UNIFORM_INT);
+    rlDisableBackfaceCulling();
+    for (const Character* ch : casters) ch->draw(char_mat_, true);
+    rlEnableBackfaceCulling();
+    SetShaderValue(char_, l_depthOnly_, &zero, SHADER_UNIFORM_INT);
+    EndMode3D();
+    EndTextureMode();
+    char_mat_.maps[MATERIAL_MAP_METALNESS].texture.id = t1;
+    char_mat_.maps[MATERIAL_MAP_NORMAL].texture.id = t2;
+    rlSetClipPlanes(keep_near, keep_far);
+}
+
+namespace {
+// A perspective view from `lp` that frames every point within `r` of `c`; false if it can't
+// (the light is among them, or so close it would need a fisheye).
+bool frame_from(Vector3 lp, Vector3 c, float r, Camera3D& lc, double& near_d, double& far_d) {
+    const float dist = Vector3Distance(lp, c);
+    if (dist < 0.5f) return false;
+    lc = {};
+    lc.position = lp;
+    lc.target = c;
+    lc.up = std::fabs(Vector3Normalize(Vector3Subtract(c, lp)).y) > 0.95f ? Vector3{0, 0, 1} : Vector3{0, 1, 0};
+    lc.fovy = 2.0f * std::atan(r / dist) * RAD2DEG * 1.05f;
+    lc.projection = CAMERA_PERSPECTIVE;
+    near_d = std::max(0.05, double(dist - r - 0.3f));
+    far_d = double(dist + r + 0.5f);
+    return lc.fovy <= 165.0f;   // a hanging lamp right overhead would need a wider view than that
+}
+}  // namespace
+
+void Game::render_shadows(const std::vector<const Character*>& casters, const std::vector<const Character*>& gun_lit) {
+    for (auto& sm : shadows_) sm.light = sm.dyn = -1;
+    if (light_n_ == 0) return;
+    int used = 0;
+    // The flash, then the flashlight: only a shadow map can hold back the light they add to the
+    // painting, where a Drowned stands in the way.
+    for (int slot = 0; slot < 2 && !gun_lit.empty(); ++slot) {
+        const int li = slot == 0 ? flash_light_ : lamp_light_;
+        if (li < 0) continue;
+        const Vector4 p = light_pos_[li];
+        const Vector3 lp{p.x, p.y, p.z};
+        Camera3D lc{};
+        double nd = 0.08, fd = p.w;
+        if (slot == 1) {   // the flashlight: exactly its cone
+            const Vector4 d = light_dir_[li];
+            lc.position = lp;
+            lc.target = Vector3Add(lp, {d.x, d.y, d.z});
+            lc.up = std::fabs(d.y) > 0.95f ? Vector3{0, 0, 1} : Vector3{0, 1, 0};
+            lc.fovy = 2.0f * std::acos(std::clamp(d.w, 0.0f, 1.0f)) * RAD2DEG * 1.1f;
+            lc.projection = CAMERA_PERSPECTIVE;
+        } else {           // the flash: framing the Drowned within its reach
+            Vector3 c{};
+            int n = 0;
+            for (const Character* ch : gun_lit)
+                if (Vector3Distance(ch->joint(J_PELVIS), lp) < p.w) { c = Vector3Add(c, ch->joint(J_PELVIS)); ++n; }
+            if (n == 0) continue;
+            c = Vector3Scale(c, 1.0f / float(n));
+            float r = 0;
+            for (const Character* ch : gun_lit)
+                if (Vector3Distance(ch->joint(J_PELVIS), lp) < p.w) r = std::max(r, Vector3Distance(ch->joint(J_PELVIS), c));
+            if (!frame_from(lp, c, r + 1.15f, lc, nd, fd)) continue;
+        }
+        shadow_pass(used, lc, nd, fd, gun_lit);
+        shadows_[used].light = li;
+        shadows_[used].dyn = slot;
+        ++used;
+    }
+    if (used >= 2 || casters.empty()) return;
+    // The room's lamps: the brightest on the characters, framing all of them.
     Vector3 c{};
     for (const Character* ch : casters) c = Vector3Add(c, ch->joint(J_PELVIS));
     c = Vector3Scale(c, 1.0f / float(casters.size()));
@@ -160,11 +237,10 @@ void Game::render_shadows(const std::vector<const Character*>& casters) {
     struct Pick { int i; float e; };
     Pick picks[8];
     int np = 0;
-    for (int i = 0; i < static_lights_; ++i) {                        // the room's lights; a muzzle flash is too brief
+    for (int i = 0; i < static_lights_; ++i) {
         const Vector4 p = light_pos_[i], col = light_col_[i];
         if (int(col.w + 0.5f) == 2) continue;                       // suns: none indoors
         const float dist = Vector3Distance({p.x, p.y, p.z}, c);
-        if (dist < 0.5f) continue;                                    // a light among the characters can't frame them
         const float x = std::clamp(1.0f - std::pow(dist / std::max(p.w, 1e-3f), 4.0f), 0.0f, 1.0f);
         const float e = (col.x + col.y + col.z) * x * x / (1.0f + dist * dist * 0.35f);
         if (e > 0.02f && np < 8) picks[np++] = {i, e};
@@ -172,54 +248,34 @@ void Game::render_shadows(const std::vector<const Character*>& casters) {
     for (int k = 0; k < std::min(np, 2); ++k)   // the brightest two to the front (all we need)
         for (int m = k + 1; m < np; ++m)
             if (picks[m].e > picks[k].e) std::swap(picks[k], picks[m]);
-    const double keep_near = rlGetCullDistanceNear(), keep_far = rlGetCullDistanceFar();
-    for (int k = 0; k < np && k < 2; ++k) {
+    for (int k = 0; k < np && used < 2; ++k) {
         const Vector4 p = light_pos_[picks[k].i];
-        const Vector3 lp{p.x, p.y, p.z};
-        const float dist = Vector3Distance(lp, c);
         Camera3D lc{};
-        lc.position = lp;
-        lc.target = c;
-        lc.up = std::fabs(Vector3Normalize(Vector3Subtract(c, lp)).y) > 0.95f ? Vector3{0, 0, 1} : Vector3{0, 1, 0};
-        lc.fovy = 2.0f * std::atan(r / dist) * RAD2DEG * 1.05f;
-        lc.projection = CAMERA_PERSPECTIVE;
-        if (lc.fovy > 165.0f) continue;                               // a hanging lamp right overhead needs a wide view
-        rlSetClipPlanes(std::max(0.05, double(dist - r - 0.3f)), double(dist + r + 0.5f));   // tight: precise depth
-        const unsigned t1 = char_mat_.maps[MATERIAL_MAP_METALNESS].texture.id, t2 = char_mat_.maps[MATERIAL_MAP_NORMAL].texture.id;
-        char_mat_.maps[MATERIAL_MAP_METALNESS].texture.id = 0;         // never sample a map while drawing into it
-        char_mat_.maps[MATERIAL_MAP_NORMAL].texture.id = 0;
-        BeginTextureMode(shadows_[k].rt);
-        ClearBackground(WHITE);
-        BeginMode3D(lc);
-        shadows_[k].vp = MatrixMultiply(rlGetMatrixModelview(), rlGetMatrixProjection());
-        const int one = 1, zero = 0;
-        SetShaderValue(char_, l_depthOnly_, &one, SHADER_UNIFORM_INT);
-        rlDisableBackfaceCulling();
-        for (const Character* ch : casters) ch->draw(char_mat_, true);
-        rlEnableBackfaceCulling();
-        SetShaderValue(char_, l_depthOnly_, &zero, SHADER_UNIFORM_INT);
-        EndMode3D();
-        EndTextureMode();
-        char_mat_.maps[MATERIAL_MAP_METALNESS].texture.id = t1;
-        char_mat_.maps[MATERIAL_MAP_NORMAL].texture.id = t2;
-        rlSetClipPlanes(keep_near, keep_far);
-        shadows_[k].light = picks[k].i;
+        double nd = 0, fd = 0;
+        if (!frame_from({p.x, p.y, p.z}, c, r, lc, nd, fd)) continue;
+        shadow_pass(used, lc, nd, fd, casters);
+        shadows_[used].light = picks[k].i;
+        ++used;
     }
 }
 
 void Game::bind_shadows() {
-    int which[2];
+    int which[2], dyn_map[2] = {-1, -1};
     Vector4 pl[2];
     for (int k = 0; k < 2; ++k) {
         const ShadowMap& sm = shadows_[k];
         which[k] = sm.light;
         const Vector4 p = sm.light >= 0 ? light_pos_[sm.light] : Vector4{0, 0, 0, 0};
-        pl[k] = {p.x, p.y, p.z, sm.light >= 0 ? 1.0f : 0.0f};
+        // A room lamp's shadow darkens the painting (the lamp is painted in); the flash's and the
+        // flashlight's hold back the light they add instead.
+        pl[k] = {p.x, p.y, p.z, sm.light >= 0 && sm.dyn < 0 ? 1.0f : 0.0f};
+        if (sm.dyn >= 0) dyn_map[sm.dyn] = k;
         SetShaderValueMatrix(char_, l_shVP_[k], sm.vp);
         SetShaderValueMatrix(plate_, l_pShVP_[k], sm.vp);
     }
     SetShaderValueV(char_, l_shLight_, which, SHADER_UNIFORM_INT, 2);
     SetShaderValueV(plate_, l_pShL_, pl, SHADER_UNIFORM_VEC4, 2);
+    SetShaderValueV(plate_, l_pDynSh_, dyn_map, SHADER_UNIFORM_INT, 2);
     char_mat_.maps[MATERIAL_MAP_METALNESS].texture = shadows_[0].rt.depth;   // the shader's texture1
     char_mat_.maps[MATERIAL_MAP_NORMAL].texture = shadows_[1].rt.depth;      // the shader's texture2
 }
@@ -256,6 +312,7 @@ void Game::upload_lights() {
         }
     }
     static_lights_ = n;
+    flash_light_ = lamp_light_ = -1;
     // The muzzle flash: one more light on the characters, and a light the painted room never saw
     // (the plate shader relights the painting with it, from the painted depth).
     Vector4 dpos[2]{}, dcol[2]{}, ddir[2]{};
@@ -265,14 +322,14 @@ void Game::upload_lights() {
         const Vector3 c = Vector3Scale(FLASH_COLOR, fp / 4.0f);
         dpos[0] = {at.x, at.y, at.z, FLASH_RANGE};
         dcol[0] = {c.x, c.y, c.z, 0};
-        if (n < 8) { pos[n] = dpos[0]; col[n] = dcol[0]; ++n; }
+        if (n < 8) { pos[n] = dpos[0]; col[n] = dcol[0]; flash_light_ = n++; }
     }
     if (flashlight && hero_.has_lamp()) {
         const Vector3 at = hero_.lamp(), d = hero_.lamp_dir();
         dpos[1] = {at.x, at.y, at.z, LAMP_RANGE};
         dcol[1] = {LAMP_COLOR.x, LAMP_COLOR.y, LAMP_COLOR.z, 1};   // w: a spot
         ddir[1] = {d.x, d.y, d.z, std::cos(LAMP_HALF)};
-        if (n < 8) { pos[n] = dpos[1]; col[n] = {LAMP_COLOR.x, LAMP_COLOR.y, LAMP_COLOR.z, 1}; dir[n] = ddir[1]; ++n; }
+        if (n < 8) { pos[n] = dpos[1]; col[n] = {LAMP_COLOR.x, LAMP_COLOR.y, LAMP_COLOR.z, 1}; dir[n] = ddir[1]; lamp_light_ = n++; }
     }
     SetShaderValueV(plate_, l_dynPos_, dpos, SHADER_UNIFORM_VEC4, 2);
     SetShaderValueV(plate_, l_dynCol_, dcol, SHADER_UNIFORM_VEC4, 2);
@@ -442,6 +499,8 @@ void Game::upload_studio_lights() {
     const Vector4 col[8] = {{1.0f * 3.9f, 0.78f * 3.9f, 0.55f * 3.9f, 0}, {0.9f, 1.0f, 1.3f, 0}, {0.6f * 3.2f, 0.7f * 3.2f, 1.0f * 3.2f, 0}};
     const Vector4 dir[8] = {};
     set_lights(pos, col, dir, 3);
+    static_lights_ = 3;
+    flash_light_ = lamp_light_ = -1;
     const float top[3] = {0.05f, 0.055f, 0.07f}, bot[3] = {0.02f, 0.018f, 0.015f}, rim[3] = {0.1f, 0.12f, 0.16f};
     const float fog[3] = {0, 0, 0}, fogr[2] = {50.0f, 60.0f};
     SetShaderValue(char_, l_top_, top, SHADER_UNIFORM_VEC3);
@@ -594,10 +653,11 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
 void Game::render() {
     const auto& plate = plates_.at(shot_);
     casters_.clear();   // (reused: no allocation per frame)
+    gun_lit_.clear();
     casters_.push_back(&hero_);
     for (const auto& e : enemies_)
-        if (e.active) casters_.push_back(&e.body);
-    render_shadows(casters_);
+        if (e.active) { casters_.push_back(&e.body); gun_lit_.push_back(&e.body); }
+    render_shadows(casters_, gun_lit_);
     bind_shadows();
     SetShaderValueMatrix(plate_, l_pInvView_, MatrixInvert(MatrixLookAt(cam_.position, cam_.target, cam_.up)));
     const float th = std::tan(cam_.fovy * 0.5f * DEG2RAD), tan_half[2] = {th * float(W) / float(H), th};

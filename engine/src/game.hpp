@@ -65,17 +65,22 @@ public:
     const Stats& stats() const { return stats_; }
 
 private:
-    // Real shadows from up to two lights at a time (whichever light the characters most): each
-    // light gets a depth map of the characters seen from it; the character shader reads it for
-    // self-shadowing, the plate shader for shadows cast onto the painted room.
+    // Real shadows from up to two lights at a time: each light gets a depth map of the characters
+    // seen from it; the character shader reads it for self-shadowing, the plate shader for shadows
+    // cast onto the painted room. The muzzle flash and the flashlight (lights the painting never
+    // saw) come first while they're on; then the room's lamps that light the characters most.
     struct ShadowMap {
         RenderTexture2D rt{};           // depth only
         Matrix vp = MatrixIdentity();   // world -> the light's clip space
         int light = -1;                 // index into the light arrays, -1 = unused this frame
+        int dyn = -1;                   // which light the painting never saw (0 flash, 1 flashlight), -1: a room lamp
     };
     static constexpr int SHADOW_RES = 1024;
     void init_shadows();
-    void render_shadows(const std::vector<const Character*>& casters);
+    // casters: everyone, for the room's lamps; gun_lit: the Drowned, for the flash and the
+    // flashlight (they sit on the survivor, so they don't shadow him).
+    void render_shadows(const std::vector<const Character*>& casters, const std::vector<const Character*>& gun_lit = {});
+    void shadow_pass(int k, const Camera3D& from, double near_d, double far_d, const std::vector<const Character*>& casters);
     void bind_shadows();                // shadow uniforms for the character and plate shaders
 
     void cut_to(const std::string& id);
@@ -141,10 +146,11 @@ private:
     Stats stats_;
     bool staged_aim_ = false;                    // capture setups hold the aim and the stick from code
     Vector2 staged_in_{};
-    std::vector<const Character*> casters_;      // who casts shadows this frame (kept: no allocation per frame)
+    std::vector<const Character*> casters_, gun_lit_;   // who casts shadows this frame (kept: no allocation per frame)
     float health_ = 100, time_ = 0, banner_t_ = 3.5f, qt_ = -1, qt_from_ = 0, near_ = 0.01f, far_ = 1000.0f;
-    int static_lights_ = 0;                      // room lights (they cast shadows); the flash comes after them
-    int l_dynPos_ = -1, l_dynCol_ = -1, l_dynDir_ = -1;
+    int static_lights_ = 0;                      // room lights; the flash and the flashlight come after them
+    int flash_light_ = -1, lamp_light_ = -1;     // where the flash and the flashlight sit in the light arrays (-1: off)
+    int l_dynPos_ = -1, l_dynCol_ = -1, l_dynDir_ = -1, l_pDynSh_ = -1;
     bool tank_ = false;
     Vector3 held_fwd_{0, 0, -1}, held_right_{1, 0, 0};
     Vector2 held_in_{};
