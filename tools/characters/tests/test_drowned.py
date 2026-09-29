@@ -141,14 +141,27 @@ class ShippedCitizenTests(unittest.TestCase):
     def test_tears_have_flesh_walls_and_the_skin_stays_skin(self):
         for name, ch in self.cast.items():
             body = next(p for p in ch.parts if p.name == "body")
-            self.assertGreater(int(np.sum(body.mat == MAT["flesh"])), 20, name)   # the walls inside the cheek (and belly)
+            walls = int(np.sum(body.mat == MAT["flesh"]))
+            if name == "woman_dress":                                    # no tear in her: no walls
+                self.assertEqual(walls, 0)
+            else:
+                self.assertGreater(walls, 20, name)                      # inside the split belly (and Pieter's mouth)
             self.assertGreater(int(np.sum(body.mat == MAT["drowned"])), len(body.mat) // 2, name)
 
-    def test_anchors_for_gore_and_hair(self):
+    def test_they_all_died_screaming(self):
+        for name, ch in self.cast.items():
+            throat = next((p for p in ch.parts if p.name == "throat"), None)
+            self.assertIsNotNone(throat, name)                           # the black hollow behind the scream
+            self.assertTrue(np.all(throat.mat == MAT["void"]), name)
+            self.assertNotIn("tongue", [a.name for a in ch.anchors], name)   # a scream doesn't loll its tongue
+
+    def test_anchors_for_gore_hair_and_water(self):
         names = {c: [a.name for a in ch.anchors] for c, ch in self.cast.items()}
         for c in CITIZENS:
-            self.assertIn("tongue", names[c])
             self.assertIn("loose_skin", names[c])
+            for d in ("drip_hand_l", "drip_hand_r", "drip_chin"):
+                self.assertIn(d, names[c])
+            self.assertGreaterEqual(sum(n.startswith("drip_") for n in names[c]), 6, c)   # and round the hems
         self.assertIn("guts", names["office_worker"])
         self.assertIn("guts", names["pieter"])
         self.assertNotIn("guts", names["woman_dress"])                  # her belly is whole

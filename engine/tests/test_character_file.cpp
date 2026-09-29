@@ -61,9 +61,10 @@ TEST(CharacterFile, ShippedCitizensLoadAndFitSixteenBitIndices) {
         ASSERT_TRUE(f.ok()) << id << ": " << f.error;
         EXPECT_EQ(f.joints.size(), 24u) << id;
         EXPECT_NE(f.part("body"), nullptr) << id;
-        bool tongue = false;
-        for (const auto& a : f.anchors) tongue |= a.name == "tongue";
-        EXPECT_TRUE(tongue) << id;
+        bool drips = false;
+        for (const auto& a : f.anchors) drips |= a.name == "drip_chin";
+        EXPECT_TRUE(drips) << id;
+        EXPECT_NE(f.part("throat"), nullptr) << id;   // the scream's black hollow
         for (const auto& p : f.parts) {
             EXPECT_LE(p.vertices(), 65535u) << id << "/" << p.name;
             for (size_t v = 0; v < p.vertices(); ++v) {

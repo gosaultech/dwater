@@ -376,6 +376,40 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     }
     step_dangles(dt);
     step_strands(dt);
+    step_drips(dt);
+}
+
+void Character::add_drip_source(int joint, Vector3 off) {
+    if (drip_mesh_.vertexCount == 0) {   // one small drop, shared by every drip this character sheds
+        MeshData d;
+        MeshBuilder(d).material(MAT_WATER).color(Color{120, 128, 130, 255}).ellipsoid({}, {0.003f, 0.0045f, 0.003f}, 8, 6);
+        drip_mesh_ = upload(d);
+    }
+    drip_src_.push_back({joint, off, 0.3f + 1.5f * frand(rng_)});
+}
+
+void Character::step_drips(float dt) {
+    if (drip_src_.empty()) return;
+    const float h = std::clamp(dt, 0.0f, 0.05f);
+    for (auto& d : drips_) {
+        d.v.y -= 9.8f * h;
+        d.p = Vector3Add(d.p, Vector3Scale(d.v, h));
+    }
+    drips_.erase(std::remove_if(drips_.begin(), drips_.end(), [](const Drip& d) { return d.p.y < 0.003f; }), drips_.end());
+    for (auto& src : drip_src_) {
+        if ((src.next -= dt) > 0) continue;
+        src.next = 0.35f + 1.6f * frand(rng_);   // a drop gathers, falls; the next one takes a while
+        Vector3 at;
+        if (src.joint >= 0) {
+            at = Vector3Transform(src.off, W_[src.joint]);
+        } else {
+            const Strands& st = strands_.front();
+            const size_t k = size_t(src.off.x);
+            if (!st.live || (k + 1) * size_t(st.n) > st.p.size()) continue;
+            at = st.p[(k + 1) * size_t(st.n) - 1];
+        }
+        if (drips_.size() < 48) drips_.push_back({at, {0, -0.25f, 0}});
+    }
 }
 
 void Character::step_dangles(float dt) {
@@ -468,7 +502,7 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         T[J_CHEST] = {-0.1f - gasp * 0.03f, 0.05f, 0};
         T[J_NECK] = {0.02f, 0, 0.14f};
         T[J_HEAD] = {0.3f - 0.95f * bow_ + sway * 0.05f, 0.12f, (0.42f + sway * 0.08f) * (1.0f - 0.6f * bow_)};
-        T[J_JAW] = {-0.95f + gasp * 0.12f, 0.12f, 0.07f};
+        T[J_JAW] = {-0.95f + gasp * 0.12f, 0.2f, 0.09f};   // crooked: it hangs off to one side
         T[J_SHO_R] = {0.3f, 0, -0.06f};
         T[J_ELB_R] = {0.3f, 0, 0};
         T[J_SHO_L] = {0.12f, 0, 0.12f};
@@ -642,6 +676,8 @@ void Character::draw(const Material& m, bool shadow_caster) const {
     for (const auto& d : dangles_) DrawMesh(d.mesh, m, MatrixIdentity());
     if (shadow_caster) return;   // hair lets light through: its shadow would black out the face
     for (const auto& s : strands_) DrawMesh(s.mesh, m, MatrixIdentity());
+    for (const auto& d : drips_)   // stretched by their fall
+        DrawMesh(drip_mesh_, m, MatrixMultiply(MatrixScale(1, 1 + 0.5f * std::fabs(d.v.y), 1), MatrixTranslate(d.p.x, d.p.y, d.p.z)));
 }
 
 void Character::unload() {
@@ -650,6 +686,10 @@ void Character::unload() {
     for (auto& d : dangles_) UnloadMesh(d.mesh);
     for (auto& s : skinned_) UnloadMesh(s.mesh);
     for (auto& s : strands_) UnloadMesh(s.mesh);
+    if (drip_mesh_.vertexCount) UnloadMesh(drip_mesh_);
+    drip_mesh_ = {};
+    drip_src_.clear();
+    drips_.clear();
     skinned_.clear();
     strands_.clear();
     rigid_.clear();

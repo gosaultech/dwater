@@ -73,6 +73,17 @@ class Body:
         return out
 
 
+def normals(V: np.ndarray, body_quads: np.ndarray, groups: dict) -> np.ndarray:
+    """Vertex normals: the body's from its faces; each helper's from its own (so they don't bleed into the skin)."""
+    N = quad_normals(V, body_quads)
+    for g, q in groups.items():
+        if g == "body":
+            continue
+        ids = np.unique(q)
+        N[ids] = quad_normals(V, q)[ids]
+    return N
+
+
 def build(data: Path, macro: mhdata.Macro, extra: dict[str, float] | None = None) -> Body:
     mesh = mhdata.load_obj(data / "3dobjs" / "base.obj")
     skel = mhdata.load_skeleton(data / "rigs" / "default.mhskel")
@@ -94,12 +105,7 @@ def build(data: Path, macro: mhdata.Macro, extra: dict[str, float] | None = None
             fs = [f[1] for f in mesh.faces if f[0] == g]
             if all(len(f) == 4 for f in fs):
                 groups[g] = np.array(fs, dtype=np.int64)
-    N = quad_normals(V, body_quads)
-    for g, q in groups.items():   # helpers get their own normals, so they don't bleed into the skin
-        if g == "body":
-            continue
-        ids = np.unique(q)
-        N[ids] = quad_normals(V, q)[ids]
+    N = normals(V, body_quads, groups)
     jid, jw = rig.fold_weights(skel, weights, len(V))
     bone_w = {}
     for b, (idx, w) in weights.items():

@@ -255,12 +255,13 @@ def subdivide(P: Vec, N: Vec, src: np.ndarray, tris: np.ndarray, W: np.ndarray, 
 
 
 def clip_overlay(b: Body, base: dwc.Part, name: str, mat: int, color: tuple, inside: Callable[[Vec], np.ndarray],
-                 lift: float, hem: float = 0.004, detail: int = 0, tint: Callable[[Vec], np.ndarray] | None = None) -> dwc.Part:
+                 lift: float, hem: float = 0.004, detail: int = 0, tint: Callable[[Vec], np.ndarray] | None = None,
+                 wet: float = 0.0) -> dwc.Part:
     """A piece cut from another garment's surface along a smooth boundary (webbing straps, a patch):
     inside(P) is positive inside the piece and crosses zero at its edge, so the edges are exact
     curves instead of the stairs of the body's mesh. The piece is lifted `lift` off its base.
     detail: times to subdivide the faces near the piece first (narrow pieces, painted patterns);
-    tint(P) -> (n, 3) colours paints it (stripes on a tie)."""
+    tint(P) -> (n, 3) colours paints it (stripes on a tie); wet: its aux (soaked cloth, see Garment.aux)."""
     src0, tris0, P0, N0, W0 = base.shell
     for _ in range(detail):
         s = inside(P0)
@@ -270,7 +271,7 @@ def clip_overlay(b: Body, base: dwc.Part, name: str, mat: int, color: tuple, ins
     col = np.tile(rgba(color), (len(P), 1))
     if tint:
         col[:, :3] = np.clip(tint(P), 0, 255).astype(np.uint8)
-    return _finish(b, name, mat, P + N * lift, N, src, col, T, hem, W)
+    return _finish(b, name, mat, P + N * lift, N, src, col, T, hem, W, aux=np.full(len(P), wet))
 
 
 def neckline(rim: np.ndarray, P: Vec, above: float) -> np.ndarray:
@@ -409,11 +410,12 @@ def build(b: Body, g: Garment) -> tuple[dwc.Part, np.ndarray]:
 
 
 def build_helper(b: Body, group: str, name: str, mat: int, color: tuple, offset: float, trim: Callable | None = None,
-                 tint: Callable | None = None, hem: float = 0.004, smooth: int = 2, loosen: Callable | None = None) -> dwc.Part:
+                 tint: Callable | None = None, hem: float = 0.004, smooth: int = 2, loosen: Callable | None = None,
+                 aux: Callable | None = None) -> dwc.Part:
     """A garment from one of MakeHuman's helper meshes (the skirt): a proxy already fitted round the
     body and weighted to it, which a body shell can't give (a skirt spans the gap between the legs).
-    Offset outward, smoothed, then trimmed, tinted and hemmed like any garment (trim, tint, loosen:
-    as Garment)."""
+    Offset outward, smoothed, then trimmed, tinted and hemmed like any garment (trim, tint, loosen,
+    aux: as Garment)."""
     quads = b.groups[group]
     ids, local = np.unique(quads, return_inverse=True)
     local = local.reshape(quads.shape)
@@ -434,7 +436,7 @@ def build_helper(b: Body, group: str, name: str, mat: int, color: tuple, offset:
     col = np.tile(rgba(color), (len(Pc), 1))
     if tint:
         col[:, :3] = np.clip(tint(b, src, Pc), 0, 255).astype(np.uint8)
-    return _finish(b, name, mat, Pc, Nc, src, col, T, hem, W)
+    return _finish(b, name, mat, Pc, Nc, src, col, T, hem, W, aux=aux(b, src, Pc) if aux else None)
 
 
 # ── Shaping helpers ──────────────────────────────────────────────────────────────

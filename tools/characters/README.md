@@ -77,9 +77,30 @@ departments: wardrobe first, then the make-up effects team.
 
 | Id | Who | Wardrobe | What the canal did |
 |---|---|---|---|
-| `office_worker` | Jeroen, 48, civil servant | Pale blue shirt with the collar open, a loosened burgundy tie, lanyard and staff pass, charcoal trousers and belt, one shoe | Belly split with guts out, torn right cheek, scalp slipping at the front, left hand degloved |
-| `woman_dress` | Sanne, 34 | Teal midi dress with a small flower print, cropped mustard cardigan, barefoot | Long wet hair over her face, torn right cheek, left hand degloved |
-| `pieter` | Pieter, 67, pensioner | Navy cable-knit sweater over a checked shirt collar, faded jeans, white trainers | One eye gone, torn left cheek, belly split through the sweater, right hand degloved |
+| `office_worker` | Jeroen, 48, civil servant | Pale blue shirt with the collar open, a loosened burgundy tie, lanyard and staff pass, charcoal trousers and belt, one shoe | Belly split with guts out, scalp slipping at the front, left hand degloved |
+| `woman_dress` | Sanne, 34 | Teal midi dress with a small flower print, cropped mustard cardigan, barefoot | Long wet hair over her face, parted just enough to show the scream; left hand degloved |
+| `pieter` | Pieter, 67, pensioner | Navy cable-knit sweater, faded jeans, white trainers | One eye gone, the corner of his mouth torn back along the cheek, belly split through the sweater, right hand degloved |
+
+All three died the same way: screaming (the director's reference is the closet scene in *The
+Ring*, 2002). That **death mask** is built in three layers:
+
+1. **Expression.** MakeHuman's own expression units, FACS-style morph targets for the brows,
+   lids, lips and neck, are set to a scream of terror and pushed past what a living face can do
+   (`drowned.death_mask`). They give inner brows raised, lids wide, the lower lip dragged
+   down, and the neck's cords standing out. The crooked side screams harder.
+2. **Distortion.** `drowned.distort` warps the face itself: the lower face is drawn a third
+   longer than a face can go and dragged off to one side, more and more toward the chin, and the
+   eye sockets sink. In the engine the jaw then hangs open 54 degrees, skewed to the same side.
+3. **Paint and parts.** Charcoal-grey waterlogged skin, sockets bruised almost black, eyes that
+   are dark hollows with a milky glint rolled up under the lids, and forehead furrows (the
+   shader reads where from the body's aux). The back of MakeHuman's mouth pocket, which the
+   open jaw would stretch into a membrane, is cut away onto a black **throat**, so the scream
+   is a hole.
+
+Their clothes are soaked: every garment carries a wetness in its aux, and the shader darkens it
+and gives it a dull sheen (wool and knit drink the water and barely shine). Water still runs off
+them: the engine drops drips from the `drip_*` anchors (fingertips, chin, hems) and from the
+ends of wet hair.
 
 The engine picks them by variant: `Character::make(Kind::Drowned, 0 | 1 | 2)`.
 
@@ -117,7 +138,7 @@ into single hairs by the shader (`MAT_WETHAIR`).
 | `parts.py` | The `MAT` table (mirrors `dw::Mat` in `engine/include/dw/mesh_builder.hpp`) and `part_from_quads`. |
 | `cast.py` | The survivor, plus shared pieces: eyes, hair caps, hair patches, brows, lashes, scalp anchors. |
 | `cast_drowned.py` | The Drowned citizens: wardrobe, gore anchors, and the per-character touches. |
-| `drowned.py` | What the canal does to any body: bloat targets, wounds and their flesh walls, drowned skin paint, canal-stained cloth. |
+| `drowned.py` | What the canal does to any body: bloat targets, the death mask (scream expression and face distortion), wounds and their flesh walls, drowned skin paint, canal-stained and soaked cloth. |
 | `bake.py` | Baked ambient occlusion per vertex (voxel grid and hemisphere rays), stored in the colour alpha. |
 | `dwc.py` | The `.dwc` binary format: `write`, `read`, and the byte layout. |
 | `build_characters.py` | Command line entry point and SQLite build log. |
@@ -139,8 +160,8 @@ and read by `engine/src/character_file.cpp`.
 
   Triangles follow as 16-bit indices, so a part has at most 65535 vertices.
 - **Anchors.** Named points in joint space: loc and hair roots, backpack, flashlight,
-  drawstrings, and for the Drowned `guts`, `tongue`, `loose_skin`, `tie`, `badge`,
-  `mussels*` and `weed*`.
+  drawstrings, and for the Drowned `guts`, `tongue` (unused while they scream), `loose_skin`,
+  `tie`, `badge`, `drip_*`, `mussels*` and `weed*`.
 
 The C++ loader bounds-checks every read. A truncated or foreign file gives an error string,
 never a crash (see `engine/tests/test_character_file.cpp`).

@@ -14,7 +14,7 @@
 namespace dw {
 using namespace cast;
 namespace {
-const Color GUTS{170, 124, 118, 255}, GUTS_DARK{150, 100, 98, 255}, TONGUE{56, 32, 48, 255}, SLOUGH{188, 184, 160, 255},
+const Color GUTS{150, 116, 112, 255}, GUTS_DARK{124, 92, 92, 255}, TONGUE{56, 32, 48, 255}, SLOUGH{160, 158, 140, 255},
     WEED{44, 60, 26, 255}, TIE{80, 20, 30, 255}, CARD{214, 214, 206, 255}, CARD_BAND{36, 62, 128, 255}, INK{60, 60, 64, 255};
 
 // Lie flat on a surface: local x across, y up it, -z out along `normal` (a card on a shirt).
@@ -108,7 +108,8 @@ Character build_citizen(const std::string& id, int variant) {
     }
     // Long hair, soaked: a clump from every "hair" anchor, lying along the skull away from the crown
     // and hanging straight once it leaves it. Clumps rooted at the front fall forward: a wet
-    // curtain over the face (her head hangs forward, so it stays there).
+    // curtain over the face (her head hangs forward, so it stays there), parted a finger's width,
+    // so the scream shows through the gap.
     int roots = 0;
     for (const auto& a : c.anchors_) roots += a.name.rfind("hair", 0) == 0;
     if (roots > 0) {
@@ -151,6 +152,7 @@ Character build_citizen(const std::string& id, int variant) {
             if (a.name.rfind("hair", 0) != 0) continue;
             const Vector3 n = Vector3Normalize(a.dir), p0 = a.pos;
             const bool curtain = p0.z < -0.02f && std::fabs(p0.x) < 0.055f;       // the front of the scalp
+            const float part = p0.x < 0 ? -1.0f : 1.0f;                               // which side of the parting
             const float len = curtain ? 0.3f + 0.06f * rnd() : 0.36f + 0.08f * rnd();
             const float seg = len / float(hair.n - 1), radius = 0.01f + 0.012f * rnd();   // ribbon width
             Vector3 p = Vector3Subtract(p0, Vector3Scale(n, 0.002f));
@@ -165,7 +167,8 @@ Character build_citizen(const std::string& id, int variant) {
                 Vector3 along = Vector3Subtract(Vector3Subtract(p, crown), Vector3Scale(radial, Vector3DotProduct(Vector3Subtract(p, crown), radial)));
                 along = Vector3LengthSqr(along) > 1e-8f ? Vector3Normalize(along) : Vector3{0, -1, 0};
                 const float leave = curtain ? (p.z < -0.075f ? 1.0f : 0.25f) : std::clamp((0.35f - radial.y) / 0.4f, 0.0f, 1.0f);
-                const Vector3 want = Vector3Normalize(Vector3Lerp(along, {0, -1, 0}, leave));
+                const Vector3 fall = curtain ? Vector3{part * 0.22f, -1, 0} : Vector3{0, -1, 0};
+                const Vector3 want = Vector3Normalize(Vector3Lerp(along, fall, leave));
                 dir = first ? want : Vector3Normalize(Vector3Lerp(dir, want, 0.5f));
                 first = false;
                 p = Vector3Add(p, Vector3Scale(dir, seg));
@@ -176,10 +179,16 @@ Character build_citizen(const std::string& id, int variant) {
             }
             hair.seg.push_back(seg);
             hair.radius.push_back(radius);
-            hair.stiff.push_back(curtain ? 0.14f : 0.1f);
+            hair.stiff.push_back(curtain ? 0.22f : 0.1f);
         }
         c.add_strands(std::move(hair));
     }
+    // Water still running off them: from the points the .dwc marks (fingertips, chin, hems) and
+    // from every tenth hank of wet hair.
+    for (const auto& a : c.anchors_)
+        if (a.name.rfind("drip", 0) == 0) c.add_drip_source(a.joint, a.pos);
+    if (!c.strands_.empty())
+        for (size_t k = 0; k < c.strands_.front().anchor.size(); k += 10) c.add_drip_source(-1, {float(k), 0, 0});
     // Canal growth: mussel clusters, weed trailing from hems and belts.
     unsigned seed = 31u + unsigned(variant);
     for (const auto& a : c.anchors_) {

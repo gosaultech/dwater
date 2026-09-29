@@ -37,8 +37,54 @@ BLOAT = {
 }
 BRUISE, CYANOSIS, LIVID = (66, 46, 64), (60, 46, 62), (98, 76, 96)
 RAW, DRIED, MUD = (104, 24, 22), (58, 14, 12), (72, 60, 42)
-DERMIS, SLOUGH = (146, 100, 92), (188, 184, 160)
-PUTRID, BLOTCH, MOUTH = (88, 106, 66), (84, 62, 74), (44, 20, 26)   # green rot, purple-brown marks, the mouth's lining
+DERMIS, SLOUGH = (126, 94, 88), (164, 162, 146)
+PUTRID, BLOTCH, MOUTH = (88, 106, 66), (84, 62, 74), (22, 12, 14)   # green rot, purple-brown marks, the mouth's lining
+SOCKET = (30, 22, 28)                                                 # the hollows round the eyes
+
+
+# The death mask: every one of them died screaming, and the face stayed that way. MakeHuman's
+# expression units (FACS-style morph targets: brows, lids, mouth, neck) set to a scream of terror,
+# pushed past what a living face can do. Per unit: (left, right) weights; the crooked side screams
+# harder, so the mouth drags off to one side.
+SCREAM = {
+    "eyebrows-{s}-inner-up": (1.4, 1.4), "eyebrows-{s}-up": (0.5, 0.5),
+    "eye-{s}-opened-up": (1.5, 1.5),
+    "nose-{s}-dilatation": (0.9, 0.9), "nose-{s}-elevation": (0.5, 0.5),
+}
+SCREAM_MID = {"mouth-open": 0.7, "mouth-depression-retraction": 1.3, "mouth-retraction": 0.35,   # a tall O, not a wide
+              "neck-platysma": 1.4}                                                                  # grin; the jaw drops in the engine
+
+
+def death_mask(amount: float = 1.0, crooked: float = 0.0, ethnicity: str = "caucasian") -> dict[str, float]:
+    """Target weights for the frozen scream: amount 0..1 (and a little past), crooked -1..1 (which
+    side it drags toward, and how far)."""
+    base = f"expression/units/{ethnicity}/"
+    out = {}
+    for unit, (l, r) in SCREAM.items():
+        out[base + unit.format(s="left") + ".target"] = l * amount * (1 + 0.35 * max(crooked, 0))
+        out[base + unit.format(s="right") + ".target"] = r * amount * (1 + 0.35 * max(-crooked, 0))
+    for unit, w in SCREAM_MID.items():
+        out[base + unit + ".target"] = w * amount
+    return out
+
+
+def distort(b: Body, face, crooked: float = 0.0, stretch: float = 0.32, sink: float = 0.005) -> None:
+    """Warp the face the way the scream left it: the lower face drawn down longer than a face can
+    go, dragged off toward the crooked side (-1..1) more and more toward the chin, and the eye
+    sockets sunk deep. In place, before anything is built on the body; normals are rebuilt.
+    Rebuild the Face landmarks afterwards (the mouth has moved)."""
+    import body as bm
+    V = b.V
+    head = b.weight_of("head", "jaw")
+    rel = V - face.head
+    w = head * np.clip(-rel[:, 2] / 0.06, 0, 1)                     # the face, not the back of the skull
+    below = np.clip(np.mean([e[1] for e in face.eyes]) - V[:, 1], 0, None)   # metres below the eyes
+    V[:, 1] -= w * stretch * below
+    V[:, 0] += w * crooked * 1.6 * below ** 2
+    for e in face.eyes:                                              # the sockets (and the eyes in them) sink
+        k = np.clip(1 - np.linalg.norm(V - e, axis=1) / 0.026, 0, 1) ** 1.5 * head
+        V[:, 2] += k * sink
+    b.N = bm.normals(V, b.body_quads, b.groups)
 
 
 def bloat(amount: float, extra: dict[str, float] | None = None) -> dict[str, float]:
@@ -109,20 +155,31 @@ def _nearest(b: Body, target: np.ndarray, mask: np.ndarray) -> np.ndarray:
     return b.V[ids[np.argmin(np.linalg.norm(b.V[ids] - target, axis=1))]]
 
 
-def wounds(b: Body, face, side: float, seed: int = 1, belly: float = 1.0) -> Wounds:
-    """Tear one cheek through to the teeth and split the belly (belly = size, 0 for none)."""
+def mouth_back(b: Body, face) -> np.ndarray:
+    """Body quads at the back of MakeHuman's mouth pocket (per quad). A jaw hanging open stretches
+    them into a membrane across the scream; cut them, and a void behind them reads as the throat."""
+    rel = b.V[b.body_quads].mean(axis=1) - face.mouth
+    return ((np.linalg.norm(rel, axis=1) < 0.05) & (np.abs(rel[:, 0]) < 0.03) & (rel[:, 2] > 0.012)
+            & (rel[:, 1] > -0.034) & (rel[:, 1] < 0.02))
+
+
+def wounds(b: Body, face, side: float, seed: int = 1, belly: float = 1.0, cheek: bool = True,
+           cheek_at=(0.034, 0.004, 0.02), cheek_size=(0.014, 0.021)) -> Wounds:
+    """Tear one cheek through to the teeth (unless cheek is False) and split the belly (belly = size,
+    0 for none). cheek_at: the tear's centre from the mouth (x toward `side`); cheek_size: its half
+    height and half length. The default sits over the back teeth; a long, low one splits the corner
+    of the mouth back along the cheek, so the jaw hangs open further on that side."""
     from body import J
     V = b.V
     on_body = np.isin(np.arange(len(V)), b.body_ids)
     head = on_body & (b.weight_of("head", "jaw") > 0.5)
-    # Cheek: over the back teeth, a few centimetres behind the corner of the mouth.
-    c = _nearest(b, face.mouth + np.array([0.034 * side, 0.004, 0.02]), head)
+    c = _nearest(b, face.mouth + np.array([cheek_at[0] * side, cheek_at[1], cheek_at[2]]), head)
     rel = V - c
     ang = np.arctan2(rel[:, 1], rel[:, 2])
     rag = 1 + 0.22 * np.sin(ang * 5 + seed) + 0.12 * np.sin(ang * 11 + seed * 2.3)
-    d = np.sqrt((rel[:, 1] / 0.014) ** 2 + (np.hypot(rel[:, 0], rel[:, 2]) / 0.021) ** 2) / rag
-    cheek_dist = np.where(head, d, 99.0)
-    cheek_rim = head * np.clip(1 - (d - 1.0) / 0.9, 0, 1)
+    d = np.sqrt((rel[:, 1] / cheek_size[0]) ** 2 + (np.hypot(rel[:, 0], rel[:, 2]) / cheek_size[1]) ** 2) / rag
+    cheek_dist = np.where(head & cheek, d, 99.0)
+    cheek_rim = head * cheek * np.clip(1 - (d - 1.0) / 0.9, 0, 1)
     # Belly: a vertical split beside the navel, where the gas burst the skin.
     pelvis = b.joints[J["pelvis"]]
     torso = on_body & np.isin(b.dominant, [J["pelvis"], J["spine"], J["chest"]])
@@ -172,14 +229,16 @@ def paint_body(b: Body, part, ids: np.ndarray, face, skin, w: Wounds, degloved: 
     # Rot shows in patches: green where the gut's bacteria spread (strongest over the belly), purple-
     # brown blotches where vessels burst.
     belly = np.clip(1 - np.abs(V[:, 1] - w.belly_centre[1]) / 0.25, 0, 1) * (V[:, 2] < w.belly_centre[2] + 0.12)
-    col = mix(col, PUTRID, np.clip((value_noise(V * 7.0, seed + 3) - 0.52) * 3 + belly * 0.35, 0, 1) * 0.5)
+    face_w = b.weight_of("head", "jaw")[ids]
+    col = mix(col, PUTRID, np.clip((value_noise(V * 7.0, seed + 3) - 0.52) * 3 + belly * 0.35, 0, 1) * 0.5 * (1 - 0.8 * face_w))
     col = mix(col, BLOTCH, np.clip((value_noise(V * 11.0, seed + 11) - 0.6) * 4, 0, 1) * 0.55)
     # Blood settles low once the heart stops: hands, feet, earlobes go purple.
     ext = b.weight_of("wri_l", "wri_r", "fing1_l", "fing2_l", "thumb_l", "fing1_r", "fing2_r", "thumb_r", "ank_l", "ank_r")[ids]
     col = mix(col, LIVID, np.clip(ext * 1.3 - 0.2, 0, 1) * 0.55 * lividity)
-    for k, e in enumerate(face.eyes):   # bruised, sunken sockets
+    for k, e in enumerate(face.eyes):   # hollow sockets: bruised almost black at the lids
         d = np.linalg.norm(V - e, axis=1)
-        col = mix(col, BRUISE, np.clip(1 - (d - 0.012) / 0.024, 0, 1) ** 1.3 * 0.85)
+        col = mix(col, BRUISE, np.clip(1 - (d - 0.012) / 0.03, 0, 1) ** 1.2 * 0.9)
+        col = mix(col, SOCKET, np.clip(1 - (d - 0.011) / 0.012, 0, 1) * 0.85)
         if k == empty_socket:          # eaten out: raw, crusted lids
             col = mix(col, mix(np.tile(np.array(RAW, float), (len(ids), 1)), DRIED, value_noise(V * 150.0, seed + 13)),
                       np.clip(1 - (d - 0.014) / 0.008, 0, 1))
@@ -219,6 +278,11 @@ def paint_body(b: Body, part, ids: np.ndarray, face, skin, w: Wounds, degloved: 
         mat[wall] = MAT["flesh"]
     part.col = np.column_stack([np.clip(col, 0, 255), np.full(len(ids), 255)]).astype(np.uint8)
     part.mat = mat
+    # Where the forehead furrows (the shader reads it from aux): above the brows the scream raised.
+    rel = V - face.head
+    brow_y = np.mean([e[1] for e in face.eyes]) + 0.02
+    forehead = np.clip((V[:, 1] - brow_y) / 0.01, 0, 1) * np.clip((brow_y + 0.06 - V[:, 1]) / 0.02, 0, 1) * np.clip(-rel[:, 2] / 0.05, 0, 1)
+    part.aux = np.clip(forehead * face_w, 0, 1).astype(np.float32)
 
 
 def canal_tint(color, mud_top: float = 0.55, wet: float = 0.8, blood: list | None = None, seed: int = 0):
@@ -239,6 +303,15 @@ def canal_tint(color, mud_top: float = 0.55, wet: float = 0.8, blood: list | Non
             col = mix(col, DRIED, np.clip(bl, 0, 1))
         return col
     return tint
+
+
+def soaked(seed: int = 0, dry_top: float = 1.9):
+    """Garment aux: how wet the cloth is (the shader darkens it and gives it a dull sheen). Soaked
+    through, wettest low down where the water runs to, drying a little in patches up top."""
+    def aux(bb, ids, P):
+        n = value_noise(P * 6.0, seed + 21)
+        return np.clip(0.75 + 0.25 * np.clip((dry_top - P[:, 1]) / dry_top, 0, 1) - 0.25 * n, 0.4, 1.0)
+    return aux
 
 
 def drool(face, length: float = 0.3, width: float = 0.05):

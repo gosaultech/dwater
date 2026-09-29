@@ -95,6 +95,12 @@ private:
     const Anchor* anchor(const std::string& name) const;
     void add_strands(Strands s);
     void step_strands(float dt);
+    // Water running off a Drowned: drops form at a few low points (fingertips, the chin, hems, the
+    // ends of wet hair), fall, and are gone at the floor.
+    struct Drip { Vector3 p, v; };
+    struct DripSource { int joint; Vector3 off; float next; };   // joint < 0: the end of hair strand `off.x`
+    void add_drip_source(int joint, Vector3 off);
+    void step_drips(float dt);
     void add_skinned(const FilePart& p);
     void add_rigid(int joint, int region, MeshData& d);
     void add_sweep(Sweep s, std::vector<Pt> pts);
@@ -122,6 +128,9 @@ private:
     std::vector<Skinned> skinned_;
     std::vector<Anchor> anchors_;
     std::vector<Strands> strands_;
+    std::vector<DripSource> drip_src_;
+    std::vector<Drip> drips_;
+    Mesh drip_mesh_{};
     friend Character build_survivor();
     friend Character build_drowned(int variant);
     friend Character build_citizen(const std::string& id, int variant);

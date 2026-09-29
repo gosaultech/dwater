@@ -70,7 +70,7 @@ inline Matrix align_y(Vector3 up, float spin) {
 
 // A cluster of zebra mussels on a surface: small striped shells, packed and half-buried.
 inline void mussels(MeshData& d, Vector3 at, Vector3 normal, int count, float spread, unsigned seed) {
-    const Color dark{34, 26, 18, 255}, light{168, 152, 116, 255};
+    const Color dark{30, 24, 18, 255}, light{118, 108, 86, 255};
     unsigned s = seed * 2654435761u + 1u;
     auto rnd = [&s]() { s ^= s << 13; s ^= s >> 17; s ^= s << 5; return float(s & 0xFFFF) / 65535.0f; };
     const Matrix frame = align_y(normal, 0.0f);

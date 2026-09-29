@@ -52,9 +52,11 @@ def eyeball(center, radius, paint, rings_deg, segs=24):
     return P, (P - center) / radius, np.array(C), np.array(M, np.uint8), np.array(tris)
 
 
-def eyes(b, sclera, iris, pupil=(10, 8, 8), iris_r=0.44, mat_eye=MAT["eye"], mat_iris=MAT["iris"], limbus=None, veins=None):
+def eyes(b, sclera, iris, pupil=(10, 8, 8), iris_r=0.44, mat_eye=MAT["eye"], mat_iris=MAT["iris"], limbus=None, veins=None,
+         look_up=0.0, sink=0.0):
     """Both eyeballs on MakeHuman's eye helpers. limbus: a darker ring round the iris; veins: the
-    colour the white turns toward its corners (bloodshot)."""
+    colour the white turns toward its corners (bloodshot); look_up: degrees the eyes roll up;
+    sink: metres they sit deeper in the head."""
     pupil_r = iris_r * 0.42
     deg = lambda r: float(np.degrees(np.arcsin(min(r, 1.0))))
     rings = sorted({0, deg(pupil_r) * 0.5, deg(pupil_r) - 1.2, deg(pupil_r) + 1.2, deg(iris_r) * 0.75, deg(iris_r) - 1.5,
@@ -78,6 +80,11 @@ def eyes(b, sclera, iris, pupil=(10, 8, 8), iris_r=0.44, mat_eye=MAT["eye"], mat
                 return mat_eye, tuple(np.array(sclera[:3]) * (1 - t) + np.array(veins[:3]) * t)
             return mat_eye, sclera
         P, N, C, M, T = eyeball(c, r, paint, rings)
+        if look_up:   # roll the eye about its centre: the front swings up
+            a = np.radians(look_up)
+            R = np.array([[1, 0, 0], [0, np.cos(a), -np.sin(a)], [0, np.sin(a), np.cos(a)]])
+            P, N = (P - c) @ R.T + c, N @ R.T
+        P = P + np.array([0, 0, sink])
         out.append(rigid_part(f"eye_{side}", P, N, C, M, T, J["head"], bm.R_HEAD))
     return out
 

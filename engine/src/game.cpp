@@ -436,7 +436,7 @@ void Game::model_sheet(const std::string& dir, const std::string& only) {
             Vector3 at{0, w.target_y, 0};
             float a = w.orbit_deg * DEG2RAD, e = w.elev_deg * DEG2RAD;
             if (w.head) {
-                at = c.head_point();
+                at = Vector3Add(c.head_point(), {0, -0.04f, 0});   // the face, mouth and all, not just the skull
                 Vector3 f = c.face_dir();
                 a += std::atan2(f.x, -f.z);
             }

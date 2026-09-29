@@ -146,7 +146,7 @@ void main() {
         sss = albedo * vec3(1.1, 0.42, 0.3);
     } else if (mat == 2) {     // drowned skin: marbled vessels, slipping skin, blisters, slime where wet
         albedo *= mix(0.86, 1.06, fbm(p * 8.0));
-        albedo = mix(albedo, albedo * vec3(0.92, 1.02, 0.9), smoothstep(0.4, 0.7, fbm(p * 3.0 + 9.0)));   // greening
+        albedo = mix(albedo, albedo * vec3(0.95, 1.01, 0.94), smoothstep(0.4, 0.7, fbm(p * 3.0 + 9.0)));   // greening
         vec3 q = p * 15.0 + vec3(fbm(p * 4.0) * 2.2);                                        // warped: vessels wander
         float ves = max(smoothstep(0.9, 0.985, ridge(q)), smoothstep(0.93, 0.99, ridge(q * 2.13 + 7.3)) * 0.7);
         float region = smoothstep(0.38, 0.62, fbm(p * 2.4 + 3.0));                            // marbling comes in patches
@@ -158,14 +158,19 @@ void main() {
         float curl = smoothstep(0.64, 0.66, sl) * (1.0 - smoothstep(0.67, 0.685, sl));
         float raw = smoothstep(0.675, 0.695, sl) * smoothstep(0.5, 0.58, fbm(p * 16.0 + 3.1)) * 0.9;   // torn through in places
         float wrk = abs(sin(p.y * 190.0 + fbm(p * 26.0) * 6.0));
-        albedo = mix(albedo, lin(vec3(0.62, 0.62, 0.56)) * mix(0.8, 1.05, wrk), curl * 0.4);
-        albedo = mix(albedo, lin(vec3(0.36, 0.21, 0.19)) * mix(0.7, 1.1, fbm(p * 40.0)), raw * 0.8);   // the dermis: pink-brown, wet
-        float bl = smoothstep(0.84, 0.9, noise(p * 62.0)) * (1.0 - raw);                      // gas blisters
-        albedo = mix(albedo, lin(vec3(0.62, 0.62, 0.52)), bl * 0.35);
+        albedo = mix(albedo, lin(vec3(0.56, 0.56, 0.52)) * mix(0.8, 1.05, wrk), curl * 0.3);
+        albedo = mix(albedo, lin(vec3(0.3, 0.2, 0.19)) * mix(0.7, 1.1, fbm(p * 40.0)), raw * 0.75);   // the dermis: pink-brown, wet
+        float bl = smoothstep(0.9, 0.95, noise(p * 90.0)) * (1.0 - raw);                      // gas blisters: small, glassy
+        albedo = mix(albedo, albedo * vec3(1.15, 1.12, 0.95), bl * 0.5);
+        // Waterlogged skin creases all over (vAux: how deeply; the scream's brows furrow the forehead).
+        // The scream's brows furrow the forehead (vAux: where, from tools/characters/drowned.py).
+        float furrow = smoothstep(0.72, 1.0, sin(p.y * 270.0 + fbm(p * 7.0) * 7.0)) * smoothstep(0.4, 1.0, vAux) * smoothstep(0.3, 0.6, fbm(p * 20.0 + 4.0));
+        albedo *= 1.0 - 0.3 * furrow;
         float wet = max(smoothstep(0.45, 0.66, fbm(p * 5.0 + 7.0)), raw);
         spec = max(mix(0.04, 0.32, wet), bl * 0.6); gloss = max(mix(10.0, 46.0, wet), bl * 90.0);
-        h = fbm(p * 70.0) * 0.6 + fbm(p * 190.0) * 0.25 - ves * region * 0.1 + bl * 0.9 - raw * 0.5 + curl * wrk * 0.3; bk = 0.0022; wrap = 0.4;
-        sss = mix(vec3(0.07, 0.11, 0.07), vec3(0.14, 0.05, 0.04), raw);
+        h = fbm(p * 70.0) * 0.6 + fbm(p * 190.0) * 0.25 - ves * region * 0.1 + bl * 0.6 - raw * 0.5 + curl * wrk * 0.3
+            - furrow * 0.45; bk = 0.0022; wrap = 0.4;
+        sss = mix(vec3(0.05, 0.07, 0.06), vec3(0.08, 0.04, 0.03), raw);
     } else if (mat == 3) {     // coroner's sheet: dirty linen, canal mud, old blood; damp patches
         float st = fbm(p * 6.0);
         albedo = mix(albedo, albedo * vec3(0.5, 0.42, 0.3), smoothstep(0.48, 0.72, st));
@@ -208,8 +213,8 @@ void main() {
         float rg = sin(p.y * 600.0) * 0.5 + 0.5; albedo *= mix(0.55, 1.1, rg); h = rg; bk = 0.0008; spec = 0.9; gloss = 100.0;
     } else if (mat == 15) { albedo *= mix(0.4, 1.0, fbm(p * 90.0)); spec = 0.04; gloss = 8.0; }
     else if (mat == 16) {     // dead eye: milky, clouded cornea under a wet film
-        albedo *= mix(0.86, 1.04, fbm(p * 120.0)); spec = 0.9; gloss = 240.0; wrap = 0.35; rim = 0.25;
-        sss = vec3(0.12, 0.13, 0.14);
+        albedo *= mix(0.8, 1.0, fbm(p * 120.0)); spec = 0.7; gloss = 240.0; wrap = 0.2; rim = 0.12;
+        sss = vec3(0.04, 0.045, 0.05);
     } else if (mat == 17) {   // teeth: yellowed, stained at the gumline
         albedo *= mix(0.7, 1.05, fbm(p * 90.0)); h = fbm(p * 200.0); bk = 0.0006; spec = 0.35; gloss = 50.0; wrap = 0.3;
     } else if (mat == 18) {   // bone: dirty ivory, pitted, wet
@@ -221,9 +226,9 @@ void main() {
         float ves = smoothstep(0.86, 0.97, 1.0 - abs(fbm(p * 30.0) * 2.0 - 1.0));
         albedo = mix(albedo * mix(0.8, 1.1, fbm(p * 25.0)), lin(vec3(0.45, 0.08, 0.1)), ves * 0.7);
         h = fbm(p * 90.0); bk = 0.001; spec = 0.8; gloss = 85.0; wrap = 0.55; sss = vec3(0.4, 0.12, 0.12);
-    } else if (mat == 21) {   // mussel shell: growth rings, lacquered wet
+    } else if (mat == 21) {   // mussel shell: growth rings, wet, crusted with silt
         float gr = sin(length(p) * 1400.0) * 0.5 + 0.5;
-        albedo *= mix(0.82, 1.08, gr); h = gr; bk = 0.0005; spec = 0.55; gloss = 60.0;
+        albedo *= mix(0.82, 1.08, gr) * mix(0.7, 1.0, fbm(p * 200.0)); h = gr; bk = 0.0005; spec = 0.3; gloss = 45.0;
     } else if (mat == 22) {   // canal weed: slimy, light glows through it
         albedo *= mix(0.6, 1.2, fbm(p * 50.0)); spec = 0.5; gloss = 40.0; wrap = 0.6; sss = vec3(0.1, 0.18, 0.05);
     } else if (mat == 23) {   // loose skin: bleached, wrinkled like a washerwoman's fingers, wet
@@ -280,13 +285,22 @@ void main() {
         float aa = clamp(1.4 - fwidth(p.x * 60.0) * 1.2, 0.0, 1.0);
         float fine = mix(0.5, noise(vec3(fract(p.x) * 60.0, p.y * 4.0, p.z * 3.0)), aa);   // the hairs within a clump
         albedo *= mix(0.62, 1.15, fine) * mix(0.85, 1.1, fbm(vec3(p.z * 2.0, p.y * 30.0, 0.5)));
-        h = fine; bk = 0.0006; spec = 0.18; gloss = 40.0; wrap = 0.25; rim = 0.08;
+        h = fine; bk = 0.0006; spec = 0.12; gloss = 40.0; wrap = 0.25; rim = 0.08;
         vec3 dpx = dFdx(vWorld), dpy = dFdy(vWorld), r1 = cross(dpy, N), r2 = cross(N, dpx);
         vec3 g = (dFdx(p.y) * r1 + dFdy(p.y) * r2) * sign(dot(dpx, r1));
         if (dot(g, g) > 1e-20) { strand = normalize(g); aniso = 0.25; }
+    } else if (mat == 38) {   // a drop of water: dark and glassy, it shows only where it catches the light
+        spec = 1.4; gloss = 320.0; wrap = 0.0; rim = 0.5;
     } else if (mat == 24) {   // raw dermis where the outer skin slipped off: wet and pink
-        albedo *= mix(0.7, 1.1, fbm(p * 55.0)); h = fbm(p * 140.0); bk = 0.0008; spec = 0.45; gloss = 55.0; wrap = 0.5;
-        sss = vec3(0.16, 0.05, 0.04);
+        albedo *= mix(0.7, 1.1, fbm(p * 55.0)); h = fbm(p * 140.0); bk = 0.0008; spec = 0.35; gloss = 50.0; wrap = 0.5;
+        sss = vec3(0.09, 0.04, 0.035);
+    }
+    // Soaked cloth (vAux on a garment: how wet): darker, and a dull sheen where the water sits.
+    bool cloth = mat == 3 || mat == 4 || mat == 5 || mat == 6 || mat == 27 || mat == 28 || mat == 32 || mat == 33 || mat == 34;
+    if (cloth && vAux > 0.0) {
+        bool thick = mat == 4 || mat == 28;   // wool and knit drink the water: dark, barely shining
+        albedo *= 1.0 - (thick ? 0.3 : 0.22) * vAux;
+        spec = mix(spec, thick ? 0.06 : 0.16, vAux); gloss = mix(gloss, thick ? 14.0 : 28.0, vAux); bk *= 1.0 - 0.4 * vAux;
     }
     if (bk > 0.0) N = bumpN(N, h, bk);
 
