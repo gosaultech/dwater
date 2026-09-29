@@ -35,6 +35,8 @@ RoomSpec RoomSpec::load(const std::string& path) {
     if (!r.errors.empty()) return r;
     r.id = d["id"];
     r.display_name = d.value("display_name", r.id);
+    r.footsteps = d.value("footsteps", r.footsteps);
+    r.ambience = d.value("ambience", r.ambience);
     r.bounds = rect(d["bounds"]["min"], d["bounds"]["max"]);
     r.height = d["height"];
     for (const auto& s : d["shots"])

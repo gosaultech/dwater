@@ -1,8 +1,9 @@
 // damned_waters/engine/src/game.cpp
-// Purpose: see game.hpp. Render order per frame:
-//   1. plate: painted background, writing its painted DEPTH into the z-buffer
-//   2. characters: real-time, depth-tested against the painting
-//   3. blob shadows, then post (grain + vignette) to the window
+// Purpose: see game.hpp. The fight itself is in game_combat.cpp. Render order per frame:
+//   1. plate: painted background, writing its painted DEPTH into the z-buffer (relit by any
+//      muzzle flash)
+//   2. characters and the fight's debris: real-time, depth-tested against the painting
+//   3. blob shadows, then post (grain + vignette) to the window, and the death screen
 #include "game.hpp"
 
 #include <rlgl.h>
@@ -17,7 +18,12 @@
 namespace dw {
 namespace {
 constexpr float LIGHT_SCALE = 2.4f;   // RoomSpec godot_energy -> this shader's units
-float ease_out(float t) { return 1.0f - (1.0f - t) * (1.0f - t); }
+// The muzzle flash as a light: warm white, bright for a frame or three, reaching a few metres.
+constexpr float FLASH_RANGE = 6.0f;
+const Vector3 FLASH_COLOR{2.6f, 1.9f, 1.1f};
+// The flashlight: a warm-white LED spot, about 42 degrees across, good for a hall's length.
+constexpr float LAMP_RANGE = 9.0f, LAMP_HALF = 21.0f * DEG2RAD;
+const Vector3 LAMP_COLOR{2.5f, 2.35f, 2.1f};
 }  // namespace
 
 bool Game::init(const std::string& room_id) {
@@ -63,17 +69,19 @@ bool Game::init(const std::string& room_id) {
     post_ = LoadShaderFromMemory(nullptr, shaders::POST_FS);
     l_time_ = GetShaderLocation(post_, "u_time");
     l_res_ = GetShaderLocation(post_, "u_res");
+    l_dynPos_ = GetShaderLocation(plate_, "u_dynPos");
+    l_dynCol_ = GetShaderLocation(plate_, "u_dynCol");
+    l_dynDir_ = GetShaderLocation(plate_, "u_dynDir");
     rt_ = LoadRenderTexture(W, H);
     init_shadows();
     near_ = float(rlGetCullDistanceNear());
     far_ = float(rlGetCullDistanceFar());
+    sfx_.init(root + "/game/assets/audio");   // quietly does nothing without an audio device
+    sfx_.ambience(spec_.ambience, 0.45f);
+    fx_.init();
+    fx_.set_bounds(spec_.bounds.x0, spec_.bounds.z0, spec_.bounds.x1, spec_.bounds.z1);
     hero_ = Character::make(Kind::Survivor);
-    drowned_ = Character::make(Kind::Drowned);
-    const Spawn& sp = spec_.spawns.count("start") ? spec_.spawns.at("start") : spec_.spawns.begin()->second;
-    player_ = {sp.pos.x, sp.pos.z, sp.yaw};
-    enemy_ = {0.6f, 1.6f, 0.0f};
-    for (const auto& e : spec_.enemies)
-        if (e.requires_flag.empty()) { enemy_ = {e.pos.x, e.pos.z, e.yaw}; break; }
+    reset_fight();
     cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
     upload_lights();
     animate(0.0f);
@@ -83,7 +91,10 @@ bool Game::init(const std::string& room_id) {
 void Game::shutdown() {
     for (auto& [id, p] : plates_) { UnloadTexture(p.first); UnloadTexture(p.second); }
     hero_.unload();
-    drowned_.unload();
+    for (auto& e : enemies_) e.body.unload();
+    enemies_.clear();
+    fx_.shutdown();
+    sfx_.shutdown();
     UnloadMesh(blob_mesh_);
     UnloadShader(plate_); UnloadShader(char_); UnloadShader(blob_); UnloadShader(post_);
     UnloadRenderTexture(rt_);
@@ -137,7 +148,7 @@ void Game::set_lights(const Vector4* pos, const Vector4* col, const Vector4* dir
 
 // Pick the (up to) two lights that light the characters most, and draw the characters' depth as
 // each of those lights sees them: a perspective view from the light, framing all the characters.
-void Game::render_shadows(std::initializer_list<const Character*> casters) {
+void Game::render_shadows(const std::vector<const Character*>& casters) {
     for (auto& sm : shadows_) sm.light = -1;
     if (casters.size() == 0 || light_n_ == 0) return;
     Vector3 c{};
@@ -147,19 +158,22 @@ void Game::render_shadows(std::initializer_list<const Character*> casters) {
     for (const Character* ch : casters) r = std::max(r, Vector3Distance(ch->joint(J_PELVIS), c));
     r += 1.15f;   // a character reaches about a metre from its hips (hair, raised arms)
     struct Pick { int i; float e; };
-    std::vector<Pick> picks;
-    for (int i = 0; i < light_n_; ++i) {
+    Pick picks[8];
+    int np = 0;
+    for (int i = 0; i < static_lights_; ++i) {                        // the room's lights; a muzzle flash is too brief
         const Vector4 p = light_pos_[i], col = light_col_[i];
         if (int(col.w + 0.5f) == 2) continue;                       // suns: none indoors
         const float dist = Vector3Distance({p.x, p.y, p.z}, c);
         if (dist < 0.5f) continue;                                    // a light among the characters can't frame them
         const float x = std::clamp(1.0f - std::pow(dist / std::max(p.w, 1e-3f), 4.0f), 0.0f, 1.0f);
         const float e = (col.x + col.y + col.z) * x * x / (1.0f + dist * dist * 0.35f);
-        if (e > 0.02f) picks.push_back({i, e});
+        if (e > 0.02f && np < 8) picks[np++] = {i, e};
     }
-    std::sort(picks.begin(), picks.end(), [](const Pick& a, const Pick& b) { return a.e > b.e; });
+    for (int k = 0; k < std::min(np, 2); ++k)   // the brightest two to the front (all we need)
+        for (int m = k + 1; m < np; ++m)
+            if (picks[m].e > picks[k].e) std::swap(picks[k], picks[m]);
     const double keep_near = rlGetCullDistanceNear(), keep_far = rlGetCullDistanceFar();
-    for (size_t k = 0; k < picks.size() && k < 2; ++k) {
+    for (int k = 0; k < np && k < 2; ++k) {
         const Vector4 p = light_pos_[picks[k].i];
         const Vector3 lp{p.x, p.y, p.z};
         const float dist = Vector3Distance(lp, c);
@@ -241,6 +255,28 @@ void Game::upload_lights() {
             dir[n] = {d.x, d.y, d.z, std::cos(half)};
         }
     }
+    static_lights_ = n;
+    // The muzzle flash: one more light on the characters, and a light the painted room never saw
+    // (the plate shader relights the painting with it, from the painted depth).
+    Vector4 dpos[2]{}, dcol[2]{}, ddir[2]{};
+    const float fp = fx_.flash_power();
+    if (fp > 0) {
+        const Vector3 at = fx_.flash_pos();
+        const Vector3 c = Vector3Scale(FLASH_COLOR, fp / 4.0f);
+        dpos[0] = {at.x, at.y, at.z, FLASH_RANGE};
+        dcol[0] = {c.x, c.y, c.z, 0};
+        if (n < 8) { pos[n] = dpos[0]; col[n] = dcol[0]; ++n; }
+    }
+    if (flashlight && hero_.has_lamp()) {
+        const Vector3 at = hero_.lamp(), d = hero_.lamp_dir();
+        dpos[1] = {at.x, at.y, at.z, LAMP_RANGE};
+        dcol[1] = {LAMP_COLOR.x, LAMP_COLOR.y, LAMP_COLOR.z, 1};   // w: a spot
+        ddir[1] = {d.x, d.y, d.z, std::cos(LAMP_HALF)};
+        if (n < 8) { pos[n] = dpos[1]; col[n] = {LAMP_COLOR.x, LAMP_COLOR.y, LAMP_COLOR.z, 1}; dir[n] = ddir[1]; ++n; }
+    }
+    SetShaderValueV(plate_, l_dynPos_, dpos, SHADER_UNIFORM_VEC4, 2);
+    SetShaderValueV(plate_, l_dynCol_, dcol, SHADER_UNIFORM_VEC4, 2);
+    SetShaderValueV(plate_, l_dynDir_, ddir, SHADER_UNIFORM_VEC4, 2);
     set_lights(pos, col, dir, n);
     const float top[3] = {0.03f, 0.034f, 0.046f}, bot[3] = {0.011f, 0.009f, 0.007f}, rim[3] = {0.1f, 0.12f, 0.16f};
     const float fog[3] = {0.006f, 0.007f, 0.009f}, fogr[2] = {5.0f, 16.0f};
@@ -256,139 +292,148 @@ void Game::collide(float& x, float& z, float r) const {
         for (const auto& b : spec_.colliders) resolve_circle_obb(x, z, r, b);
 }
 
-void Game::move_player(float dt) {
-    Actor& p = player_;
-    p.speed = 0;
-    if (health_ <= 0) { p.pose = Pose::Dead; return; }
-    if (IsKeyPressed(KEY_T)) tank_ = !tank_;
-    const float ix = float(IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) - float(IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT));
-    const float iy = float(IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) - float(IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN));
-    if (qt_ >= 0) {   // quick turn: 180 degrees in 0.3 s
-        qt_ = std::min(1.0f, qt_ + dt / 0.3f);
-        p.yaw = qt_from_ + kPi * ease_out(qt_);
-        if (qt_ >= 1) qt_ = -1;
-        p.pose = Pose::Idle;
-        return;
-    }
-    if (IsKeyPressed(KEY_Q)) { qt_ = 0; qt_from_ = p.yaw; return; }
-    if (hurt_t_ > 0) { p.pose = Pose::Hurt; return; }
-    if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) || IsKeyDown(KEY_K)) {
-        p.yaw -= ix * 1.9f * dt;
-        p.pose = Pose::Aim;
-        return;
-    }
-    const float speed = IsKeyDown(KEY_LEFT_SHIFT) ? 3.8f : 1.9f;
-    float mx = 0, mz = 0;
-    if (tank_) {
-        p.yaw -= ix * 2.6f * dt;
-        V2 f = forward_from_yaw(p.yaw);
-        float k = iy * speed * (iy < 0 ? 0.6f : 1.0f);
-        mx = f.x * k; mz = f.z * k;
-    } else {
-        Vector3 fwd = Vector3Subtract(cam_.target, cam_.position);
-        fwd.y = 0;
-        fwd = Vector3Normalize(fwd);
-        Vector3 right{-fwd.z, 0, fwd.x};
-        Vector2 in{ix, iy};
-        if (Vector2Length(in) < 0.2f) holding_ = false;
-        else if (!holding_ || std::fabs(Vector2Angle(in, held_in_)) > 35.0f * DEG2RAD) {
-            holding_ = true;   // keep this camera's basis until the stick changes: no cut-induced reversals
-            held_fwd_ = fwd; held_right_ = right; held_in_ = in;
-        }
-        if (holding_) {
-            Vector3 d = Vector3Add(Vector3Scale(held_right_, ix), Vector3Scale(held_fwd_, iy));
-            if (Vector3Length(d) > 1) d = Vector3Normalize(d);
-            mx = d.x * speed; mz = d.z * speed;
-            p.yaw = step_yaw(p.yaw, yaw_towards(0, 0, d.x, d.z), 12.0f * dt);
-        }
-    }
-    p.x += mx * dt;
-    p.z += mz * dt;
-    collide(p.x, p.z, 0.28f);
-    p.speed = std::sqrt(mx * mx + mz * mz);
-    p.pose = p.speed > 2.6f ? Pose::Run : p.speed > 0.1f ? Pose::Walk : Pose::Idle;
-}
-
-void Game::update_enemy(float dt) {
-    Actor& e = enemy_;
-    float dx = player_.x - e.x, dz = player_.z - e.z, dist = std::sqrt(dx * dx + dz * dz);
-    V2 f = forward_from_yaw(e.yaw);
-    float ang = std::acos(std::clamp((f.x * dx + f.z * dz) / std::max(dist, 1e-4f), -1.0f, 1.0f));
-    bool sees = health_ > 0 && dist < 9.0f && (ang < 60.0f * DEG2RAD || dist < 1.5f);
-    EEvent ev = brain_.update(dt, sees, false, dist);
-    float want = yaw_towards(e.x, e.z, player_.x, player_.z);
-    e.speed = 0;
-    switch (brain_.state) {
-        case EState::Pursuit: {
-            e.yaw = step_yaw(e.yaw, want, 2.2f * dt);
-            float align = std::clamp(std::cos(wrap_pi(want - e.yaw)), 0.2f, 1.0f);
-            e.speed = 0.85f * align;
-            e.pose = Pose::Shamble;
-            break;
-        }
-        case EState::Attack: {
-            bool striking = brain_.t >= brain_.windup;
-            if (!striking) e.yaw = step_yaw(e.yaw, want, 1.4f * dt);
-            e.speed = striking ? 2.0f : 0.0f;
-            e.pose = striking ? Pose::Strike : Pose::Windup;
-            break;
-        }
-        case EState::Alert: e.yaw = step_yaw(e.yaw, want, 1.2f * dt); e.pose = Pose::Idle; break;
-        case EState::Recovery: e.pose = Pose::Shamble; break;
-        default: e.pose = Pose::Idle;
-    }
-    V2 fw = forward_from_yaw(e.yaw);
-    e.x += fw.x * e.speed * dt;
-    e.z += fw.z * e.speed * dt;
-    collide(e.x, e.z, 0.32f);
-    if (ev == EEvent::Strike && dist <= 1.7f && ang < 55.0f * DEG2RAD && hurt_t_ <= 0 && health_ > 0) {
-        health_ -= 20;
-        hurt_t_ = 0.5f;
-        player_.x += dx / std::max(dist, 1e-3f) * 0.35f;
-        player_.z += dz / std::max(dist, 1e-3f) * 0.35f;
-        collide(player_.x, player_.z, 0.28f);
-    }
-    // Bodies don't overlap.
-    dx = player_.x - e.x; dz = player_.z - e.z;
-    float d2 = std::sqrt(dx * dx + dz * dz), minD = 0.6f;
-    if (d2 < minD && d2 > 1e-4f) { player_.x += dx / d2 * (minD - d2); player_.z += dz / d2 * (minD - d2); }
-}
-
 void Game::animate(float dt) {
     hero_.place({player_.x, 0, player_.z}, player_.yaw);
-    hero_.animate(player_.pose, player_.speed, dt);
-    drowned_.place({enemy_.x, 0, enemy_.z}, enemy_.yaw);
-    drowned_.animate(enemy_.pose, enemy_.speed, dt);
+    hero_.animate(player_.pose, player_.speed, dt, aim_pitch_);
+    fx_.follow_flash(hero_.muzzle(), hero_.barrel_dir());   // the flame stays on the barrel as it kicks
+    for (auto& e : enemies_) {
+        if (!e.active) continue;
+        e.body.place({e.a.x, 0, e.a.z}, e.a.yaw);
+        e.body.animate(e.a.pose, e.a.speed, dt);
+    }
 }
 
 void Game::update(float dt) {
     time_ += dt;
-    hurt_t_ -= dt;
     banner_t_ -= dt;
     if (IsKeyPressed(KEY_F3)) debug = !debug;
-    move_player(dt);
-    update_enemy(dt);
+    if (IsKeyPressed(KEY_L)) flashlight = !flashlight;
+    update_player(dt);
+    update_enemies(dt);
+    fx_.update(dt);
+    sfx_.update();
     std::string next = select_shot(spec_.zones(), shot_, player_.x, player_.z);
     if (next != shot_) cut_to(next);
-    upload_lights();
     animate(dt);
+    upload_lights();   // after the pose: the flash light sits where the muzzle is now
 }
 
+// The capture setups (--capture): the first four are posed (no AI); the rest play the fight out,
+// with the aim held and the trigger pulled from here, and stop on the frame worth looking at.
 std::string Game::stage(int i) {
-    struct S { float px, pz, pyaw; Pose ppose; float pspeed, ex, ez, eyaw; Pose epose; float espeed; const char* name; };
-    static const S setups[] = {
-        {1.0f, 7.2f, kPi, Pose::Aim, 0, 1.1f, 8.85f, 0.0f, Pose::Windup, 0, "front_door_windup"},
-        {0.62f, 2.45f, kPi, Pose::Idle, 0, 0.55f, 1.0f, kPi, Pose::Shamble, 0.6f, "cellar_door_behind_you"},
-        {0.75f, 4.6f, 0.0f, Pose::Walk, 1.9f, 0.6f, 2.0f, kPi, Pose::Shamble, 0.7f, "hall_approach"},
-        {1.35f, 0.45f, kPi, Pose::Idle, 0, 0.6f, 2.2f, kPi, Pose::Idle, 0, "drowned_portrait"},
+    constexpr float DT = 1.0f / 60;
+    auto run = [&](float seconds) { for (float t = 0; t < seconds; t += DT) update(DT); };
+    auto join = [&](size_t k, float x, float z, float yaw, EState st) -> Enemy& {
+        Enemy& e = enemies_[std::min(k, enemies_.size() - 1)];
+        e.active = true;
+        e.a = {x, z, yaw};
+        e.brain.go(st);
+        return e;
     };
-    const S& s = setups[i];
-    player_ = {s.px, s.pz, s.pyaw, s.pspeed, s.ppose};
-    enemy_ = {s.ex, s.ez, s.eyaw, s.espeed, s.epose};
-    cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
-    for (int f = 0; f < 90; ++f) { time_ += 1.0f / 60; animate(1.0f / 60); }
-    upload_lights();
-    return s.name;
+    reset_fight();
+    banner_t_ = 0;   // no room title over the stills
+    staged_aim_ = false;
+    staged_in_ = {};
+    for (auto& e : enemies_) e.active = false;
+    if (enemies_.empty()) return "no_enemies";
+    std::string name;
+    if (i < 4) {
+        struct S { float px, pz, pyaw; Pose ppose; float pspeed, ex, ez, eyaw; Pose epose; float espeed; const char* name; };
+        static const S setups[] = {
+            {1.0f, 7.2f, kPi, Pose::Aim, 0, 1.1f, 8.85f, 0.0f, Pose::Windup, 0, "front_door_windup"},
+            {0.62f, 2.45f, kPi, Pose::Idle, 0, 0.55f, 1.0f, kPi, Pose::Shamble, 0.6f, "cellar_door_behind_you"},
+            {0.75f, 4.6f, 0.0f, Pose::Walk, 1.9f, 0.6f, 2.0f, kPi, Pose::Shamble, 0.7f, "hall_approach"},
+            {1.35f, 0.45f, kPi, Pose::Idle, 0, 0.6f, 2.2f, kPi, Pose::Idle, 0, "drowned_portrait"},
+        };
+        const S& s = setups[i];
+        player_ = {s.px, s.pz, s.pyaw, s.pspeed, s.ppose};
+        Enemy& e = join(0, s.ex, s.ez, s.eyaw, EState::Idle);
+        e.a.speed = s.espeed;
+        e.a.pose = s.epose;
+        cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+        for (int f = 0; f < 90; ++f) { time_ += DT; animate(DT); }
+        upload_lights();
+        return s.name;
+    }
+    switch (i) {
+        case 4: {   // the M92FS: the flash lights him, the Drowned and the hall for a frame
+            join(0, 0.75f, 3.1f, kPi, EState::Pursuit);
+            player_ = {1.05f, 5.55f, 0.0f};
+            staged_aim_ = true;
+            run(0.6f);
+            fire();
+            run(DT);
+            name = "pistol_flash";
+            break;
+        }
+        case 5: {   // the Jachtgeweer at two metres
+            join(1, 1.1f, 9.1f, 0.0f, EState::Pursuit);
+            switch_gun(1);
+            player_ = {0.9f, 7.0f, kPi};
+            staged_aim_ = true;
+            run(0.6f);
+            fire();
+            run(DT);
+            name = "shotgun_blast";
+            break;
+        }
+        case 6: {   // S aims at the legs: three or four rounds and a shin comes off; it crawls on
+            Enemy& z = join(0, 0.7f, 0.45f, kPi, EState::Pursuit);
+            player_ = {1.0f, 2.5f, 0.0f};
+            staged_aim_ = true;
+            staged_in_ = {0, -1};
+            run(0.5f);
+            for (int k = 0; k < 5 && !z.crawling; ++k) { fire(); run(0.5f); }
+            if (const int off = z.damage.hit(R_FARM_R, 9.0f); off >= 0) cut_off(z, off, shot_dir());   // and a stray round took a hand
+            staged_in_ = {};
+            run(2.5f);
+            name = "legs_off_crawler";
+            break;
+        }
+        case 7: {   // W aims at the head: a crit bursts it (forced here; the dice decide in play)
+            Enemy& s = join(2, 0.75f, 0.5f, kPi, EState::Pursuit);
+            player_ = {0.95f, 2.45f, 0.0f};
+            staged_aim_ = true;
+            staged_in_ = {0, 1};
+            run(0.7f);
+            fire();
+            if (!s.damage.head_gone()) {
+                s.damage.hit(R_HEAD, 0, true);
+                cut_off(s, R_HEAD, shot_dir());
+                kill_enemy(s);
+            }
+            run(0.22f);
+            name = "head_burst";
+            break;
+        }
+        case 8: {   // the first one headless by the door, a bang, and two more come in
+            Enemy& z = join(0, 0.45f, 8.0f, 0.4f, EState::Pursuit);
+            z.damage.hit(R_HEAD, 0, true);
+            cut_off(z, R_HEAD, {0, 0, 1});
+            kill_enemy(z);
+            player_ = {1.1f, 6.95f, kPi};
+            run(1.2f);
+            script_.phase = HallEncounter::Phase::Bang;   // skip the quiet: straight to the door
+            script_.t = HallEncounter::BANG_TO_ENTRY - DT;
+            run(0.6f);
+            staged_aim_ = true;
+            run(0.4f);
+            name = "second_wave";
+            break;
+        }
+        default: {   // bitten once too often
+            join(1, 1.0f, 8.3f, 0.0f, EState::Pursuit);
+            player_ = {1.0f, 7.4f, kPi};
+            health_ = 15;
+            hurt_player(20, 1.0f, 8.3f);
+            run(3.2f);
+            name = "you_died";
+            break;
+        }
+    }
+    staged_aim_ = false;
+    staged_in_ = {};
+    return name;
 }
 
 void Game::upload_studio_lights() {
@@ -478,15 +523,40 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     float orbit = 0, elev = 0, dist = 1, tx = 0, ty = 1, fovy = 30;
     if (std::sscanf(spec.c_str(), "%47[^,],%f,%f,%f,%f,%f,%f", who, &orbit, &elev, &dist, &tx, &ty, &fovy) != 7) return false;
     // who = survivor | drowned[N] (N: the citizen), optionally @head / @chest / @pelvis to orbit that
-    // joint instead (the target is then offset from it by target_x, target_y; @head orbits from the face).
-    std::string w = who, at_joint;
+    // joint instead (the target is then offset from it by target_x, target_y; @head orbits from the face),
+    // then any of /pose=aim /gun=1 /limp=1 /cut=3+8 (regions cut off first; anatomy.hpp).
+    std::string w = who, at_joint, opts;
+    if (const auto k = w.find('/'); k != std::string::npos) { opts = w.substr(k); w.resize(k); }
     if (const auto k = w.find('@'); k != std::string::npos) { at_joint = w.substr(k + 1); w.resize(k); }
     const bool survivor = w == "survivor";
     const int variant = !survivor && w.size() > 7 ? std::atoi(w.c_str() + 7) : 0;
     upload_studio_lights();
     Character c = Character::make(survivor ? Kind::Survivor : Kind::Drowned, variant);
     c.place({0, 0, 0}, 0);
-    for (int f = 0; f < 150; ++f) c.animate(Pose::Idle, 0.0f, 1.0f / 60);
+    Pose pose = Pose::Idle;
+    std::vector<int> cuts;
+    for (size_t i = 0; i < opts.size();) {
+        const size_t j = std::min(opts.find('/', i + 1), opts.size());
+        const std::string o = opts.substr(i + 1, j - i - 1), key = o.substr(0, o.find('=')), val = o.substr(o.find('=') + 1);
+        static const std::map<std::string, Pose> poses = {
+            {"idle", Pose::Idle}, {"walk", Pose::Walk}, {"run", Pose::Run}, {"aim", Pose::Aim}, {"hurt", Pose::Hurt},
+            {"dead", Pose::Dead}, {"dodge", Pose::Dodge}, {"kick", Pose::Kick}, {"reload", Pose::Reload},
+            {"shamble", Pose::Shamble}, {"windup", Pose::Windup}, {"strike", Pose::Strike}, {"stagger", Pose::Stagger},
+            {"floored", Pose::Floored}, {"crawl", Pose::Crawl}};
+        if (key == "pose" && poses.count(val)) pose = poses.at(val);
+        if (key == "gun") c.set_weapon(std::atoi(val.c_str()));
+        if (key == "limp") c.limp = float(std::atof(val.c_str()));
+        if (key == "cut")
+            for (size_t a = 0; a < val.size();) { cuts.push_back(std::atoi(val.c_str() + a)); a = std::min(val.find('+', a), val.size()) + 1; }
+        i = j;
+    }
+    for (int f = 0; f < 90; ++f) c.animate(pose, pose == Pose::Walk || pose == Pose::Shamble ? 0.8f : 0.0f, 1.0f / 60);
+    for (int r : cuts) { MeshData piece; Vector3 centre; c.sever(r, piece, centre); }
+    if (survivor) {   // how true the barrel lies to where he faces (the shots fly along his facing)
+        const Vector3 b = c.barrel_dir();
+        TraceLog(LOG_INFO, "VIEW barrel dir %.2f %.2f %.2f  muzzle %.2f %.2f %.2f", b.x, b.y, b.z, c.muzzle().x, c.muzzle().y, c.muzzle().z);
+    }
+    for (int f = 0; f < 60; ++f) c.animate(pose, pose == Pose::Walk || pose == Pose::Shamble ? 0.8f : 0.0f, 1.0f / 60);
     render_shadows({&c});
     bind_shadows();
     float a = orbit * DEG2RAD;
@@ -523,7 +593,11 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
 
 void Game::render() {
     const auto& plate = plates_.at(shot_);
-    render_shadows({&hero_, &drowned_});
+    casters_.clear();   // (reused: no allocation per frame)
+    casters_.push_back(&hero_);
+    for (const auto& e : enemies_)
+        if (e.active) casters_.push_back(&e.body);
+    render_shadows(casters_);
     bind_shadows();
     SetShaderValueMatrix(plate_, l_pInvView_, MatrixInvert(MatrixLookAt(cam_.position, cam_.target, cam_.up)));
     const float th = std::tan(cam_.fovy * 0.5f * DEG2RAD), tan_half[2] = {th * float(W) / float(H), th};
@@ -546,14 +620,27 @@ void Game::render() {
     SetShaderValue(char_, l_cam_, &cam_.position, SHADER_UNIFORM_VEC3);
     rlDisableBackfaceCulling();
     hero_.draw(char_mat_);
-    drowned_.draw(char_mat_);
+    for (const auto& e : enemies_)
+        if (e.active) e.body.draw(char_mat_);
+    fx_.draw(char_mat_);   // blood, brass, what came off
     rlEnableBackfaceCulling();
     rlDisableDepthMask();
+    BeginBlendMode(BLEND_ADDITIVE);   // the flash glows over whatever is behind it
+    fx_.draw_flash(char_mat_);
+    EndBlendMode();
     BeginBlendMode(BLEND_ALPHA);
     const float strength = 0.35f;   // contact darkening under the feet; the lights cast the real shadows
     SetShaderValue(blob_, l_blob_, &strength, SHADER_UNIFORM_FLOAT);
-    for (const Actor* a : {&player_, &enemy_})
-        DrawMesh(blob_mesh_, blob_mat_, MatrixMultiply(MatrixScale(0.85f, 1, 0.85f), MatrixTranslate(a->x, 0.012f, a->z)));
+    auto blob = [&](const Character& c, const Actor& a) {   // under the feet, or under the whole body when it's down
+        const bool down = a.pose == Pose::Dead || a.pose == Pose::Floored || a.pose == Pose::Crawl ||
+                          a.pose == Pose::CrawlWindup || a.pose == Pose::CrawlStrike;
+        const Vector3 at = down ? Vector3Lerp(c.joint(J_PELVIS), c.joint(J_CHEST), 0.5f) : Vector3{a.x, 0, a.z};
+        const float sz = down ? 1.25f : 0.85f;
+        DrawMesh(blob_mesh_, blob_mat_, MatrixMultiply(MatrixScale(sz, 1, sz), MatrixTranslate(at.x, 0.012f, at.z)));
+    };
+    blob(hero_, player_);
+    for (const auto& e : enemies_)
+        if (e.active) blob(e.body, e.a);
     EndBlendMode();
     rlEnableDepthMask();
     EndMode3D();
@@ -572,11 +659,29 @@ void Game::present() const {
         unsigned char a = static_cast<unsigned char>(std::min(1.0f, banner_t_) * 210);
         DrawText(spec_.display_name.c_str(), 40, 34, 26, Color{210, 200, 180, a});
     }
-    const char* cond = health_ > 66 ? "FINE" : health_ > 33 ? "CAUTION" : health_ > 0 ? "DANGER" : "YOU DIED";
-    Color cc = health_ > 66 ? Color{90, 200, 110, 200} : health_ > 33 ? Color{230, 170, 40, 220} : Color{220, 40, 30, 230};
-    if (health_ < 100) DrawText(cond, 40, GetScreenHeight() - 50, 22, cc);
-    if (debug) DrawText(TextFormat("%d fps  shot %s  pos %.2f %.2f  %s  enemy %d", GetFPS(), shot_.c_str(), player_.x, player_.z,
-                                   tank_ ? "TANK" : "MODERN", int(brain_.state)), 10, 10, 18, YELLOW);
+    // No HUD: how hurt he is shows in his limp; ammo and health live on the status screen.
+    // Only death gets words on the screen, as in the classic games.
+    if (pmode_ == PMode::Dead) {
+        const int sw = GetScreenWidth(), sh = GetScreenHeight();
+        const float k = std::clamp((dead_t_ - 0.8f) / 1.6f, 0.0f, 1.0f);
+        DrawRectangle(0, 0, sw, sh, Color{14, 0, 0, static_cast<unsigned char>(k * 190)});
+        if (k > 0) {
+            const int fs = sh / 9, tw = MeasureText("YOU DIED", fs);
+            DrawText("YOU DIED", (sw - tw) / 2, sh / 2 - fs, fs, Color{170, 16, 12, static_cast<unsigned char>(k * 255)});
+            if (dead_t_ > 2.5f) {
+                const int ps = sh / 36, pw = MeasureText("Press Enter to try again", ps);
+                DrawText("Press Enter to try again", (sw - pw) / 2, sh / 2 + fs / 2, ps, Color{150, 140, 130, 200});
+            }
+        }
+    }
+    if (debug) {
+        std::string es;
+        for (const auto& e : enemies_)
+            if (e.active) es += TextFormat("  %s:%d%s", e.id.c_str(), int(e.brain.state), e.crawling ? "c" : "");
+        DrawText(TextFormat("%d fps  shot %s  pos %.2f %.2f  %s  hp %.0f  mag %d/%d%s", GetFPS(), shot_.c_str(), player_.x, player_.z,
+                            tank_ ? "TANK" : "MODERN", health_, guns_[gun_].mag, inv_.count_of(guns_[gun_].spec().ammo), es.c_str()),
+                 10, 10, 18, YELLOW);
+    }
 }
 
 }  // namespace dw

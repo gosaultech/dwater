@@ -185,8 +185,11 @@ Character build_citizen(const std::string& id, int variant) {
     }
     // Water still running off them: from the points the .dwc marks (fingertips, chin, hems) and
     // from every tenth hank of wet hair.
-    for (const auto& a : c.anchors_)
-        if (a.name.rfind("drip", 0) == 0) c.add_drip_source(a.joint, a.pos);
+    for (const auto& a : c.anchors_) {
+        if (a.name.rfind("drip", 0) != 0) continue;
+        c.add_drip_source(a.joint, a.pos, false, region_of(a.joint));
+        if (a.name == "drip_chin") c.chin_ = a.pos;   // the jaw's hit capsule runs to it
+    }
     if (!c.strands_.empty())
         for (size_t k = 0; k < c.strands_.front().anchor.size(); k += 10) c.add_drip_source(-1, {float(k), 0, 0});
     // Canal growth: mussel clusters, weed trailing from hems and belts.

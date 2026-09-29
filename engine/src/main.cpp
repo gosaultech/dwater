@@ -1,7 +1,10 @@
 // damned_waters/engine/src/main.cpp
 // Purpose: entry point. Normal play, or --capture DIR to stage fixed setups
 // and save screenshots (used to review the look without playing).
-//   ./damned_waters                 play (WASD, Shift run, Q quick turn, RMB/K aim, T tank/modern, F3 debug)
+//   ./damned_waters                 play: WASD move, Shift run, Q quick turn, RMB/K aim (W/S: head/legs),
+//                                   LMB/J/Space fire, R reload, 1/2/F guns, C/Alt dodge, E kick, L flashlight,
+//                                   T tank/modern, F3 debug; Enter after dying to try again
+//   --flashlight                    start with the flashlight on (also for --capture)
 //   ./damned_waters --capture out   stage + screenshot every setup, then exit
 //   ./damned_waters --sheet out     studio turnaround of the cast (model review), then exit
 //                                   (--only pieter,survivor: just those subjects)
@@ -10,6 +13,7 @@
 //                                   who: survivor | drowned[N] [@head | @chest | @pelvis]
 //   ./damned_waters --frames 600    auto-exit (smoke tests)
 #include <raylib.h>
+#include <rlgl.h>
 #include <algorithm>
 #include <string>
 
@@ -28,12 +32,15 @@ int main(int argc, char** argv) {
         else if (a == "--room") room = argv[++i];
         else if (a == "--frames") max_frames = std::stol(argv[++i]);
     }
+    bool flashlight = false;
+    for (int i = 1; i < argc; ++i) flashlight = flashlight || std::string(argv[i]) == "--flashlight";
     SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
     InitWindow(dw::Game::W, dw::Game::H, "Damned Waters");
     SetTargetFPS(60);
     dw::Telemetry tel(std::string(GetApplicationDirectory()) + "damned_waters.db");
     tel.begin(!view.empty() ? "view" : !sheet.empty() ? "sheet" : capture.empty() ? "play" : "capture", room);
     dw::Game game;
+    game.flashlight = flashlight;
     if (!game.init(room)) {
         tel.end("init_failed", 0, 0, 0);
         CloseWindow();
@@ -53,6 +60,7 @@ int main(int argc, char** argv) {
                 BeginDrawing();
                 game.present();
                 if (warm == 1) {
+                    rlDrawRenderBatchActive();   // text and overlays are batched: draw them before reading the screen
                     Image img = LoadImageFromScreen();
                     ExportImage(img, (capture + "/" + name + ".png").c_str());
                     UnloadImage(img);

@@ -53,11 +53,11 @@ Vector3 Character::pattern_offset() {
     return {x, y, z};
 }
 
-void Character::add_rigid(int joint, int region, MeshData& d) {
+void Character::add_rigid(int joint, int region, MeshData& d, int tag) {
     if (!d.count()) return;
     const Vector3 o = pattern_offset();
     for (size_t i = 0; i < d.count(); ++i) { d.tan[i * 4] += o.x; d.tan[i * 4 + 1] += o.y; d.tan[i * 4 + 2] += o.z; }
-    rigid_.push_back({joint, region, upload(d)});
+    rigid_.push_back({joint, region, upload(d), tag});
 }
 
 void Character::add_sweep(Sweep s, std::vector<Pt> pts) {
@@ -282,6 +282,8 @@ void Character::add_skinned(const FilePart& p) {
     m.boneWeights = static_cast<float*>(alloc(p.weight.size() * sizeof(float)));
     m.boneCount = J_COUNT;
     m.boneMatrices = static_cast<Matrix*>(alloc(sizeof(Matrix) * J_COUNT));
+    m.texcoords2 = static_cast<float*>(alloc(size_t(n) * 2 * sizeof(float)));   // x: the body region (cut-off ones aren't drawn)
+    std::vector<std::vector<int>> by_region(R_COUNT);
     std::memcpy(m.vertices, p.pos.data(), p.pos.size() * sizeof(float));
     std::memcpy(m.normals, p.nrm.data(), p.nrm.size() * sizeof(float));
     std::memcpy(m.colors, p.col.data(), p.col.size());
@@ -296,10 +298,14 @@ void Character::add_skinned(const FilePart& p) {
         m.tangents[i * 4 + 1] = p.pos[i * 3 + 1] + o.y;
         m.tangents[i * 4 + 2] = p.pos[i * 3 + 2] + o.z;
         m.tangents[i * 4 + 3] = i < int(p.aux.size()) ? p.aux[i] : 0.0f;   // the material's spare value (see dwc.py)
+        const int reg = i < int(p.region.size()) ? std::min(int(p.region[i]), int(R_COUNT) - 1) : int(R_BODY);
+        m.texcoords2[i * 2] = float(reg);
+        m.texcoords2[i * 2 + 1] = 0;
+        by_region[size_t(reg)].push_back(i);
     }
     for (int j = 0; j < J_COUNT; ++j) m.boneMatrices[j] = MatrixIdentity();
     UploadMesh(&m, false);
-    skinned_.push_back({p.name, m});
+    skinned_.push_back({p.name, m, std::move(by_region)});
 }
 
 void Character::fk() {
@@ -324,7 +330,7 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     float bob = 0;
     targets(pose, speed, dt, aim_pitch, T, bob);
     const bool sharp = pose == Pose::Windup || pose == Pose::Strike || pose == Pose::Hurt || pose == Pose::Stagger ||
-                       pose == Pose::CrawlStrike;
+                       pose == Pose::CrawlStrike || pose == Pose::Kick || pose == Pose::Dodge;
     const float k = smoothing(sharp ? 16.0f : 9.0f, dt);
     for (int j = 0; j < J_COUNT; ++j) ang_[j] = Vector3Lerp(ang_[j], T[j], k);
     bob_ = Lerp(bob_, bob, k);
@@ -379,13 +385,16 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     step_drips(dt);
 }
 
-void Character::add_drip_source(int joint, Vector3 off) {
-    if (drip_mesh_.vertexCount == 0) {   // one small drop, shared by every drip this character sheds
+void Character::add_drip_source(int joint, Vector3 off, bool blood, int region) {
+    if (drip_mesh_.vertexCount == 0) {   // one small drop of each, shared by every drip this character sheds
         MeshData d;
         MeshBuilder(d).material(MAT_WATER).color(Color{120, 128, 130, 255}).ellipsoid({}, {0.003f, 0.0045f, 0.003f}, 8, 6);
         drip_mesh_ = upload(d);
+        d = {};
+        MeshBuilder(d).material(MAT_WATER).color(Color{96, 10, 10, 255}).ellipsoid({}, {0.0032f, 0.0048f, 0.0032f}, 8, 6);
+        blood_drip_mesh_ = upload(d);
     }
-    drip_src_.push_back({joint, off, 0.3f + 1.5f * frand(rng_)});
+    if (drip_src_.size() < 40) drip_src_.push_back({joint, off, 0.3f + 1.5f * frand(rng_), blood, region});
 }
 
 void Character::step_drips(float dt) {
@@ -397,8 +406,8 @@ void Character::step_drips(float dt) {
     }
     drips_.erase(std::remove_if(drips_.begin(), drips_.end(), [](const Drip& d) { return d.p.y < 0.003f; }), drips_.end());
     for (auto& src : drip_src_) {
-        if ((src.next -= dt) > 0) continue;
-        src.next = 0.35f + 1.6f * frand(rng_);   // a drop gathers, falls; the next one takes a while
+        if ((src.next -= dt) > 0 || severed(src.region)) continue;
+        src.next = (src.blood ? 0.2f : 0.35f) + 1.6f * frand(rng_);   // a drop gathers, falls; the next one takes a while
         Vector3 at;
         if (src.joint >= 0) {
             at = Vector3Transform(src.off, W_[src.joint]);
@@ -408,7 +417,7 @@ void Character::step_drips(float dt) {
             if (!st.live || (k + 1) * size_t(st.n) > st.p.size()) continue;
             at = st.p[(k + 1) * size_t(st.n) - 1];
         }
-        if (drips_.size() < 48) drips_.push_back({at, {0, -0.25f, 0}});
+        if (drips_.size() < 64) drips_.push_back({at, {0, -0.25f, 0}, src.blood});
     }
 }
 
@@ -550,18 +559,79 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
             break;
         }
         case Pose::Aim: {   // two-handed pistol: strong arm straight, support arm crossing in
-            T[J_SHO_R] = {kPi / 2 + ap, 0, -0.14f};
+            if (weapon_ == 1) {   // the shotgun at the shoulder: strong elbow out, support arm under the fore-end
+                T[J_SHO_R] = {0.5f + ap, 0.25f, 0.0f};
+                T[J_ELB_R] = {1.2f, 0, 0};
+                T[J_SHO_L] = {1.1f + ap, 0, 0.45f};
+                T[J_ELB_L] = {0.5f, 0, 0};
+                T[J_SPINE] = {-0.08f, -0.12f, 0};
+                T[J_CHEST] = {-0.03f, -0.1f, 0};
+                T[J_NECK] = {-0.12f, 0.12f, -0.12f};   // cheek down to the stock
+                T[J_HIP_L] = {0.25f, 0, -0.05f};
+                T[J_KNE_L] = {-0.22f, 0, 0};
+                T[J_HIP_R] = {-0.2f, 0, 0.06f};
+                T[J_KNE_R] = {-0.1f, 0, 0};
+                bob = -0.025f;
+                break;
+            }
+            T[J_SHO_R] = {kPi / 2 + ap, 0, 0.08f};
             T[J_ELB_R] = {0.02f, 0, 0};
             T[J_SHO_L] = {kPi / 2 + ap - 0.12f, 0, 0.62f};
             T[J_ELB_L] = {0.35f, 0, 0};
-            T[J_SPINE] = {-0.06f, 0.08f, 0};
-            T[J_CHEST] = {-0.03f, 0.08f, 0};
+            T[J_SPINE] = {-0.06f, 0.03f, 0};
+            T[J_CHEST] = {-0.03f, 0.03f, 0};
             T[J_NECK] = {-0.1f, -0.1f, 0};
             T[J_HIP_L] = {0.22f, 0, -0.04f};
             T[J_KNE_L] = {-0.2f, 0, 0};
             T[J_HIP_R] = {-0.2f, 0, 0.06f};
             T[J_KNE_R] = {-0.1f, 0, 0};
             bob = -0.02f;
+            break;
+        }
+        case Pose::Kick: {   // a front kick to floor it: weight back, the right leg driving out
+            T[J_HIP_R] = {1.35f, 0, 0.04f};
+            T[J_KNE_R] = {-0.12f, 0, 0};
+            T[J_HIP_L] = {-0.12f, 0, -0.03f};
+            T[J_KNE_L] = {-0.3f, 0, 0};
+            T[J_SPINE] = {0.22f, 0, 0};
+            T[J_CHEST] = {0.1f, 0, 0};
+            T[J_NECK] = {-0.15f, 0, 0};
+            T[J_SHO_L] = {0.5f, 0, 0.45f};
+            T[J_ELB_L] = {0.6f, 0, 0};
+            T[J_SHO_R] = {0.35f, 0, -0.3f};
+            T[J_ELB_R] = {0.9f, 0, 0};
+            bob = -0.04f;
+            break;
+        }
+        case Pose::Dodge: {   // a low hop out of the way: knees bent, leaning into it, arms tucked
+            T[J_HIP_L] = {0.55f, 0, -0.12f - 0.25f * lean};
+            T[J_HIP_R] = {0.5f, 0, 0.12f - 0.25f * lean};
+            T[J_KNE_L] = T[J_KNE_R] = {-0.95f, 0, 0};
+            T[J_SPINE] = {-0.38f, 0, -0.3f * lean};
+            T[J_CHEST] = {-0.12f, 0, -0.1f * lean};
+            T[J_NECK] = {0.15f, 0, 0};
+            T[J_SHO_L] = {0.7f, 0, 0.35f};
+            T[J_ELB_L] = {1.2f, 0, 0};
+            T[J_SHO_R] = {0.6f, 0, -0.25f};
+            T[J_ELB_R] = {1.1f, 0, 0};
+            bob = -0.16f;
+            break;
+        }
+        case Pose::Reload: {   // head down over the gun: a fresh magazine, or two shells into the barrels
+            const float work = std::sin(t_ * 9.0f) * 0.12f;
+            if (weapon_ == 1) {
+                T[J_SHO_R] = {0.3f, 0, -0.15f};
+                T[J_ELB_R] = {1.15f, 0, 0};
+                T[J_SHO_L] = {0.5f + work, 0, 0.4f};
+                T[J_ELB_L] = {1.35f, 0, 0};
+            } else {
+                T[J_SHO_R] = {0.6f, 0, -0.08f};
+                T[J_ELB_R] = {1.35f, 0, 0};
+                T[J_SHO_L] = {0.55f + work, 0, 0.32f};
+                T[J_ELB_L] = {1.45f, 0, 0};
+            }
+            T[J_NECK] = {-0.3f, 0, 0};
+            T[J_SPINE] = {-0.08f, 0, 0};
             break;
         }
         case Pose::Windup: {   // the readable tell: arms flung up and wide, spine arched, jaw gaping
@@ -655,6 +725,26 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         }
         default: break;
     }
+    if (!drowned && weapon_ == 1 && (pose == Pose::Idle || pose == Pose::Walk || pose == Pose::Run || pose == Pose::Hurt)) {
+        // The shotgun carried at the low ready: both hands on it, barrels angled down ahead.
+        T[J_SHO_R] = {0.28f, 0, -0.16f};
+        T[J_ELB_R] = {0.95f, 0, 0};
+        T[J_SHO_L] = {0.5f, 0, 0.62f};
+        T[J_ELB_L] = {0.55f, 0, 0};
+    }
+    if (!drowned && limp > 0 && pose != Pose::Dead) {
+        // Hurt: he favours the right leg (it barely bends and drags), dips as it takes his weight,
+        // and when it's bad, his free hand holds his ribs.
+        const float s = std::sin(phase_), moving = (pose == Pose::Walk || pose == Pose::Run) ? 1.0f : 0.0f;
+        T[J_KNE_R].x *= 1.0f - 0.75f * limp * moving;
+        T[J_HIP_R].x *= 1.0f - 0.35f * limp * moving;
+        T[J_SPINE] = Vector3Add(T[J_SPINE], {-0.1f * limp, 0, 0.12f * limp * std::max(0.0f, -s) * moving});
+        bob -= 0.035f * limp * std::max(0.0f, -s) * moving;
+        if (limp > 0.7f && weapon_ == 0 && pose != Pose::Aim && pose != Pose::Reload && pose != Pose::Kick && pose != Pose::Dodge) {
+            T[J_SHO_L] = {0.05f, -1.3f, 0.3f};
+            T[J_ELB_L] = {1.75f, 0, 0};
+        }
+    }
     for (float s : {-1.0f, 1.0f}) {   // keep the soles flat
         int hp = s < 0 ? J_HIP_L : J_HIP_R, kn = s < 0 ? J_KNE_L : J_KNE_R;
         T[s < 0 ? J_ANK_L : J_ANK_R] = {-(T[hp].x + T[kn].x) * 0.9f, 0, 0};
@@ -663,21 +753,32 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
 
 void Character::draw(const Material& m, bool shadow_caster) const {
     static unsigned shader = 0;
-    static int skin_loc = -1;
-    if (shader != m.shader.id) { shader = m.shader.id; skin_loc = GetShaderLocation(m.shader, "u_skin"); }
+    static int skin_loc = -1, hidden_loc = -1;
+    if (shader != m.shader.id) {
+        shader = m.shader.id;
+        skin_loc = GetShaderLocation(m.shader, "u_skin");
+        hidden_loc = GetShaderLocation(m.shader, "u_hidden");
+    }
+    const int hidden = int(hidden_), none = 0;
     if (!skinned_.empty()) {
         const int on = 1, off = 0;
         SetShaderValue(m.shader, skin_loc, &on, SHADER_UNIFORM_INT);
+        SetShaderValue(m.shader, hidden_loc, &hidden, SHADER_UNIFORM_INT);
         for (const auto& s : skinned_) DrawMesh(s.mesh, m, MatrixIdentity());
+        SetShaderValue(m.shader, hidden_loc, &none, SHADER_UNIFORM_INT);
         SetShaderValue(m.shader, skin_loc, &off, SHADER_UNIFORM_INT);
     }
-    for (const auto& r : rigid_) DrawMesh(r.mesh, m, W_[r.joint]);
+    for (const auto& r : rigid_)
+        if (!severed(r.region) && (r.tag == 0 || r.tag == weapon_ + 1)) DrawMesh(r.mesh, m, W_[r.joint]);
     for (const auto& d : dyn_) DrawMesh(d.mesh, m, MatrixIdentity());
-    for (const auto& d : dangles_) DrawMesh(d.mesh, m, MatrixIdentity());
+    for (const auto& d : dangles_)
+        if (!severed(d.region)) DrawMesh(d.mesh, m, MatrixIdentity());
     if (shadow_caster) return;   // hair lets light through: its shadow would black out the face
-    for (const auto& s : strands_) DrawMesh(s.mesh, m, MatrixIdentity());
+    if (!severed(R_HEAD))
+        for (const auto& s : strands_) DrawMesh(s.mesh, m, MatrixIdentity());
     for (const auto& d : drips_)   // stretched by their fall
-        DrawMesh(drip_mesh_, m, MatrixMultiply(MatrixScale(1, 1 + 0.5f * std::fabs(d.v.y), 1), MatrixTranslate(d.p.x, d.p.y, d.p.z)));
+        DrawMesh(d.blood ? blood_drip_mesh_ : drip_mesh_, m,
+                 MatrixMultiply(MatrixScale(1, 1 + 0.5f * std::fabs(d.v.y), 1), MatrixTranslate(d.p.x, d.p.y, d.p.z)));
 }
 
 void Character::unload() {
@@ -687,7 +788,10 @@ void Character::unload() {
     for (auto& s : skinned_) UnloadMesh(s.mesh);
     for (auto& s : strands_) UnloadMesh(s.mesh);
     if (drip_mesh_.vertexCount) UnloadMesh(drip_mesh_);
-    drip_mesh_ = {};
+    if (blood_drip_mesh_.vertexCount) UnloadMesh(blood_drip_mesh_);
+    drip_mesh_ = blood_drip_mesh_ = {};
+    hidden_ = 0;
+    wounds_ = 0;
     drip_src_.clear();
     drips_.clear();
     skinned_.clear();

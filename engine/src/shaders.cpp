@@ -18,11 +18,13 @@ namespace dw::shaders {
 // parts and rebuilt tubes (u_skin = 0) use the model matrix alone.
 const char* CHAR_VS = R"(#version 330
 in vec3 vertexPosition; in vec3 vertexNormal; in vec2 vertexTexCoord; in vec4 vertexTangent; in vec4 vertexColor;
-in vec4 vertexBoneIds; in vec4 vertexBoneWeights;
+in vec4 vertexBoneIds; in vec4 vertexBoneWeights; in vec2 vertexTexCoord2;
 uniform mat4 mvp; uniform mat4 matModel; uniform mat4 matNormal;
 uniform mat4 boneMatrices[24]; uniform int u_skin;
 out vec3 vWorld; out vec3 vNormal; out vec3 vRestN; out vec3 vSurf; out vec4 vColor; out float vAo; out float vAux; flat out int vMat;
+flat out int vRegion;
 void main() {
+    vRegion = int(vertexTexCoord2.x + 0.5);   // which body region (anatomy.hpp): cut-off regions are not drawn
     vAux = vertexTangent.w;   // the material's spare per-vertex value (hair: how thinned-out toward its edge)
     vRestN = vertexNormal;   // before skinning: which way the surface faces in pattern space (knit columns)
     vec4 pos = vec4(vertexPosition, 1.0);
@@ -44,6 +46,8 @@ void main() {
 
 const char* CHAR_FS = R"(#version 330
 in vec3 vWorld; in vec3 vNormal; in vec3 vRestN; in vec3 vSurf; in vec4 vColor; in float vAo; in float vAux; flat in int vMat;
+flat in int vRegion;
+uniform int u_hidden;   // a bit per body region that has been shot away: its skin and clothes vanish
 uniform vec3 u_camPos; uniform int u_lightCount;
 uniform vec4 u_lightPos[8]; uniform vec4 u_lightCol[8]; uniform vec4 u_lightDir[8];
 uniform vec3 u_ambTop; uniform vec3 u_ambBottom; uniform vec3 u_rim; uniform vec3 u_fog; uniform vec2 u_fogRange;
@@ -106,6 +110,7 @@ vec3 bumpN(vec3 N, float h, float k) {
 }
 
 void main() {
+    if (((u_hidden >> vRegion) & 1) != 0) discard;   // per triangle, so the cut edge is torn, not clean
     // Hair ribbons (wet long hair) thin out toward their edges and ends into single hairs: streaks
     // along the ribbon, each dropping out at its own point.
     if (vMat == 37 && vAux > 0.0 && hash(vec3(floor(fract(vSurf.x) * 26.0), floor(vSurf.y * 7.0), floor(vSurf.z * 50.0))) < smoothstep(0.25, 1.0, vAux) * 1.05) discard;
@@ -289,6 +294,13 @@ void main() {
         vec3 dpx = dFdx(vWorld), dpy = dFdy(vWorld), r1 = cross(dpy, N), r2 = cross(N, dpx);
         vec3 g = (dFdx(p.y) * r1 + dFdy(p.y) * r2) * sign(dot(dpx, r1));
         if (dot(g, g) > 1e-20) { strand = normalize(g); aniso = 0.25; }
+    } else if (mat == 40) {   // blood: dark red and wet, thicker (darker) where it pools
+        albedo *= mix(0.75, 1.1, fbm(p * 90.0)); h = fbm(p * 60.0) * 0.3; bk = 0.0004; spec = 0.6; gloss = 90.0; wrap = 0.3;
+        sss = vec3(0.08, 0.0, 0.0);
+    } else if (mat == 39) {   // oiled walnut: grain running along the stock, darker figure
+        float g = sin(p.y * 95.0 + fbm(p * 11.0) * 9.0 + p.x * 25.0) * 0.5 + 0.5;
+        albedo *= mix(0.72, 1.12, g) * mix(0.85, 1.05, fbm(p * 70.0));
+        h = g * 0.3 + fbm(p * 160.0) * 0.2; bk = 0.0005; spec = 0.22; gloss = 36.0; wrap = 0.2;
     } else if (mat == 38) {   // a drop of water: dark and glassy, it shows only where it catches the light
         spec = 1.4; gloss = 320.0; wrap = 0.0; rim = 0.5;
     } else if (mat == 24) {   // raw dermis where the outer skin slipped off: wet and pink
@@ -343,6 +355,9 @@ uniform float u_near; uniform float u_far; uniform float u_depthMax;
 uniform mat4 u_invView; uniform vec2 u_tanHalf;          // the camera: pixel + depth -> room position
 uniform sampler2D u_shadow0; uniform sampler2D u_shadow1;
 uniform mat4 u_shadowVP[2]; uniform vec4 u_shadowL[2];   // light position (xyz) and shadow strength (w, 0 = off)
+// Lights the painting never saw (a muzzle flash, a flashlight): position + range, colour + kind
+// (w: 0 point, 1 spot), spot direction + cos(half angle). Black = off.
+uniform vec4 u_dynPos[2]; uniform vec4 u_dynCol[2]; uniform vec4 u_dynDir[2];
 out vec4 finalColor;
 float decode(vec2 rg) { return (floor(rg.r * 255.0 + 0.5) * 256.0 + floor(rg.g * 255.0 + 0.5)) / 65535.0; }
 float castShadow(sampler2D sm, mat4 vp, vec4 L, vec3 P, vec3 N) {
@@ -371,7 +386,22 @@ void main() {
     float dark = 0.0;
     if (u_shadowL[0].w > 0.0) dark += castShadow(u_shadow0, u_shadowVP[0], u_shadowL[0], P, N);
     if (u_shadowL[1].w > 0.0) dark += castShadow(u_shadow1, u_shadowVP[1], u_shadowL[1], P, N);
-    finalColor = vec4(col * (1.0 - clamp(dark, 0.0, 0.82)), 1.0);
+    // Relight the painting: the plate's own colour stands in for the surface's (it's already lit, so
+    // give the dark corners a floor), turned toward the new light by the normal rebuilt from depth.
+    vec3 cam = (u_invView * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    vec3 Nf = dot(N, cam - P) < 0.0 ? -N : N;
+    vec3 alb = max(col, vec3(0.07)) * 1.5, add = vec3(0.0);
+    for (int i = 0; i < 2; i++) {
+        if (dot(u_dynCol[i].rgb, vec3(1.0)) <= 0.0) continue;
+        vec3 toL = u_dynPos[i].xyz - P;
+        float dist = length(toL);
+        vec3 L = toL / max(dist, 1e-4);
+        float x = clamp(1.0 - pow(dist / u_dynPos[i].w, 4.0), 0.0, 1.0);
+        float att = x * x / (1.0 + dist * dist * 0.9);
+        if (u_dynCol[i].w > 0.5) att *= smoothstep(u_dynDir[i].w, mix(u_dynDir[i].w, 1.0, 0.35), dot(-L, normalize(u_dynDir[i].xyz)));
+        add += alb * u_dynCol[i].rgb * att * max(dot(Nf, L), 0.0);
+    }
+    finalColor = vec4(col * (1.0 - clamp(dark, 0.0, 0.82)) + add, 1.0);
 })";
 
 const char* BLOB_FS = R"(#version 330

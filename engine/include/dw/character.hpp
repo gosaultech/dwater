@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 #include "dw/anatomy.hpp"
+#include "dw/combat.hpp"
 #include "dw/mesh_builder.hpp"
 
 namespace dw {
@@ -32,6 +33,7 @@ enum Joint : int {
 enum class Kind { Survivor, Drowned };
 enum class Pose {
     Idle, Walk, Run, Aim, Hurt, Dead,                       // shared
+    Dodge, Kick, Reload,                                    // the survivor fighting
     Shamble, Windup, Strike, Stagger, Floored,              // the Drowned on its feet
     Crawl, CrawlWindup, CrawlStrike                         // the Drowned after losing a leg
 };
@@ -49,8 +51,36 @@ public:
     Vector3 face_dir() const { return Vector3Normalize({-W_[J_HEAD].m8, -W_[J_HEAD].m9, -W_[J_HEAD].m10}); }
     Kind kind = Kind::Survivor;
 
+    // ── Combat: being hit, and coming apart ──
+    // Capsules round each body region still attached, for the shot rays (combat.hpp).
+    int hit_volumes(int owner, HitVolume* out, int max) const;
+    // Where a ray really meets the skin or clothes of `region` (a capsule is only a stand-in): the
+    // point, the surface's normal and the joint that carries it. False if it slips past.
+    bool surface_hit(int region, Vector3 ro, Vector3 rd, Vector3& at, Vector3& n, int& joint) const;
+    // A wound that stays: a dark, raw crater at `at` (world), riding `joint` from then on.
+    void add_wound(int joint, Vector3 at, Vector3 n, float size);
+    // Cut off `root` and everything hanging from it. `piece` is what comes away, posed as it was, in
+    // world space about `centre` (the game drops it); a raw stump stays on the body, and bleeds.
+    void sever(int root, MeshData& piece, Vector3& centre);
+    bool severed(int region) const { return (hidden_ >> region) & 1u; }
+    void recoil(float kick);                  // the gun bucks: arms, shoulders and head jolt
+    void set_weapon(int w);                   // the survivor's gun in hand: 0 = M92FS, 1 = Jachtgeweer
+    int weapon() const { return weapon_; }
+    Vector3 muzzle() const;                   // where the shot leaves the barrel (world)
+    Vector3 barrel_dir() const;               // which way the barrel points (world)
+    Vector3 ejection_port() const;            // where spent brass (or a spent shell) comes out (world)
+    // The survivor's flashlight on his backpack strap: where the lens is, and which way it shines.
+    bool has_lamp() const { return lamp_joint_ >= 0; }
+    Vector3 lamp() const;
+    Vector3 lamp_dir() const;
+    // The Jachtgeweer sits in the hand tipped by this much (radians about the wrist's x), so it
+    // lies level along the aim with the strong elbow bent at the shoulder.
+    static constexpr float SHOTGUN_HOLD = -0.12f;
+    float limp = 0;                           // 0..1: how badly the survivor limps (the only sign of his health)
+    float lean = 0;                           // dodge: -1 hops to his left, 1 to his right, 0 straight back
+
 private:
-    struct Rigid { int joint, region; Mesh mesh; };
+    struct Rigid { int joint, region; Mesh mesh; int tag = 0; };   // tag: 0 always shown; 1 + weapon: only while held
     struct Pt { int joint; Vector3 off; int region; };   // sweep control point (region: the segment ENDING here)
     struct Dyn { Sweep sweep; std::vector<Pt> pts; Mesh mesh; };
     struct Dangle {
@@ -64,7 +94,7 @@ private:
         bool live;
     };
     struct Capsule { int a, b; Vector3 oa, ob; float r; };   // keeps dangles out of the body
-    struct Skinned { std::string name; Mesh mesh; };
+    struct Skinned { std::string name; Mesh mesh; std::vector<std::vector<int>> by_region; };   // vertex ids per region
     struct Anchor { std::string name; int joint; Vector3 pos, dir; };   // joint space, from the .dwc
     // Hair that swings: many thin strands (locs), simulated like dangles but drawn as ONE small
     // indexed mesh, so 64 locs cost one upload a frame.
@@ -97,12 +127,15 @@ private:
     void step_strands(float dt);
     // Water running off a Drowned: drops form at a few low points (fingertips, the chin, hems, the
     // ends of wet hair), fall, and are gone at the floor.
-    struct Drip { Vector3 p, v; };
-    struct DripSource { int joint; Vector3 off; float next; };   // joint < 0: the end of hair strand `off.x`
-    void add_drip_source(int joint, Vector3 off);
+    struct Drip { Vector3 p, v; bool blood; };
+    struct DripSource { int joint; Vector3 off; float next; bool blood; int region; };   // joint < 0: the end of hair strand `off.x`
+    void add_drip_source(int joint, Vector3 off, bool blood = false, int region = R_BODY);
     void step_drips(float dt);
     void add_skinned(const FilePart& p);
-    void add_rigid(int joint, int region, MeshData& d);
+    void add_rigid(int joint, int region, MeshData& d, int tag = 0);
+    Matrix gun_frame() const;                                       // the gun in hand -> world
+    Vector3 skin_point(const Skinned& s, int v) const;             // a skinned vertex where it is this frame
+    Vector3 skin_normal(const Skinned& s, int v) const;
     void add_sweep(Sweep s, std::vector<Pt> pts);
     void add_dangle(int joint, int region, Vector3 anchor, Vector3 rest, int n, float seg, Profile prof, int mat, Color c,
                     float drag = 0.96f, float stiff = 0.0f, int pin_joint = -1, Vector3 pin = {});
@@ -130,7 +163,12 @@ private:
     std::vector<Strands> strands_;
     std::vector<DripSource> drip_src_;
     std::vector<Drip> drips_;
-    Mesh drip_mesh_{};
+    Mesh drip_mesh_{}, blood_drip_mesh_{};
+    unsigned hidden_ = 0;                                           // bit per Region: cut off
+    int weapon_ = 0, wounds_ = 0;
+    int lamp_joint_ = -1;                                           // the flashlight's lens: joint and offset (joint space)
+    Vector3 lamp_off_{};
+    Vector3 chin_{0, -0.05f, -0.085f};                              // jaw space: the chin (for the jaw's hit capsule)
     friend Character build_survivor();
     friend Character build_drowned(int variant);
     friend Character build_citizen(const std::string& id, int variant);

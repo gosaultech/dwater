@@ -46,6 +46,33 @@ void m92fs(MeshData& d) {
     g.material(MAT_METAL).color(BLACK_PARTS).box({0, 0.002f, 0.061f}, {0.0145f, 0.028f, 0.005f}, 0.4f, 12, 6);   // magazine base
 }
 
+// The Jachtgeweer: Pieter's side-by-side hunting shotgun. Built in wrist space like the pistol,
+// barrels down the hand (-y) above it (-z): blued barrels, a silver action, a walnut fore-end
+// and stock. `hold` swings it about the grip so it lies along the aim in the shotgun poses.
+void jachtgeweer(MeshData& d, float hold) {
+    const Color BLUED{34, 36, 40, 255}, ACTION{150, 146, 138, 255}, WALNUT{86, 50, 28, 255}, PAD{20, 18, 18, 255};
+    const float bz = -0.075f;                                                        // the bore axis
+    MeshBuilder b(d);
+    b.transform(MatrixRotateX(hold));
+    b.material(MAT_METAL).color(BLUED);
+    for (float x : {-0.0098f, 0.0098f}) b.tube({x, -0.12f, bz}, {x, -0.86f, bz}, 0.0102f, 0.0094f, 12);   // two barrels
+    b.box({0, -0.49f, bz - 0.0105f}, {0.0042f, 0.37f, 0.0028f}, 0.4f, 8, 16);       // the rib between them
+    b.material(MAT_METAL).color(PAD);
+    for (float x : {-0.0098f, 0.0098f}) b.tube({x, -0.859f, bz}, {x, -0.861f, bz}, 0.0074f, 0.0074f, 10);   // the dark bores
+    b.material(MAT_STEEL).color(ACTION).box({0, -0.07f, bz + 0.008f}, {0.021f, 0.062f, 0.022f}, 0.3f, 16, 12);   // the action
+    b.material(MAT_WOOD).color(WALNUT).box({0, -0.3f, bz + 0.017f}, {0.019f, 0.12f, 0.015f}, 0.45f, 14, 12);    // fore-end
+    b.material(MAT_METAL).color(BLUED);                                               // trigger guard and two triggers
+    b.chain({{0, -0.02f, bz + 0.03f}, {0, -0.07f, bz + 0.058f}, {0, -0.105f, bz + 0.05f}, {0, -0.11f, bz + 0.03f}},
+            {0.003f, 0.003f, 0.003f, 0.003f}, 6, 0.6f);
+    for (float y : {-0.06f, -0.078f}) b.box({0, y, bz + 0.042f}, {0.0022f, 0.003f, 0.01f}, 0.5f, 6, 6);
+    // The stock: the wrist of it in the hand, then down and back toward the shoulder.
+    b.material(MAT_WOOD).color(WALNUT).tube({0, -0.012f, bz + 0.024f}, {0, 0.07f, bz + 0.05f}, 0.017f, 0.019f, 12);
+    const Matrix drop = MatrixMultiply(MatrixRotateX(-0.18f), MatrixTranslate(0, 0.2f, bz + 0.07f));
+    MeshBuilder st(d);
+    st.transform(MatrixMultiply(drop, MatrixRotateX(hold))).material(MAT_WOOD).color(WALNUT).box({}, {0.021f, 0.14f, 0.032f}, 0.4f, 14, 14);
+    st.material(MAT_RUBBER).color(PAD).box({0, 0.145f, 0.004f}, {0.022f, 0.008f, 0.035f}, 0.4f, 10, 8);   // butt pad
+}
+
 void backpack(MeshData& d, Vector3 at) {
     MeshBuilder b(d);
     const Vector3 c = Vector3Add(at, {0, -0.1f, 0.13f});
@@ -162,9 +189,18 @@ Character build_survivor() {
     c.add_strands(std::move(locs));
     MeshData d;
     m92fs(d);
-    c.add_rigid(J_WRI_R, R_FARM_R, d);
+    c.add_rigid(J_WRI_R, R_FARM_R, d, 1);   // shown while the M92FS is in hand
+    d = {};
+    jachtgeweer(d, Character::SHOTGUN_HOLD);   // level along the aim when the elbow is bent at the shoulder
+    c.add_rigid(J_WRI_R, R_FARM_R, d, 2);   // ... or the Jachtgeweer
     if (const auto* a = c.anchor("backpack")) { d = {}; backpack(d, a->pos); c.add_rigid(a->joint, R_BODY, d); }
-    if (const auto* a = c.anchor("flashlight")) { d = {}; flashlight(d, a->pos); c.add_rigid(a->joint, R_BODY, d); }
+    if (const auto* a = c.anchor("flashlight")) {
+        d = {};
+        flashlight(d, a->pos);
+        c.add_rigid(a->joint, R_BODY, d);
+        c.lamp_joint_ = a->joint;
+        c.lamp_off_ = Vector3Add(a->pos, {0, 0.044f, -0.04f});   // just in front of the lens
+    }
     for (const char* name : {"drawstring-1", "drawstring1"})   // the hoodie's cords, swinging; thicker aglets at the ends
         if (const auto* a = c.anchor(name))
             c.add_dangle(a->joint, R_BODY, a->pos, {0, -1, -0.15f}, 8, 0.027f,

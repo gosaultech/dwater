@@ -47,7 +47,9 @@ enum Mat : int {
     MAT_LOCS = 35,       // locs: twisted, matted hair
     MAT_LAMP = 36,       // a lit lens: glows, ignores the room's light
     MAT_WETHAIR = 37,    // long hair, soaked: dark, clumped, glossy
-    MAT_WATER = 38       // a drop of water: dark and glassy, it only shows where it catches the light
+    MAT_WATER = 38,      // a drop of water: dark and glassy, it only shows where it catches the light
+    MAT_WOOD = 39,       // oiled walnut: grain along the part's length (the shotgun's stock)
+    MAT_BLOOD = 40       // fresh blood: dark red, wet, glossy where it pools
 };
 
 struct MeshData {

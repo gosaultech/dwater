@@ -1,19 +1,45 @@
 // damned_waters/engine/src/game.hpp
-// Purpose: one playable room: pre-rendered plates with depth, fixed camera
-// cuts, the survivor (tank or modern controls), one Verdronkene with its brain.
+// Purpose: one playable room: pre-rendered plates with depth, fixed camera cuts, the survivor
+// (tank or modern controls) and the Drowned. Classic survival-horror combat (game_combat.cpp):
+// aim with auto-targeting and W/S for high and low, the M92FS and the Jachtgeweer, reload, kick a
+// staggered Drowned, dodge; RE2-Remake-style gore; no HUD (the survivor's limp tells you how hurt
+// he is). The hall's script: one Drowned, then a bang at the front door and two more.
 #ifndef DW_GAME_HPP
 #define DW_GAME_HPP
 #include <raylib.h>
 #include <initializer_list>
 #include <map>
 #include <string>
+#include <vector>
+#include "audio.hpp"
 #include "dw/character.hpp"
+#include "dw/combat.hpp"
 #include "dw/core.hpp"
 #include "dw/room_spec.hpp"
+#include "effects.hpp"
 
 namespace dw {
 
 struct Actor { float x = 0, z = 0, yaw = 0, speed = 0; Pose pose = Pose::Idle; };
+
+// One Drowned: its body, where it is, its mind and what's been shot off it.
+struct Enemy {
+    std::string id;
+    int variant = 0;
+    Character body;
+    Actor a;
+    EnemyBrain brain;
+    BodyDamage damage;
+    bool active = false;          // in the room (the second wave waits behind the front door)
+    float gurgle = 3, dead_t = 0, push_x = 0, push_z = 0, step = 0;
+    float speed = 0.85f, turn = 2.2f, reach = 1.7f, bite = 20;     // m/s, rad/s, m, and what a lunge takes off him
+    bool pooled = false;          // blood has started spreading under it
+    bool heard = false;           // a noise reached it this frame (a shot, a footstep)
+    bool crawling = false;        // lost a leg: down on the floor for good
+};
+
+// The survivor's fighting state.
+enum class PMode { Normal, Aim, QuickTurn, Dodge, Kick, Hurt, Dead };
 
 class Game {
 public:
@@ -23,7 +49,7 @@ public:
     void update(float dt);          // input, AI, animation
     void render();                  // scene -> offscreen target
     void present() const;           // post-process to the window + HUD
-    int capture_count() const { return 4; }
+    int capture_count() const { return 10; }
     std::string stage(int i);       // pose a capture setup; returns its name
     // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
     // only: a comma-separated list of subjects to render (empty: all).
@@ -33,6 +59,10 @@ public:
     // (target_x, target_y, 0), or that joint offset by (target_x, target_y).
     bool studio_view(const std::string& spec, const std::string& png);
     bool debug = false;
+    bool flashlight = false;   // L: the flashlight on his strap (a spot on the characters and on the painted room)
+    // What happened in the fight, for the telemetry database.
+    struct Stats { int shots = 0, hits = 0, kills = 0, limbs = 0, heads = 0, kicks = 0, dodges = 0, deaths = 0; float damage_taken = 0; };
+    const Stats& stats() const { return stats_; }
 
 private:
     // Real shadows from up to two lights at a time (whichever light the characters most): each
@@ -45,17 +75,43 @@ private:
     };
     static constexpr int SHADOW_RES = 1024;
     void init_shadows();
-    void render_shadows(std::initializer_list<const Character*> casters);
+    void render_shadows(const std::vector<const Character*>& casters);
     void bind_shadows();                // shadow uniforms for the character and plate shaders
 
     void cut_to(const std::string& id);
     void upload_lights();
     void upload_studio_lights();
     void set_lights(const Vector4* pos, const Vector4* col, const Vector4* dir, int n);   // uploads and remembers them
-    void move_player(float dt);
-    void update_enemy(float dt);
+    void move_player(float dt, float ix, float iy, float speed_scale);   // walking and running
     void collide(float& x, float& z, float r) const;
     void animate(float dt);
+    // Combat (game_combat.cpp).
+    void reset_fight();                          // a fresh start: full health, guns loaded, the first Drowned waiting
+    void update_player(float dt);
+    void update_enemies(float dt);
+    void enter_aim();
+    void aim(float dt, float ix, float iy);
+    void fire();
+    void reload();
+    void switch_gun(int g);
+    bool common_actions(float ix, float iy);     // dodge, reload, weapon keys: true if one took over this frame
+    void start_dodge(float ix, float iy);
+    int kickable() const;
+    void hurt_player(float dmg, float from_x, float from_z);
+    void cut_off(Enemy& e, int region, Vector3 dir);   // a part of it comes away: the piece falls, blood
+    float wall_hit(Vector3 from, Vector3 dir, float range) const;   // how far a shot flies before a wall (or range)
+    void noise(float x, float z, float radius);   // every Drowned in earshot hears it
+    void set_pmode(PMode m) { pmode_ = m; pmode_t_ = 0; }
+    bool aim_held() const;
+    bool fire_pressed() const;
+    Vector3 aim_point(const Enemy& e) const;     // where on the target the gun points (W: the head, S: a leg)
+    Vector3 shot_dir() const;                    // the way a shot flies (before any spread)
+    void kill_enemy(Enemy& e);
+    void become_crawler(Enemy& e);
+    Vector3 ear() const { return {player_.x, 1.6f, player_.z}; }
+    Vector3 ear_right() const;                   // the screen's right: sounds pan the way the camera sees them
+    void say(const Enemy& e, const char* sound, float volume = 1.0f);   // a sound from a Drowned
+    float frand() { rng_ ^= rng_ << 13; rng_ ^= rng_ >> 17; rng_ ^= rng_ << 5; return float(rng_ & 0xFFFFFF) / 16777215.0f; }
 
     RoomSpec spec_;
     std::map<std::string, std::pair<Texture2D, Texture2D>> plates_;
@@ -65,10 +121,30 @@ private:
     Material char_mat_{}, blob_mat_{};
     Mesh blob_mesh_{};
     RenderTexture2D rt_{};
-    Character hero_, drowned_;
-    Actor player_, enemy_;
-    EnemyBrain brain_;
-    float health_ = 100, hurt_t_ = 0, time_ = 0, banner_t_ = 3.5f, qt_ = -1, qt_from_ = 0, near_ = 0.01f, far_ = 1000.0f;
+    Character hero_;
+    Actor player_;
+    std::vector<Enemy> enemies_;
+    HallEncounter script_;
+    SoundBank sfx_;
+    Effects fx_;
+    // The survivor in a fight.
+    PMode pmode_ = PMode::Normal;
+    float pmode_t_ = 0, invuln_ = 0, dodge_cd_ = 0, aim_pitch_ = 0, manual_pitch_ = 0, aim_snap_ = 0, dead_t_ = 0;
+    Vector3 dodge_dir_{}, knock_{};              // the dodge's direction; being knocked back (m/s)
+    int aim_target_ = -1, kick_target_ = -1, gun_ = 0, spent_shells_ = 0;
+    int aim_leg_ = -1;                           // aiming low: which leg (0 left, 1 right; -1 not chosen yet)
+    bool kick_done_ = false;
+    Firearm guns_[2];
+    Inventory inv_;
+    float step_accum_ = 0, reload_shells_t_ = -1;
+    unsigned rng_ = 0x9E3779B9u;
+    Stats stats_;
+    bool staged_aim_ = false;                    // capture setups hold the aim and the stick from code
+    Vector2 staged_in_{};
+    std::vector<const Character*> casters_;      // who casts shadows this frame (kept: no allocation per frame)
+    float health_ = 100, time_ = 0, banner_t_ = 3.5f, qt_ = -1, qt_from_ = 0, near_ = 0.01f, far_ = 1000.0f;
+    int static_lights_ = 0;                      // room lights (they cast shadows); the flash comes after them
+    int l_dynPos_ = -1, l_dynCol_ = -1, l_dynDir_ = -1;
     bool tank_ = false;
     Vector3 held_fwd_{0, 0, -1}, held_right_{1, 0, 0};
     Vector2 held_in_{};

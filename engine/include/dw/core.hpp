@@ -84,21 +84,31 @@ inline bool resolve_circle_obb(float& x, float& z, float r, const Obb2& b) {
     return true;
 }
 
-// ── Enemy brain: IDLE -> ALERT -> PURSUIT -> ATTACK -> RECOVERY (+STAGGER, DEAD) ──
-enum class EState { Idle, Alert, Pursuit, Attack, Recovery, Stagger, Dead };
-enum class EEvent { None, Alerted, Pursue, Windup, Strike, Calmed };
+// ── Enemy brain ─────────────────────────────────────────────────────────────────
+//   IDLE -> ALERT -> PURSUIT -> ATTACK -> RECOVERY (-> RETREAT) -> PURSUIT
+//   plus STAGGER (a hit), FLOORED (a kick or a heavy blast) and DEAD.
+// A pure state machine (ported from the Godot demo's EnemyBrain): the game feeds it senses and
+// hits and acts on the events it returns. Tuning comes from the fields, so a Drowned and a
+// crawler share one brain with different numbers (two drivers, one car, different habits).
+enum class EState { Idle, Alert, Pursuit, Attack, Recovery, Retreat, Stagger, Floored, Dead };
+enum class EEvent { None, Alerted, Pursue, Windup, Strike, Calmed, GotUp };
+enum class EHit { Ignored, Hurt, Staggered, Floored, Died };
 
 struct EnemyBrain {
     float hp = 6, alert_time = 0.7f, attack_range = 1.25f, windup = 0.85f, strike_window = 0.25f;
-    float recovery = 1.1f, stagger_time = 0.4f, give_up = 6.0f;
+    float recovery = 1.1f, retreat_time = 0.0f, stagger_time = 0.4f, stagger_immunity = 1.2f, floor_time = 2.4f;
+    float give_up = 6.0f;
     EState state = EState::Idle;
-    float t = 0, lost = 0;
+    float t = 0, lost = 0, immune = 0;
     bool struck = false;
 
+    bool dead() const { return state == EState::Dead; }
+    bool kickable() const { return state == EState::Stagger; }
     void go(EState s) { state = s; t = 0; if (s == EState::Attack) struck = false; }
-    // Returns at most one event per tick (the game reacts to it).
+    // sees: in its view and nothing in between; heard: a noise reached it. At most one event per tick.
     EEvent update(float dt, bool sees, bool heard, float dist) {
         t += dt;
+        immune = std::max(0.0f, immune - dt);
         switch (state) {
             case EState::Idle:
                 if (sees || heard) { go(EState::Alert); return EEvent::Alerted; }
@@ -117,15 +127,33 @@ struct EnemyBrain {
                 if (t >= windup + strike_window) go(EState::Recovery);
                 break;
             case EState::Recovery:
-                if (t >= recovery) { go(EState::Pursuit); return EEvent::Pursue; }
+                if (t >= recovery) { go(retreat_time > 0 ? EState::Retreat : EState::Pursuit); return EEvent::Pursue; }
+                break;
+            case EState::Retreat:
+                if (t >= retreat_time) { go(EState::Pursuit); return EEvent::Pursue; }
                 break;
             case EState::Stagger:
                 if (t >= stagger_time) { go(EState::Pursuit); return EEvent::Pursue; }
+                break;
+            case EState::Floored:
+                if (t >= floor_time) { go(EState::Pursuit); return EEvent::GotUp; }
                 break;
             case EState::Dead: break;
         }
         return EEvent::None;
     }
+    // A hit. power 1: a bullet; 2: a heavy hit (shotgun, kick) that staggers through the immunity
+    // a fresh stagger gives. knockdown: floors it (a kick, or enough pellets in one blast).
+    EHit take_hit(float damage, int power = 1, bool knockdown = false) {
+        if (dead()) return EHit::Ignored;
+        hp -= damage;
+        if (hp <= 0) { go(EState::Dead); return EHit::Died; }
+        if (knockdown && state != EState::Floored) { go(EState::Floored); return EHit::Floored; }
+        if (state == EState::Floored) return EHit::Hurt;
+        if (immune <= 0 || power >= 2) { immune = stagger_immunity; go(EState::Stagger); return EHit::Staggered; }
+        return EHit::Hurt;
+    }
+    void kill() { if (!dead()) { hp = 0; go(EState::Dead); } }   // a burst head needs no arithmetic
 };
 
 }  // namespace dw

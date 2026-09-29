@@ -19,6 +19,7 @@ struct EnemySpawn { std::string id, kind, requires_flag; V3 pos; float yaw = 0; 
 
 struct RoomSpec {
     std::string id, display_name;
+    std::string footsteps = "wood", ambience;   // which step_*.wav the floor makes; the looping amb_*.wav
     Rect2 bounds{};
     float height = 3;
     std::vector<Shot> shots;
