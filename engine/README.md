@@ -23,19 +23,50 @@ One room (`gang`, the entrance hall) with:
 
 **Not ported yet:** weapons and combat, the other rooms, doors, UI and inventory, saves and audio.
 
-## Build and run (macOS, Apple Silicon)
+## Build and run (macOS and Windows)
+
+The same three commands on every platform, through CMake presets (`engine/CMakePresets.json`).
+The first configure downloads the pinned dependencies (raylib 5.5, nlohmann/json 3.11.3,
+GoogleTest 1.14, and SQLite on Windows), so the first build takes a few minutes. Builds land in
+`build/<platform>/` at the repo root.
+
+**macOS (Apple Silicon M1 to M4, or Intel)**
 
 ```bash
-xcode-select --install        # compilers (once)
-brew install cmake            # once
-cmake -S engine -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j
-./build/damned_waters                     # play
-./build/damned_waters --capture /tmp/dw   # stage 4 setups and save screenshots
-./build/damned_waters --sheet /tmp/dw     # studio turnaround of every character (model review)
-./build/damned_waters --sheet /tmp/dw --only pieter,survivor               # just those
-./build/damned_waters --view drowned1@head,0,5,0.5,0,-0.05,30 face.png     # one close-up
-./build/dw_tests                          # unit tests
+xcode-select --install          # compilers (once)
+brew install cmake              # CMake 3.21 or newer (once)
+cd engine
+cmake --preset macos            # configure
+cmake --build --preset macos    # build
+ctest --preset macos            # unit tests
+../build/macos/damned_waters    # play
+```
+
+**Windows 10 or 11**
+
+Install once: Visual Studio 2022 (Community or Build Tools) with *Desktop development with C++*
+(it includes CMake), and Git. Then, in a *Developer PowerShell for VS*:
+
+```powershell
+cd engine
+cmake --preset windows
+cmake --build --preset windows
+ctest --preset windows
+..\build\windows\Release\damned_waters.exe
+```
+
+The game finds its rooms through `DW_REPO_ROOT`, which CMake bakes in at configure time, so
+run it from this checkout. On the Mac it draws through Apple's OpenGL 4.1 (layered on Metal);
+the shaders are GLSL 3.30 core, which both platforms support.
+
+**Tools** (swap in `build\windows\Release\` on Windows):
+
+```bash
+../build/macos/damned_waters --capture /tmp/dw   # stage the capture setups and save screenshots
+../build/macos/damned_waters --flashlight --capture /tmp/dw   # the same with the flashlight on
+../build/macos/damned_waters --sheet /tmp/dw     # studio turnaround of every character
+../build/macos/damned_waters --sheet /tmp/dw --only pieter,survivor               # just those
+../build/macos/damned_waters --view drowned1@head,0,5,0.5,0,-0.05,30 face.png     # one close-up
 ```
 
 `--view` takes `who,orbit,elevation,distance,target_x,target_y,fov`. `who` is `survivor` or
@@ -49,17 +80,35 @@ isn't found. The engine reads `../game/data/rooms` and `../game/assets/rooms` th
 
 ## Controls
 
-| Action | Key |
-|---|---|
-| Move | WASD / arrows |
-| Run | Shift |
-| Quick turn (180 degrees) | Q |
-| Aim | Right mouse / K |
-| Toggle tank / modern controls | T |
-| Debug line (fps, shot, position) | F3 |
+Controller first: any DualSense, Xbox or Switch Pro controller (USB or Bluetooth) on both
+macOS and Windows, with the keyboard and mouse working alongside. Pick the layout in the pause
+menu (Options/Start or Esc); it's saved in `damned_waters.db` with the other options. Buttons
+are named by position (PlayStation / Xbox):
 
-In modern mode, controls keep the previous camera's direction across a cut until you change
-direction, so a cut never reverses your movement.
+| Action | Type A (RE Remake) | Type B (Souls) | Type C (Shooter) | Keyboard / mouse |
+|---|---|---|---|---|
+| Move (tilt: walk, all the way: run) | Left stick | Left stick | Left stick | WASD, Shift runs |
+| Aim (locks on) | L2 | L1 | L2 | Right mouse / K |
+| Aim over the body (head, arms, legs) | Right stick | Right stick | Right stick | Mouse, or W/S |
+| Switch target | Flick the right stick | Flick | Flick | Mouse wheel |
+| Fire | R2 | R1 | R2 | Left mouse / J |
+| Dodge | R1 | Circle/B | Circle/B | Space / C |
+| Kick (counter, or a staggered one) and interact | Cross/A | Square/X kicks, Cross/A interacts | Square/X kicks, Cross/A interacts | E |
+| Quick turn | Circle/B | R2 | L1 | Q |
+| Reload | Square/X | Triangle/Y | R1 | R |
+| Status screen | Triangle/Y | Share/View | Share/View | Tab |
+| Flashlight | L1 | L2 | D-pad down | L |
+| M92FS / Remington 870 / next | D-pad left / right / up | D-pad left / right / up | D-pad left / right, Triangle/Y | 1 / 2 / F |
+| Pause and options | Options/Menu | Options/Menu | Options/Menu | Esc |
+
+**Skill.** Dodge in the last moment of a lunge (a perfect dodge) and the Drowned bites air and
+stumbles past, open to a kick, and your next shot does double damage; slow motion on a perfect
+dodge is an option. Kick in the last moment of a lunge (a counter) and it's thrown back and
+floored; kick too early and you eat the bite.
+
+Movement is camera-relative, and a cut keeps the previous camera's directions until you change
+direction, so a cut never reverses your movement. Classic tank controls are in the options
+(or T). Rumble arrives with the switch to raylib's SDL3 backend. F3 shows a debug line.
 
 ## Architecture
 

@@ -1,0 +1,21 @@
+# damned_waters/.gitattributes
+# Purpose: the same checkout on Windows and macOS. Text files get the platform's line endings
+# in the working copy and LF in the repository; scripts that a Unix shell or Python runs stay LF
+# everywhere; assets are binary and never touched.
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.png binary
+*.jpg binary
+*.exr binary
+*.wav binary
+*.ogg binary
+*.dwc binary
+*.glb binary
+*.blend binary
+*.ttf binary
+*.otf binary
+*.zip binary
+*.db binary

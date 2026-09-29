@@ -1,0 +1,43 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "description": "damned_waters/engine/CMakePresets.json: one command per platform. Builds land in <repo>/build/<preset>.",
+      "binaryDir": "${sourceDir}/../build/${presetName}",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "macos",
+      "inherits": "base",
+      "displayName": "macOS (Apple Silicon or Intel, native)",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" },
+      "cacheVariables": { "CMAKE_OSX_DEPLOYMENT_TARGET": "12.0" }
+    },
+    {
+      "name": "windows",
+      "inherits": "base",
+      "displayName": "Windows (Visual Studio, 64-bit)",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
+      "architecture": { "value": "x64", "strategy": "set" }
+    },
+    {
+      "name": "linux",
+      "inherits": "base",
+      "displayName": "Linux",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "macos", "configurePreset": "macos", "configuration": "Release" },
+    { "name": "windows", "configurePreset": "windows", "configuration": "Release" },
+    { "name": "linux", "configurePreset": "linux", "configuration": "Release" }
+  ],
+  "testPresets": [
+    { "name": "macos", "configurePreset": "macos", "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "windows", "configurePreset": "windows", "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "linux", "configurePreset": "linux", "configuration": "Release", "output": { "outputOnFailure": true } }
+  ]
+}

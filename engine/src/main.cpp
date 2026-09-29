@@ -36,11 +36,13 @@ int main(int argc, char** argv) {
     for (int i = 1; i < argc; ++i) flashlight = flashlight || std::string(argv[i]) == "--flashlight";
     SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
     InitWindow(dw::Game::W, dw::Game::H, "Damned Waters");
+    SetExitKey(KEY_NULL);   // Esc pauses (the menu has Quit)
     SetTargetFPS(60);
     dw::Telemetry tel(std::string(GetApplicationDirectory()) + "damned_waters.db");
     tel.begin(!view.empty() ? "view" : !sheet.empty() ? "sheet" : capture.empty() ? "play" : "capture", room);
     dw::Game game;
     game.flashlight = flashlight;
+    game.settings_path = std::string(GetApplicationDirectory()) + "damned_waters.db";   // the options live next to the telemetry
     if (!game.init(room)) {
         tel.end("init_failed", 0, 0, 0);
         CloseWindow();
@@ -70,7 +72,7 @@ int main(int argc, char** argv) {
             TraceLog(LOG_INFO, "captured %s", name.c_str());
         }
     } else {
-        while (!WindowShouldClose()) {
+        while (!WindowShouldClose() && !game.quit_requested()) {
             float dt = std::min(GetFrameTime(), 1.0f / 20.0f);
             worst = std::max(worst, double(GetFrameTime()) * 1000.0);
             game.update(dt);

@@ -9,7 +9,7 @@
 namespace dw {
 namespace {
 constexpr int VOICES = 4;                 // copies of each sound that can play at once
-constexpr const char* SKIP[] = {"boss_", "title_", "perfect_dodge", "amb_"};   // not in this demo (ambience streams)
+constexpr const char* SKIP[] = {"boss_", "title_", "amb_"};   // not in this demo (the ambience streams instead)
 }  // namespace
 
 bool SoundBank::init(const std::string& dir) {

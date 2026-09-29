@@ -1,7 +1,10 @@
 // damned_waters/engine/src/game_combat.cpp
 // Purpose: the fight in the hall.
-//  * The survivor's verbs: aim (auto-targets; W/S for the head or the legs), fire, reload, switch
-//    guns, kick a staggered Drowned, dodge, quick turn; hurt, limping, dead.
+//  * The survivor's verbs, read as actions (input.hpp): move (analog, with a little weight), aim
+//    (locks on; the right stick or the mouse moves the aim over the body: head, arms, legs; a flick
+//    or the wheel switches target), fire, reload, switch guns, dodge, quick turn, and the kick:
+//    a counter in the last moment of a lunge, or a Drowned staggered or overbalanced kicked down.
+//    A dodge in the last moment of a lunge is perfect: it overbalances, the next shot does double.
 //  * The Drowned: senses, the brain's events, the lunge, crawling on after losing a leg.
 //  * What a shot does: wounds that stay, limbs that come off, heads that burst, blood on the floor.
 //  * The hall's script: one Drowned, then a bang at the front door and two more.
@@ -23,12 +26,14 @@ constexpr float VIEW_HALF = 60.0f * kPi / 180.0f;          // ... and how wide (
 constexpr float STRIKE_HALF = 55.0f * kPi / 180.0f;        // a lunge only lands in front of it
 constexpr float PLAYER_R = 0.28f, ENEMY_R = 0.32f;         // bodies on the floor plane (m)
 constexpr float LOCK_HALF = 15.0f * kPi / 180.0f;          // auto-aim holds while the gun faces this close to the target
+constexpr float WALK = 1.9f, RUN = 3.8f;                   // m/s: half a stick (or the keys) walks, all of it runs
+constexpr float ACCEL = 24.0f, DECEL = 32.0f;              // m/s^2: full run in a sixth of a second, a stop in an eighth
+constexpr float TURN = 14.0f, PIVOT = 24.0f;               // rad/s turning to the stick; a reversal pivots faster
 constexpr int VARIANTS[] = {0, 2, 1};                      // who they were: the office worker, Pieter, Sanne
 
 float ease_out(float t) { return 1.0f - (1.0f - t) * (1.0f - t); }
 Vector3 flat_forward(float yaw) { const V2 f = forward_from_yaw(yaw); return {f.x, 0, f.z}; }
 P3 p3(Vector3 v) { return {v.x, v.y, v.z}; }
-float move_toward(float v, float to, float step) { return v < to ? std::min(v + step, to) : std::max(v - step, to); }
 
 // What the body shows for what the mind is doing.
 Pose pose_for(const Enemy& e) {
@@ -42,7 +47,7 @@ Pose pose_for(const Enemy& e) {
         case EState::Pursuit:
         case EState::Retreat: return Pose::Shamble;
         case EState::Attack: return b.t >= b.windup ? Pose::Strike : Pose::Windup;
-        case EState::Stagger: return Pose::Stagger;
+        case EState::Stagger: return e.stumble > 0 ? Pose::Strike : Pose::Stagger;   // overbalanced: carried on by its lunge
         case EState::Floored: return Pose::Floored;
         default: return Pose::Idle;
     }
@@ -93,8 +98,12 @@ void Game::reset_fight() {
     const Spawn& sp = spec_.spawns.count("start") ? spec_.spawns.at("start") : spec_.spawns.begin()->second;
     player_ = {sp.pos.x, sp.pos.z, sp.yaw};
     set_pmode(PMode::Normal);
-    invuln_ = dodge_cd_ = aim_pitch_ = manual_pitch_ = aim_snap_ = dead_t_ = step_accum_ = 0;
+    invuln_ = dodge_cd_ = aim_pitch_ = aim_snap_ = dead_t_ = step_accum_ = 0;
+    focus_t_ = slowmo_t_ = 0;
+    time_scale_ = 1;
     dodge_dir_ = knock_ = {};
+    vel_ = aim_look_ = {};
+    flick_ = {};
     aim_target_ = kick_target_ = -1;
     pump_t_ = slide_t_ = -1;
     hero_.pump = hero_.slide = 0;
@@ -103,8 +112,8 @@ void Game::reset_fight() {
 
 // ── Small helpers ──────────────────────────────────────────────────────────────
 
-bool Game::aim_held() const { return staged_aim_ || IsMouseButtonDown(MOUSE_BUTTON_RIGHT) || IsKeyDown(KEY_K); }
-bool Game::fire_pressed() const { return IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsKeyPressed(KEY_J) || IsKeyPressed(KEY_SPACE); }
+bool Game::aim_held() const { return in_.held(ACT_AIM); }
+bool Game::fire_pressed() const { return in_.hit(ACT_FIRE); }
 
 Vector3 Game::ear_right() const {
     Vector3 f = Vector3Subtract(cam_.target, cam_.position);
@@ -144,22 +153,23 @@ void Game::update_player(float dt) {
     }
     invuln_ = std::max(0.0f, invuln_ - dt);
     dodge_cd_ = std::max(0.0f, dodge_cd_ - dt);
+    focus_t_ = std::max(0.0f, focus_t_ - dt);
     pmode_t_ += dt;
     Actor& p = player_;
     p.speed = 0;
     // How hurt he is shows only in how he moves: the limp eases in, there's no health bar.
     const Condition cond = condition(health_);
     hero_.limp += (limp_of(cond) - hero_.limp) * smoothing(3.0f, dt);
-    if (IsKeyPressed(KEY_T)) tank_ = !tank_;
-    const float ix = float(IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) - float(IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) + staged_in_.x;
-    const float iy = float(IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) - float(IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) + staged_in_.y;
+    if (IsKeyPressed(KEY_T)) { settings_.tank = !settings_.tank; save_settings(); }   // classic tank controls (keyboard)
+    const Vector2 in = in_.move;
     work_actions(dt);
     if (pmode_ != PMode::Aim) aim_pitch_ -= aim_pitch_ * smoothing(10.0f, dt);
+    if (pmode_ != PMode::Normal) vel_ = approach(vel_, {0, 0}, DECEL * dt);   // verbs stop the walk
     switch (pmode_) {
         case PMode::Dead:
             dead_t_ += dt;
             p.pose = Pose::Dead;
-            if (dead_t_ > 2.5f && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_E))) reset_fight();
+            if (dead_t_ > 2.5f && in_.hit(ACT_CONFIRM)) reset_fight();
             return;
         case PMode::QuickTurn: {   // 180 degrees in 0.3 s
             const float k = std::min(1.0f, pmode_t_ / QUICK_TURN_TIME);
@@ -175,6 +185,7 @@ void Game::update_player(float dt) {
             collide(p.x, p.z, PLAYER_R);
             p.pose = Pose::Dodge;
             if (pmode_t_ >= DODGE_TIME) {
+                vel_ = {dodge_dir_.x * v, dodge_dir_.z * v};   // he lands moving: no dead stop
                 if (aim_held()) enter_aim();
                 else set_pmode(PMode::Normal);
             }
@@ -184,7 +195,7 @@ void Game::update_player(float dt) {
             p.pose = Pose::Kick;
             if (!kick_done_ && pmode_t_ >= KICK_AT) {
                 kick_done_ = true;
-                sfx_.play("kick", 0.9f, 0.05f);
+                sfx_.play("kick", kick_counter_ ? 1.0f : 0.9f, 0.05f);
                 if (kick_target_ >= 0 && kick_target_ < int(enemies_.size())) {
                     Enemy& e = enemies_[size_t(kick_target_)];
                     const float dx = e.a.x - p.x, dz = e.a.z - p.z, d = std::max(std::hypot(dx, dz), 1e-3f);
@@ -192,8 +203,10 @@ void Game::update_player(float dt) {
                         ++stats_.kicks;
                         say(e, "enemy_hit", 0.8f);
                         fx_.blood_spray(e.body.joint(J_CHEST), flat_forward(p.yaw), 4, 1.2f);
-                        e.push_x = dx / d * 4.0f;
-                        e.push_z = dz / d * 4.0f;
+                        const float shove = kick_counter_ ? 5.5f : 4.0f;   // a counter throws it back
+                        e.push_x = dx / d * shove;
+                        e.push_z = dz / d * shove;
+                        input_.rumble(0.9f, 0.4f, 0.15f);
                         if (e.brain.take_hit(KICK_DAMAGE, 2, true) == EHit::Died) kill_enemy(e);
                     }
                 }
@@ -212,79 +225,74 @@ void Game::update_player(float dt) {
             return;
         }
         case PMode::Aim:
-            aim(dt, ix, iy);
+            aim(dt);
             return;
         case PMode::Normal:
             break;
     }
-    if (common_actions(ix, iy)) return;
+    if (common_actions()) return;
     if (aim_held()) { enter_aim(); return; }
     const bool run_tap = IsKeyPressed(KEY_LEFT_SHIFT) || IsKeyPressed(KEY_RIGHT_SHIFT);
-    if (IsKeyPressed(KEY_Q) || (tank_ && iy < -0.5f && run_tap)) {   // Q, or back + run on tank controls (RE3)
+    if (in_.hit(ACT_QUICK_TURN) || (settings_.tank && in.y < -0.5f && run_tap)) {   // or back + run on tank controls (RE3)
         qt_from_ = p.yaw;
         set_pmode(PMode::QuickTurn);
         return;
     }
-    if (IsKeyPressed(KEY_E)) {
-        const int k = kickable();
-        if (k >= 0) {
-            kick_target_ = k;
-            kick_done_ = false;
-            p.yaw = yaw_towards(p.x, p.z, enemies_[size_t(k)].a.x, enemies_[size_t(k)].a.z);
-            set_pmode(PMode::Kick);
-            p.pose = Pose::Kick;
-            return;
-        }
-    }
+    if (in_.hit(ACT_KICK) && try_kick()) return;
     if (guns_[gun_].is_reloading()) {   // he stands still to reload; walking off stops the 870's shells
-        const bool moving = std::fabs(ix) > 0.2f || std::fabs(iy) > 0.2f;
-        if (!moving || !guns_[gun_].spec().single_load) { p.pose = Pose::Reload; return; }
+        const bool moving = Vector2Length(in) > 0.2f;
+        if (!moving || !guns_[gun_].spec().single_load) { p.pose = Pose::Reload; vel_ = {}; return; }
         guns_[gun_].stop_loading();
     }
-    move_player(dt, ix, iy, limp_speed(cond));
+    move_player(dt, in, limp_speed(cond));
 }
 
-void Game::move_player(float dt, float ix, float iy, float speed_scale) {
+// Walking and running. The stick's tilt sets the speed (half walks, all the way runs); he gets up
+// to speed and stops in a few frames, and turns to the stick fast (a reversal pivots faster
+// still), so circling a Drowned is a matter of skill, not of fighting the controls.
+void Game::move_player(float dt, Vector2 in, float speed_scale) {
     Actor& p = player_;
-    const bool run = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
-    const float speed = (run ? 3.8f : 1.9f) * speed_scale;
-    float mx = 0, mz = 0;
-    if (tank_) {
-        p.yaw -= ix * 2.6f * dt;
+    const float tilt = std::min(1.0f, Vector2Length(in));
+    const float speed = stick_speed(tilt, WALK, RUN) * speed_scale;
+    Vector2 want{};
+    if (settings_.tank) {   // classic: left/right turn him, forward/back move him (backing up is slower)
+        p.yaw -= in.x * 2.6f * dt;
         const V2 f = forward_from_yaw(p.yaw);
-        const float k = iy * speed * (iy < 0 ? 0.6f : 1.0f);
-        mx = f.x * k;
-        mz = f.z * k;
+        const float k = (in.y < 0 ? -1.0f : 1.0f) * stick_speed(std::fabs(in.y), WALK, RUN) * speed_scale * (in.y < 0 ? 0.6f : 1.0f);
+        want = {f.x * k, f.z * k};
     } else {
         Vector3 fwd = Vector3Subtract(cam_.target, cam_.position);
         fwd.y = 0;
         fwd = Vector3Normalize(fwd);
         const Vector3 right{-fwd.z, 0, fwd.x};
-        const Vector2 in{ix, iy};
-        if (Vector2Length(in) < 0.2f) holding_ = false;
+        if (tilt < 0.2f) holding_ = false;
         else if (!holding_ || std::fabs(Vector2Angle(in, held_in_)) > 35.0f * DEG2RAD) {
             holding_ = true;   // keep this camera's basis until the stick changes: no cut-induced reversals
             held_fwd_ = fwd;
             held_right_ = right;
             held_in_ = in;
         }
-        if (holding_) {
-            Vector3 d = Vector3Add(Vector3Scale(held_right_, ix), Vector3Scale(held_fwd_, iy));
-            if (Vector3Length(d) > 1) d = Vector3Normalize(d);
-            mx = d.x * speed;
-            mz = d.z * speed;
-            p.yaw = step_yaw(p.yaw, yaw_towards(0, 0, d.x, d.z), 12.0f * dt);
+        if (holding_ && tilt > 0) {
+            const Vector3 d = Vector3Normalize(Vector3Add(Vector3Scale(held_right_, in.x), Vector3Scale(held_fwd_, in.y)));
+            want = {d.x * speed, d.z * speed};
+            const float to = yaw_towards(0, 0, d.x, d.z);
+            const bool reversal = std::fabs(wrap_pi(to - p.yaw)) > 2.4f;
+            p.yaw = step_yaw(p.yaw, to, (reversal ? PIVOT : TURN) * dt);
         }
     }
+    const bool faster = Vector2LengthSqr(want) > Vector2LengthSqr(vel_);
+    vel_ = approach(vel_, want, (faster ? ACCEL : DECEL) * dt);
     const float ox = p.x, oz = p.z;
-    p.x += mx * dt;
-    p.z += mz * dt;
+    p.x += vel_.x * dt;
+    p.z += vel_.y * dt;
     collide(p.x, p.z, PLAYER_R);
-    p.speed = std::sqrt(mx * mx + mz * mz);
+    const float moved = std::hypot(p.x - ox, p.z - oz);
+    if (dt > 0 && moved < Vector2Length(vel_) * dt * 0.5f) vel_ = Vector2Scale(vel_, 0.5f);   // ran into a wall: lose the momentum
+    p.speed = dt > 0 ? moved / dt : 0.0f;
     p.pose = p.speed > 2.6f ? Pose::Run : p.speed > 0.1f ? Pose::Walk : Pose::Idle;
     // Footsteps: one per stride, and the Drowned nearby hear them (running carries further).
     const bool running = p.pose == Pose::Run;
-    step_accum_ += std::hypot(p.x - ox, p.z - oz);
+    step_accum_ += moved;
     if (p.speed > 0.1f && step_accum_ >= (running ? 0.85f : 0.62f)) {
         step_accum_ = 0;
         sfx_.play("step_" + spec_.footsteps, running ? 0.8f : 0.5f, 0.08f);
@@ -292,29 +300,29 @@ void Game::move_player(float dt, float ix, float iy, float speed_scale) {
     }
 }
 
-// Dodge, reload and the weapon keys work walking or aiming. True if a dodge took over.
-bool Game::common_actions(float ix, float iy) {
-    if ((IsKeyPressed(KEY_C) || IsKeyPressed(KEY_LEFT_ALT) || IsKeyPressed(KEY_RIGHT_ALT)) && dodge_cd_ <= 0) {
-        start_dodge(ix, iy);
+// Dodge, reload and the weapon buttons work walking or aiming. True if a dodge took over.
+bool Game::common_actions() {
+    if (in_.hit(ACT_DODGE) && dodge_cd_ <= 0) {
+        start_dodge(in_.move);
         return true;
     }
-    if (IsKeyPressed(KEY_R)) reload();
-    if (IsKeyPressed(KEY_F)) switch_gun(1 - gun_);
-    else if (IsKeyPressed(KEY_ONE)) switch_gun(0);
-    else if (IsKeyPressed(KEY_TWO)) switch_gun(1);
+    if (in_.hit(ACT_RELOAD)) reload();
+    if (in_.hit(ACT_WEAPON_NEXT)) switch_gun(1 - gun_);
+    else if (in_.hit(ACT_WEAPON_1)) switch_gun(0);
+    else if (in_.hit(ACT_WEAPON_2)) switch_gun(1);
     return false;
 }
 
-void Game::start_dodge(float ix, float iy) {
+void Game::start_dodge(Vector2 in) {
     const Vector3 f = flat_forward(player_.yaw), right{-f.z, 0, f.x};
     Vector3 d{};
-    if (tank_ || pmode_ == PMode::Aim) {   // relative to him: sideways, or forward past it
-        d = Vector3Add(Vector3Scale(right, ix), Vector3Scale(f, std::max(iy, 0.0f)));
-    } else {                               // relative to the camera, like walking
+    if (settings_.tank || (pmode_ == PMode::Aim && !in_.pad)) {   // relative to him: sideways, or forward past it
+        d = Vector3Add(Vector3Scale(right, in.x), Vector3Scale(f, std::max(in.y, 0.0f)));
+    } else {                               // relative to the camera, like walking (and aiming with a pad)
         Vector3 fwd = Vector3Subtract(cam_.target, cam_.position);
         fwd.y = 0;
         fwd = Vector3Normalize(fwd);
-        d = Vector3Add(Vector3Scale({-fwd.z, 0, fwd.x}, ix), Vector3Scale(fwd, iy));
+        d = Vector3Add(Vector3Scale({-fwd.z, 0, fwd.x}, in.x), Vector3Scale(fwd, in.y));
     }
     if (Vector3LengthSqr(d) < 0.04f) d = Vector3Negate(f);   // no direction: hop back
     dodge_dir_ = Vector3Normalize(d);
@@ -323,6 +331,54 @@ void Game::start_dodge(float ix, float iy) {
     set_pmode(PMode::Dodge);
     ++stats_.dodges;
     sfx_.play("dodge", 0.8f, 0.06f);
+}
+
+// Cross (or E) does what's in front of him. A Drowned in the last moment of its lunge: a counter,
+// it's thrown back and floored. One staggered or overbalanced: kicked down. One still winding up:
+// the kick whiffs and he eats the bite (that's the risk). Nothing there: nothing happens.
+bool Game::try_kick() {
+    const V2 f = forward_from_yaw(player_.yaw);
+    int best = -1, best_rank = 0;
+    float best_d = 1e9f;
+    for (size_t i = 0; i < enemies_.size(); ++i) {
+        const Enemy& e = enemies_[i];
+        if (!e.active || e.brain.dead()) continue;
+        const float dx = e.a.x - player_.x, dz = e.a.z - player_.z, d = std::hypot(dx, dz);
+        if (d > KICK_RANGE || (d > 1e-3f && (dx * f.x + dz * f.z) / d < std::cos(70.0f * kPi / 180.0f))) continue;
+        const int rank = counterable(e.brain) ? 3 : e.brain.kickable() ? 2 : e.brain.state == EState::Attack ? 1 : 0;
+        if (rank > best_rank || (rank == best_rank && rank > 0 && d < best_d)) { best = int(i); best_rank = rank; best_d = d; }
+    }
+    if (best < 0) return false;
+    Enemy& e = enemies_[size_t(best)];
+    kick_counter_ = best_rank == 3;
+    if (kick_counter_) {   // cut its lunge short: it's the one staggering now
+        e.brain.go(EState::Stagger);
+        e.brain.immune = 0;
+        ++stats_.counters;
+        sfx_.play("perfect_dodge", 0.8f, 0.0f);
+        input_.rumble(0.3f, 0.9f, 0.1f);
+    }
+    kick_target_ = best_rank >= 2 ? best : -1;   // a whiff hits nothing
+    kick_done_ = false;
+    player_.yaw = yaw_towards(player_.x, player_.z, e.a.x, e.a.z);
+    set_pmode(PMode::Kick);
+    player_.pose = Pose::Kick;
+    return true;
+}
+
+// A dodge in the last moment of its lunge: it bites the air and stumbles on past, wide open,
+// and his next shot does double. (Slow motion too, if the option is on.)
+void Game::perfect_dodge_on(Enemy& e) {
+    e.brain.overbalance(OVERBALANCE_TIME);
+    e.stumble = 0.45f;
+    const V2 f = forward_from_yaw(e.a.yaw);
+    e.push_x += f.x * 1.8f;
+    e.push_z += f.z * 1.8f;
+    focus_t_ = FOCUS_TIME;
+    ++stats_.perfect_dodges;
+    sfx_.play("perfect_dodge", 0.9f, 0.0f);
+    input_.rumble(0.2f, 0.8f, 0.12f);
+    if (settings_.slowmo) slowmo_t_ = 0.6f;
 }
 
 int Game::kickable() const {
@@ -369,40 +425,66 @@ void Game::enter_aim() {
     }
     aim_target_ = pick_target(player_.x, player_.z, player_.yaw, c.data(), n);
     aim_snap_ = 0.2f;
-    manual_pitch_ = 0;
-    aim_leg_ = -1;
+    aim_look_ = {};   // every lock starts on the chest
+    flick_ = {};
 }
 
-// Where the gun points on the target: the middle of the body, drifting up to the head as W is
-// held, or down to a leg with S: the shin, below the knee, of one leg until it's gone (aim_leg_).
+// A flick of the right stick (or the mouse wheel): the next Drowned that way across the screen.
+void Game::switch_target(int dir) {
+    if (aim_target_ < 0) { enter_aim(); return; }
+    const Vector3 right = ear_right();
+    const Enemy& cur = enemies_[size_t(aim_target_)];
+    const float cx = cur.a.x * right.x + cur.a.z * right.z;
+    int best = -1;
+    float best_dx = 1e9f;
+    for (size_t i = 0; i < enemies_.size(); ++i) {
+        const Enemy& e = enemies_[i];
+        if (int(i) == aim_target_ || !e.active || e.brain.dead()) continue;
+        if (std::hypot(e.a.x - player_.x, e.a.z - player_.z) > AIM_RANGE) continue;
+        const float dx = (e.a.x * right.x + e.a.z * right.z - cx) * float(dir);
+        if (dx > 0.05f && dx < best_dx) { best_dx = dx; best = int(i); }
+    }
+    if (best < 0) return;
+    aim_target_ = best;
+    aim_snap_ = 0.2f;
+    sfx_.play("dry_fire", 0.25f, 0.1f);   // a small click as it moves over
+}
+
+// Where the gun points on the target: the right stick (or the mouse, or W/S) is a cursor over its
+// body (controls.hpp: body_aim). Centred: the chest. Up: the head. Sideways: the forearm of the
+// arm on that side of the screen. Down: the shin of the leg on that side. A part already shot off
+// passes the aim to what's left (the upper arm, the thigh, the other limb).
 Vector3 Game::aim_point(const Enemy& e) const {
     const Character& b = e.body;
     const Vector3 torso = Vector3Lerp(b.joint(J_PELVIS), b.joint(J_CHEST), 0.6f);
-    if (manual_pitch_ > 0) {
-        const Vector3 head = b.severed(R_HEAD) ? b.joint(J_NECK) : b.head_point();
-        return Vector3Lerp(torso, head, manual_pitch_);
+    const BodyAim a = body_aim(aim_look_);
+    if (a.at == AimAt::Torso || a.k <= 0) return torso;
+    const Vector3 right = ear_right();
+    // Of a pair of joints, the one on the wanted side of the screen: 0 = the body's left, 1 = its right.
+    auto side = [&](int jl, int jr, bool want_left) {
+        const bool l_on_left = Vector3DotProduct(b.joint(jl), right) < Vector3DotProduct(b.joint(jr), right);
+        return want_left == l_on_left ? 0 : 1;
+    };
+    Vector3 to = torso;
+    if (a.at == AimAt::Head) {
+        to = b.severed(R_HEAD) ? b.joint(J_NECK) : b.head_point();
+    } else if (a.at == AimAt::ArmLeft || a.at == AimAt::ArmRight) {
+        int s = side(J_SHO_L, J_SHO_R, a.at == AimAt::ArmLeft);
+        if (b.severed(s ? R_UARM_R : R_UARM_L)) s = 1 - s;
+        const int sho = s ? J_SHO_R : J_SHO_L, elb = s ? J_ELB_R : J_ELB_L, wri = s ? J_WRI_R : J_WRI_L;
+        if (b.severed(s ? R_UARM_R : R_UARM_L)) to = torso;                                     // no arms left
+        else if (b.severed(s ? R_FARM_R : R_FARM_L)) to = Vector3Lerp(b.joint(sho), b.joint(elb), 0.6f);   // the upper arm
+        else to = Vector3Lerp(b.joint(elb), b.joint(wri), 0.3f);                                // the forearm
+    } else {
+        int s = side(J_HIP_L, J_HIP_R, a.at == AimAt::LegLeft);
+        if (b.severed(s ? R_THIGH_R : R_THIGH_L)) s = 1 - s;
+        const int hip = s ? J_HIP_R : J_HIP_L, kne = s ? J_KNE_R : J_KNE_L, ank = s ? J_ANK_R : J_ANK_L;
+        if (b.severed(s ? R_THIGH_R : R_THIGH_L)) to = torso;                                   // no legs left
+        else if (b.severed(s ? R_SHIN_R : R_SHIN_L)) to = Vector3Lerp(b.joint(hip), b.joint(kne), 0.6f);   // the thigh
+        else to = Vector3Lerp(b.joint(kne), b.joint(ank), 0.4f);                                // the shin, below the knee
     }
-    if (manual_pitch_ < 0 && aim_leg_ >= 0 && !b.severed(aim_leg_ ? R_SHIN_R : R_SHIN_L)) {
-        const Vector3 leg = Vector3Lerp(b.joint(aim_leg_ ? J_KNE_R : J_KNE_L), b.joint(aim_leg_ ? J_ANK_R : J_ANK_L), 0.4f);
-        return Vector3Lerp(torso, leg, -manual_pitch_);
-    }
-    return torso;
+    return Vector3Lerp(torso, to, a.k);
 }
-
-namespace {
-// Aiming low picks the nearer leg still on, and stays on it.
-int pick_leg(const Character& b, float px, float pz) {
-    int best = -1;
-    float best_d = 1e9f;
-    for (int s = 0; s < 2; ++s) {
-        if (b.severed(s ? R_SHIN_R : R_SHIN_L)) continue;
-        const Vector3 k = b.joint(s ? J_KNE_R : J_KNE_L);
-        const float d = std::hypot(k.x - px, k.z - pz);
-        if (d < best_d) { best_d = d; best = s; }
-    }
-    return best;
-}
-}  // namespace
 
 // The way a shot flies. Locked on and facing the target, it goes to the aim point (the gun's
 // few degrees of wobble in the pose don't matter, as in the classic games); otherwise straight
@@ -418,22 +500,31 @@ Vector3 Game::shot_dir() const {
     return {f.x * std::cos(aim_pitch_), std::sin(aim_pitch_), f.z * std::cos(aim_pitch_)};
 }
 
-void Game::aim(float dt, float ix, float iy) {
+void Game::aim(float dt) {
     Actor& p = player_;
     if (!aim_held()) { set_pmode(PMode::Normal); return; }
-    if (common_actions(ix, iy)) return;   // dodging out of the aim
+    if (common_actions()) return;   // dodging out of the aim
     p.pose = guns_[gun_].is_reloading() ? Pose::Reload : Pose::Aim;
     // The target went down: after a beat, the next one (if any).
     if (aim_target_ >= 0) {
         const Enemy& t = enemies_[size_t(aim_target_)];
         if (t.brain.dead() && t.dead_t > 0.6f) enter_aim();
     }
+    // The aim cursor over the body. A stick glides to where it's held (let go: back to the chest);
+    // the mouse drags it; W/S hold it on the head or the legs.
+    if (in_.pad) {
+        aim_look_ = approach(aim_look_, in_.look, 8.0f * dt);
+        if (const int flick = flick_.update(in_.look, dt)) switch_target(flick);
+    } else {
+        aim_look_.x = std::clamp(aim_look_.x + in_.mouse.x * 0.006f, -1.0f, 1.0f);
+        aim_look_.y = std::clamp(aim_look_.y - in_.mouse.y * 0.006f, -1.0f, 1.0f);
+        if (std::fabs(in_.move.y) > 0.1f) aim_look_ = {0, in_.move.y > 0 ? 1.0f : -1.0f};
+        if (in_.wheel != 0) switch_target(in_.wheel < 0 ? 1 : -1);
+    }
     const Enemy* t = aim_target_ >= 0 ? &enemies_[size_t(aim_target_)] : nullptr;
-    manual_pitch_ = move_toward(manual_pitch_, iy, 4.0f * dt);   // W: up to the head, S: down to the legs
-    if (t && manual_pitch_ < 0 && (aim_leg_ < 0 || t->body.severed(aim_leg_ ? R_SHIN_R : R_SHIN_L)))
-        aim_leg_ = pick_leg(t->body, p.x, p.z);
+    const float turn = in_.pad || !t ? in_.move.x : (std::fabs(in_.move.x) > 0.1f ? in_.move.x : 0.0f);
     const Vector3 ap = t ? aim_point(*t) : Vector3{}, mz = hero_.muzzle();
-    if (t && std::fabs(ix) < 0.2f) {   // snap to it, then follow it round (A/D takes over)
+    if (t && std::fabs(turn) < 0.2f) {   // snap to it, then follow it round (the left stick or A/D takes over)
         // Line the GUN up with it, not his chest: the gun sits right of his middle, so he turns a
         // touch left of the target, more the closer it is (as a shooter does).
         const float right_x = std::cos(p.yaw), right_z = -std::sin(p.yaw);
@@ -442,23 +533,14 @@ void Game::aim(float dt, float ix, float iy) {
         const float want = yaw_towards(p.x, p.z, ap.x, ap.z) + std::asin(std::clamp(off / dist, -0.6f, 0.6f));
         p.yaw = step_yaw(p.yaw, want, (aim_snap_ > 0 ? 9.0f : 2.5f) * dt);
     } else {
-        p.yaw -= ix * AIM_TURN * dt;
+        p.yaw -= turn * AIM_TURN * dt;
     }
     aim_snap_ -= dt;
-    float pitch = manual_pitch_ * 0.4f;
+    float pitch = aim_look_.y * 0.4f;
     if (t) pitch = std::atan2(ap.y - mz.y, std::max(std::hypot(ap.x - mz.x, ap.z - mz.z), 0.3f));   // from the muzzle
     aim_pitch_ += (std::clamp(pitch, -0.8f, 0.55f) - aim_pitch_) * smoothing(12.0f, dt);
     if (fire_pressed()) fire();
-    if (IsKeyPressed(KEY_E)) {   // a staggered one in reach: kick it down
-        const int k = kickable();
-        if (k >= 0) {
-            kick_target_ = k;
-            kick_done_ = false;
-            p.yaw = yaw_towards(p.x, p.z, enemies_[size_t(k)].a.x, enemies_[size_t(k)].a.z);
-            set_pmode(PMode::Kick);
-            p.pose = Pose::Kick;
-        }
-    }
+    if (in_.hit(ACT_KICK)) try_kick();   // a counter, or a kick at one that's down on its luck
 }
 
 void Game::fire() {
@@ -477,6 +559,8 @@ void Game::fire() {
     if (shotgun) { pump_t_ = 0; pump_eject_ = true; }   // and then he pumps the next one in
     else slide_t_ = 0;           // the slide flies back, throws the brass, and runs home (or locks open: empty)
     const Vector3 mz = hero_.muzzle(), aim = shot_dir();
+    const float focus = focus_t_ > 0 ? FOCUS_MULT : 1.0f;   // the shot after a perfect dodge
+    focus_t_ = 0;
     sfx_.play(shotgun ? "shotgun" : "gunshot", 1.0f, 0.04f);
     fx_.flash(mz, hero_.barrel_dir(), shotgun);
     hero_.recoil(shotgun ? 0.8f : 0.4f);   // the muzzle climbs about 20 degrees for the shotgun, 10 for the pistol
@@ -512,7 +596,7 @@ void Game::fire() {
             ++t.wounds;
         }
         bool crit = false;
-        const float dmg = g.damage_for(h.region == R_HEAD, frand(), Vector3Distance(mz, at), &crit);
+        const float dmg = g.damage_for(h.region == R_HEAD, frand(), Vector3Distance(mz, at), &crit) * focus;
         t.dmg[h.region] += dmg;
         t.life += dmg * BodyDamage::LIFE[h.region];
         t.crit = t.crit || crit;
@@ -691,11 +775,15 @@ void Game::update_enemies(float dt) {
         const bool sees = player_alive && dist < SIGHT && (ang < VIEW_HALF || dist < 1.5f);
         const EEvent ev = e.brain.update(dt, sees, e.heard && player_alive, player_alive ? dist : 99.0f);
         e.heard = false;
+        e.stumble = std::max(0.0f, e.stumble - dt);
         switch (ev) {
             case EEvent::Alerted: say(e, "enemy_alert"); break;
             case EEvent::Windup: say(e, "enemy_windup"); break;
             case EEvent::Strike:
-                if (player_alive && dist <= e.reach && ang <= STRIKE_HALF) hurt_player(strike_damage(e), a.x, a.z);
+                if (player_alive && pmode_ == PMode::Dodge && perfect_dodge(pmode_t_) && dist <= e.reach + 1.2f)
+                    perfect_dodge_on(e);   // it bites the air
+                else if (player_alive && dist <= e.reach && ang <= STRIKE_HALF)
+                    hurt_player(strike_damage(e), a.x, a.z);
                 break;
             default: break;
         }

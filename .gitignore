@@ -8,3 +8,4 @@ builds/
 game/assets/characters/*/*.glb
 tools/characters/.cache/
 tools/characters/builds.db*
+build/

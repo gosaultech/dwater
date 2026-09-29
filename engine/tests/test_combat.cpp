@@ -174,6 +174,37 @@ TEST(EnemyBrain, AStaggeredDrownedIsKickableAndAKickFloorsIt) {
     EXPECT_EQ(run(b, b.floor_time + 0.05f, true, 3.0f, EEvent::GotUp), 1);
 }
 
+TEST(EnemyBrain, APerfectDodgeOverbalancesItLongEnoughToKick) {
+    EnemyBrain b;
+    b.state = EState::Pursuit;
+    b.update(DT, true, false, 1.0f);                       // in reach: the wind-up starts
+    b.overbalance(verbs::OVERBALANCE_TIME);
+    EXPECT_TRUE(b.kickable());
+    EXPECT_EQ(run(b, verbs::OVERBALANCE_TIME - 0.1f, true, 1.0f, EEvent::Pursue), 0);   // longer than a plain stagger
+    EXPECT_TRUE(b.kickable());
+    EXPECT_EQ(run(b, 0.2f, true, 1.0f, EEvent::Pursue), 1);
+    EXPECT_EQ(b.hold, 0.0f);                               // and a later stagger is ordinary again
+}
+
+TEST(Skill, TheCounterWindowIsTheLastMomentOfTheLunge) {
+    EnemyBrain b;
+    EXPECT_FALSE(counterable(b));                          // idle: nothing to counter
+    b.state = EState::Pursuit;
+    b.update(DT, true, false, 1.0f);                       // wind-up begins
+    EXPECT_FALSE(counterable(b));                          // too early: you'd eat the bite
+    run(b, b.windup - verbs::COUNTER_WINDOW + 0.02f, true, 1.0f, EEvent::None);
+    EXPECT_TRUE(counterable(b));
+    run(b, verbs::COUNTER_WINDOW, true, 1.0f, EEvent::None);
+    EXPECT_FALSE(counterable(b));                          // too late: it has bitten
+}
+
+TEST(Skill, OnlyALateDodgeIsPerfect) {
+    EXPECT_TRUE(perfect_dodge(0.05f));
+    EXPECT_TRUE(perfect_dodge(verbs::PERFECT_WINDOW));
+    EXPECT_FALSE(perfect_dodge(verbs::PERFECT_WINDOW + 0.05f));   // dodged too soon: an ordinary dodge
+    EXPECT_FALSE(perfect_dodge(-1.0f));                    // not dodging at all
+}
+
 TEST(EnemyBrain, DeathIsFinal) {
     EnemyBrain b;
     b.hp = 2;

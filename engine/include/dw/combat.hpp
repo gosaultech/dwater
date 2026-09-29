@@ -233,7 +233,20 @@ constexpr float KICK_TIME = 0.5f, KICK_AT = 0.18f, KICK_RANGE = 1.8f, KICK_DAMAG
 constexpr float HURT_TIME = 0.45f, HURT_INVULN = 0.9f;
 constexpr float AIM_RANGE = 14.0f, AIM_CONE_DEG = 100.0f, AIM_TURN = 110.0f * kPi / 180.0f;
 constexpr float QUICK_TURN_TIME = 0.3f;
+// Skill: a dodge started in the last PERFECT_WINDOW before a bite lands is a perfect dodge (the
+// Drowned overbalances past, and the next shot within FOCUS_TIME does FOCUS_MULT damage); a kick
+// in the last COUNTER_WINDOW before it lands is a counter (it's thrown back and floored).
+constexpr float PERFECT_WINDOW = 0.25f, OVERBALANCE_TIME = 1.2f, FOCUS_TIME = 1.5f, FOCUS_MULT = 2.0f;
+constexpr float COUNTER_WINDOW = 0.25f;
 }  // namespace verbs
+
+// A dodge that began `dodge_age` seconds before the bite landed: was it perfect?
+inline bool perfect_dodge(float dodge_age) { return dodge_age >= 0 && dodge_age <= verbs::PERFECT_WINDOW; }
+// Is this Drowned in the last moment of its lunge, where a kick counters it?
+inline bool counterable(const EnemyBrain& b) {
+    const float s = b.time_to_strike();
+    return s >= 0 && s <= verbs::COUNTER_WINDOW;
+}
 
 // Auto-aim: the nearest target in front, within reach and the aim cone.
 struct AimCandidate { float x, z; bool alive; };

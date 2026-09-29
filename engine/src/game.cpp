@@ -80,6 +80,8 @@ bool Game::init(const std::string& room_id) {
     sfx_.ambience(spec_.ambience, 0.45f);
     fx_.init();
     fx_.set_bounds(spec_.bounds.x0, spec_.bounds.z0, spec_.bounds.x1, spec_.bounds.z1);
+    settings_ = settings_path.empty() ? Settings{} : Settings::load(settings_path);
+    input_.scheme = settings_.scheme;
     hero_ = Character::make(Kind::Survivor);
     reset_fight();
     cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
@@ -361,18 +363,87 @@ void Game::animate(float dt) {
 }
 
 void Game::update(float dt) {
+    input_.scheme = settings_.scheme;
+    in_ = input_.poll();
+    in_.move = {in_.move.x + staged_in_.x, in_.move.y + staged_in_.y};   // (capture setups hold the stick from code)
+    in_.down[ACT_AIM] = in_.down[ACT_AIM] || staged_aim_;
     time_ += dt;
     banner_t_ -= dt;
     if (IsKeyPressed(KEY_F3)) debug = !debug;
-    if (IsKeyPressed(KEY_L)) flashlight = !flashlight;
-    update_player(dt);
-    update_enemies(dt);
-    fx_.update(dt);
+    if (in_.hit(ACT_PAUSE) && pmode_ != PMode::Dead) {
+        paused_ = !paused_;
+        menu_sel_ = 0;
+        sfx_.play("ui_confirm", 0.6f);
+    } else if (paused_) {
+        update_menu();
+    }
+    if (paused_) { sfx_.update(); return; }   // time stands still
+    if (in_.hit(ACT_FLASHLIGHT)) { flashlight = !flashlight; sfx_.play("dry_fire", 0.3f, 0.05f); }   // its switch clicks
+    // The slow-motion beat after a perfect dodge (an option): the world slows, then catches up.
+    slowmo_t_ = std::max(0.0f, slowmo_t_ - dt);
+    time_scale_ = slowmo_t_ > 0.2f ? 0.3f : slowmo_t_ > 0 ? 1.0f - 0.7f * slowmo_t_ / 0.2f : 1.0f;
+    const float g = dt * time_scale_;
+    update_player(g);
+    update_enemies(g);
+    fx_.update(g);
     sfx_.update();
     std::string next = select_shot(spec_.zones(), shot_, player_.x, player_.z);
     if (next != shot_) cut_to(next);
-    animate(dt);
+    animate(g);
     upload_lights();   // after the pose: the flash light sits where the muzzle is now
+}
+
+// ── The pause menu ──────────────────────────────────────────────────────────────
+namespace {
+constexpr int MENU_ITEMS = 5;   // resume, controller layout, slow motion, movement, quit
+}
+
+void Game::update_menu() {
+    if (in_.hit(ACT_BACK)) { paused_ = false; return; }
+    if (in_.nav_y) { menu_sel_ = (menu_sel_ - in_.nav_y + MENU_ITEMS) % MENU_ITEMS; sfx_.play("ui_move", 0.6f); }
+    const int change = in_.nav_x != 0 ? in_.nav_x : in_.hit(ACT_CONFIRM) ? 1 : 0;
+    switch (menu_sel_) {
+        case 0: if (in_.hit(ACT_CONFIRM)) paused_ = false; return;
+        case 1:
+            if (!change) return;
+            settings_.scheme = Scheme((int(settings_.scheme) + change + int(Scheme::Count)) % int(Scheme::Count));
+            input_.scheme = settings_.scheme;
+            break;
+        case 2: if (!change) return; settings_.slowmo = !settings_.slowmo; break;
+        case 3: if (!change) return; settings_.tank = !settings_.tank; break;
+        default: if (in_.hit(ACT_CONFIRM)) quit_ = true; return;
+    }
+    save_settings();
+    sfx_.play("ui_confirm", 0.6f);
+}
+
+void Game::draw_menu() const {
+    const int sw = GetScreenWidth(), sh = GetScreenHeight(), fs = std::max(14, sh / 26), x = sw / 2 - fs * 11, y0 = sh / 3;
+    DrawRectangle(0, 0, sw, sh, Color{0, 0, 0, 175});
+    DrawText("PAUSED", x, y0 - fs * 3, fs * 2, Color{200, 190, 170, 255});
+    const std::string items[MENU_ITEMS] = {
+        "Resume",
+        std::string("Controller layout:  < ") + scheme_name(settings_.scheme) + " >",
+        std::string("Slow motion on a perfect dodge:  < ") + (settings_.slowmo ? "On" : "Off") + " >",
+        std::string("Movement:  < ") + (settings_.tank ? "Tank (classic)" : "Modern") + " >",
+        "Quit"};
+    for (int i = 0; i < MENU_ITEMS; ++i) {
+        const bool sel = i == menu_sel_;
+        DrawText(items[i].c_str(), x, y0 + i * fs * 2, fs, sel ? Color{235, 225, 200, 255} : Color{130, 122, 112, 255});
+        if (sel) DrawText(">", x - fs, y0 + i * fs * 2, fs, Color{170, 20, 16, 255});
+    }
+    // The chosen layout at a glance.
+    const int acts[] = {ACT_AIM, ACT_FIRE, ACT_DODGE, ACT_KICK, ACT_QUICK_TURN, ACT_RELOAD, ACT_STATUS, ACT_FLASHLIGHT, ACT_WEAPON_1, ACT_WEAPON_2};
+    int y = y0 + MENU_ITEMS * fs * 2 + fs;
+    const int hs = std::max(12, fs * 3 / 4);
+    for (size_t i = 0; i < sizeof(acts) / sizeof(acts[0]); ++i) {
+        const int col = int(i % 2), row = int(i / 2);
+        DrawText(TextFormat("%-12s %s", act_name(acts[i]), pad_button_name(pad_button(settings_.scheme, acts[i]))),
+                 x + col * fs * 12, y + row * (hs + 6), hs, Color{150, 142, 130, 230});
+    }
+    y += 5 * (hs + 6) + fs / 2;
+    DrawText("Aim: the right stick moves the aim over the body (head, arms, legs); flick it to switch target.", x, y, hs,
+             Color{120, 114, 104, 220});
 }
 
 // The capture setups (--capture): the first four are posed (no AI); the rest play the fight out,
@@ -388,6 +459,7 @@ std::string Game::stage(int i) {
         return e;
     };
     reset_fight();
+    paused_ = false;
     banner_t_ = 0;   // no room title over the stills
     staged_aim_ = false;
     staged_in_ = {};
@@ -476,6 +548,38 @@ std::string Game::stage(int i) {
             staged_aim_ = true;
             run(0.4f);
             name = "second_wave";
+            break;
+        }
+        case 10: {   // a perfect dodge: dodged as the bite comes, it lunges into nothing and stumbles on past
+            Enemy& e = join(0, 1.0f, 8.15f, 0.0f, EState::Attack);
+            e.brain.t = e.brain.windup - 0.12f;   // about to bite
+            player_ = {1.0f, 7.05f, kPi};
+            run(DT);
+            start_dodge({-1.0f, 0.0f});
+            run(0.2f);
+            TraceLog(LOG_INFO, "STAGE perfect dodge: state %d stumble %.2f focus %.2f hp %.0f", int(e.brain.state), e.stumble, focus_t_, health_);
+            run(0.15f);
+            name = "perfect_dodge";
+            break;
+        }
+        case 11: {   // a counter kick in the last moment of the lunge: thrown back and floored
+            Enemy& e = join(1, 1.0f, 8.2f, 0.0f, EState::Attack);
+            e.brain.t = e.brain.windup - 0.15f;
+            player_ = {1.0f, 7.0f, kPi};
+            run(DT);
+            const bool took = try_kick();
+            run(0.35f);
+            TraceLog(LOG_INFO, "STAGE counter: took %d counter %d state %d hp %.0f", int(took), int(kick_counter_), int(e.brain.state), health_);
+            name = "counter_kick";
+            break;
+        }
+        case 12: {   // the pause menu: the options
+            join(0, 0.75f, 3.1f, kPi, EState::Idle);
+            player_ = {1.05f, 5.55f, 0.0f};
+            run(0.3f);
+            paused_ = true;
+            menu_sel_ = 1;
+            name = "pause_menu";
             break;
         }
         default: {   // bitten once too often
@@ -729,17 +833,20 @@ void Game::present() const {
             const int fs = sh / 9, tw = MeasureText("YOU DIED", fs);
             DrawText("YOU DIED", (sw - tw) / 2, sh / 2 - fs, fs, Color{170, 16, 12, static_cast<unsigned char>(k * 255)});
             if (dead_t_ > 2.5f) {
-                const int ps = sh / 36, pw = MeasureText("Press Enter to try again", ps);
-                DrawText("Press Enter to try again", (sw - pw) / 2, sh / 2 + fs / 2, ps, Color{150, 140, 130, 200});
+                const char* again = in_.pad ? TextFormat("Press %s to try again", pad_button_name(pad_button(settings_.scheme, ACT_CONFIRM)))
+                                            : "Press Enter to try again";
+                const int ps = sh / 36, pw = MeasureText(again, ps);
+                DrawText(again, (sw - pw) / 2, sh / 2 + fs / 2, ps, Color{150, 140, 130, 200});
             }
         }
     }
+    if (paused_) draw_menu();
     if (debug) {
         std::string es;
         for (const auto& e : enemies_)
             if (e.active) es += TextFormat("  %s:%d%s", e.id.c_str(), int(e.brain.state), e.crawling ? "c" : "");
         DrawText(TextFormat("%d fps  shot %s  pos %.2f %.2f  %s  hp %.0f  mag %d/%d%s", GetFPS(), shot_.c_str(), player_.x, player_.z,
-                            tank_ ? "TANK" : "MODERN", health_, guns_[gun_].mag, inv_.count_of(guns_[gun_].spec().ammo), es.c_str()),
+                            settings_.tank ? "TANK" : "MODERN", health_, guns_[gun_].mag, inv_.count_of(guns_[gun_].spec().ammo), es.c_str()),
                  10, 10, 18, YELLOW);
     }
 }

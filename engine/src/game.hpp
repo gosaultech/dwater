@@ -1,9 +1,10 @@
 // damned_waters/engine/src/game.hpp
-// Purpose: one playable room: pre-rendered plates with depth, fixed camera cuts, the survivor
-// (tank or modern controls) and the Drowned. Classic survival-horror combat (game_combat.cpp):
-// aim with auto-targeting and W/S for high and low, the M92FS and the Jachtgeweer, reload, kick a
-// staggered Drowned, dodge; RE2-Remake-style gore; no HUD (the survivor's limp tells you how hurt
-// he is). The hall's script: one Drowned, then a bang at the front door and two more.
+// Purpose: one playable room: pre-rendered plates with depth, fixed camera cuts, the survivor and
+// the Drowned. Controller-first (input.hpp: Type A/B/C layouts, keyboard and mouse alongside).
+// Survival-horror combat with skill in it (game_combat.cpp): lock-on aim with the right stick as a
+// cursor over the body, the M92FS and the Remington 870, a counter kick and a perfect dodge;
+// RE2-Remake-style gore; no HUD (the survivor's limp tells you how hurt he is); a pause menu with
+// the options. The hall's script: one Drowned, then a bang at the front door and two more.
 #ifndef DW_GAME_HPP
 #define DW_GAME_HPP
 #include <raylib.h>
@@ -14,9 +15,12 @@
 #include "audio.hpp"
 #include "dw/character.hpp"
 #include "dw/combat.hpp"
+#include "dw/controls.hpp"
 #include "dw/core.hpp"
 #include "dw/room_spec.hpp"
+#include "dw/settings.hpp"
 #include "effects.hpp"
+#include "input.hpp"
 
 namespace dw {
 
@@ -32,6 +36,7 @@ struct Enemy {
     BodyDamage damage;
     bool active = false;          // in the room (the second wave waits behind the front door)
     float gurgle = 3, dead_t = 0, push_x = 0, push_z = 0, step = 0;
+    float stumble = 0;            // overbalanced by a perfect dodge: its lunge still carrying it on
     float speed = 0.85f, turn = 2.2f, reach = 1.7f, bite = 20;     // m/s, rad/s, m, and what a lunge takes off him
     bool pooled = false;          // blood has started spreading under it
     bool heard = false;           // a noise reached it this frame (a shot, a footstep)
@@ -49,7 +54,7 @@ public:
     void update(float dt);          // input, AI, animation
     void render();                  // scene -> offscreen target
     void present() const;           // post-process to the window + HUD
-    int capture_count() const { return 10; }
+    int capture_count() const { return 13; }
     std::string stage(int i);       // pose a capture setup; returns its name
     // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
     // only: a comma-separated list of subjects to render (empty: all).
@@ -59,9 +64,14 @@ public:
     // (target_x, target_y, 0), or that joint offset by (target_x, target_y).
     bool studio_view(const std::string& spec, const std::string& png);
     bool debug = false;
-    bool flashlight = false;   // L: the flashlight on his strap (a spot on the characters and on the painted room)
+    bool flashlight = false;   // L1 / L: the flashlight on his strap (a spot on the characters and on the painted room)
+    std::string settings_path; // the SQLite database the options live in (set before init)
+    bool quit_requested() const { return quit_; }
     // What happened in the fight, for the telemetry database.
-    struct Stats { int shots = 0, hits = 0, kills = 0, limbs = 0, heads = 0, kicks = 0, dodges = 0, deaths = 0; float damage_taken = 0; };
+    struct Stats {
+        int shots = 0, hits = 0, kills = 0, limbs = 0, heads = 0, kicks = 0, counters = 0, dodges = 0, perfect_dodges = 0, deaths = 0;
+        float damage_taken = 0;
+    };
     const Stats& stats() const { return stats_; }
 
 private:
@@ -87,7 +97,7 @@ private:
     void upload_lights();
     void upload_studio_lights();
     void set_lights(const Vector4* pos, const Vector4* col, const Vector4* dir, int n);   // uploads and remembers them
-    void move_player(float dt, float ix, float iy, float speed_scale);   // walking and running
+    void move_player(float dt, Vector2 in, float speed_scale);   // walking and running
     void collide(float& x, float& z, float r) const;
     void animate(float dt);
     // Combat (game_combat.cpp).
@@ -95,14 +105,17 @@ private:
     void update_player(float dt);
     void update_enemies(float dt);
     void enter_aim();
-    void aim(float dt, float ix, float iy);
+    void aim(float dt);
+    void switch_target(int dir);                 // a flick (or the wheel): the next Drowned that way on screen
     void fire();
     void reload();
     void switch_gun(int g);
     void load_shell(bool first_into_empty);      // the 870: one shell went into the tube
     void work_actions(float dt);                 // the 870's pump and the M92FS's slide, and the brass they throw
-    bool common_actions(float ix, float iy);     // dodge, reload, weapon keys: true if one took over this frame
-    void start_dodge(float ix, float iy);
+    bool common_actions();                       // dodge, reload, weapon buttons: true if a dodge took over
+    void start_dodge(Vector2 in);
+    bool try_kick();                             // what's in front of him: a counter, a kick, or a whiff
+    void perfect_dodge_on(Enemy& e);
     int kickable() const;
     void hurt_player(float dmg, float from_x, float from_z);
     void cut_off(Enemy& e, int region, Vector3 dir);   // a part of it comes away: the piece falls, blood
@@ -120,7 +133,17 @@ private:
     void say(const Enemy& e, const char* sound, float volume = 1.0f);   // a sound from a Drowned
     float frand() { rng_ ^= rng_ << 13; rng_ ^= rng_ >> 17; rng_ ^= rng_ << 5; return float(rng_ & 0xFFFFFF) / 16777215.0f; }
 
+    // The pause menu (time stands still) with the options, saved to the database.
+    void update_menu();
+    void draw_menu() const;
+    void save_settings() const { if (!settings_path.empty()) settings_.save(settings_path); }
+
     RoomSpec spec_;
+    Input input_;
+    InputFrame in_;                              // this frame's actions (polled once in update)
+    Settings settings_;
+    bool paused_ = false, quit_ = false;
+    int menu_sel_ = 0;
     std::map<std::string, std::pair<Texture2D, Texture2D>> plates_;
     std::string shot_;
     Camera3D cam_{};
@@ -136,11 +159,15 @@ private:
     Effects fx_;
     // The survivor in a fight.
     PMode pmode_ = PMode::Normal;
-    float pmode_t_ = 0, invuln_ = 0, dodge_cd_ = 0, aim_pitch_ = 0, manual_pitch_ = 0, aim_snap_ = 0, dead_t_ = 0;
+    float pmode_t_ = 0, invuln_ = 0, dodge_cd_ = 0, aim_pitch_ = 0, aim_snap_ = 0, dead_t_ = 0;
+    Vector2 vel_{};                              // his velocity on the floor (m/s): gets up to speed in a few frames
+    Vector2 aim_look_{};                         // the aim cursor over the target's body (-1..1; controls.hpp body_aim)
+    FlickDetector flick_;
+    float focus_t_ = 0;                          // after a perfect dodge: the next shot does double
+    float slowmo_t_ = 0, time_scale_ = 1;        // the slow-motion beat after a perfect dodge (an option)
     Vector3 dodge_dir_{}, knock_{};              // the dodge's direction; being knocked back (m/s)
     int aim_target_ = -1, kick_target_ = -1, gun_ = 0;
-    int aim_leg_ = -1;                           // aiming low: which leg (0 left, 1 right; -1 not chosen yet)
-    bool kick_done_ = false;
+    bool kick_done_ = false, kick_counter_ = false;
     Firearm guns_[2];
     Inventory inv_;
     float step_accum_ = 0;
@@ -156,7 +183,6 @@ private:
     int static_lights_ = 0;                      // room lights; the flash and the flashlight come after them
     int flash_light_ = -1, lamp_light_ = -1;     // where the flash and the flashlight sit in the light arrays (-1: off)
     int l_dynPos_ = -1, l_dynCol_ = -1, l_dynDir_ = -1, l_pDynSh_ = -1;
-    bool tank_ = false;
     Vector3 held_fwd_{0, 0, -1}, held_right_{1, 0, 0};
     Vector2 held_in_{};
     bool holding_ = false;

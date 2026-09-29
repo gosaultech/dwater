@@ -100,6 +100,7 @@ struct EnemyBrain {
     float give_up = 6.0f;
     EState state = EState::Idle;
     float t = 0, lost = 0, immune = 0;
+    float hold = 0;              // a longer stagger than usual (overbalanced by a perfect dodge)
     bool struck = false;
 
     bool dead() const { return state == EState::Dead; }
@@ -133,7 +134,7 @@ struct EnemyBrain {
                 if (t >= retreat_time) { go(EState::Pursuit); return EEvent::Pursue; }
                 break;
             case EState::Stagger:
-                if (t >= stagger_time) { go(EState::Pursuit); return EEvent::Pursue; }
+                if (t >= std::max(stagger_time, hold)) { hold = 0; go(EState::Pursuit); return EEvent::Pursue; }
                 break;
             case EState::Floored:
                 if (t >= floor_time) { go(EState::Pursuit); return EEvent::GotUp; }
@@ -154,6 +155,10 @@ struct EnemyBrain {
         return EHit::Hurt;
     }
     void kill() { if (!dead()) { hp = 0; go(EState::Dead); } }   // a burst head needs no arithmetic
+    // Its lunge met nothing: it stumbles on past, wide open (and kickable) for `seconds`.
+    void overbalance(float seconds) { if (!dead()) { go(EState::Stagger); hold = seconds; immune = 0; } }
+    // Seconds until its bite lands (-1: it isn't lunging at anything right now).
+    float time_to_strike() const { return state == EState::Attack && !struck ? std::max(0.0f, windup - t) : -1.0f; }
 };
 
 }  // namespace dw
