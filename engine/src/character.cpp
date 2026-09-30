@@ -559,17 +559,19 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
             break;
         }
         case Pose::Aim: {   // two-handed pistol: strong arm straight, support arm crossing in
-            if (weapon_ == 1) {   // the shotgun at the shoulder: strong elbow out, support arm under the fore-end
-                // (arms and wrists fitted with --fit870: the butt in the shoulder, the bore level)
-                T[J_SHO_R] = {0.465f + ap, 0.765f, 0.155f};
-                T[J_ELB_R] = {2.088f, 0, 0};
-                T[J_WRI_R] = {-0.366f, 0.865f, -0.305f};
-                T[J_SHO_L] = {1.901f + ap, 1.026f, 1.4f};
-                T[J_ELB_L] = {0.0f, 0, 0};
-                T[J_WRI_L] = {-0.007f, 0, -0.043f};
-                T[J_SPINE] = {-0.08f, -0.12f, 0};
-                T[J_CHEST] = {-0.03f, -0.1f, 0};
-                T[J_NECK] = {-0.45f, 0.2f, -0.35f};     // cheek down toward the stock
+            if (weapon_ == 1) {   // the shotgun at the shoulder: bladed, the head down, the cheek on the comb
+                // (fitted with --fit870: the butt in the shoulder, the bore level, the right eye over
+                // it just above the receiver). He aims up or down from the waist, all of a piece.
+                T[J_SHO_R] = {0.647f, 1.065f, 0.477f};
+                T[J_ELB_R] = {1.761f, 0, 0};
+                T[J_WRI_R] = {-0.280f, -0.012f, 0.093f};
+                T[J_SHO_L] = {0.938f, -0.836f, -0.927f};
+                T[J_ELB_L] = {0.852f, 0, 0};
+                T[J_WRI_L] = {-0.199f, 0, -0.187f};
+                T[J_NECK] = {-0.675f, 0.070f, -0.356f};
+                T[J_HEAD] = {0.078f, 0.494f, 0.119f};
+                T[J_SPINE] = pitched({-0.08f, -0.375f, 0}, ap);
+                T[J_CHEST] = {0.050f, -0.330f, 0};
                 T[J_HIP_L] = {0.25f, 0, -0.05f};
                 T[J_KNE_L] = {-0.22f, 0, 0};
                 T[J_HIP_R] = {-0.2f, 0, 0.06f};
@@ -622,21 +624,23 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         }
         case Pose::Reload: {   // head down over the gun: a fresh magazine, or two shells into the barrels
             const float work = std::sin(t_ * 9.0f) * 0.12f;
+            T[J_NECK] = {-0.3f, 0, 0};
+            T[J_SPINE] = {-0.08f, 0, 0};
             if (weapon_ == 1) {   // under the arm, muzzle up a little, the left hand at the loading port (--fit870)
-                T[J_SHO_R] = {-0.054f, 0.156f, -0.741f};
-                T[J_ELB_R] = {2.268f, 0, 0};
-                T[J_WRI_R] = {0.157f, -0.017f, -0.346f};
-                T[J_SHO_L] = {1.274f + work, -0.804f, -0.143f};
-                T[J_ELB_L] = {0.376f, 0, 0};
-                T[J_WRI_L] = {1.2f, 0, 1.178f};
+                T[J_SHO_R] = {-0.133f, 0.342f, -0.791f};
+                T[J_ELB_R] = {2.314f, 0, 0};
+                T[J_WRI_R] = {0.107f, -0.179f, -0.273f};
+                T[J_SHO_L] = {0.648f + work, 0.156f, 1.181f};
+                T[J_ELB_L] = {1.145f, 0, 0};
+                T[J_WRI_L] = {-1.200f, 0, -1.200f};
+                T[J_SPINE].y = -0.041f;   // turned, the gun side back
+                T[J_CHEST].y = -0.331f;
             } else {
                 T[J_SHO_R] = {0.6f, 0, -0.08f};
                 T[J_ELB_R] = {1.35f, 0, 0};
                 T[J_SHO_L] = {0.55f + work, 0, 0.32f};
                 T[J_ELB_L] = {1.45f, 0, 0};
             }
-            T[J_NECK] = {-0.3f, 0, 0};
-            T[J_SPINE] = {-0.08f, 0, 0};
             break;
         }
         case Pose::Windup: {   // the readable tell: arms flung up and wide, spine arched, jaw gaping
@@ -733,12 +737,14 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
     if (!drowned && weapon_ == 1 && (pose == Pose::Idle || pose == Pose::Walk || pose == Pose::Run || pose == Pose::Hurt)) {
         // The shotgun carried at the low ready: the butt still in the shoulder, both hands on it, the
         // muzzle 40 degrees down ahead (--fit870).
-        T[J_SHO_R] = {-0.6f, 1.118f, 1.104f};
-        T[J_ELB_R] = {2.062f, 0, 0};
-        T[J_WRI_R] = {-0.487f, -0.299f, 0.535f};
-        T[J_SHO_L] = {0.703f, 0.689f, 0.901f};
-        T[J_ELB_L] = {0.0f, 0, 0};
-        T[J_WRI_L] = {-0.004f, 0, -0.076f};
+        T[J_SHO_R] = {0.270f, 0.462f, -0.533f};
+        T[J_ELB_R] = {1.857f, 0, 0};
+        T[J_WRI_R] = {-0.436f, 0.913f, -0.704f};
+        T[J_SHO_L] = {0.395f, -1.200f, -0.771f};
+        T[J_ELB_L] = {0.218f, 0, 0};
+        T[J_WRI_L] = {-0.052f, 0, 0.366f};
+        T[J_SPINE].y += -0.277f;   // turned, the gun side back
+        T[J_CHEST].y += -0.370f;
     }
     if (!drowned && weapon_ == 1 && (pose == Pose::Aim || pose == Pose::Reload || pose == Pose::Idle || pose == Pose::Walk ||
                                      pose == Pose::Run || pose == Pose::Hurt)) {

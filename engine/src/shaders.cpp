@@ -312,11 +312,16 @@ void main() {
     } else if (mat == 40) {   // blood: dark red and wet, thicker (darker) where it pools
         albedo *= mix(0.75, 1.1, fbm(p * 90.0)); h = fbm(p * 60.0) * 0.3; bk = 0.0004; spec = 0.6; gloss = 90.0; wrap = 0.3;
         sss = vec3(0.08, 0.0, 0.0);
-    } else if (mat == 39) {   // oiled walnut: fine grain running along the stock, darker figure drifting through it
-        float g = sin(p.y * 330.0 + fbm(p * 16.0) * 14.0 + p.x * 90.0) * 0.5 + 0.5;
-        float fig = fbm(vec3(p.x * 40.0, p.y * 9.0, p.z * 40.0));
-        albedo *= mix(0.82, 1.08, g) * mix(0.72, 1.1, fig) * mix(0.92, 1.04, fbm(p * 90.0));
-        h = g * 0.3 + fbm(p * 160.0) * 0.2; bk = 0.0005; spec = 0.22; gloss = 36.0; wrap = 0.2;
+    } else if (mat == 39) {   // oiled walnut, under a soft satin sheen (duller in the open pores of the dark lines).
+        // The gun's length runs along y here: the grain lines run with it, stacked up its height and
+        // wandering slowly as the fibres did round the tree's knots; a darker figure drifts through.
+        // Lines finer than a pixel fade to their average rather than shimmer.
+        float aa = clamp(1.6 - length(fwidth(p)) * 450.0, 0.0, 1.0);
+        float wander = fbm(vec3(p.x * 20.0, p.y * 3.5, p.z * 20.0));
+        float g = mix(0.5, sin(p.z * 520.0 + p.x * 140.0 + wander * 18.0) * 0.5 + 0.5, aa);
+        float fig = fbm(vec3(p.x * 28.0, p.y * 5.0, p.z * 28.0));
+        albedo *= mix(0.86, 1.06, g) * mix(0.7, 1.12, fig) * mix(0.94, 1.03, fbm(p * 90.0));
+        h = g * 0.3 * aa + fbm(p * 160.0) * 0.2; bk = 0.0005; spec = mix(0.06, 0.13, g); gloss = 22.0; wrap = 0.3;
     } else if (mat == 38) {   // a drop of water: dark and glassy, it shows only where it catches the light
         spec = 1.4; gloss = 320.0; wrap = 0.0; rim = 0.5;
     } else if (mat == 24) {   // raw dermis where the outer skin slipped off: wet and pink

@@ -265,9 +265,12 @@ GunParts r870(const Matrix& hold, Stock stock) {
     const int FURN = wood ? MAT_WOOD : MAT_POLYMER;
     const Color furn = wood ? WALNUT : POLY;
 
+    // Built in the gun's own frame, then turned into the hand (MeshData::append), so the wood's grain
+    // keeps to the gun however it's held.
+    MeshData moving, fixed;
+
     // ── The fore-end and its action bars (they move) ─────────────────────────────
-    MeshBuilder m(g.moving);
-    m.transform(tip);
+    MeshBuilder m(moving);
     m.material(FURN).color(furn);
     Outline fore;   // long and round-bellied, wrapped round the magazine tube under the barrel
     fore.to(252, -11).to(428, -11).curve(445, -11, 445, -27, 5).curve(445, -55, 423, -55, 6).to(264, -55)
@@ -281,8 +284,7 @@ GunParts r870(const Matrix& hold, Stock stock) {
     for (float side : {-1.0f, 1.0f}) m.box(rifle_at(222, -21, side * 12.5f), {0.9f * MM, 26 * MM, 2.6f * MM}, 0.35f, 8, 6);
 
     // ── The rest (it stays put) ──────────────────────────────────────────────────
-    MeshBuilder f(g.fixed);
-    f.transform(tip);
+    MeshBuilder f(fixed);
     // The receiver: a long, flat-sided box, its back sweeping round and down into the stock.
     f.material(MAT_METAL).color(BLUED);
     Outline recv;
@@ -377,10 +379,12 @@ GunParts r870(const Matrix& hold, Stock stock) {
             const float u = -302 + 312 * float(i) / float(ROWS - 1);
             const float hi = u > 1 ? -38.0f : along(top.p, u), lo = along(bottom.p, u);   // (ahead of the receiver's back: under it)
             const float k = std::clamp((u + 302) / 262, 0.0f, 1.0f);                      // 0 at the butt, 1 at the wrist
-            const float hw = Lerp(21, 15.5f, k * k * (3 - 2 * k)), n = Lerp(3.6f, 2.6f, k);    // half width, squareness
+            // Half width, and squareness: an oval that fills out toward the butt (flat-sided, it
+            // would catch the light all at once, like a plank).
+            const float hw = Lerp(21, 15.5f, k * k * (3 - 2 * k)), n = Lerp(2.7f, 2.2f, k);
             std::vector<Vector3> ring(SEGS);
-            for (int j = 0; j < SEGS; ++j) {
-                const float a = 2 * PI * float(j) / SEGS, c = std::cos(a), sn = std::sin(a);
+            for (int j = 0; j < SEGS; ++j) {   // (round clockwise seen from the butt, so the skin faces out)
+                const float a = -2 * PI * float(j) / SEGS, c = std::cos(a), sn = std::sin(a);
                 const float x = hw * std::copysign(std::pow(std::fabs(c), 2 / n), c);
                 const float y = (hi + lo) / 2 + (hi - lo) / 2 * std::copysign(std::pow(std::fabs(sn), 2 / n), sn);
                 ring[size_t(j)] = rifle_at(u, y, x);
@@ -394,6 +398,8 @@ GunParts r870(const Matrix& hold, Stock stock) {
     pad.to(-300, -32).to(-322, -31).curve(-327, -31, -327, -36, 2).to(-327, -165).curve(-327, -170, -322, -170, 2).to(-300, -170);
     f.slab(rifle(pad).p, 0, 22 * MM, 7 * MM, 3);
     f.material(MAT_METAL).color(BLUED).tube(rifle_at(-250, -146, 0), rifle_at(-252, -154, 0), 3 * MM, 3 * MM, 10);   // sling stud
+    g.moving.append(moving, tip);
+    g.fixed.append(fixed, tip);
     return g;
 }
 

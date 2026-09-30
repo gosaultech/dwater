@@ -13,7 +13,9 @@
 //   z (roll):  DOWN limbs' tips move toward the character's right with +z
 #ifndef DW_CHARACTER_HPP
 #define DW_CHARACTER_HPP
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <string>
 #include <vector>
 #include "dw/anatomy.hpp"
@@ -84,15 +86,29 @@ public:
         return MatrixMultiply(MatrixMultiply(MatrixTranslate(-fist.x, -fist.y, -fist.z), MatrixRotateX(tilt)),
                               MatrixTranslate(fist.x, fist.y, fist.z));
     }
-    // A tool: search the arms, the right wrist and the neck so the shotgun's bore lies along `aim`,
-    // the butt sits at `pocket` (from the right shoulder joint), the cheek on the comb (`cheek`), the
-    // elbow no higher than the shoulder and the left hand at `left` (a point on the gun, as
-    // cast_guns.cpp places it before the hold). Returns the result as text for the pose tables.
+    // A joint's angles (this rig's order: z, then x, then y) with a further pitch `a` about its
+    // parent's x axis on top. Aiming a long gun up or down the way a shooter does, from the waist:
+    // the gun, both arms and the cheek on the stock move as one.
+    static Vector3 pitched(Vector3 e, float a) {
+        const Matrix m = MatrixMultiply(MatrixMultiply(MatrixMultiply(MatrixRotateZ(e.z), MatrixRotateX(e.x)), MatrixRotateY(e.y)),
+                                        MatrixRotateX(a));
+        // m = Rx(a) Ry Rx Rz (column vectors); read it back as Ry(y) Rx(x) Rz(z).
+        return {std::asin(std::clamp(-m.m9, -1.0f, 1.0f)), std::atan2(m.m8, m.m10), std::atan2(m.m1, m.m5)};
+    }
+    // A tool: search the arms and the right wrist so the shotgun's bore lies along `aim`, the butt
+    // sits at `pocket` (from the right shoulder joint), the elbow no higher than the shoulder and the
+    // left hand at `left` (a point on the gun, as cast_guns.cpp places it before the hold), on top
+    // of `pose`'s body. With `cheek`, the head and upper body join the search too: the cheek goes
+    // down on the comb with the right eye over the bore, just above the receiver, as a shooter
+    // sights along a bead. Returns the result as text for the pose tables.
     struct ShotgunFit {
         Vector3 aim{0, 0, -1};
-        Vector3 pocket{-0.05f, -0.03f, -0.05f};   // the shoulder pocket
+        // The shoulder pocket (from the shoulder joint, chest frame): on the front of his jacket, the
+        // pad's top about level with the top of his shoulder.
+        Vector3 pocket{-0.05f, 0.02f, -0.12f};
         Vector3 left{0, -0.3547f, 0.0032f};       // under the fore-end, near its back
         bool cheek = true;
+        Pose pose = Pose::Aim;                    // the body the arms are fitted on
     };
     std::string fit_shotgun(const ShotgunFit& goal);
     float limp = 0;                           // 0..1: how badly the survivor limps (the only sign of his health)

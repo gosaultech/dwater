@@ -702,7 +702,8 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     if (std::sscanf(spec.c_str(), "%47[^,],%f,%f,%f,%f,%f,%f", who, &orbit, &elev, &dist, &tx, &ty, &fovy) != 7) return false;
     // who = survivor | drowned[N] (N: the citizen), optionally @head / @chest / @pelvis to orbit that
     // joint instead (the target is then offset from it by target_x, target_y; @head orbits from the face),
-    // then any of /pose=aim /gun=1 /limp=1 /cut=3+8 (regions cut off first; anatomy.hpp).
+    // then any of /pose=aim /gun=1 /limp=1 /cut=3+8 (regions cut off first; anatomy.hpp) /pitch=20
+    // (aiming 20 degrees up; negative is down).
     std::string w = who, at_joint, opts;
     if (const auto k = w.find('/'); k != std::string::npos) { opts = w.substr(k); w.resize(k); }
     if (const auto k = w.find('@'); k != std::string::npos) { at_joint = w.substr(k + 1); w.resize(k); }
@@ -714,6 +715,7 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     c.place({0, 0, 0}, 0);
     Pose pose = Pose::Idle;
     std::vector<int> cuts;
+    float pitch = 0;
     for (size_t i = 0; i < opts.size();) {
         const size_t j = std::min(opts.find('/', i + 1), opts.size());
         const std::string o = opts.substr(i + 1, j - i - 1), key = o.substr(0, o.find('=')), val = o.substr(o.find('=') + 1);
@@ -725,17 +727,19 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
         if (key == "pose" && poses.count(val)) pose = poses.at(val);
         if (key == "gun") c.set_weapon(std::atoi(val.c_str()));
         if (key == "limp") c.limp = float(std::atof(val.c_str()));
+        if (key == "pitch") pitch = float(std::atof(val.c_str())) * DEG2RAD;
         if (key == "cut")
             for (size_t a = 0; a < val.size();) { cuts.push_back(std::atoi(val.c_str() + a)); a = std::min(val.find('+', a), val.size()) + 1; }
         i = j;
     }
-    for (int f = 0; f < 90; ++f) c.animate(pose, pose == Pose::Walk || pose == Pose::Shamble ? 0.8f : 0.0f, 1.0f / 60);
+    const float speed = pose == Pose::Walk || pose == Pose::Shamble ? 0.8f : 0.0f;
+    for (int f = 0; f < 90; ++f) c.animate(pose, speed, 1.0f / 60, pitch);
     for (int r : cuts) { MeshData piece; Vector3 centre; c.sever(r, piece, centre); }
     if (survivor) {   // how true the barrel lies to where he faces (the shots fly along his facing)
         const Vector3 b = c.barrel_dir();
         TraceLog(LOG_INFO, "VIEW barrel dir %.2f %.2f %.2f  muzzle %.2f %.2f %.2f", b.x, b.y, b.z, c.muzzle().x, c.muzzle().y, c.muzzle().z);
     }
-    for (int f = 0; f < 60; ++f) c.animate(pose, pose == Pose::Walk || pose == Pose::Shamble ? 0.8f : 0.0f, 1.0f / 60);
+    for (int f = 0; f < 60; ++f) c.animate(pose, speed, 1.0f / 60, pitch);
     render_shadows({&c});
     bind_shadows();
     float a = orbit * DEG2RAD;

@@ -12,8 +12,9 @@
 //                                   (who, orbit, elevation, distance, target x, target height, fov), then exit;
 //                                   who: survivor | drowned[N] [@head | @chest | @pelvis | @hand],
 //                                   or a gun, catalogue-lit: m92fs | r870 (see Game::gun_view)
-//   ./damned_waters --fit870        a tool: fit the arms and wrists that hold the 870 (aim, low
-//                                   ready, reload), print them for the pose tables, then exit
+//   ./damned_waters --fit870        a tool: fit the hold on the 870 (aim, low ready, reload: arms,
+//                                   wrists and the turn of his back; aiming, also his head and lean,
+//                                   the cheek down on the stock), print it for the pose tables, exit
 //   ./damned_waters --frames 600    auto-exit (smoke tests)
 #include <raylib.h>
 #include <rlgl.h>
@@ -62,10 +63,12 @@ int main(int argc, char** argv) {
         dw::Character::ShotgunFit aim, low, reload;
         low.aim = {0, -0.64f, -0.77f};   // the low ready: still in the shoulder, the muzzle 40 degrees down
         low.cheek = false;
+        low.pose = dw::Pose::Idle;          // carried like this while he stands, walks and runs
         reload.aim = {0, 0.2f, -0.98f};   // loading: under the armpit, muzzle up a little, left hand at the port
         reload.pocket = {0.0f, -0.2f, 0.02f};
         reload.left = {0, -0.2447f, -0.0068f};
         reload.cheek = false;
+        reload.pose = dw::Pose::Reload;
         TraceLog(LOG_INFO, "FIT aim %s", c.fit_shotgun(aim).c_str());
         TraceLog(LOG_INFO, "FIT low ready %s", c.fit_shotgun(low).c_str());
         TraceLog(LOG_INFO, "FIT reload %s", c.fit_shotgun(reload).c_str());

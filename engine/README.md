@@ -69,13 +69,14 @@ the shaders are GLSL 3.30 core, which both platforms support.
 ../build/macos/damned_waters --view drowned1@head,0,5,0.5,0,-0.05,30 face.png     # one close-up
 ../build/macos/damned_waters --view m92fs,0,0,2.0,0,0,8.3 pistol.png              # a gun, catalogue-lit
 ../build/macos/damned_waters --view r870,30,14,1.6,0.05,0,14 shotgun.png           # the 870
-../build/macos/damned_waters --fit870    # fit the arms and wrists that hold the 870, print them, exit
+../build/macos/damned_waters --fit870    # fit the hold on the 870 (arms, wrists, back; aiming, the cheek on the stock), print it, exit
 ```
 
 `--view` takes `who,orbit,elevation,distance,target_x,target_y,fov`. `who` is `survivor` or
 `drowned0`..`drowned2` (the office worker, Sanne, Pieter). Add `@head`, `@chest`, `@pelvis` or
 `@hand` to orbit that joint; the target is then an offset from it, and `@head` starts from the
-face. Then any of `/pose=aim`, `/gun=1` (the 870 in hand), `/limp=1`, `/cut=3+8`.
+face. Then any of `/pose=aim`, `/gun=1` (the 870 in hand), `/limp=1`, `/cut=3+8`, `/pitch=20` (aiming 20
+degrees up; negative is down).
 
 `who` can also be a gun, `m92fs` or `r870`, lit like a catalogue photo so it can be held up
 against reference photos: `/slide=1` works the slide or fore-end back, `/roll=20` turns the
