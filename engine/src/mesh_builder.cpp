@@ -130,6 +130,135 @@ void MeshBuilder::ellipsoid(Vector3 c, Vector3 r, int segs, int rings, const Bum
 
 void MeshBuilder::tube(Vector3 a, Vector3 b, float r0, float r1, int sides) { chain({a, b}, {r0, r1}, sides); }
 
+Outline& Outline::arc(float cy, float cz, float r, float a0, float a1, int n) {
+    for (int i = 0; i <= n; ++i) {
+        const float a = a0 + (a1 - a0) * float(i) / float(n);
+        p.push_back({cy + r * std::cos(a), cz + r * std::sin(a)});
+    }
+    return *this;
+}
+
+Outline& Outline::curve(float ky, float kz, float y, float z, int n) {
+    const Vector2 a = p.empty() ? Vector2{ky, kz} : p.back();
+    for (int i = 1; i <= n; ++i) {
+        const float t = float(i) / float(n), u = 1 - t;
+        p.push_back({u * u * a.x + 2 * u * t * ky + t * t * y, u * u * a.y + 2 * u * t * kz + t * t * z});
+    }
+    return *this;
+}
+
+Outline Outline::scaled(float k, float dy, float dz) const {
+    Outline o;
+    for (const Vector2& v : p) o.p.push_back({v.x * k + dy, v.y * k + dz});
+    return o;
+}
+
+namespace {
+float cross2(Vector2 a, Vector2 b) { return a.x * b.y - a.y * b.x; }
+bool in_triangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c) {
+    const float d1 = cross2(Vector2Subtract(b, a), Vector2Subtract(p, a)), d2 = cross2(Vector2Subtract(c, b), Vector2Subtract(p, b)),
+                d3 = cross2(Vector2Subtract(a, c), Vector2Subtract(p, c));
+    return d1 >= 0 && d2 >= 0 && d3 >= 0;
+}
+// Ear clipping: a simple counter-clockwise polygon into triangles (index triples).
+std::vector<std::array<int, 3>> triangulate(const std::vector<Vector2>& poly) {
+    std::vector<int> idx(poly.size());
+    for (size_t i = 0; i < idx.size(); ++i) idx[i] = int(i);
+    std::vector<std::array<int, 3>> out;
+    while (idx.size() > 3) {
+        bool clipped = false;
+        const size_t m = idx.size();
+        for (size_t i = 0; i < m && !clipped; ++i) {
+            const int a = idx[(i + m - 1) % m], b = idx[i], c = idx[(i + 1) % m];
+            const Vector2 A = poly[size_t(a)], B = poly[size_t(b)], C = poly[size_t(c)];
+            if (cross2(Vector2Subtract(B, A), Vector2Subtract(C, B)) <= 1e-12f) continue;   // a reflex corner: not an ear
+            bool inside = false;
+            for (int k : idx)
+                if (k != a && k != b && k != c && in_triangle(poly[size_t(k)], A, B, C)) { inside = true; break; }
+            if (inside) continue;
+            out.push_back({a, b, c});
+            idx.erase(idx.begin() + long(i));
+            clipped = true;
+        }
+        if (!clipped) break;   // degenerate (it crosses itself): leave the rest open
+    }
+    if (idx.size() == 3) out.push_back({idx[0], idx[1], idx[2]});
+    return out;
+}
+}  // namespace
+
+void MeshBuilder::slab(const std::vector<Vector2>& outline, float xc, float hw, float round, int steps) {
+    std::vector<Vector2> P = outline;
+    if (P.size() > 1 && Vector2Distance(P.front(), P.back()) < 1e-7f) P.pop_back();
+    const int n = int(P.size());
+    if (n < 3) return;
+    float area = 0;
+    for (int i = 0; i < n; ++i) area += cross2(P[size_t(i)], P[size_t((i + 1) % n)]);
+    if (area < 0) std::reverse(P.begin(), P.end());   // counter-clockwise in (y, z): the outside is to each edge's right
+    round = std::clamp(round, 0.0f, hw * 0.95f);
+    steps = round > 0 ? std::max(1, steps) : 0;
+    const size_t N = P.size();
+    std::vector<Vector2> en(N), vn(N), miter(N);
+    std::vector<bool> sharp(N);
+    for (int i = 0; i < n; ++i) {
+        const Vector2 d = Vector2Normalize(Vector2Subtract(P[size_t((i + 1) % n)], P[size_t(i)]));
+        en[size_t(i)] = {d.y, -d.x};   // outward
+    }
+    for (int i = 0; i < n; ++i) {
+        const Vector2 a = en[size_t((i + n - 1) % n)], b = en[size_t(i)];
+        Vector2 m = Vector2Add(a, b);
+        m = Vector2Length(m) > 1e-6f ? Vector2Normalize(m) : b;
+        miter[size_t(i)] = Vector2Scale(m, 1.0f / std::max(Vector2DotProduct(m, b), 0.35f));   // very sharp corners don't spike
+        vn[size_t(i)] = m;
+        sharp[size_t(i)] = Vector2DotProduct(a, b) < 0.819f;   // cos 35 degrees
+    }
+    // Rings across the width: the -x face's outline, round the edge to its equator, straight across,
+    // and round again to the +x face.
+    struct Ring { float x, inset, c, s, side; };
+    std::vector<Ring> rings;
+    for (int k = steps; k >= 0; --k) {
+        const float t = steps ? 0.5f * PI * float(k) / float(steps) : 0.0f;
+        rings.push_back({xc - (hw - round + round * std::sin(t)), round * (1 - std::cos(t)), std::cos(t), std::sin(t), -1});
+    }
+    for (int k = 0; k <= steps; ++k) {
+        const float t = steps ? 0.5f * PI * float(k) / float(steps) : 0.0f;
+        rings.push_back({xc + (hw - round + round * std::sin(t)), round * (1 - std::cos(t)), std::cos(t), std::sin(t), 1});
+    }
+    auto at = [&](const Ring& r, int i) {
+        const Vector2 q = Vector2Subtract(P[size_t(i)], Vector2Scale(miter[size_t(i)], r.inset));
+        return Vector3{r.x, q.x, q.y};
+    };
+    auto nrm = [](const Ring& r, Vector2 n2) { return Vector3Normalize({r.side * r.s, n2.x * r.c, n2.y * r.c}); };
+    const Color cols[3] = {col_, col_, col_};
+    auto emit = [&](Vector3 a, Vector3 b, Vector3 c, Vector3 na, Vector3 nb, Vector3 nc) {
+        const Vector3 face = Vector3CrossProduct(Vector3Subtract(b, a), Vector3Subtract(c, a));
+        if (Vector3DotProduct(face, Vector3Add(Vector3Add(na, nb), nc)) < 0) { std::swap(b, c); std::swap(nb, nc); }
+        const Vector3 p[3] = {a, b, c}, nn[3] = {na, nb, nc};
+        tri(p, nn, cols, mat_);
+    };
+    for (size_t k = 0; k + 1 < rings.size(); ++k) {
+        const Ring &r0 = rings[k], &r1 = rings[k + 1];
+        for (int i = 0; i < n; ++i) {
+            const int j = (i + 1) % n;
+            const Vector2 ni = sharp[size_t(i)] ? en[size_t(i)] : vn[size_t(i)], nj = sharp[size_t(j)] ? en[size_t(i)] : vn[size_t(j)];
+            const Vector3 a = at(r0, i), b = at(r0, j), c = at(r1, j), d = at(r1, i);
+            emit(a, b, c, nrm(r0, ni), nrm(r0, nj), nrm(r1, nj));
+            emit(a, c, d, nrm(r0, ni), nrm(r1, nj), nrm(r1, ni));
+        }
+    }
+    // The flat faces: the outline inset by the rounding, fanned into triangles.
+    std::vector<Vector2> face(N);
+    for (int i = 0; i < n; ++i) face[size_t(i)] = Vector2Subtract(P[size_t(i)], Vector2Scale(miter[size_t(i)], round));
+    const auto tris = triangulate(face);
+    for (float side : {-1.0f, 1.0f}) {
+        const float x = xc + side * hw;
+        const Vector3 nn{side, 0, 0};
+        for (const auto& t : tris)
+            emit({x, face[size_t(t[0])].x, face[size_t(t[0])].y}, {x, face[size_t(t[1])].x, face[size_t(t[1])].y},
+                 {x, face[size_t(t[2])].x, face[size_t(t[2])].y}, nn, nn, nn);
+    }
+}
+
 void MeshBuilder::box(Vector3 c, Vector3 half, float k, int segs, int rings) {
     auto shape = [k](float v) { return (v < 0 ? -1.0f : 1.0f) * std::pow(std::fabs(v), k); };
     Grid g(rings + 1, std::vector<Vector3>(segs));

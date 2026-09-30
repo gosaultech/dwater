@@ -64,7 +64,7 @@ public:
     void sever(int root, MeshData& piece, Vector3& centre);
     bool severed(int region) const { return (hidden_ >> region) & 1u; }
     void recoil(float kick);                  // the gun bucks: arms, shoulders and head jolt
-    void set_weapon(int w);                   // the survivor's gun in hand: 0 = M92FS, 1 = Jachtgeweer
+    void set_weapon(int w);                   // the survivor's gun in hand: 0 = M92FS, 1 = Remington 870
     int weapon() const { return weapon_; }
     Vector3 muzzle() const;                   // where the shot leaves the barrel (world)
     Vector3 barrel_dir() const;               // which way the barrel points (world)
@@ -73,16 +73,36 @@ public:
     bool has_lamp() const { return lamp_joint_ >= 0; }
     Vector3 lamp() const;
     Vector3 lamp_dir() const;
-    // The Jachtgeweer sits in the hand tipped by this much (radians about the wrist's x), so it
-    // lies level along the aim with the strong elbow bent at the shoulder.
-    static constexpr float SHOTGUN_HOLD = -0.12f;
+    // How the Remington 870 sits in the right hand: its grip in the fist where the pistol's is, tipped
+    // back about the fist by GRIP_TILT (radians) so the fingers wrap the front of the stock's wrist
+    // (it slopes 38 degrees further back than the pistol's front strap). The wrist, not the gun,
+    // then bends to bring the bore level (the aim poses).
+    static constexpr float GRIP_TILT = 0.6f;
+    static Matrix shotgun_hold(float tilt = GRIP_TILT) {
+        const Vector3 fist{0, -0.0473f, 0.017f};   // the middle of the fist, wrist space
+        return MatrixMultiply(MatrixMultiply(MatrixTranslate(-fist.x, -fist.y, -fist.z), MatrixRotateX(tilt)),
+                              MatrixTranslate(fist.x, fist.y, fist.z));
+    }
+    // A tool: search the arms, the right wrist and the neck so the shotgun's bore lies along `aim`,
+    // the butt sits at `pocket` (from the right shoulder joint), the cheek on the comb (`cheek`), the
+    // elbow no higher than the shoulder and the left hand at `left` (a point on the gun, as
+    // cast_guns.cpp places it before the hold). Returns the result as text for the pose tables.
+    struct ShotgunFit {
+        Vector3 aim{0, 0, -1};
+        Vector3 pocket{-0.05f, -0.03f, -0.05f};   // the shoulder pocket
+        Vector3 left{0, -0.3837f, 0.0115f};       // under the fore-end, toward its back
+        bool cheek = true;
+    };
+    std::string fit_shotgun(const ShotgunFit& goal);
     float limp = 0;                           // 0..1: how badly the survivor limps (the only sign of his health)
     float pump = 0;                           // 0..1: the 870's fore-end racked back
     float slide = 0;                          // 0..1: the M92FS's slide back (1 and staying: locked open, empty)
     float lean = 0;                           // dodge: -1 hops to his left, 1 to his right, 0 straight back
 
 private:
-    struct Rigid { int joint, region; Mesh mesh; int tag = 0; };   // tag: 0 always shown; 1 + weapon: only while held
+    // tag: 0 always shown; 1 + weapon: only while that gun is in hand. drive: 1 the slide, 2 the
+    // fore-end: the part sits `travel` further along (joint space) when the gun is worked all the way.
+    struct Rigid { int joint, region; Mesh mesh; int tag = 0; int drive = 0; Vector3 travel{}; };
     struct Pt { int joint; Vector3 off; int region; };   // sweep control point (region: the segment ENDING here)
     struct Dyn { Sweep sweep; std::vector<Pt> pts; Mesh mesh; };
     struct Dangle {
@@ -134,7 +154,7 @@ private:
     void add_drip_source(int joint, Vector3 off, bool blood = false, int region = R_BODY);
     void step_drips(float dt);
     void add_skinned(const FilePart& p);
-    void add_rigid(int joint, int region, MeshData& d, int tag = 0);
+    void add_rigid(int joint, int region, MeshData& d, int tag = 0, int drive = 0, Vector3 travel = {});
     Matrix gun_frame() const;                                       // the gun in hand -> world
     Vector3 skin_point(const Skinned& s, int v) const;             // a skinned vertex where it is this frame
     Vector3 skin_normal(const Skinned& s, int v) const;

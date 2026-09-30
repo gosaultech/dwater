@@ -35,7 +35,7 @@ target_include_directories(dw_core PUBLIC include)
 target_link_libraries(dw_core PUBLIC nlohmann_json::nlohmann_json SQLite::SQLite3 raylib)
 target_compile_definitions(dw_core PUBLIC DW_REPO_ROOT="${CMAKE_SOURCE_DIR}/..")
 
-set(DW_CAST src/character.cpp src/character_combat.cpp src/cast_survivor.cpp src/cast_drowned.cpp src/cast_citizens.cpp
+set(DW_CAST src/character.cpp src/character_combat.cpp src/cast_survivor.cpp src/cast_guns.cpp src/cast_drowned.cpp src/cast_citizens.cpp
             src/mesh_builder.cpp)
 add_executable(damned_waters src/main.cpp src/game.cpp src/game_combat.cpp src/input.cpp src/audio.cpp src/effects.cpp src/shaders.cpp ${DW_CAST})
 target_link_libraries(damned_waters PRIVATE dw_core raylib)
@@ -52,7 +52,7 @@ if(DW_BUILD_TESTS)
         set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
         FetchContent_MakeAvailable(googletest)
     endif()
-    add_executable(dw_tests tests/test_core.cpp tests/test_character_file.cpp tests/test_combat.cpp tests/test_controls.cpp src/mesh_builder.cpp)
+    add_executable(dw_tests tests/test_core.cpp tests/test_character_file.cpp tests/test_combat.cpp tests/test_controls.cpp tests/test_mesh_builder.cpp tests/test_guns.cpp src/mesh_builder.cpp src/cast_guns.cpp)
     target_link_libraries(dw_tests PRIVATE dw_core GTest::gtest_main)
     enable_testing()
     add_test(NAME dw_tests COMMAND dw_tests)

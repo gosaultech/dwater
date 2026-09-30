@@ -49,7 +49,8 @@ enum Mat : int {
     MAT_WETHAIR = 37,    // long hair, soaked: dark, clumped, glossy
     MAT_WATER = 38,      // a drop of water: dark and glassy, it only shows where it catches the light
     MAT_WOOD = 39,       // oiled walnut: grain along the part's length (the shotgun's stock)
-    MAT_BLOOD = 40       // fresh blood: dark red, wet, glossy where it pools
+    MAT_BLOOD = 40,      // fresh blood: dark red, wet, glossy where it pools
+    MAT_POLYMER = 41     // gun furniture: black synthetic stock and fore-end, faintly stippled
 };
 
 struct MeshData {
@@ -91,12 +92,31 @@ public:
     void drape(Vector3 top, Vector2 r_top, Vector2 r_bottom, float length, int rings, int segs, int folds,
                float fold_amp, const std::function<float(float)>& length_scale = {}, unsigned seed = 1,
                float th0 = 0.0f, float th1 = 2.0f * PI);
+    // A hard-surface part from its side view, the way a gun or a tool is modelled: `outline` is a
+    // closed polygon in the (y, z) plane (either winding), extruded across x from xc - half_w to
+    // xc + half_w, its edges rounded by `round` (a quarter circle in `steps` facets). Corners
+    // sharper than 35 degrees stay crisp (their faces don't share normals); gentler ones shade
+    // smoothly. A machined slide, a trigger guard, a stock.
+    void slab(const std::vector<Vector2>& outline, float xc, float half_w, float round, int steps = 3);
 private:
     void tri(const Vector3* p, const Vector3* n, const Color* c, float mat);
     MeshData& d_;
     float mat_ = 0, ao_ = 1;
     Color col_ = WHITE;
     Matrix xf_ = MatrixIdentity();
+};
+
+// A closed outline for MeshBuilder::slab, in (y, z): straight runs, arcs and curves, the way a
+// draughtsman draws a part's side view.
+struct Outline {
+    std::vector<Vector2> p;
+    Outline& to(float y, float z) { p.push_back({y, z}); return *this; }
+    // An arc round (cy, cz) of radius r from angle a0 to a1 (radians; 0 = +y, pi/2 = +z), in n steps.
+    Outline& arc(float cy, float cz, float r, float a0, float a1, int n);
+    // A curve from the last point toward (ky, kz) and on to (y, z) (a quadratic Bezier), in n steps.
+    Outline& curve(float ky, float kz, float y, float z, int n);
+    // Everything scaled (millimetres to metres, say) and moved.
+    Outline scaled(float k, float dy = 0, float dz = 0) const;
 };
 
 // Cross-section profile along a sweep: (s 0..1, rx, rz, forward shift).

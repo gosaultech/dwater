@@ -53,11 +53,11 @@ Vector3 Character::pattern_offset() {
     return {x, y, z};
 }
 
-void Character::add_rigid(int joint, int region, MeshData& d, int tag) {
+void Character::add_rigid(int joint, int region, MeshData& d, int tag, int drive, Vector3 travel) {
     if (!d.count()) return;
     const Vector3 o = pattern_offset();
     for (size_t i = 0; i < d.count(); ++i) { d.tan[i * 4] += o.x; d.tan[i * 4 + 1] += o.y; d.tan[i * 4 + 2] += o.z; }
-    rigid_.push_back({joint, region, upload(d), tag});
+    rigid_.push_back({joint, region, upload(d), tag, drive, travel});
 }
 
 void Character::add_sweep(Sweep s, std::vector<Pt> pts) {
@@ -560,13 +560,16 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         }
         case Pose::Aim: {   // two-handed pistol: strong arm straight, support arm crossing in
             if (weapon_ == 1) {   // the shotgun at the shoulder: strong elbow out, support arm under the fore-end
-                T[J_SHO_R] = {0.5f + ap, 0.25f, 0.0f};
-                T[J_ELB_R] = {1.2f, 0, 0};
-                T[J_SHO_L] = {1.1f + ap, 0, 0.45f};
-                T[J_ELB_L] = {0.5f, 0, 0};
+                // (arms and wrists fitted with --fit870: the butt in the shoulder, the bore level)
+                T[J_SHO_R] = {0.464f + ap, 0.607f, 0.140f};
+                T[J_ELB_R] = {2.177f, 0, 0};
+                T[J_WRI_R] = {-0.55f, -1.6f, 1.236f};
+                T[J_SHO_L] = {1.632f + ap, 0.110f, 0.552f};
+                T[J_ELB_L] = {0.002f, 0, 0};
+                T[J_WRI_L] = {-0.007f, 0, -0.079f};
                 T[J_SPINE] = {-0.08f, -0.12f, 0};
                 T[J_CHEST] = {-0.03f, -0.1f, 0};
-                T[J_NECK] = {-0.12f, 0.12f, -0.12f};   // cheek down to the stock
+                T[J_NECK] = {-0.45f, -0.12f, -0.35f};   // cheek down toward the stock
                 T[J_HIP_L] = {0.25f, 0, -0.05f};
                 T[J_KNE_L] = {-0.22f, 0, 0};
                 T[J_HIP_R] = {-0.2f, 0, 0.06f};
@@ -619,11 +622,13 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         }
         case Pose::Reload: {   // head down over the gun: a fresh magazine, or two shells into the barrels
             const float work = std::sin(t_ * 9.0f) * 0.12f;
-            if (weapon_ == 1) {
-                T[J_SHO_R] = {0.3f, 0, -0.15f};
-                T[J_ELB_R] = {1.15f, 0, 0};
-                T[J_SHO_L] = {0.5f + work, 0, 0.4f};
-                T[J_ELB_L] = {1.35f, 0, 0};
+            if (weapon_ == 1) {   // under the arm, muzzle up a little, the left hand at the loading port (--fit870)
+                T[J_SHO_R] = {-0.463f, 0.395f, 0.727f};
+                T[J_ELB_R] = {2.305f, 0, 0};
+                T[J_WRI_R] = {0.026f, -1.6f, 0.183f};
+                T[J_SHO_L] = {0.741f + work, -0.314f, 0.629f};
+                T[J_ELB_L] = {1.133f, 0, 0};
+                T[J_WRI_L] = {-0.45f, 0, 0.258f};
             } else {
                 T[J_SHO_R] = {0.6f, 0, -0.08f};
                 T[J_ELB_R] = {1.35f, 0, 0};
@@ -726,11 +731,14 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         default: break;
     }
     if (!drowned && weapon_ == 1 && (pose == Pose::Idle || pose == Pose::Walk || pose == Pose::Run || pose == Pose::Hurt)) {
-        // The shotgun carried at the low ready: both hands on it, barrels angled down ahead.
-        T[J_SHO_R] = {0.28f, 0, -0.16f};
-        T[J_ELB_R] = {0.95f, 0, 0};
-        T[J_SHO_L] = {0.5f, 0, 0.62f};
-        T[J_ELB_L] = {0.55f, 0, 0};
+        // The shotgun carried at the low ready: the butt still in the shoulder, both hands on it, the
+        // muzzle 40 degrees down ahead (--fit870).
+        T[J_SHO_R] = {-0.105f, 0.238f, -0.734f};
+        T[J_ELB_R] = {2.164f, 0, 0};
+        T[J_WRI_R] = {-0.55f, -1.6f, 1.204f};
+        T[J_SHO_L] = {0.994f, -0.486f, 0.046f};
+        T[J_ELB_L] = {0.003f, 0, 0};
+        T[J_WRI_L] = {-0.001f, 0, -0.077f};
     }
     if (!drowned && limp > 0 && pose != Pose::Dead) {
         // Hurt: he favours the right leg (it barely bends and drags), dips as it takes his weight,
@@ -768,8 +776,11 @@ void Character::draw(const Material& m, bool shadow_caster) const {
         SetShaderValue(m.shader, hidden_loc, &none, SHADER_UNIFORM_INT);
         SetShaderValue(m.shader, skin_loc, &off, SHADER_UNIFORM_INT);
     }
-    for (const auto& r : rigid_)
-        if (!severed(r.region) && (r.tag == 0 || r.tag == weapon_ + 1)) DrawMesh(r.mesh, m, W_[r.joint]);
+    for (const auto& r : rigid_) {
+        if (severed(r.region) || (r.tag != 0 && r.tag != weapon_ + 1)) continue;
+        const float k = r.drive == 1 ? slide : r.drive == 2 ? pump : 0.0f;   // the slide or the fore-end, worked back
+        DrawMesh(r.mesh, m, k > 0 ? MatrixMultiply(MatrixTranslate(r.travel.x * k, r.travel.y * k, r.travel.z * k), W_[r.joint]) : W_[r.joint]);
+    }
     for (const auto& d : dyn_) DrawMesh(d.mesh, m, MatrixIdentity());
     for (const auto& d : dangles_)
         if (!severed(d.region)) DrawMesh(d.mesh, m, MatrixIdentity());

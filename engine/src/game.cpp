@@ -12,7 +12,9 @@
 #include <vector>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
+#include "cast_guns.hpp"
 #include "dw/shaders.hpp"
 
 namespace dw {
@@ -57,6 +59,9 @@ bool Game::init(const std::string& room_id) {
     l_top_ = GetShaderLocation(char_, "u_ambTop");
     l_bot_ = GetShaderLocation(char_, "u_ambBottom");
     l_rim_ = GetShaderLocation(char_, "u_rim");
+    l_env_top_ = GetShaderLocation(char_, "u_envTop");
+    l_env_bot_ = GetShaderLocation(char_, "u_envBottom");
+    l_softbox_ = GetShaderLocation(char_, "u_softbox");
     l_fog_ = GetShaderLocation(char_, "u_fog");
     l_fogr_ = GetShaderLocation(char_, "u_fogRange");
     char_mat_ = LoadMaterialDefault();
@@ -339,9 +344,14 @@ void Game::upload_lights() {
     set_lights(pos, col, dir, n);
     const float top[3] = {0.03f, 0.034f, 0.046f}, bot[3] = {0.011f, 0.009f, 0.007f}, rim[3] = {0.1f, 0.12f, 0.16f};
     const float fog[3] = {0.006f, 0.007f, 0.009f}, fogr[2] = {5.0f, 16.0f};
+    const float env_top[3] = {0.07f, 0.075f, 0.09f}, env_bot[3] = {0.02f, 0.017f, 0.014f};   // a dark hall to mirror
+    const float no_softbox = 0;
+    SetShaderValue(char_, l_softbox_, &no_softbox, SHADER_UNIFORM_FLOAT);
     SetShaderValue(char_, l_top_, top, SHADER_UNIFORM_VEC3);
     SetShaderValue(char_, l_bot_, bot, SHADER_UNIFORM_VEC3);
     SetShaderValue(char_, l_rim_, rim, SHADER_UNIFORM_VEC3);
+    SetShaderValue(char_, l_env_top_, env_top, SHADER_UNIFORM_VEC3);
+    SetShaderValue(char_, l_env_bot_, env_bot, SHADER_UNIFORM_VEC3);
     SetShaderValue(char_, l_fog_, fog, SHADER_UNIFORM_VEC3);
     SetShaderValue(char_, l_fogr_, fogr, SHADER_UNIFORM_VEC2);
 }
@@ -495,7 +505,7 @@ std::string Game::stage(int i) {
             name = "pistol_flash";
             break;
         }
-        case 5: {   // the Jachtgeweer at two metres
+        case 5: {   // the Remington 870 at two metres
             join(1, 1.1f, 9.1f, 0.0f, EState::Pursuit);
             switch_gun(1);
             player_ = {0.9f, 7.0f, kPi};
@@ -607,9 +617,14 @@ void Game::upload_studio_lights() {
     flash_light_ = lamp_light_ = -1;
     const float top[3] = {0.05f, 0.055f, 0.07f}, bot[3] = {0.02f, 0.018f, 0.015f}, rim[3] = {0.1f, 0.12f, 0.16f};
     const float fog[3] = {0, 0, 0}, fogr[2] = {50.0f, 60.0f};
+    const float env_top[3] = {0.12f, 0.13f, 0.15f}, env_bot[3] = {0.035f, 0.032f, 0.03f};
+    const float no_softbox = 0;
+    SetShaderValue(char_, l_softbox_, &no_softbox, SHADER_UNIFORM_FLOAT);
     SetShaderValue(char_, l_top_, top, SHADER_UNIFORM_VEC3);
     SetShaderValue(char_, l_bot_, bot, SHADER_UNIFORM_VEC3);
     SetShaderValue(char_, l_rim_, rim, SHADER_UNIFORM_VEC3);
+    SetShaderValue(char_, l_env_top_, env_top, SHADER_UNIFORM_VEC3);
+    SetShaderValue(char_, l_env_bot_, env_bot, SHADER_UNIFORM_VEC3);
     SetShaderValue(char_, l_fog_, fog, SHADER_UNIFORM_VEC3);
     SetShaderValue(char_, l_fogr_, fogr, SHADER_UNIFORM_VEC2);
 }
@@ -691,6 +706,7 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     std::string w = who, at_joint, opts;
     if (const auto k = w.find('/'); k != std::string::npos) { opts = w.substr(k); w.resize(k); }
     if (const auto k = w.find('@'); k != std::string::npos) { at_joint = w.substr(k + 1); w.resize(k); }
+    if (w == "m92fs" || w == "r870") return gun_view(w, opts, orbit, elev, dist, tx, ty, fovy, png);
     const bool survivor = w == "survivor";
     const int variant = !survivor && w.size() > 7 ? std::atoi(w.c_str() + 7) : 0;
     upload_studio_lights();
@@ -726,7 +742,8 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     const float e = elev * DEG2RAD;
     Vector3 at{tx, ty, 0};
     if (!at_joint.empty()) {
-        const Vector3 j = at_joint == "head" ? c.head_point() : c.joint(at_joint == "chest" ? J_CHEST : J_PELVIS);
+        const Vector3 j = at_joint == "head" ? c.head_point() : at_joint == "hand" ? c.joint(J_WRI_R)
+                        : c.joint(at_joint == "chest" ? J_CHEST : J_PELVIS);
         at = {j.x + tx, j.y + ty, j.z};
         if (at_joint == "head") { const Vector3 f = c.face_dir(); a += std::atan2(f.x, -f.z); }
     }
@@ -750,6 +767,96 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     const bool ok = ExportImage(img, png.c_str());
     UnloadImage(img);
     c.unload();
+    upload_lights();
+    return ok;
+}
+
+// A gun on its own, turned side-on (muzzle to the right, its right side facing the camera at
+// orbit 0), lit like a catalogue photo so it can be held up against the real thing. opts:
+//   /slide=0..1   the slide or fore-end worked back
+//   /roll=deg     the picture turned (muzzle up), to match a reference photo's angle
+//   /bg=dark      a black backdrop instead of the studio's pale grey
+//   /obj=stem     also write the meshes to stem_fixed.obj and stem_moving.obj
+//   /wood         the 870 in walnut rather than black synthetic
+bool Game::gun_view(const std::string& who, const std::string& opts, float orbit, float elev, float dist, float tx, float ty,
+                    float fovy, const std::string& png) {
+    auto opt = [&](const char* key, float fallback) {
+        const auto k = opts.find(key);
+        return k == std::string::npos ? fallback : float(std::atof(opts.c_str() + k + std::strlen(key)));
+    };
+    const float back = opt("/slide=", 0), roll = opt("/roll=", 0);
+    const bool dark = opts.find("/bg=dark") != std::string::npos;
+    // A product shot: a big soft key above and in front, a fill from the other side, a light
+    // behind to trace the edges, and pale surroundings for the steel to mirror.
+    const Vector4 pos[8] = {{-0.5f, 1.3f, 1.1f, 9.0f}, {1.3f, 0.2f, 0.9f, 9.0f}, {0.2f, 1.6f, -0.4f, 9.0f}, {-0.6f, 0.4f, -1.3f, 9.0f}};
+    const Vector4 col[8] = {{2.3f, 2.27f, 2.22f, 0}, {0.6f, 0.62f, 0.65f, 0}, {1.2f, 1.2f, 1.22f, 0}, {1.0f, 1.02f, 1.05f, 0}};
+    const Vector4 dir[8] = {};
+    set_lights(pos, col, dir, 4);
+    static_lights_ = 4;
+    flash_light_ = lamp_light_ = -1;
+    const float top[3] = {0.2f, 0.2f, 0.21f}, bot[3] = {0.09f, 0.09f, 0.09f}, rim[3] = {0.2f, 0.2f, 0.21f};
+    const float env_top[3] = {1.1f, 1.1f, 1.13f}, env_bot[3] = {0.05f, 0.05f, 0.055f};
+    const float fog[3] = {0, 0, 0}, fogr[2] = {50.0f, 60.0f}, softbox = 0.35f;
+    SetShaderValue(char_, l_softbox_, &softbox, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(char_, l_top_, top, SHADER_UNIFORM_VEC3);
+    SetShaderValue(char_, l_bot_, bot, SHADER_UNIFORM_VEC3);
+    SetShaderValue(char_, l_rim_, rim, SHADER_UNIFORM_VEC3);
+    SetShaderValue(char_, l_env_top_, env_top, SHADER_UNIFORM_VEC3);
+    SetShaderValue(char_, l_env_bot_, env_bot, SHADER_UNIFORM_VEC3);
+    SetShaderValue(char_, l_fog_, fog, SHADER_UNIFORM_VEC3);
+    SetShaderValue(char_, l_fogr_, fogr, SHADER_UNIFORM_VEC2);
+    for (auto& sm : shadows_) sm.light = sm.dyn = -1;   // no characters: no shadow maps
+    bind_shadows();
+    const cast::Stock furniture = opts.find("/wood") != std::string::npos ? cast::Stock::Walnut : cast::Stock::Synthetic;
+    cast::GunParts gp = who == "m92fs" ? cast::m92fs() : cast::r870(MatrixIdentity(), furniture);   // (straight, not as held)
+    Mesh fixed = upload(gp.fixed), moving = upload(gp.moving);
+    if (const auto k = opts.find("/obj="); k != std::string::npos) {   // the meshes as OBJ files (wrist space), for matching photos
+        const std::string stem = opts.substr(k + 5, opts.find('/', k + 1) - (k + 5));
+        // (raylib's ExportMesh keeps two decimals: a centimetre, far too coarse for a pistol)
+        auto write = [](const MeshData& d, const std::string& path) {
+            if (FILE* f = std::fopen(path.c_str(), "w")) {
+                for (size_t i = 0; i < d.count(); ++i) std::fprintf(f, "v %.6f %.6f %.6f\n", d.pos[i * 3], d.pos[i * 3 + 1], d.pos[i * 3 + 2]);
+                for (size_t t = 0; t + 2 < d.count(); t += 3) std::fprintf(f, "f %zu %zu %zu\n", t + 1, t + 2, t + 3);
+                std::fclose(f);
+            }
+        };
+        write(gp.fixed, stem + "_fixed.obj");
+        write(gp.moving, stem + "_moving.obj");
+    }
+    Matrix lay = MatrixIdentity();   // wrist space -> side-on: -y to +x (the muzzle right), -z up, +x toward the camera
+    lay.m0 = 0; lay.m4 = -1; lay.m8 = 0;
+    lay.m1 = 0; lay.m5 = 0; lay.m9 = -1;
+    lay.m2 = 1; lay.m6 = 0; lay.m10 = 0;
+    const Matrix M = MatrixMultiply(MatrixTranslate(-gp.centre.x, -gp.centre.y, -gp.centre.z), lay);
+    const Matrix Mm = MatrixMultiply(MatrixTranslate(gp.travel.x * back, gp.travel.y * back, gp.travel.z * back), M);
+    const float a = orbit * DEG2RAD, e = elev * DEG2RAD;
+    Camera3D cam{};
+    cam.target = {tx, ty, 0};
+    cam.position = {tx + dist * std::sin(a) * std::cos(e), ty + dist * std::sin(e), dist * std::cos(a) * std::cos(e)};
+    cam.up = Vector3RotateByAxisAngle({0, 1, 0}, Vector3Normalize(Vector3Subtract(cam.target, cam.position)), roll * DEG2RAD);
+    cam.fovy = fovy;
+    cam.projection = CAMERA_PERSPECTIVE;
+    constexpr int SS = 3;   // drawn at three times the size and shrunk: smooth edges on the machined parts
+    RenderTexture2D big = LoadRenderTexture(W * SS, H * SS);
+    BeginTextureMode(big);
+    ClearBackground(dark ? Color{8, 8, 9, 255} : Color{226, 226, 228, 255});
+    BeginMode3D(cam);
+    SetShaderValue(char_, l_cam_, &cam.position, SHADER_UNIFORM_VEC3);
+    rlDisableBackfaceCulling();
+    DrawMesh(fixed, char_mat_, M);
+    DrawMesh(moving, char_mat_, Mm);
+    rlEnableBackfaceCulling();
+    EndMode3D();
+    EndTextureMode();
+    Image img = LoadImageFromTexture(big.texture);
+    ImageFlipVertical(&img);
+    ImageResize(&img, W, H);
+    const bool ok = ExportImage(img, png.c_str());
+    UnloadImage(img);
+    UnloadRenderTexture(big);
+    UnloadMesh(fixed);
+    UnloadMesh(moving);
+    TraceLog(LOG_INFO, "VIEW %s: %d + %d triangles", who.c_str(), int(gp.fixed.count() / 3), int(gp.moving.count() / 3));
     upload_lights();
     return ok;
 }

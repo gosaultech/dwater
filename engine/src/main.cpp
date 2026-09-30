@@ -10,13 +10,17 @@
 //                                   (--only pieter,survivor: just those subjects)
 //   ./damned_waters --view survivor,25,10,0.6,0,0.9,30 out.png   one full-resolution studio shot
 //                                   (who, orbit, elevation, distance, target x, target height, fov), then exit;
-//                                   who: survivor | drowned[N] [@head | @chest | @pelvis]
+//                                   who: survivor | drowned[N] [@head | @chest | @pelvis | @hand],
+//                                   or a gun, catalogue-lit: m92fs | r870 (see Game::gun_view)
+//   ./damned_waters --fit870        a tool: fit the arms and wrists that hold the 870 (aim, low
+//                                   ready, reload), print them for the pose tables, then exit
 //   ./damned_waters --frames 600    auto-exit (smoke tests)
 #include <raylib.h>
 #include <rlgl.h>
 #include <algorithm>
 #include <string>
 
+#include "dw/character.hpp"
 #include "dw/telemetry.hpp"
 #include "game.hpp"
 
@@ -32,8 +36,11 @@ int main(int argc, char** argv) {
         else if (a == "--room") room = argv[++i];
         else if (a == "--frames") max_frames = std::stol(argv[++i]);
     }
-    bool flashlight = false;
-    for (int i = 1; i < argc; ++i) flashlight = flashlight || std::string(argv[i]) == "--flashlight";
+    bool flashlight = false, fit870 = false;
+    for (int i = 1; i < argc; ++i) {
+        flashlight = flashlight || std::string(argv[i]) == "--flashlight";
+        fit870 = fit870 || std::string(argv[i]) == "--fit870";   // a tool: fit the shotgun hold, print it, exit
+    }
     SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
     InitWindow(dw::Game::W, dw::Game::H, "Damned Waters");
     SetExitKey(KEY_NULL);   // Esc pauses (the menu has Quit)
@@ -50,7 +57,20 @@ int main(int argc, char** argv) {
     }
     double start = GetTime(), worst = 0;
     long frames = 0;
-    if (!view.empty()) {
+    if (fit870) {
+        dw::Character c = dw::Character::make(dw::Kind::Survivor);
+        dw::Character::ShotgunFit aim, low, reload;
+        low.aim = {0, -0.64f, -0.77f};   // the low ready: still in the shoulder, the muzzle 40 degrees down
+        low.cheek = false;
+        reload.aim = {0, 0.2f, -0.98f};   // loading: under the armpit, muzzle up a little, left hand at the port
+        reload.pocket = {0.0f, -0.2f, 0.02f};
+        reload.left = {0, -0.2037f, 0.0015f};
+        reload.cheek = false;
+        TraceLog(LOG_INFO, "FIT aim %s", c.fit_shotgun(aim).c_str());
+        TraceLog(LOG_INFO, "FIT low ready %s", c.fit_shotgun(low).c_str());
+        TraceLog(LOG_INFO, "FIT reload %s", c.fit_shotgun(reload).c_str());
+        c.unload();
+    } else if (!view.empty()) {
         if (!game.studio_view(view, view_png)) TraceLog(LOG_ERROR, "bad --view spec: %s", view.c_str());
     } else if (!sheet.empty()) {
         game.model_sheet(sheet, only);

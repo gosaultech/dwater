@@ -7,6 +7,8 @@
 // lesson: what a cut looks like on this particular body, posed as it is this frame.
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <string>
 
 #include "cast_common.hpp"
 #include "dw/character.hpp"
@@ -221,13 +223,13 @@ void Character::recoil(float k) {   // added to the twitch offsets, which ease b
 void Character::set_weapon(int w) { weapon_ = w; }
 
 // Guns are built in wrist space: the barrel runs down the hand (-y) above the web of the thumb (-z);
-// the shotgun is tipped in the hand by SHOTGUN_HOLD.
+// the shotgun is turned in the hand by shotgun_hold().
 Matrix Character::gun_frame() const {
-    return weapon_ == 1 ? MatrixMultiply(MatrixRotateX(SHOTGUN_HOLD), W_[J_WRI_R]) : W_[J_WRI_R];
+    return weapon_ == 1 ? MatrixMultiply(shotgun_hold(), W_[J_WRI_R]) : W_[J_WRI_R];
 }
 
-Vector3 Character::muzzle() const {
-    return Vector3Transform(weapon_ == 1 ? Vector3{0, -0.86f, -0.075f} : Vector3{0, -0.2485f, -0.066f}, gun_frame());
+Vector3 Character::muzzle() const {   // (cast_guns.cpp: the end of the 870's choke; the M92FS's muzzle)
+    return Vector3Transform(weapon_ == 1 ? Vector3{0, -0.7587f, -0.0435f} : Vector3{0, -0.2401f, -0.066f}, gun_frame());
 }
 
 Vector3 Character::barrel_dir() const {
@@ -241,7 +243,95 @@ Vector3 Character::lamp_dir() const {   // the head is bent forward, a little do
 }
 
 Vector3 Character::ejection_port() const {   // the pistol's port behind the muzzle; the shotgun's open breech
-    return Vector3Transform(weapon_ == 1 ? Vector3{0, -0.13f, -0.075f} : Vector3{0, -0.115f, -0.074f}, gun_frame());
+    return Vector3Transform(weapon_ == 1 ? Vector3{0.016f, -0.2087f, -0.0455f} : Vector3{0.012f, -0.137f, -0.066f}, gun_frame());
+}
+
+// ── A tool: fitting the shotgun hold ─────────────────────────────────────────────
+std::string Character::fit_shotgun(const ShotgunFit& goal) {
+    weapon_ = 1;
+    Vector3 T[J_COUNT]{};
+    float bob = 0;
+    targets(Pose::Aim, 0, 0, 0, T, bob);
+    bob_ = bob;
+    pitch_ = pivot_ = lift_ = 0;
+    pos_ = {};
+    yaw_ = 0;
+    for (auto& t : twitch_) t = {};
+    const Vector3 aim = Vector3Normalize(goal.aim);
+    const bool cheek = goal.cheek;
+    // Points on the gun (cast_guns.cpp's rifle_at, before the hold): the middle of the butt pad, the
+    // fore-end's belly toward its back (where a hand pumps it), the top of the comb.
+    const Vector3 butt{0, 0.2053f, 0.0435f}, belly = goal.left, comb{0, 0.0563f, -0.0405f};
+    constexpr int K = 17;   // SHO_R xyz, ELB_R, WRI_R xyz, SHO_L xyz, ELB_L, WRI_L x z, NECK xyz, grip tilt
+    // (the wrist, in its joint's axes: x tips the hand sideways in the plane of the palm, 30 degrees
+    // at most; y twists it; z bends it toward the palm or its back, 75 degrees. The grip in the fist
+    // is fixed: fingers round the front of the stock's wrist, thumb over it.)
+    const float lo[K] = {-0.6f, -1.2f, -1.4f, 0.0f, -0.55f, -1.6f, -1.3f, -0.3f, -1.2f, -1.4f, 0.0f, -1.2f, -1.2f, -0.6f, -0.5f, -0.5f, GRIP_TILT};
+    const float hi[K] = {2.6f, 1.2f, 1.4f, 2.6f, 0.55f, 1.6f, 1.3f, 2.8f, 1.2f, 1.4f, 2.4f, 1.2f, 1.2f, 0.3f, 0.5f, 0.5f, GRIP_TILT};
+    float gaps[3]{};   // how far off the butt, the left hand and the cheek end up (m)
+    float parts[6]{};
+    auto eval = [&](const float* q) {
+        for (int j = 0; j < J_COUNT; ++j) ang_[j] = T[j];
+        ang_[J_SHO_R] = {q[0], q[1], q[2]};
+        ang_[J_ELB_R] = {q[3], 0, 0};
+        ang_[J_WRI_R] = {q[4], q[5], q[6]};   // the hand bends with the gun in it
+        ang_[J_SHO_L] = {q[7], q[8], q[9]};
+        ang_[J_ELB_L] = {q[10], 0, 0};
+        ang_[J_WRI_L] = {q[11], 0, q[12]};
+        ang_[J_NECK] = {q[13], q[14], q[15]};
+        fk();
+        const Matrix G = MatrixMultiply(shotgun_hold(q[16]), W_[J_WRI_R]);
+        const Vector3 bore = Vector3Normalize(rotate_only({0, -1, 0}, G));
+        const Vector3 pocket = Vector3Add(joint(J_SHO_R), goal.pocket);
+        const Vector3 palm = Vector3Lerp(joint(J_WRI_L), joint(J_FING1_L), 0.5f);
+        gaps[0] = Vector3Distance(Vector3Transform(butt, G), pocket);
+        gaps[1] = Vector3Distance(palm, Vector3Add(Vector3Transform(belly, G), {0, -0.025f, 0}));
+        gaps[2] = Vector3Distance(Vector3Transform(comb, G), Vector3Add(joint(J_JAW), {0, -0.03f, 0}));
+        parts[0] = 600.0f * (1.0f - Vector3DotProduct(bore, aim));
+        parts[1] = 4000.0f * gaps[0] * gaps[0];
+        parts[2] = 1000.0f * gaps[1] * gaps[1];
+        parts[3] = cheek ? 40.0f * gaps[2] * gaps[2] : 0.0f;
+        const float over = joint(J_ELB_R).y - (joint(J_SHO_R).y + 0.04f);   // the elbow out, but not above the shoulder
+        parts[4] = over > 0 ? 200.0f * over * over : 0.0f;
+        parts[5] = 0.05f * (3.0f * q[4] * q[4] + 0.5f * q[5] * q[5] + q[6] * q[6]);   // a wrist bent no further than it must
+        return parts[0] + parts[1] + parts[2] + parts[3] + parts[4] + parts[5];
+    };
+    unsigned rng = 0x2545F491u;
+    auto rnd = [&rng]() { rng ^= rng << 13; rng ^= rng >> 17; rng ^= rng << 5; return float(rng & 0xFFFFFF) / 16777215.0f; };
+    const float start[K] = {0.5f, 0.25f, 0.0f, 1.2f, 0.0f, 0.0f, 0.0f, 1.1f, 0.0f, 0.45f, 0.5f, 0.0f, 0.0f, T[J_NECK].x, T[J_NECK].y, T[J_NECK].z,
+                            GRIP_TILT};
+    float bestq[K];
+    std::copy(start, start + K, bestq);
+    float best = eval(bestq);
+    for (int restart = 0; restart < 12; ++restart) {   // several starts: the arms have more than one way to hold a gun
+        float q[K];
+        for (int k = 0; k < K; ++k) q[k] = restart == 0 ? start[k] : lo[k] + (hi[k] - lo[k]) * rnd();
+        float cur = eval(q), step = 0.8f;
+        for (int it = 0; it < 40000; ++it) {
+            float t[K];
+            std::copy(q, q + K, t);
+            const int n = 1 + int(rnd() * 2.99f);
+            for (int m = 0; m < n; ++m) {
+                const int k = std::min(K - 1, int(rnd() * float(K)));
+                t[k] = std::clamp(t[k] + (rnd() * 2 - 1) * step, lo[k], hi[k]);
+            }
+            const float c = eval(t);
+            if (c < cur) { cur = c; std::copy(t, t + K, q); }
+            if (it % 4000 == 3999) step *= 0.65f;
+        }
+        if (cur < best) { best = cur; std::copy(q, q + K, bestq); }
+    }
+    eval(bestq);
+    const float* q = bestq;
+    char buf[800];
+    std::snprintf(buf, sizeof(buf),
+                  "cost %.4f (bore %.4f butt %.4f hand %.4f cheek %.4f elbow %.4f wrist %.4f)\n"
+                  "  gaps: butt %.1f cm, left hand %.1f cm, cheek %.1f cm; grip tilt %.3f\n"
+                  "  SHO_R {%.3f, %.3f, %.3f} ELB_R %.3f WRI_R {%.3f, %.3f, %.3f}\n"
+                  "  SHO_L {%.3f, %.3f, %.3f} ELB_L %.3f WRI_L {%.3f, 0, %.3f} NECK {%.3f, %.3f, %.3f}",
+                  best, parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], gaps[0] * 100, gaps[1] * 100, gaps[2] * 100, q[16],
+                  q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], q[9], q[10], q[11], q[12], q[13], q[14], q[15]);
+    return buf;
 }
 
 }  // namespace dw

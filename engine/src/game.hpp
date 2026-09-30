@@ -63,6 +63,10 @@ public:
     // (who: survivor | drowned[N], optionally @head, @chest or @pelvis); the camera orbits the point
     // (target_x, target_y, 0), or that joint offset by (target_x, target_y).
     bool studio_view(const std::string& spec, const std::string& png);
+    // who: m92fs | r870, a gun on its own, side-on and catalogue-lit; opts: /slide=1 (worked back),
+    // /roll=deg, /bg=dark, /wood (the 870 in walnut), /obj=stem (write the meshes out)
+    bool gun_view(const std::string& who, const std::string& opts, float orbit, float elev, float dist, float tx, float ty,
+                  float fovy, const std::string& png);
     bool debug = false;
     bool flashlight = false;   // L1 / L: the flashlight on his strap (a spot on the characters and on the painted room)
     std::string settings_path; // the SQLite database the options live in (set before init)
@@ -187,6 +191,7 @@ private:
     Vector2 held_in_{};
     bool holding_ = false;
     int l_cam_ = -1, l_count_ = -1, l_pos_ = -1, l_col_ = -1, l_dir_ = -1, l_top_ = -1, l_bot_ = -1, l_rim_ = -1, l_fog_ = -1, l_fogr_ = -1;
+    int l_env_top_ = -1, l_env_bot_ = -1, l_softbox_ = -1;
     int l_depth_ = -1, l_near_ = -1, l_far_ = -1, l_dmax_ = -1, l_blob_ = -1, l_time_ = -1, l_res_ = -1;
     ShadowMap shadows_[2];
     Vector4 light_pos_[8]{}, light_col_[8]{}, light_dir_[8]{};

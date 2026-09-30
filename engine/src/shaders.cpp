@@ -51,6 +51,9 @@ uniform int u_hidden;   // a bit per body region that has been shot away: its sk
 uniform vec3 u_camPos; uniform int u_lightCount;
 uniform vec4 u_lightPos[8]; uniform vec4 u_lightCol[8]; uniform vec4 u_lightDir[8];
 uniform vec3 u_ambTop; uniform vec3 u_ambBottom; uniform vec3 u_rim; uniform vec3 u_fog; uniform vec2 u_fogRange;
+// What bare metal mirrors: the surroundings as a gradient from the floor (bottom) to the ceiling (top).
+uniform vec3 u_envTop; uniform vec3 u_envBottom;
+uniform float u_softbox;   // > 0: each light is a big studio softbox, mirrored whole in bare metal (product shots)
 // Shadows: depth maps of the characters seen from up to two lights (bound as the material's maps 1
 // and 2), each light's view-projection, and which light each belongs to (-1 = none this frame).
 uniform sampler2D texture1; uniform sampler2D texture2;
@@ -126,6 +129,7 @@ void main() {
     vec3 p = vSurf;
     vec3 albedo = lin(vColor.rgb);
     float spec = 0.04, gloss = 12.0, wrap = 0.2, h = 0.0, bk = 0.0, rim = 0.2;
+    float metal = 0.0;   // how much of the surroundings the surface mirrors (bare metal)
     vec3 sss = vec3(0.0);
     vec3 strand = vec3(0.0); float aniso = 0.0;   // hair: the strand's direction and the strength of its sheen
     float fogf = smoothstep(u_fogRange.x, u_fogRange.y, length(u_camPos - vWorld));
@@ -210,7 +214,7 @@ void main() {
         float curl = noise(p * 700.0) * 0.6 + noise(p * 260.0) * 0.4;
         albedo *= mix(0.7, 1.15, curl); h = curl; bk = 0.00035; spec = 0.05; gloss = 14.0; wrap = 0.35; rim = 0.35;
     } else if (mat == 9 || mat == 10) { spec = 0.9; gloss = 220.0; wrap = 0.25; rim = 0.1; }   // wet eyes
-    else if (mat == 11) { albedo *= mix(0.7, 1.0, fbm(p * 50.0)); spec = 0.6; gloss = 60.0; }
+    else if (mat == 11) { albedo *= mix(0.7, 1.0, fbm(p * 50.0)); spec = 0.6; gloss = 60.0; metal = 0.18; }
     else if (mat == 12) {     // raw flesh: fibres, wet
         float fib = abs(sin(p.y * 260.0 + fbm(p * 20.0) * 5.0));
         albedo *= mix(0.55, 1.15, fib); h = fib; bk = 0.0015; spec = 0.75; gloss = 70.0; wrap = 0.5; sss = vec3(0.35, 0.02, 0.02);
@@ -294,12 +298,24 @@ void main() {
         vec3 dpx = dFdx(vWorld), dpy = dFdy(vWorld), r1 = cross(dpy, N), r2 = cross(N, dpx);
         vec3 g = (dFdx(p.y) * r1 + dFdy(p.y) * r2) * sign(dot(dpx, r1));
         if (dot(g, g) > 1e-20) { strand = normalize(g); aniso = 0.25; }
+    } else if (mat == 25) {   // brushed stainless steel: fine streaks along the part; mostly it mirrors the room
+        float br = fbm(vec3(p.x * 900.0, p.y * 12.0, p.z * 900.0));
+        albedo *= mix(0.3, 0.4, br); h = br * 0.3; bk = 0.0002; spec = 1.1; gloss = 55.0; wrap = 0.1; rim = 0.3; metal = 0.72;
+    } else if (mat == 26) {   // stippled rubber grips: small raised dots, scattered (fade to their average when too small to see)
+        float aa = clamp(1.5 - length(fwidth(p)) * 700.0, 0.0, 1.0);
+        vec3 q = p * 560.0, c = floor(q);
+        vec3 f = fract(q) - 0.5 - (vec3(hash(c), hash(c + 3.7), hash(c + 7.1)) - 0.5) * 0.45;
+        float k = mix(0.3, 1.0 - smoothstep(0.16, 0.33, length(f)), aa);
+        albedo *= mix(0.86, 1.14, k) * mix(0.93, 1.04, fbm(p * 240.0)); h = k; bk = 0.0005; spec = 0.07; gloss = 14.0; wrap = 0.2; rim = 0.15;
+    } else if (mat == 41) {   // gun furniture: black synthetic, faintly stippled
+        albedo *= mix(0.85, 1.05, fbm(p * 400.0)); h = fbm(p * 900.0); bk = 0.0003; spec = 0.12; gloss = 18.0; wrap = 0.15; rim = 0.2;
     } else if (mat == 40) {   // blood: dark red and wet, thicker (darker) where it pools
         albedo *= mix(0.75, 1.1, fbm(p * 90.0)); h = fbm(p * 60.0) * 0.3; bk = 0.0004; spec = 0.6; gloss = 90.0; wrap = 0.3;
         sss = vec3(0.08, 0.0, 0.0);
-    } else if (mat == 39) {   // oiled walnut: grain running along the stock, darker figure
-        float g = sin(p.y * 95.0 + fbm(p * 11.0) * 9.0 + p.x * 25.0) * 0.5 + 0.5;
-        albedo *= mix(0.72, 1.12, g) * mix(0.85, 1.05, fbm(p * 70.0));
+    } else if (mat == 39) {   // oiled walnut: fine grain running along the stock, darker figure drifting through it
+        float g = sin(p.y * 330.0 + fbm(p * 16.0) * 14.0 + p.x * 90.0) * 0.5 + 0.5;
+        float fig = fbm(vec3(p.x * 40.0, p.y * 9.0, p.z * 40.0));
+        albedo *= mix(0.82, 1.08, g) * mix(0.72, 1.1, fig) * mix(0.92, 1.04, fbm(p * 90.0));
         h = g * 0.3 + fbm(p * 160.0) * 0.2; bk = 0.0005; spec = 0.22; gloss = 36.0; wrap = 0.2;
     } else if (mat == 38) {   // a drop of water: dark and glassy, it shows only where it catches the light
         spec = 1.4; gloss = 320.0; wrap = 0.0; rim = 0.5;
@@ -335,10 +351,19 @@ void main() {
         col += albedo * max((ndl + wrap) / (1.0 + wrap), 0.0) * lc * vAo;
         col += sss * (0.5 - 0.5 * ndl) * lc * 0.35;                                  // light bleeding through flesh
         col += spec * pow(max(dot(N, normalize(L + V)), 0.0), gloss) * lc * step(0.0, ndl) * vAo;
+        if (metal > 0.0 && u_softbox > 0.0)   // the softbox itself, mirrored: a broad patch with soft edges
+            col += metal * u_softbox * smoothstep(0.72, 0.93, dot(reflect(-V, N), L)) * lc * vAo;
         if (aniso > 0.0) {   // a band of sheen across hair, tinted by the hair's own colour
             float th = dot(strand, normalize(L + V));
             col += aniso * pow(sqrt(max(1.0 - th * th, 0.0)), 48.0) * lc * step(0.0, ndl) * vAo * (vec3(0.2) + albedo * 4.0);
         }
+    }
+    if (metal > 0.0) {   // bare metal mirrors its surroundings, tinted by its own colour (strongest at grazing angles)
+        vec3 R = reflect(-V, N);
+        vec3 env = mix(u_envBottom, u_envTop, smoothstep(-0.15, 0.55, R.y));
+        float fres = mix(1.0, 1.5, pow(1.0 - max(dot(N, V), 0.0), 5.0));
+        vec3 tint = mix(vec3(1.0), albedo / max(max(albedo.r, max(albedo.g, albedo.b)), 0.02), 0.25);
+        col += env * metal * fres * tint * vAo;
     }
     col += pow(1.0 - max(dot(N, V), 0.0), 4.0) * rim * u_rim * vAo;
     col = mix(col, u_fog, fogf * 0.6);
