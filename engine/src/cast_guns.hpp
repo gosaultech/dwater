@@ -17,9 +17,9 @@ struct GunParts {
 // Both in the right hand's wrist space: the barrel runs down the hand (-y) above the web of the
 // thumb (-z); +x is the gun's right side.
 GunParts m92fs();
-// The 870's furniture: the Express Tactical's black synthetic, or the oiled walnut of the classic guns.
-enum class Stock { Synthetic, Walnut };
-GunParts r870(const Matrix& hold, Stock stock = Stock::Synthetic);   // hold: how it's turned in the hand (Character::shotgun_hold)
+// The 870's furniture: the oiled walnut of the classic police guns (the survivor's), or black synthetic.
+enum class Stock { Walnut, Synthetic };
+GunParts r870(const Matrix& hold, Stock stock = Stock::Walnut);   // hold: how it's turned in the hand (Character::shotgun_hold)
 
 }  // namespace dw::cast
 #endif

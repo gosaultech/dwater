@@ -64,7 +64,7 @@ public:
     // (target_x, target_y, 0), or that joint offset by (target_x, target_y).
     bool studio_view(const std::string& spec, const std::string& png);
     // who: m92fs | r870, a gun on its own, side-on and catalogue-lit; opts: /slide=1 (worked back),
-    // /roll=deg, /bg=dark, /wood (the 870 in walnut), /obj=stem (write the meshes out)
+    // /roll=deg, /bg=dark, /synthetic (the 870 in black synthetic), /obj=stem (write the meshes out)
     bool gun_view(const std::string& who, const std::string& opts, float orbit, float elev, float dist, float tx, float ty,
                   float fovy, const std::string& png);
     bool debug = false;

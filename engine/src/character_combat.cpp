@@ -229,7 +229,7 @@ Matrix Character::gun_frame() const {
 }
 
 Vector3 Character::muzzle() const {   // (cast_guns.cpp: the end of the 870's choke; the M92FS's muzzle)
-    return Vector3Transform(weapon_ == 1 ? Vector3{0, -0.7587f, -0.0435f} : Vector3{0, -0.2401f, -0.066f}, gun_frame());
+    return Vector3Transform(weapon_ == 1 ? Vector3{0, -0.7387f, -0.0518f} : Vector3{0, -0.2401f, -0.066f}, gun_frame());
 }
 
 Vector3 Character::barrel_dir() const {
@@ -243,7 +243,7 @@ Vector3 Character::lamp_dir() const {   // the head is bent forward, a little do
 }
 
 Vector3 Character::ejection_port() const {   // the pistol's port behind the muzzle; the shotgun's open breech
-    return Vector3Transform(weapon_ == 1 ? Vector3{0.016f, -0.2087f, -0.0455f} : Vector3{0.012f, -0.137f, -0.066f}, gun_frame());
+    return Vector3Transform(weapon_ == 1 ? Vector3{0.016f, -0.2477f, -0.0548f} : Vector3{0.012f, -0.137f, -0.066f}, gun_frame());
 }
 
 // ── A tool: fitting the shotgun hold ─────────────────────────────────────────────
@@ -261,7 +261,7 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
     const bool cheek = goal.cheek;
     // Points on the gun (cast_guns.cpp's rifle_at, before the hold): the middle of the butt pad, the
     // fore-end's belly toward its back (where a hand pumps it), the top of the comb.
-    const Vector3 butt{0, 0.2053f, 0.0435f}, belly = goal.left, comb{0, 0.0563f, -0.0405f};
+    const Vector3 butt{0, 0.2323f, 0.0512f}, belly = goal.left, comb{0, 0.0553f, -0.0268f};
     constexpr int K = 17;   // SHO_R xyz, ELB_R, WRI_R xyz, SHO_L xyz, ELB_L, WRI_L x z, NECK xyz, grip tilt
     // (the wrist, in its joint's axes: x tips the hand sideways in the plane of the palm, 30 degrees
     // at most; y twists it; z bends it toward the palm or its back, 75 degrees. The grip in the fist

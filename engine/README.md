@@ -68,7 +68,7 @@ the shaders are GLSL 3.30 core, which both platforms support.
 ../build/macos/damned_waters --sheet /tmp/dw --only pieter,survivor               # just those
 ../build/macos/damned_waters --view drowned1@head,0,5,0.5,0,-0.05,30 face.png     # one close-up
 ../build/macos/damned_waters --view m92fs,0,0,2.0,0,0,8.3 pistol.png              # a gun, catalogue-lit
-../build/macos/damned_waters --view r870/wood,30,14,1.6,0.05,0,14 shotgun.png      # the 870 in walnut
+../build/macos/damned_waters --view r870,30,14,1.6,0.05,0,14 shotgun.png           # the 870
 ../build/macos/damned_waters --fit870    # fit the arms and wrists that hold the 870, print them, exit
 ```
 
@@ -79,7 +79,7 @@ face. Then any of `/pose=aim`, `/gun=1` (the 870 in hand), `/limp=1`, `/cut=3+8`
 
 `who` can also be a gun, `m92fs` or `r870`, lit like a catalogue photo so it can be held up
 against reference photos: `/slide=1` works the slide or fore-end back, `/roll=20` turns the
-picture, `/bg=dark` puts it on black, `/wood` gives the 870 its walnut stock, `/obj=name` writes
+picture, `/bg=dark` puts it on black, `/synthetic` gives the 870 a black stock, `/obj=name` writes
 the meshes out as `name_fixed.obj` and `name_moving.obj` (full precision, for matching a camera
 to a photo).
 

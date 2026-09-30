@@ -777,7 +777,7 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
 //   /roll=deg     the picture turned (muzzle up), to match a reference photo's angle
 //   /bg=dark      a black backdrop instead of the studio's pale grey
 //   /obj=stem     also write the meshes to stem_fixed.obj and stem_moving.obj
-//   /wood         the 870 in walnut rather than black synthetic
+//   /synthetic    the 870 in black synthetic rather than walnut
 bool Game::gun_view(const std::string& who, const std::string& opts, float orbit, float elev, float dist, float tx, float ty,
                     float fovy, const std::string& png) {
     auto opt = [&](const char* key, float fallback) {
@@ -807,7 +807,7 @@ bool Game::gun_view(const std::string& who, const std::string& opts, float orbit
     SetShaderValue(char_, l_fogr_, fogr, SHADER_UNIFORM_VEC2);
     for (auto& sm : shadows_) sm.light = sm.dyn = -1;   // no characters: no shadow maps
     bind_shadows();
-    const cast::Stock furniture = opts.find("/wood") != std::string::npos ? cast::Stock::Walnut : cast::Stock::Synthetic;
+    const cast::Stock furniture = opts.find("/synthetic") != std::string::npos ? cast::Stock::Synthetic : cast::Stock::Walnut;
     cast::GunParts gp = who == "m92fs" ? cast::m92fs() : cast::r870(MatrixIdentity(), furniture);   // (straight, not as held)
     Mesh fixed = upload(gp.fixed), moving = upload(gp.moving);
     if (const auto k = opts.find("/obj="); k != std::string::npos) {   // the meshes as OBJ files (wrist space), for matching photos

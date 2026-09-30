@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
         low.cheek = false;
         reload.aim = {0, 0.2f, -0.98f};   // loading: under the armpit, muzzle up a little, left hand at the port
         reload.pocket = {0.0f, -0.2f, 0.02f};
-        reload.left = {0, -0.2037f, 0.0015f};
+        reload.left = {0, -0.2447f, -0.0068f};
         reload.cheek = false;
         TraceLog(LOG_INFO, "FIT aim %s", c.fit_shotgun(aim).c_str());
         TraceLog(LOG_INFO, "FIT low ready %s", c.fit_shotgun(low).c_str());

@@ -1,6 +1,6 @@
 // damned_waters/engine/tests/test_guns.cpp
 // Purpose: GoogleTest suite for the survivor's guns (cast_guns.cpp): they come out the size of the
-// real ones (a Beretta M92FS, a Remington 870 Express Tactical), their moving parts travel the
+// real ones (a Beretta M92FS, a Remington 870 with an 18.5-inch barrel), their moving parts travel the
 // right way, and every part is a closed surface facing outward.
 #include <gtest/gtest.h>
 
@@ -42,10 +42,10 @@ TEST(Guns, TheBerettaIsTheSizeOfAnM92FS) {
     EXPECT_LT(b.hi.x - b.lo.x, 0.040f);
 }
 
-TEST(Guns, The870IsTheSizeOfAnExpressTactical) {
+TEST(Guns, The870IsTheSizeOfTheRealOne) {
     const cast::GunParts g = cast::r870(MatrixIdentity());
     const Box b = bounds(g.moving, bounds(g.fixed));
-    EXPECT_GT(b.hi.y - b.lo.y, 0.95f);    // 38.5 inches overall
+    EXPECT_GT(b.hi.y - b.lo.y, 0.95f);    // 38 to 39 inches overall with an 18.5-inch barrel
     EXPECT_LT(b.hi.y - b.lo.y, 0.99f);
     EXPECT_GT(b.hi.x - b.lo.x, 0.040f);   // the fore-end and the butt pad are the widest
     EXPECT_LT(b.hi.x - b.lo.x, 0.056f);
@@ -62,7 +62,7 @@ TEST(Guns, TheSlideAndTheForeEndWorkBackTowardTheShooter) {
 }
 
 TEST(Guns, EveryPartIsClosedAndFacesOutward) {
-    for (const cast::GunParts& g : {cast::m92fs(), cast::r870(MatrixIdentity()), cast::r870(MatrixIdentity(), cast::Stock::Walnut)}) {
+    for (const cast::GunParts& g : {cast::m92fs(), cast::r870(MatrixIdentity()), cast::r870(MatrixIdentity(), cast::Stock::Synthetic)}) {
         EXPECT_GT(volume(g.fixed), 0.0);
         EXPECT_GT(volume(g.moving), 0.0);
     }

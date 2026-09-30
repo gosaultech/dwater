@@ -73,11 +73,12 @@ public:
     bool has_lamp() const { return lamp_joint_ >= 0; }
     Vector3 lamp() const;
     Vector3 lamp_dir() const;
-    // How the Remington 870 sits in the right hand: its grip in the fist where the pistol's is, tipped
-    // back about the fist by GRIP_TILT (radians) so the fingers wrap the front of the stock's wrist
-    // (it slopes 38 degrees further back than the pistol's front strap). The wrist, not the gun,
-    // then bends to bring the bore level (the aim poses).
-    static constexpr float GRIP_TILT = 0.6f;
+    // How the Remington 870 sits in the right hand: the middle of its grip in the fist where the
+    // pistol's is, turned about the fist by GRIP_TILT (radians about the wrist's x; negative tips
+    // the muzzle down in the hand) so the hand closes round the stock's wrist, fingers under it
+    // toward the trigger. The wrist, not the gun, then bends to bring the bore level (the aim poses;
+    // --fit870 puts the butt in the shoulder to within a centimetre with this grip).
+    static constexpr float GRIP_TILT = -0.6f;
     static Matrix shotgun_hold(float tilt = GRIP_TILT) {
         const Vector3 fist{0, -0.0473f, 0.017f};   // the middle of the fist, wrist space
         return MatrixMultiply(MatrixMultiply(MatrixTranslate(-fist.x, -fist.y, -fist.z), MatrixRotateX(tilt)),
@@ -90,7 +91,7 @@ public:
     struct ShotgunFit {
         Vector3 aim{0, 0, -1};
         Vector3 pocket{-0.05f, -0.03f, -0.05f};   // the shoulder pocket
-        Vector3 left{0, -0.3837f, 0.0115f};       // under the fore-end, toward its back
+        Vector3 left{0, -0.3547f, 0.0032f};       // under the fore-end, near its back
         bool cheek = true;
     };
     std::string fit_shotgun(const ShotgunFit& goal);

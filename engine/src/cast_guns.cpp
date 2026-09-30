@@ -7,10 +7,11 @@
 //    photo and the silhouettes compared until they agreed. Satin stainless slide and barrel, a
 //    slightly greyer alloy frame, black controls and sights with three white dots, dark grey
 //    stippled rubber grips with two screws and the medallion.
-//  * Remington 870 Express Tactical: an 18.5-inch barrel with an extended, ported choke, about
-//    38.5 inches overall, a 14-inch length of pull, six in the extended tube and one in the
-//    chamber. Matte black receiver with a Picatinny rail and a ghost-ring rear sight, black
-//    synthetic stock and tactical fore-end, a SuperCell recoil pad.
+//  * Remington 870, the classic police gun of the reference photos: an 18.5-inch plain barrel with
+//    a bead at the muzzle, 38 inches overall, a 14-inch length of pull, six in the extended tube
+//    and one in the chamber. Blued steel with the bolt bright in the ejection port and a gold
+//    trigger, an oiled walnut stock and fore-end, a black recoil pad. (Its trigger group sits at
+//    the back of the receiver, the ejection port in the front half, as in the photos.)
 // Gun space: u runs forward along the bore (the pistol's from the rear of the frame's rails, 6 mm
 // behind the slide; the shotgun's from the back of the receiver), v up from the bore's
 // centreline, w across to the gun's right (all mm). It's placed in the right hand's wrist space,
@@ -36,19 +37,19 @@ Vector3 pistol_at(float u, float v, float w = 0) { return {w * MM, P_Y0 - u * MM
 const Color INOX{206, 207, 209, 255}, ALLOY{190, 190, 192, 255}, OXIDE{24, 24, 26, 255}, RUBBER{74, 74, 78, 255},
     STIPPLE{86, 86, 90, 255}, GROOVE{96, 96, 100, 255}, BORE{8, 8, 10, 255}, DOT{236, 234, 226, 255}, FIRE_DOT{196, 22, 20, 255}, GAP{14, 14, 15, 255},
     MAG{26, 26, 28, 255};
-// ── Remington 870 Express Tactical ──────────────────────────────────────────────
-// u from the back of the receiver: the trigger at 62, the breech face at 170, the barrel's end at
-// 640 (18.5 inches), the extended choke to 665, the butt at -299 (14 inches from the trigger):
-// 38 inches overall. The right hand holds the
-// wrist of the stock: the middle of that grip, (-46.4, -60.5), sits where the pistol's grip does in
+// ── Remington 870 ───────────────────────────────────────────────────────────────
+// u from the back of the receiver: the trigger at 27, the breech face at 174, the muzzle at 644
+// (18.5 inches of barrel), the butt at -327 (14 inches from the trigger). The right hand holds the
+// wrist of the stock: the middle of that grip, (-47, -69), sits where the pistol's grip does in
 // the fist (Character::shotgun_hold then tilts it to lie along the fingers). The fore-end is where
 // the left hand pumps.
-constexpr float R_Y0 = -0.0937f, R_Z0 = -0.0435f;
+constexpr float R_Y0 = -0.0947f, R_Z0 = -0.0518f;
 Outline rifle(const Outline& o) { return o.scaled(-MM, R_Y0, R_Z0); }
 Vector3 rifle_at(float u, float v, float w = 0) { return {w * MM, R_Y0 - u * MM, R_Z0 - v * MM}; }
-// Matte black metal; the furniture black synthetic or oiled walnut.
-const Color MATTE{34, 35, 37, 255}, BARREL{30, 31, 33, 255}, POLY{27, 27, 29, 255}, WALNUT{104, 54, 30, 255}, PAD{16, 16, 17, 255},
-    SLOT{12, 12, 13, 255}, BOLT{196, 198, 200, 255}, BIG_DOT{226, 232, 214, 255};
+// Blued steel, a gold trigger, the bolt bright in its port; the furniture oiled walnut (or black
+// synthetic).
+const Color BLUED{24, 26, 32, 255}, GILT{178, 140, 64, 255}, POLY{27, 27, 29, 255}, WALNUT{104, 54, 30, 255}, PAD{16, 16, 17, 255},
+    SLOT{12, 12, 13, 255}, BOLT{196, 198, 200, 255}, BEAD{232, 222, 190, 255};
 }  // namespace
 
 GunParts m92fs() {
@@ -259,7 +260,7 @@ GunParts r870(const Matrix& hold, Stock stock) {
     Matrix turn = tip;   // (the hold turns the travel; its shift doesn't move a direction)
     turn.m12 = turn.m13 = turn.m14 = 0;
     g.travel = Vector3Transform({0, 0.089f, 0}, turn);   // the fore-end racks 89 mm back, to the receiver
-    g.centre = Vector3Transform(rifle_at(183, -40), tip);
+    g.centre = Vector3Transform(rifle_at(160, -50), tip);
     const bool wood = stock == Stock::Walnut;
     const int FURN = wood ? MAT_WOOD : MAT_POLYMER;
     const Color furn = wood ? WALNUT : POLY;
@@ -282,83 +283,60 @@ GunParts r870(const Matrix& hold, Stock stock) {
     // ── The rest (it stays put) ──────────────────────────────────────────────────
     MeshBuilder f(g.fixed);
     f.transform(tip);
-    // The receiver: a long, flat-sided box, its top edge rounded at the back where the stock meets it.
-    f.material(MAT_METAL).color(MATTE);
+    // The receiver: a long, flat-sided box, its back sweeping round and down into the stock.
+    f.material(MAT_METAL).color(BLUED);
     Outline recv;
-    recv.to(0, -39).to(0, 10).curve(0, 17, 7, 17, 4).to(209, 17).curve(212, 17, 212, 14, 2).to(212, -36).curve(212, -39, 209, -39, 2);
-    f.slab(rifle(recv).p, 0, 16 * MM, 2.5f * MM, 3);
-    // The ejection port on the right, the bright bolt showing in it; the loading port underneath.
+    recv.to(0, -39).to(0, 0).curve(0, 17, 26, 17, 6).to(209, 17).curve(212, 17, 212, 14, 2).to(212, -36).curve(212, -39, 209, -39, 2);
+    f.slab(rifle(recv).p, 0, 16 * MM, 3.5f * MM, 3);
+    // The ejection port in the front half on the right, the bright bolt showing in it; the loading
+    // port underneath; the two pins that hold the trigger group in.
     f.color(SLOT);
     Outline eport;
-    eport.to(80, -5).to(148, -5).curve(153, -5, 153, 0, 2).to(153, 6).curve(153, 11, 148, 11, 2).to(80, 11).curve(75, 11, 75, 6, 2)
-        .to(75, 0).curve(75, -5, 80, -5, 2);
+    eport.to(123, -5).to(183, -5).curve(188, -5, 188, 0, 2).to(188, 6).curve(188, 11, 183, 11, 2).to(123, 11).curve(118, 11, 118, 6, 2)
+        .to(118, 0).curve(118, -5, 123, -5, 2);
     f.slab(rifle(eport).p, 15.2f * MM, 1 * MM, 0.4f * MM, 1);
     f.material(MAT_STEEL).color(BOLT);
     Outline bolt;
-    bolt.to(80, -2.5f).to(147, -2.5f).curve(150, -2.5f, 150, 3, 2).curve(150, 8.5f, 147, 8.5f, 2).to(80, 8.5f).curve(77.5f, 8.5f, 77.5f, 3, 2)
-        .curve(77.5f, -2.5f, 80, -2.5f, 2);
+    bolt.to(123, -2.5f).to(182, -2.5f).curve(185, -2.5f, 185, 3, 2).curve(185, 8.5f, 182, 8.5f, 2).to(123, 8.5f).curve(120.5f, 8.5f, 120.5f, 3, 2)
+        .curve(120.5f, -2.5f, 123, -2.5f, 2);
     f.slab(rifle(bolt).p, 14.5f * MM, 1.9f * MM, 1.8f * MM, 3);
     f.material(MAT_METAL).color(SLOT);
-    f.box(rifle_at(112, -39.2f), {10.5f * MM, 50 * MM, 0.4f * MM}, 0.25f, 8, 6);
-    f.color(MATTE);
-    // The trigger group under it: the plate, the guard, the trigger, the cross-bolt safety behind
-    // it, and the action release lever ahead of the guard on the left.
+    f.box(rifle_at(150, -39.2f), {10.5f * MM, 38 * MM, 0.4f * MM}, 0.25f, 8, 6);
+    Outline pin;
+    pin.arc(0, 0, 2.4f, 0, 2 * PI * 15 / 16, 15);
+    f.color(Color{58, 60, 66, 255});
+    for (const float u : {14.0f, 98.0f}) f.slab(rifle(pin.scaled(1, u, -30)).p, 0, 16.2f * MM, 0.3f * MM, 1);
+    // The trigger group under the back of the receiver: the plate, the guard, the gold trigger, the
+    // cross-bolt safety behind it, and the action release lever ahead of the guard on the left.
+    f.color(BLUED);
     Outline plate;
-    plate.to(18, -37).to(128, -37).curve(130, -37, 130, -40, 2).to(128, -47).to(22, -47).curve(18, -47, 18, -43, 2);
+    plate.to(4, -37).to(108, -37).curve(110, -37, 110, -40, 2).to(108, -47).to(8, -47).curve(4, -47, 4, -43, 2);
     f.slab(rifle(plate).p, 0, 11 * MM, 2 * MM, 2);
     Outline tguard;
-    tguard.to(26, -45).curve(28, -80, 46, -80, 5).to(94, -80).curve(111, -80, 113, -45, 5).to(104, -45).curve(102, -72.5f, 91, -72.5f, 5)
-        .to(49, -72.5f).curve(35.5f, -72.5f, 34.5f, -45, 5);
+    tguard.to(8, -45).curve(10, -80, 28, -80, 5).to(76, -80).curve(93, -80, 95, -45, 5).to(86, -45).curve(84, -72.5f, 73, -72.5f, 5)
+        .to(31, -72.5f).curve(17.5f, -72.5f, 16.5f, -45, 5);
     f.slab(rifle(tguard).p, 0, 4.5f * MM, 1.8f * MM, 2);
+    f.color(GILT);
     Outline trig;
-    trig.to(58, -45).to(64, -45).curve(67.5f, -57, 65, -68, 3).to(62.5f, -69).curve(63, -57, 58, -46, 3);
+    trig.to(24, -45).to(30, -45).curve(33.5f, -57, 31, -68, 3).to(28.5f, -69).curve(29, -57, 24, -46, 3);
     f.slab(rifle(trig).p, 0, 3.5f * MM, 1.2f * MM, 2);
-    f.tube(rifle_at(44, -53, -12.5f), rifle_at(44, -53, 12.5f), 3.6f * MM, 3.6f * MM, 16);   // cross-bolt safety
-    f.material(MAT_DEFAULT).color(Color{170, 30, 26, 255});                                    // its red ring: ready to fire
-    f.tube(rifle_at(44, -53, -12.5f), rifle_at(44, -53, -12.9f), 3.7f * MM, 3.7f * MM, 16);
-    f.material(MAT_METAL).color(MATTE);
+    f.color(BLUED).tube(rifle_at(12, -53, -12.5f), rifle_at(12, -53, 12.5f), 3.6f * MM, 3.6f * MM, 16);   // cross-bolt safety
+    f.material(MAT_DEFAULT).color(Color{170, 30, 26, 255});                                               // its red ring: ready to fire
+    f.tube(rifle_at(12, -53, -12.5f), rifle_at(12, -53, -12.9f), 3.7f * MM, 3.7f * MM, 16);
+    f.material(MAT_METAL).color(BLUED);
     Outline release;
-    release.to(114, -42).to(124, -42).curve(127, -42, 127, -45, 2).to(125, -50).to(116, -49);
+    release.to(100, -42).to(110, -42).curve(113, -42, 113, -45, 2).to(111, -50).to(102, -49);
     f.slab(rifle(release).p, -11.8f * MM, 1 * MM, 0.4f * MM, 1);
-    // The Picatinny rail along the top, and the ghost-ring rear sight on it: a ring between two ears.
-    Outline rail;
-    rail.to(18, 16).to(18, 23).to(152, 23).to(152, 16);
-    f.slab(rifle(rail).p, 0, 10.5f * MM, 1 * MM, 1);
-    f.color(SLOT);
-    for (int k = 0; k < 13; ++k) f.box(rifle_at(24.0f + 10.0f * float(k), 23.2f), {10.6f * MM, 2.5f * MM, 1.2f * MM}, 0.3f, 6, 4);
-    f.color(MATTE);
-    Outline ear;
-    ear.to(28, 22).to(31, 42).to(40, 42).to(46, 22);
-    for (float side : {-1.0f, 1.0f}) f.slab(rifle(ear).p, side * 8 * MM, 1.6f * MM, 0.6f * MM, 1);
-    {
-        std::vector<Vector3> ring;
-        std::vector<float> rr;
-        for (int i = 0; i <= 16; ++i) {
-            const float a = 2 * PI * float(i) / 16;
-            ring.push_back(rifle_at(37, 34 + 4.2f * std::sin(a), 4.2f * std::cos(a)));
-            rr.push_back(1.3f * MM);
-        }
-        f.chain(ring, rr, 6);
-    }
-    // The barrel, 18.5 inches from the breech, and the extended, ported choke beyond it; the front
-    // blade with its big white dot.
-    f.color(BARREL);
-    f.tube(rifle_at(190, 0), rifle_at(640, 0), 10.3f * MM, 9.6f * MM, 24);
-    f.color(MATTE).tube(rifle_at(638, 0), rifle_at(665, 0), 11.5f * MM, 11.5f * MM, 24);
-    f.color(SLOT);
-    for (int k = 0; k < 3; ++k)
-        for (float side : {-1.0f, 1.0f}) f.box(rifle_at(646.0f + 6.0f * float(k), 7, side * 5.5f), {2 * MM, 2 * MM, 3 * MM}, 0.3f, 6, 4);
-    f.tube(rifle_at(665, 0), rifle_at(665.4f, 0), 9.2f * MM, 9.2f * MM, 16);   // the bore
-    f.color(MATTE);
-    Outline ramp;
-    ramp.to(612, 8).to(617, 18).to(628, 18).to(632, 8);
-    f.slab(rifle(ramp).p, 0, 1.6f * MM, 0.5f * MM, 1);
-    f.material(MAT_DEFAULT).color(BIG_DOT).ellipsoid(rifle_at(617.5f, 16.5f), {1.8f * MM, 0.5f * MM, 1.8f * MM}, 10, 4);
+    // The plain barrel, 18.5 inches from the breech, with a bead at the muzzle.
+    f.tube(rifle_at(190, 0), rifle_at(644, 0), 10.3f * MM, 9.6f * MM, 24);
+    f.color(SLOT).tube(rifle_at(644, 0), rifle_at(644.4f, 0), 8.6f * MM, 8.6f * MM, 16);   // the bore
+    f.color(BLUED).tube(rifle_at(636, 9), rifle_at(636, 11.2f), 1.1f * MM, 1.1f * MM, 8);
+    f.material(MAT_DEFAULT).color(BEAD).ellipsoid(rifle_at(636, 11.8f), {1.7f * MM, 1.7f * MM, 1.7f * MM}, 10, 6);
     // The magazine tube under the barrel, lengthened by an extension to seven shells: the barrel's
     // ring where the standard tube ended, the extension's cap, and a clamp tying tube to barrel.
-    f.material(MAT_METAL).color(MATTE);
-    f.tube(rifle_at(205, -27), rifle_at(608, -27), 11 * MM, 11 * MM, 20);
-    f.tube(rifle_at(608, -27), rifle_at(622, -27), 12.5f * MM, 12.5f * MM, 20);
+    f.material(MAT_METAL).color(BLUED);
+    f.tube(rifle_at(205, -27), rifle_at(610, -27), 11 * MM, 11 * MM, 20);
+    f.tube(rifle_at(610, -27), rifle_at(624, -27), 12.5f * MM, 12.5f * MM, 20);
     Outline lug;
     lug.to(452, 9).to(466, 9).to(466, -39).to(452, -39);
     f.slab(rifle(lug).p, 0, 12 * MM, 5 * MM, 3);
@@ -371,38 +349,40 @@ GunParts r870(const Matrix& hold, Stock stock) {
         std::vector<float> rr;
         for (int i = 0; i <= 14; ++i) {
             const float a = 2 * PI * float(i) / 14;
-            swivel.push_back(rifle_at(616 + 7 * std::cos(a), -46 + 5 * std::sin(a)));
+            swivel.push_back(rifle_at(617 + 7 * std::cos(a), -46 + 5 * std::sin(a)));
             rr.push_back(1.2f * MM);
         }
         f.chain(swivel, rr, 6);
     }
-    // The stock: a sporter's, its wrist curving down into a half pistol grip. Lofted, so it can be
-    // slim at the wrist where the hand closes round it and broad at the butt: its top and bottom
-    // lines come from the side view, its width and roundness change along it.
+    // The stock: a sporter's, dropping away from the receiver to a comb well below the line of the
+    // barrel, its wrist curving down into a half pistol grip. Lofted, so it can be slim at the wrist
+    // where the hand closes round it and broad at the butt: its top and bottom lines come from the
+    // side view, its width and roundness change along it.
     f.material(FURN).color(furn);
     {
         Outline top, bottom;   // both run back to front
-        top.to(-271, -18).to(-80, 6).curve(-35, 11, 1, 15, 6);
-        bottom.to(-271, -156).curve(-190, -128, -115, -117, 8).curve(-85, -114, -60, -103, 5).curve(-30, -88, -6, -62, 6).to(20, -47)
-            .to(22, -44);
+        top.to(-302, -32).to(-110, -14).curve(-60, -11, -30, -4, 5).curve(-12, 0, 1, 4, 4);   // the comb, then the wrist rising
+        bottom.to(-302, -166).curve(-220, -130, -150, -118, 8).to(-109, -114)                 // the belly, rising...
+            .curve(-92, -121, -79, -119, 4)                                                     // ... to dip into the grip
+            .curve(-55, -114, -39, -97, 4).curve(-20, -75, 4, -57, 5).to(8, -49).to(10, -44);  // and up its front to the guard
         auto along = [](const std::vector<Vector2>& line, float u) {   // v on a polyline at u
             if (u <= line.front().x) return line.front().y;
             for (size_t i = 1; i < line.size(); ++i)
                 if (u <= line[i].x) return Lerp(line[i - 1].y, line[i].y, (u - line[i - 1].x) / std::max(line[i].x - line[i - 1].x, 1e-4f));
             return line.back().y;
         };
-        constexpr int ROWS = 48, SEGS = 28;
+        constexpr int ROWS = 52, SEGS = 28;
         Grid loft;
         for (int i = 0; i < ROWS; ++i) {
-            const float u = -271 + 293 * float(i) / float(ROWS - 1);
+            const float u = -302 + 312 * float(i) / float(ROWS - 1);
             const float hi = u > 1 ? -38.0f : along(top.p, u), lo = along(bottom.p, u);   // (ahead of the receiver's back: under it)
-            const float k = std::clamp((u + 271) / 240, 0.0f, 1.0f);                      // 0 at the butt, 1 at the wrist
-            const float hw = Lerp(21, 16, k * k * (3 - 2 * k)), n = Lerp(3.6f, 2.6f, k);    // half width, squareness
+            const float k = std::clamp((u + 302) / 262, 0.0f, 1.0f);                      // 0 at the butt, 1 at the wrist
+            const float hw = Lerp(21, 15.5f, k * k * (3 - 2 * k)), n = Lerp(3.6f, 2.6f, k);    // half width, squareness
             std::vector<Vector3> ring(SEGS);
             for (int j = 0; j < SEGS; ++j) {
-                const float a = 2 * PI * float(j) / SEGS, c = std::cos(a), s = std::sin(a);
+                const float a = 2 * PI * float(j) / SEGS, c = std::cos(a), sn = std::sin(a);
                 const float x = hw * std::copysign(std::pow(std::fabs(c), 2 / n), c);
-                const float y = (hi + lo) / 2 + (hi - lo) / 2 * std::copysign(std::pow(std::fabs(s), 2 / n), s);
+                const float y = (hi + lo) / 2 + (hi - lo) / 2 * std::copysign(std::pow(std::fabs(sn), 2 / n), sn);
                 ring[size_t(j)] = rifle_at(u, y, x);
             }
             loft.push_back(ring);
@@ -411,9 +391,9 @@ GunParts r870(const Matrix& hold, Stock stock) {
     }
     f.material(MAT_RUBBER).color(PAD);
     Outline pad;
-    pad.to(-269, -16).to(-294, -15).curve(-299, -15, -299, -20, 2).to(-299, -154).curve(-299, -159, -294, -159, 2).to(-269, -158);
+    pad.to(-300, -32).to(-322, -31).curve(-327, -31, -327, -36, 2).to(-327, -165).curve(-327, -170, -322, -170, 2).to(-300, -170);
     f.slab(rifle(pad).p, 0, 22 * MM, 7 * MM, 3);
-    f.material(MAT_METAL).color(MATTE).tube(rifle_at(-225, -135, 0), rifle_at(-227, -143, 0), 3 * MM, 3 * MM, 10);   // sling stud
+    f.material(MAT_METAL).color(BLUED).tube(rifle_at(-250, -146, 0), rifle_at(-252, -154, 0), 3 * MM, 3 * MM, 10);   // sling stud
     return g;
 }
 
