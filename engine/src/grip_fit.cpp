@@ -556,8 +556,14 @@ std::string Character::fit_grips(const std::string& out_path) {
     // The 870's wrist in the strong hand, shaken hands with: the palm along its right side, the web
     // high on its top behind the receiver, the thumb round over the top to the far side (not along
     // the top, where it would block the view); the trigger finger's pad on the trigger; the other
-    // three fingers round the front of the half pistol grip, the middle one under the guard.
-    goals.push_back({"SHOTGUN_RIGHT", "870, strong hand", true, &stock_field, INDEX_KNUCKLE, S(-16, -42, 34), dir(0, 0, -1), dir(0.72f, -0.69f, 0), S(-35, -60, 0),
+    // three fingers round the front of the half pistol grip, the middle one under the guard. The hand
+    // reaches 30 degrees down across the stock's wrist: square across it the fingers wrap it best but
+    // the wrist ends up by his face once the butt is in the shoulder; flatter, the forearm drops
+    // better but the fingers slide off. (Picked by fitting the arms, --fit870, to each in turn;
+    // DW_FIT_870_REACH tries another, in degrees.)
+    const float reach870 = std::getenv("DW_FIT_870_REACH") ? float(std::atof(std::getenv("DW_FIT_870_REACH"))) * DEG2RAD : 30.0f * DEG2RAD;
+    goals.push_back({"SHOTGUN_RIGHT", "870, strong hand", true, &stock_field, INDEX_KNUCKLE, S(-16, -42, 34), dir(0, 0, -1),
+                     dir(std::cos(reach870), -std::sin(reach870), 0), S(-35, -60, 0),
                      {{WEB, S(-28, -3, 11), 4 * MM},
                       {INDEX_PAD, S(33, -60, 0), 2 * MM},              // on the trigger's face
                       {INDEX_KNUCKLE, S(-16, -42, 34), 12 * MM},       // knuckles down the right of the grip

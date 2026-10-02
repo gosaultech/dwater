@@ -74,6 +74,10 @@ the shaders are GLSL 3.30 core, which both platforms support.
 ../build/macos/damned_waters --fit870    # fit the hold on the 870 (arms, wrists, back; aiming, the cheek on the stock), print it, exit
 ```
 
+`--fitgrips` takes a few minutes. `DW_FIT_ONLY=PISTOL_LEFT` (or a comma list) refits just those
+grips and keeps the rest, `DW_FIT_QUICK=1` makes a fast rough pass, and `DW_FIT_TRACE=1` reports
+each stage of the search.
+
 `--view` takes `who,orbit,elevation,distance,target_x,target_y,fov`. `who` is `survivor` or
 `drowned0`..`drowned2` (the office worker, Sanne, Pieter). Add `@head`, `@chest`, `@pelvis`,
 `@hand` or `@lhand` (the right or left wrist) to orbit that joint; the target is then an offset from it, and `@head` starts from the
@@ -130,7 +134,15 @@ searching: the elbow bends until the arm is as long as the gap to the grip, and 
 arm can then reach it, it takes the one with the elbow where the pose had it (down and out). It
 costs a few dozen multiplications a frame. The pose tables (`--fitpistol`, `--fit870`) give the
 rest: the right arm and wrist so the bore lies along the aim, the head so the right eye sits on
-the sight line or the cheek on the comb.
+the sight line or the cheek on the comb, each wrist bent no further than a wrist goes.
+
+A grip has to suit the arm as well as the gun. A hand placed however suits the fingers can leave
+the wrist bent past what wrists do, so each pistol grip is fitted against the way the forearm
+comes in (a wrist tips about 30 degrees toward the little finger, 15 toward the thumb). The 870's
+right hand sits 30 degrees down across the stock's wrist: square across it the fingers wrap best
+but the wrist ends up by his face once the butt is in the shoulder. A forearm turns the hand by
+twisting along its length; this rig has no joint for that, so the wrist turns the hand and the
+forearm's skin takes half the twist, the way a sleeve wrings along an arm rather than at the cuff.
 
 ## Controls
 

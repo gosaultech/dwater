@@ -460,6 +460,18 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     support_hand();
     for (int j = 0; j < J_COUNT; ++j)   // skinning: rest-pose vertex -> joint space -> where the joint is now
         bones_[j] = MatrixMultiply(MatrixTranslate(-rest_[j].x, -rest_[j].y, -rest_[j].z), W_[j]);
+    // A forearm turns the hand by twisting along its length (the radius rolling round the ulna);
+    // this rig has no joint for it, so the wrist does the turning. The forearm's skin takes half the
+    // wrist's twist about its bone, so the skin wrings by half at the wrist and half at the elbow
+    // instead of all of it at the wrist (a shotgun's grip turns the palm a long way).
+    for (int side = 0; side < 2; ++side) {
+        const int elbow = side ? J_ELB_R : J_ELB_L, wrist = side ? J_WRI_R : J_WRI_L;
+        const float twist = side == 0 && support_ && support_w_ > 1e-3f ? support_wrist_.y : ang_[wrist].y + twitch_[wrist].y;
+        if (std::fabs(twist) < 1e-3f) continue;
+        bones_[elbow] = MatrixMultiply(MatrixMultiply(MatrixTranslate(-rest_[elbow].x, -rest_[elbow].y, -rest_[elbow].z),
+                                                      MatrixRotate(Vector3Normalize(off_[wrist]), 0.5f * twist)),
+                                       W_[elbow]);
+    }
     for (auto& s : skinned_) std::memcpy(s.mesh.boneMatrices, bones_, sizeof(bones_));
     const Vector3 right{std::cos(yaw_), 0, -std::sin(yaw_)};
     for (auto& d : dyn_) {
@@ -649,17 +661,20 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         case Pose::Aim: {   // two-handed pistol: strong arm straight, support arm crossing in
             if (weapon_ == 1) {   // the shotgun at the shoulder: bladed, the head down, the cheek on the comb
                 // (fitted with --fit870: the butt in the shoulder, the bore level, the right eye over
-                // it just above the receiver). He aims up or down from the waist, all of a piece.
-                T[J_SHO_R] = {0.647f, 1.065f, 0.477f};
-                T[J_ELB_R] = {1.761f, 0, 0};
-                T[J_WRI_R] = {-0.280f, -0.012f, 0.093f};
-                T[J_SHO_L] = {0.938f, -0.836f, -0.927f};
-                T[J_ELB_L] = {0.852f, 0, 0};
-                T[J_WRI_L] = {-0.199f, 0, -0.187f};
-                T[J_NECK] = {-0.675f, 0.070f, -0.356f};
-                T[J_HEAD] = {0.078f, 0.494f, 0.119f};
-                T[J_SPINE] = pitched({-0.08f, -0.375f, 0}, ap);
-                T[J_CHEST] = {0.050f, -0.330f, 0};
+                // it just above the receiver). The right elbow comes up and out, lifting the shoulder
+                // into a pocket for the butt, the hand wrapped round the stock's wrist; the left hand
+                // stays on the fore-end by support_hand(). He aims up or down from the waist, all of a
+                // piece.
+                T[J_SHO_R] = {0.158f, 1.040f, 2.032f};
+                T[J_ELB_R] = {1.788f, 0, 0};
+                T[J_WRI_R] = {-0.550f, -1.986f, 0.477f};
+                T[J_SHO_L] = {2.922f, -1.441f, -1.077f};
+                T[J_ELB_L] = {0.279f, 0, 0};
+                T[J_WRI_L] = {-0.390f, 0.040f, -0.052f};
+                T[J_NECK] = {-0.580f, 0.153f, -0.450f};
+                T[J_HEAD] = {0.350f, 0.500f, 0.290f};
+                T[J_SPINE] = pitched({-0.08f, -0.498f, 0}, ap);
+                T[J_CHEST] = {-0.300f, -0.177f, 0};
                 T[J_HIP_L] = {0.25f, 0, -0.05f};
                 T[J_KNE_L] = {-0.22f, 0, 0};
                 T[J_HIP_R] = {-0.2f, 0, 0.06f};
@@ -724,14 +739,14 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
             T[J_NECK] = {-0.3f, 0, 0};
             T[J_SPINE] = {-0.08f, 0, 0};
             if (weapon_ == 1) {   // under the arm, muzzle up a little, the left hand at the loading port (--fit870)
-                T[J_SHO_R] = {-0.133f, 0.342f, -0.791f};
-                T[J_ELB_R] = {2.314f, 0, 0};
-                T[J_WRI_R] = {0.107f, -0.179f, -0.273f};
-                T[J_SHO_L] = {0.648f + work, 0.156f, 1.181f};
-                T[J_ELB_L] = {1.145f, 0, 0};
-                T[J_WRI_L] = {-1.200f, 0, -1.200f};
-                T[J_SPINE].y = -0.041f;   // turned, the gun side back
-                T[J_CHEST].y = -0.331f;
+                T[J_SHO_R] = {-0.505f, 0.468f, 0.733f};
+                T[J_ELB_R] = {2.487f, 0, 0};
+                T[J_WRI_R] = {-0.440f, -1.086f, 0.359f};
+                T[J_SHO_L] = {0.666f + work, -0.579f, -0.097f};
+                T[J_ELB_L] = {1.414f, 0, 0};
+                T[J_WRI_L] = {0.175f, 0.000f, 1.198f};
+                T[J_SPINE].y = -0.130f;   // turned, the gun side back
+                T[J_CHEST].y = -0.369f;
             } else {
                 T[J_SHO_R] = {0.6f, 0, -0.08f};
                 T[J_ELB_R] = {1.35f, 0, 0};
@@ -834,14 +849,14 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
     if (!drowned && weapon_ == 1 && (pose == Pose::Idle || pose == Pose::Walk || pose == Pose::Run || pose == Pose::Hurt)) {
         // The shotgun carried at the low ready: the butt still in the shoulder, both hands on it, the
         // muzzle 40 degrees down ahead (--fit870).
-        T[J_SHO_R] = {0.270f, 0.462f, -0.533f};
-        T[J_ELB_R] = {1.857f, 0, 0};
-        T[J_WRI_R] = {-0.436f, 0.913f, -0.704f};
-        T[J_SHO_L] = {0.395f, -1.200f, -0.771f};
-        T[J_ELB_L] = {0.218f, 0, 0};
-        T[J_WRI_L] = {-0.052f, 0, 0.366f};
-        T[J_SPINE].y += -0.277f;   // turned, the gun side back
-        T[J_CHEST].y += -0.370f;
+        T[J_SHO_R] = {0.013f, 0.547f, -0.039f};
+        T[J_ELB_R] = {1.906f, 0, 0};
+        T[J_WRI_R] = {-0.550f, -2.400f, 1.160f};
+        T[J_SHO_L] = {0.786f, 0.964f, 0.813f};
+        T[J_ELB_L] = {0.000f, 0, 0};
+        T[J_WRI_L] = {-0.757f, 0.215f, -0.861f};
+        T[J_SPINE].y += -0.452f;   // turned, the gun side back
+        T[J_CHEST].y += -0.467f;
     }
     // Both hands on the gun: the left one round the 870's fore-end, or over the right on the
     // pistol's grip (--fitgrips), support_hand() bending the arm to put it there; or a shell.
