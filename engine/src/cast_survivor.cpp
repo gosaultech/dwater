@@ -131,10 +131,10 @@ Character build_survivor() {
     MeshData d;
     // The guns (cast_guns.cpp), each in two parts: the one that moves when it's worked (the M92FS's
     // slide, the 870's fore-end) and the rest.
-    cast::GunParts gun = cast::m92fs();
+    cast::GunParts gun = cast::m92fs(Character::pistol_hold());   // held as --fitgrips fitted it
     c.add_rigid(J_WRI_R, R_FARM_R, gun.fixed, 1);   // shown while the M92FS is in hand
     c.add_rigid(J_WRI_R, R_FARM_R, gun.moving, 1, 1, gun.travel);
-    gun = cast::r870(Character::shotgun_hold());    // turned in the hand: the stock runs back over the forearm
+    gun = cast::r870(Character::shotgun_hold());
     c.add_rigid(J_WRI_R, R_FARM_R, gun.fixed, 2);   // ... or the Remington 870
     c.add_rigid(J_WRI_R, R_FARM_R, gun.moving, 2, 2, gun.travel);
     if (const auto* a = c.anchor("backpack")) { d = {}; backpack(d, a->pos); c.add_rigid(a->joint, R_BODY, d); }

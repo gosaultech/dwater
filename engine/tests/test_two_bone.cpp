@@ -1,0 +1,99 @@
+// damned_waters/engine/tests/test_two_bone.cpp
+// Purpose: the two-bone arm solve (two_bone.hpp) that keeps the survivor's left hand on a gun held
+// in both hands: the wrist lands on the goal whenever it can, the elbow stays on the side the pose
+// put it, the turn is a true rotation, and a goal out of reach gets the arm pointed straight at it.
+#include <gtest/gtest.h>
+
+#include <cmath>
+
+#include "dw/two_bone.hpp"
+
+using namespace dw;
+
+namespace {
+// His left arm as the rig builds it: hanging, a little out from the body (7 degrees), the forearm
+// a touch forward.
+const Vector3 UPPER{0.035f, -0.285f, 0.004f}, FORE{0.03f, -0.255f, -0.012f};
+
+// Where the solved arm puts the wrist (the shoulder's unturned frame).
+Vector3 wrist_of(const TwoBone& s, Vector3 oe, Vector3 ow) {
+    return Vector3Transform(Vector3Add(oe, Vector3Transform(ow, MatrixRotateX(s.elbow))), s.turn);
+}
+
+unsigned rng = 12345u;
+float rnd() {   // 0..1, the same sequence every run
+    rng ^= rng << 13;
+    rng ^= rng >> 17;
+    rng ^= rng << 5;
+    return float(rng & 0xFFFFFF) / 16777215.0f;
+}
+Vector3 random_dir() {
+    for (;;) {
+        const Vector3 v{rnd() * 2 - 1, rnd() * 2 - 1, rnd() * 2 - 1};
+        if (Vector3Length(v) > 0.2f && Vector3Length(v) < 1) return Vector3Normalize(v);
+    }
+}
+}  // namespace
+
+TEST(TwoBone, PutsTheWristOnAnyGoalWithinReach) {
+    const float a = Vector3Length(UPPER), b = Vector3Length(FORE);
+    for (int i = 0; i < 500; ++i) {
+        // Anywhere from a sharply bent arm to nearly straight (the elbow stops at 2.6 radians).
+        const float reach = Lerp(0.6f * (a + b), 0.995f * (a + b), rnd());
+        const Vector3 goal = Vector3Scale(random_dir(), reach);
+        const TwoBone s = solve_two_bone(UPPER, FORE, goal, random_dir());
+        const Vector3 w = wrist_of(s, UPPER, FORE);
+        EXPECT_LT(Vector3Distance(w, goal), 1e-4f) << "goal " << goal.x << " " << goal.y << " " << goal.z;
+        EXPECT_GE(s.elbow, 0.0f);   // elbows bend one way
+    }
+}
+
+TEST(TwoBone, KeepsTheElbowWhereThePoseHadIt) {
+    for (int i = 0; i < 200; ++i) {
+        const Vector3 goal = Vector3Scale(random_dir(), 0.4f);
+        const Vector3 hint = random_dir();
+        const TwoBone s = solve_two_bone(UPPER, FORE, goal, hint);
+        // The arm's hinge, squared to shoulder-to-wrist, lies along the hint squared to the goal's
+        // direction: of all the ways round the goal the elbow could go, the one nearest the pose.
+        const Vector3 v = Vector3Add(UPPER, Vector3Transform(FORE, MatrixRotateX(s.elbow)));
+        const Vector3 vn = Vector3Normalize(v), gn = Vector3Normalize(goal);
+        const Vector3 x{1, 0, 0};
+        const Vector3 built = Vector3Normalize(Vector3Subtract(x, Vector3Scale(vn, Vector3DotProduct(x, vn))));
+        const Vector3 want = Vector3Normalize(Vector3Subtract(hint, Vector3Scale(gn, Vector3DotProduct(hint, gn))));
+        const Vector3 got = Vector3Transform(built, s.turn);
+        EXPECT_GT(Vector3DotProduct(got, want), 0.9999f);
+    }
+}
+
+TEST(TwoBone, TheTurnIsARotation) {
+    for (int i = 0; i < 100; ++i) {
+        const TwoBone s = solve_two_bone(UPPER, FORE, Vector3Scale(random_dir(), 0.35f), random_dir());
+        const Matrix& m = s.turn;
+        const Vector3 c0{m.m0, m.m1, m.m2}, c1{m.m4, m.m5, m.m6}, c2{m.m8, m.m9, m.m10};
+        EXPECT_NEAR(Vector3Length(c0), 1.0f, 1e-5f);
+        EXPECT_NEAR(Vector3Length(c1), 1.0f, 1e-5f);
+        EXPECT_NEAR(Vector3DotProduct(c0, c1), 0.0f, 1e-5f);
+        EXPECT_NEAR(Vector3DotProduct(c1, c2), 0.0f, 1e-5f);
+        EXPECT_NEAR(Vector3DotProduct(Vector3CrossProduct(c0, c1), c2), 1.0f, 1e-5f);   // not a mirror
+        EXPECT_FLOAT_EQ(m.m12, 0.0f);   // and no shift
+    }
+}
+
+TEST(TwoBone, AGoalOutOfReachGetsTheArmPointedStraightAtIt) {
+    const Vector3 goal{0.1f, 0.2f, -1.4f};   // well past his fingertips
+    const TwoBone s = solve_two_bone(UPPER, FORE, goal, {1, 0, 0});
+    const Vector3 w = wrist_of(s, UPPER, FORE);
+    EXPECT_GT(Vector3DotProduct(Vector3Normalize(w), Vector3Normalize(goal)), 0.9999f);
+    EXPECT_LT(s.elbow, 0.1f);   // as straight as this arm goes
+}
+
+TEST(TwoBone, ReachingForwardBendsTheElbowForward) {
+    // A hand brought up in front of the chest, half the arm's length out: the forearm swings
+    // forward (-z, where he faces) of the elbow, as elbows do.
+    const Vector3 goal{0.05f, -0.15f, -0.3f};
+    const TwoBone s = solve_two_bone(UPPER, FORE, goal, {1, 0, 0});
+    const Vector3 elbow = Vector3Transform(UPPER, s.turn), w = wrist_of(s, UPPER, FORE);
+    EXPECT_GT(s.elbow, 0.5f);
+    EXPECT_LT(w.z, elbow.z);
+    EXPECT_LT(elbow.y, 0.0f);   // the elbow down, below the shoulder, with the hinge across the body
+}

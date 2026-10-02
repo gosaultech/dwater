@@ -31,13 +31,14 @@ Matrix lying_on(Vector3 at, Vector3 normal) {
 }
 
 int region_of(int joint) {   // which body region a joint's skin belongs to (for dismemberment)
+    if (const int h = hand_of(joint)) return h == 1 ? R_FARM_L : R_FARM_R;   // a hand goes with its forearm
     switch (joint) {
         case J_HEAD: return R_HEAD;
         case J_JAW: return R_JAW;
         case J_SHO_L: return R_UARM_L;
         case J_SHO_R: return R_UARM_R;
-        case J_ELB_L: case J_WRI_L: case J_FING1_L: case J_FING2_L: case J_THUMB_L: return R_FARM_L;
-        case J_ELB_R: case J_WRI_R: case J_FING1_R: case J_FING2_R: case J_THUMB_R: return R_FARM_R;
+        case J_ELB_L: return R_FARM_L;
+        case J_ELB_R: return R_FARM_R;
         case J_HIP_L: return R_THIGH_L;
         case J_HIP_R: return R_THIGH_R;
         case J_KNE_L: case J_ANK_L: return R_SHIN_L;

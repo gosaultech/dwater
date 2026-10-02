@@ -14,12 +14,17 @@ struct GunParts {
     Vector3 centre{};   // the middle of the gun (wrist space): what a studio view orbits
 };
 
-// Both in the right hand's wrist space: the barrel runs down the hand (-y) above the web of the
-// thumb (-z); +x is the gun's right side.
-GunParts m92fs();
+// Both built in the right hand's wrist space (the barrel runs down the hand (-y) above the web of
+// the thumb (-z); +x is the gun's right side), then turned by `hold`: how the gun sits in the hand
+// (Character::pistol_hold / shotgun_hold; identity: as built, for catalogue views and tests).
+GunParts m92fs(const Matrix& hold = MatrixIdentity());
+// A point in a gun's own measure, in the space it's built in (mm: u forward along the bore, v up
+// from its centreline, w across to its right; cast_guns.cpp says where each part is).
+Vector3 m92fs_at(float u, float v, float w = 0);
+Vector3 r870_at(float u, float v, float w = 0);
 // The 870's furniture: the oiled walnut of the classic police guns (the survivor's), or black synthetic.
 enum class Stock { Walnut, Synthetic };
-GunParts r870(const Matrix& hold, Stock stock = Stock::Walnut);   // hold: how it's turned in the hand (Character::shotgun_hold)
+GunParts r870(const Matrix& hold, Stock stock = Stock::Walnut);
 
 }  // namespace dw::cast
 #endif

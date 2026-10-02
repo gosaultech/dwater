@@ -12,12 +12,22 @@
 #include "dw/character_file.hpp"
 #include "dw/core.hpp"
 #include "dw/room_spec.hpp"
+#include "grips.hpp"
 
 namespace dw {
 namespace {
-constexpr int PARENT[J_COUNT] = {-1,      J_PELVIS, J_SPINE, J_CHEST, J_NECK,   J_HEAD,  J_CHEST, J_SHO_L, J_ELB_L,
-                                 J_CHEST, J_SHO_R,  J_ELB_R, J_PELVIS, J_HIP_L, J_KNE_L, J_PELVIS, J_HIP_R, J_KNE_R,
-                                 J_WRI_L, J_FING1_L, J_WRI_L, J_WRI_R, J_FING1_R, J_WRI_R};
+constexpr std::array<int, J_COUNT> make_parents() {
+    std::array<int, J_COUNT> p{-1,      J_PELVIS, J_SPINE, J_CHEST, J_NECK,   J_HEAD,  J_CHEST, J_SHO_L, J_ELB_L,
+                               J_CHEST, J_SHO_R,  J_ELB_R, J_PELVIS, J_HIP_L, J_KNE_L, J_PELVIS, J_HIP_R, J_KNE_R};
+    for (int side = 0; side < 2; ++side)   // each finger hangs off the wrist, segment after segment
+        for (int f = 0; f < 5; ++f)
+            for (int k = 0; k < 3; ++k) {
+                const int j = finger_joint(side == 1, f, k);
+                p[size_t(j)] = k == 0 ? (side ? J_WRI_R : J_WRI_L) : j - 1;
+            }
+    return p;
+}
+constexpr std::array<int, J_COUNT> PARENT = make_parents();
 enum RootMode { STAND = 0, BACK = 1, PRONE = 2 };
 
 float frand(unsigned& s) {   // xorshift: deterministic per character, no global RNG state
@@ -78,6 +88,36 @@ void Character::add_dangle(int joint, int region, Vector3 anchor, Vector3 rest, 
     dangles_.push_back(std::move(d));
 }
 
+// Each finger joint bends about the line across its finger and along the palm (the finger's
+// direction crossed with the way the palm faces): a hinge, like a knuckle. The palm faces across
+// the knuckle line, away from the back of the hand; the thumb bends toward the palm the same way.
+void Character::find_hinges() {
+    for (int side = 0; side < 2; ++side) {
+        const bool right = side == 1;
+        const Vector3 wrist = rest_[right ? J_WRI_R : J_WRI_L];
+        const Vector3 index = Vector3Subtract(rest_[finger_joint(right, F_INDEX, 0)], wrist);
+        const Vector3 little = Vector3Subtract(rest_[finger_joint(right, F_LITTLE, 0)], wrist);
+        Vector3 palm = Vector3Normalize(Vector3CrossProduct(index, little));   // (the right hand's; the left is its mirror)
+        if (!right) palm = Vector3Negate(palm);
+        for (int f = 0; f < 5; ++f)
+            for (int k = 0; k < 3; ++k) {
+                const int j = finger_joint(right, f, k);
+                const Vector3 along = k < 2 ? Vector3Subtract(rest_[j + 1], rest_[j]) : Vector3Subtract(rest_[j], rest_[j - 1]);
+                hinge_[j] = Vector3Normalize(Vector3CrossProduct(Vector3Normalize(along), palm));
+            }
+    }
+}
+
+void Character::curl(Vector3* T, bool right, int finger, float k0, float k1, float k2) const {
+    const float a[3] = {k0, k1, k2};
+    for (int k = 0; k < 3; ++k) {
+        const int j = finger_joint(right, finger, k);
+        // The bend as this rig's three angles (z, then x, then y): R = Ry Rx Rz.
+        const Matrix m = MatrixRotate(hinge_[j], a[k]);
+        T[j] = {std::asin(std::clamp(-m.m9, -1.0f, 1.0f)), std::atan2(m.m8, m.m10), std::atan2(m.m1, m.m5)};
+    }
+}
+
 bool Character::load_body(const std::string& path) {
     const CharacterFile f = CharacterFile::load(path);
     if (!f.ok() || f.joints.size() != size_t(J_COUNT)) {
@@ -88,6 +128,7 @@ bool Character::load_body(const std::string& path) {
         rest_[j] = {f.joints[j][0], f.joints[j][1], f.joints[j][2]};
         off_[j] = PARENT[j] < 0 ? rest_[j] : Vector3Subtract(rest_[j], rest_[PARENT[j]]);
     }
+    find_hinges();
     pelvis_h_ = rest_[J_PELVIS].y;
     for (const auto& p : f.parts) add_skinned(p);
     for (const auto& a : f.anchors)
@@ -280,6 +321,7 @@ void Character::add_skinned(const FilePart& p) {
     m.indices = static_cast<unsigned short*>(alloc(p.index.size() * sizeof(unsigned short)));
     m.boneIds = static_cast<unsigned char*>(alloc(p.joint.size()));
     m.boneWeights = static_cast<float*>(alloc(p.weight.size() * sizeof(float)));
+    static_assert(J_COUNT == 48, "the skinning shader (shaders.cpp, CHAR_VS) holds boneMatrices[48]: one per joint");
     m.boneCount = J_COUNT;
     m.boneMatrices = static_cast<Matrix*>(alloc(sizeof(Matrix) * J_COUNT));
     m.texcoords2 = static_cast<float*>(alloc(size_t(n) * 2 * sizeof(float)));   // x: the body region (cut-off ones aren't drawn)
@@ -324,6 +366,50 @@ void Character::fk() {
     }
 }
 
+// The left hand on a gun held in both hands. After the pose, the left arm is bent so the hand
+// lands where its grip holds the gun, wherever the right hand has taken the gun: aimed up or down,
+// bucking from a shot, or (the 870) with the fore-end racked back under the hand. Two bones, so
+// it's solved outright, no searching, the same every frame:
+//  1. the elbow bends until shoulder-to-wrist is as long as shoulder-to-goal;
+//  2. the upper arm swings to point the wrist at the goal, keeping the elbow's hinge as near as it
+//     can to where the pose had it (so the elbow stays down and out, the way the pose was made);
+//  3. the wrist turns the hand onto the grip.
+// support_w_ blends it in and out as the pose changes (the goal slides from where the pose put the
+// hand to the grip).
+void Character::support_hand() {
+    if (!support_ || support_w_ < 1e-3f) return;
+    Vector3 racked{};   // the 870's fore-end, worked back (wrist space): the hand goes with it
+    if (weapon_ == 1)
+        for (const Rigid& r : rigid_)
+            if (r.drive == 2 && r.tag == 2) racked = Vector3Scale(r.travel, pump);
+    const Matrix G = MatrixMultiply(MatrixMultiply(weapon_ == 1 ? shotgun_hold() : pistol_hold(), MatrixTranslate(racked.x, racked.y, racked.z)),
+                                    W_[J_WRI_R]);   // gun space -> world
+    const Matrix want = MatrixMultiply(MatrixInvert(support_->hold), G);   // the left wrist, on the grip
+    const Matrix& now = W_[J_WRI_L];
+    const Vector3 goal = Vector3Lerp({now.m12, now.m13, now.m14}, {want.m12, want.m13, want.m14}, support_w_);
+    const Quaternion turn = QuaternionSlerp(QuaternionFromMatrix(now), QuaternionFromMatrix(want), support_w_);
+    // 1 and 2: the elbow and the upper arm.
+    const Vector3 oe = off_[J_ELB_L], ow = off_[J_WRI_L];
+    const Matrix S = MatrixMultiply(MatrixTranslate(off_[J_SHO_L].x, off_[J_SHO_L].y, off_[J_SHO_L].z), W_[PARENT[J_SHO_L]]);   // the shoulder, unturned
+    const Matrix Si = MatrixInvert(S);
+    const Vector3 hinge = Vector3Subtract(Vector3Transform({W_[J_SHO_L].m0, W_[J_SHO_L].m1, W_[J_SHO_L].m2}, Si), Vector3Transform({0, 0, 0}, Si));
+    const TwoBone arm = solve_two_bone(oe, ow, Vector3Transform(goal, Si), hinge);
+    W_[J_SHO_L] = MatrixMultiply(arm.turn, S);
+    W_[J_ELB_L] = MatrixMultiply(MatrixMultiply(MatrixRotateX(arm.elbow), MatrixTranslate(oe.x, oe.y, oe.z)), W_[J_SHO_L]);
+    // 3. The wrist: whatever turn takes the forearm's end to the grip's.
+    Matrix X = MatrixMultiply(MatrixTranslate(ow.x, ow.y, ow.z), W_[J_ELB_L]);
+    Matrix Xr = X;
+    Xr.m12 = Xr.m13 = Xr.m14 = 0;
+    const Matrix bend = MatrixMultiply(QuaternionToMatrix(turn), MatrixInvert(Xr));   // the wrist's own turn
+    support_wrist_ = {std::asin(std::clamp(-bend.m9, -1.0f, 1.0f)), std::atan2(bend.m8, bend.m10), std::atan2(bend.m1, bend.m5)};
+    W_[J_WRI_L] = MatrixMultiply(bend, X);
+    for (int j = J_THUMB1_L; j < J_THUMB1_R; ++j) {   // and the fingers ride the wrist
+        const Vector3 a = Vector3Add(ang_[j], twitch_[j]);
+        const Matrix Rj = MatrixMultiply(MatrixMultiply(MatrixRotateZ(a.z), MatrixRotateX(a.x)), MatrixRotateY(a.y));
+        W_[j] = MatrixMultiply(MatrixMultiply(Rj, MatrixTranslate(off_[j].x, off_[j].y, off_[j].z)), W_[PARENT[j]]);
+    }
+}
+
 void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     t_ += dt;
     Vector3 T[J_COUNT]{};
@@ -334,6 +420,8 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     const float k = smoothing(sharp ? 16.0f : 9.0f, dt);
     for (int j = 0; j < J_COUNT; ++j) ang_[j] = Vector3Lerp(ang_[j], T[j], k);
     bob_ = Lerp(bob_, bob, k);
+    if (want_support_) support_ = want_support_;   // (letting go, the hand eases off the grip it had)
+    support_w_ = Lerp(support_w_, want_support_ ? 1.0f : 0.0f, k);
 
     // Twitches: the Drowned's nerves still fire. A joint snaps, then drifts back.
     const float decay = std::exp(-dt * 6.0f);
@@ -369,6 +457,7 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     lift_ = Lerp(from_lift_, tl, e);
 
     fk();
+    support_hand();
     for (int j = 0; j < J_COUNT; ++j)   // skinning: rest-pose vertex -> joint space -> where the joint is now
         bones_[j] = MatrixMultiply(MatrixTranslate(-rest_[j].x, -rest_[j].y, -rest_[j].z), W_[j]);
     for (auto& s : skinned_) std::memcpy(s.mesh.boneMatrices, bones_, sizeof(bones_));
@@ -487,17 +576,16 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         T[s < 0 ? J_HIP_L : J_HIP_R] = {0.03f, 0, 0.02f * s};
         T[s < 0 ? J_KNE_L : J_KNE_R] = {-0.07f, 0, 0};
     }
-    for (float s : {-1.0f, 1.0f}) {   // hands: fingers loosely curled toward the palm (palms face the body)
-        const bool L = s < 0;
-        const float in = L ? 1.0f : -1.0f;
-        T[L ? J_FING1_L : J_FING1_R] = {0, 0, (drowned ? 0.5f : 0.25f) * in};
-        T[L ? J_FING2_L : J_FING2_R] = {0, 0, (drowned ? 0.8f : 0.35f) * in};
-        T[L ? J_THUMB_L : J_THUMB_R] = {0, 0, 0.15f * in};
+    for (bool right : {false, true}) {   // hands: fingers loosely curled toward the palm (palms face the body)
+        for (int f = F_INDEX; f <= F_LITTLE; ++f) {
+            const float more = 0.05f * float(f - F_INDEX);   // the little finger curls furthest
+            curl(T, right, f, (drowned ? 0.5f : 0.25f) + more, (drowned ? 0.8f : 0.35f) + more, drowned ? 0.45f : 0.2f);
+        }
+        curl(T, right, F_THUMB, 0, 0.15f, 0.1f);
     }
-    if (!drowned) {   // the right hand grips the pistol
-        T[J_FING1_R] = {0, 0, -1.25f};
-        T[J_FING2_R] = {0, 0, -1.35f};
-        T[J_THUMB_R] = {0, 0, -0.45f};
+    if (!drowned) {   // the right hand round whichever gun is in it (--fitgrips)
+        const Grip& g = weapon_ == 1 ? grips::SHOTGUN_RIGHT : grips::PISTOL_RIGHT;
+        for (int k = 0; k < 15; ++k) T[J_THUMB1_R + k] = g.fingers[k];
     }
     T[J_SPINE] = {-0.02f + std::sin(t_ * 1.6f) * 0.012f, 0, 0};
     T[J_CHEST] = {std::sin(t_ * 1.6f + 0.5f) * 0.01f, 0, 0};
@@ -579,13 +667,22 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
                 bob = -0.025f;
                 break;
             }
-            T[J_SHO_R] = {kPi / 2 + ap, 0, 0.08f};
-            T[J_ELB_R] = {0.02f, 0, 0};
-            T[J_SHO_L] = {kPi / 2 + ap - 0.12f, 0, 0.62f};
-            T[J_ELB_L] = {0.35f, 0, 0};
-            T[J_SPINE] = {-0.06f, 0.03f, 0};
-            T[J_CHEST] = {-0.03f, 0.03f, 0};
-            T[J_NECK] = {-0.1f, -0.1f, 0};
+            // The isosceles stance, thumbs forward (--fitpistol): both arms out, the strong wrist tipped
+            // toward the little finger, the support wrist cammed down; the gun brought up to the eye,
+            // the right eye on the sights; the shoulders squared to the target, the chest leaning in.
+            // Aiming up or down, the arms swing at the shoulders and the head goes with them, and he
+            // bends a little at the waist; the left hand stays on the gun by support_hand().
+            const float arms = 0.6f * ap, waist = 0.4f * ap;
+            T[J_SHO_R] = pitched({2.053f, 0.169f, -0.183f}, arms);
+            T[J_ELB_R] = {0.019f, 0, 0};
+            T[J_WRI_R] = {-0.590f, 0.224f, 0.215f};
+            T[J_SHO_L] = pitched({2.058f, -0.791f, -0.214f}, arms);
+            T[J_ELB_L] = {0.0f, 0, 0};
+            T[J_WRI_L] = {-0.529f, 0.163f, -0.587f};
+            T[J_SPINE] = pitched({-0.06f, -0.103f, 0}, waist);
+            T[J_CHEST] = {-0.091f, 0.039f, 0};
+            T[J_NECK] = pitched({0.026f, -0.064f, -0.134f}, 0.5f * arms);
+            T[J_HEAD] = pitched({0.019f, -0.036f, 0.001f}, 0.5f * arms);
             T[J_HIP_L] = {0.22f, 0, -0.04f};
             T[J_KNE_L] = {-0.2f, 0, 0};
             T[J_HIP_R] = {-0.2f, 0, 0.06f};
@@ -746,13 +843,19 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         T[J_SPINE].y += -0.277f;   // turned, the gun side back
         T[J_CHEST].y += -0.370f;
     }
+    // Both hands on the gun: the left one round the 870's fore-end, or over the right on the
+    // pistol's grip (--fitgrips), support_hand() bending the arm to put it there; or a shell.
+    want_support_ = nullptr;
     if (!drowned && weapon_ == 1 && (pose == Pose::Aim || pose == Pose::Reload || pose == Pose::Idle || pose == Pose::Walk ||
                                      pose == Pose::Run || pose == Pose::Hurt)) {
-        // Both hands on the 870: the left one closed round the fore-end (or a shell).
-        T[J_FING1_L] = {0, 0, 1.0f};
-        T[J_FING2_L] = {0, 0, 1.1f};
-        T[J_THUMB_L] = {0, 0, 0.4f};
+        if (pose == Pose::Reload) {
+            for (int f = F_INDEX; f <= F_LITTLE; ++f) curl(T, false, f, 1.0f, 0.8f, 0.35f);
+            curl(T, false, F_THUMB, 0.1f, 0.4f, 0.2f);
+        } else {
+            want_support_ = &grips::SHOTGUN_LEFT;
+        }
     }
+    if (!drowned && weapon_ == 0 && pose == Pose::Aim) want_support_ = &grips::PISTOL_LEFT;
     if (!drowned && limp > 0 && pose != Pose::Dead) {
         // Hurt: he favours the right leg (it barely bends and drags), dips as it takes his weight,
         // and when it's bad, his free hand holds his ribs.
@@ -770,6 +873,25 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         int hp = s < 0 ? J_HIP_L : J_HIP_R, kn = s < 0 ? J_KNE_L : J_KNE_R;
         T[s < 0 ? J_ANK_L : J_ANK_R] = {-(T[hp].x + T[kn].x) * 0.9f, 0, 0};
     }
+    if (grip_view >= 0) {   // debugging a grip: that hand on its gun, held out in front, clear of the body
+        for (int j : {J_SHO_L, J_ELB_L, J_WRI_L, J_SHO_R, J_ELB_R, J_WRI_R}) T[j] = {};
+        const bool left = r_gun_on_left();
+        T[left ? J_SHO_L : J_SHO_R] = {1.4f, 0, left ? 0.35f : -0.35f};
+        for (int k = 0; k < 15; ++k) T[(left ? J_THUMB1_L : J_THUMB1_R) + k] = view_grip().fingers[k];
+        want_support_ = nullptr;
+        if (grip_view == 3) {   // the left hand reaching across onto the pistol (support_hand)
+            T[J_SHO_L] = {1.3f, 0, 0.6f};
+            T[J_ELB_L] = {0.5f, 0, 0};
+            want_support_ = &grips::PISTOL_LEFT;
+        }
+    }
+    if (want_support_)
+        for (int k = 0; k < 15; ++k) T[J_THUMB1_L + k] = want_support_->fingers[k];
+}
+
+const Grip& Character::view_grip() const {
+    static const Grip* const g[4] = {&grips::PISTOL_RIGHT, &grips::SHOTGUN_RIGHT, &grips::SHOTGUN_LEFT, &grips::PISTOL_RIGHT};
+    return *g[std::clamp(grip_view, 0, 3)];
 }
 
 void Character::draw(const Material& m, bool shadow_caster) const {
@@ -789,10 +911,16 @@ void Character::draw(const Material& m, bool shadow_caster) const {
         SetShaderValue(m.shader, hidden_loc, &none, SHADER_UNIFORM_INT);
         SetShaderValue(m.shader, skin_loc, &off, SHADER_UNIFORM_INT);
     }
+    // (Debugging a left-hand grip: the gun, built into the right hand's grip, moved to the left's.)
+    const bool on_left = r_gun_on_left();
+    const Matrix to_left = on_left ? MatrixMultiply(MatrixMultiply(MatrixInvert(weapon_ == 1 ? shotgun_hold() : pistol_hold()),
+                                                                   view_grip().hold), W_[J_WRI_L])
+                                   : MatrixIdentity();
     for (const auto& r : rigid_) {
         if (severed(r.region) || (r.tag != 0 && r.tag != weapon_ + 1)) continue;
         const float k = r.drive == 1 ? slide : r.drive == 2 ? pump : 0.0f;   // the slide or the fore-end, worked back
-        DrawMesh(r.mesh, m, k > 0 ? MatrixMultiply(MatrixTranslate(r.travel.x * k, r.travel.y * k, r.travel.z * k), W_[r.joint]) : W_[r.joint]);
+        const Matrix at = r.tag != 0 && on_left ? to_left : W_[r.joint];
+        DrawMesh(r.mesh, m, k > 0 ? MatrixMultiply(MatrixTranslate(r.travel.x * k, r.travel.y * k, r.travel.z * k), at) : at);
     }
     for (const auto& d : dyn_) DrawMesh(d.mesh, m, MatrixIdentity());
     for (const auto& d : dangles_)

@@ -13,6 +13,7 @@ import body as bm
 import dwc
 import garments as gm
 import mhdata
+import rig
 from body import J
 from parts import MAT, part_from_quads, rgba
 
@@ -140,7 +141,7 @@ def paint_face(b, part, ids, skin, lips, brows, palms=None, face=None):
     mat[lip > 0.5] = MAT["lips"]
     mat[brow > 0.55] = MAT["brow"]
     if palms is not None:
-        hand = b.weight_of("wri_l", "wri_r", "fing1_l", "fing2_l", "thumb_l", "fing1_r", "fing2_r", "thumb_r")[ids]
+        hand = b.weight_of(*rig.hand_joints("l", "r"))[ids]
         inward = -b.N[ids, 0] * np.sign(V[:, 0])
         pw = np.clip(hand * 1.5 - 0.5, 0, 1) * np.clip(inward * 1.6, 0, 1)
         col = col * (1 - pw[:, None]) + np.array(palms[:3], float) * pw[:, None]
@@ -250,7 +251,7 @@ def survivor(data: Path) -> dwc.Character:
     skin, lips, brows = (74, 50, 38), (58, 38, 34), (18, 14, 12)
     dom = b.dominant
     arm = np.isin(dom, [J[n] for n in ("sho_l", "elb_l", "sho_r", "elb_r")])
-    hand = np.isin(dom, [J[n] for n in ("wri_l", "wri_r", "fing1_l", "fing2_l", "thumb_l", "fing1_r", "fing2_r", "thumb_r")])
+    hand = np.isin(dom, [J[n] for n in rig.hand_joints("l", "r")])
     torso = np.isin(dom, [J[n] for n in ("pelvis", "spine", "chest", "neck")])
     legs = np.isin(dom, [J[n] for n in ("hip_l", "kne_l", "ank_l", "hip_r", "kne_r", "ank_r")])
     armhand = arm | hand

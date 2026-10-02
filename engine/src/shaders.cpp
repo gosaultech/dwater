@@ -20,7 +20,7 @@ const char* CHAR_VS = R"(#version 330
 in vec3 vertexPosition; in vec3 vertexNormal; in vec2 vertexTexCoord; in vec4 vertexTangent; in vec4 vertexColor;
 in vec4 vertexBoneIds; in vec4 vertexBoneWeights; in vec2 vertexTexCoord2;
 uniform mat4 mvp; uniform mat4 matModel; uniform mat4 matNormal;
-uniform mat4 boneMatrices[24]; uniform int u_skin;
+uniform mat4 boneMatrices[48]; uniform int u_skin;
 out vec3 vWorld; out vec3 vNormal; out vec3 vRestN; out vec3 vSurf; out vec4 vColor; out float vAo; out float vAux; flat out int vMat;
 flat out int vRegion;
 void main() {

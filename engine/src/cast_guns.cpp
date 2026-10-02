@@ -19,7 +19,9 @@
 // fist.
 #include "cast_guns.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <vector>
 
 namespace dw::cast {
@@ -37,6 +39,94 @@ Vector3 pistol_at(float u, float v, float w = 0) { return {w * MM, P_Y0 - u * MM
 const Color INOX{206, 207, 209, 255}, ALLOY{190, 190, 192, 255}, OXIDE{24, 24, 26, 255}, RUBBER{74, 74, 78, 255},
     STIPPLE{86, 86, 90, 255}, GROOVE{96, 96, 100, 255}, BORE{8, 8, 10, 255}, DOT{236, 234, 226, 255}, FIRE_DOT{196, 22, 20, 255}, GAP{14, 14, 15, 255},
     MAG{26, 26, 28, 255};
+// ── Roll marks ──────────────────────────────────────────────────────────────────
+// Lettering stamped into steel, in a plain stroke font: each glyph a few pen strokes on a grid 4
+// wide and 6 tall (the capitals' height; m, the one lower-case letter, is 4). Each stroke is laid
+// into the metal as a thin dark bar, a hair proud of the surface and sunk into it below, a closed
+// little block, so the part stays a closed surface (the grip fitter's distance field counts on
+// that). Like letters cut with a fine engraving pen.
+struct Glyph { char c; float advance; const char* strokes; };   // strokes: "x,y x,y ...|x,y ..." (grid units)
+const Glyph FONT[] = {
+    {'A', 5.4f, "0,0 2,6 4,0|0.75,2.2 3.25,2.2"},
+    {'B', 5.4f, "0,0 0,6 3,6 3.9,5.1 3.9,3.9 3,3 0,3|3,3 4,2 4,0.9 3.1,0 0,0"},
+    {'C', 5.4f, "4,5 3,6 1,6 0,5 0,1 1,0 3,0 4,1"},
+    {'D', 5.4f, "0,0 0,6 2.4,6 4,4.4 4,1.6 2.4,0 0,0"},
+    {'E', 5.2f, "4,6 0,6 0,0 4,0|0,3 3,3"},
+    {'F', 5.2f, "4,6 0,6 0,0|0,3 3,3"},
+    {'G', 5.4f, "4,5 3,6 1,6 0,5 0,1 1,0 3,0 4,1 4,2.8 2.3,2.8"},
+    {'I', 2.6f, "0.6,0 0.6,6"},
+    {'L', 5.0f, "0,6 0,0 3.8,0"},
+    {'M', 6.0f, "0,0 0,6 2.25,2.4 4.5,6 4.5,0"},
+    {'N', 5.4f, "0,0 0,6 4,0 4,6"},
+    {'O', 5.6f, "1.1,0 0,1.1 0,4.9 1.1,6 2.9,6 4,4.9 4,1.1 2.9,0 1.1,0"},
+    {'P', 5.2f, "0,0 0,6 3,6 4,5 4,4 3,3 0,3"},
+    {'R', 5.4f, "0,0 0,6 3,6 4,5 4,4 3,3 0,3|2.2,3 4,0"},
+    {'S', 5.4f, "4,5 3,6 1,6 0,5 0,4 1,3 3,3 4,2 4,1 3,0 1,0 0,1"},
+    {'T', 5.2f, "0,6 4,6|2,6 2,0"},
+    {'U', 5.4f, "0,6 0,1 1,0 3,0 4,1 4,6"},
+    {'V', 5.4f, "0,6 2,0 4,6"},
+    {'Y', 5.4f, "0,6 2,3 4,6|2,3 2,0"},
+    {'2', 5.4f, "0,5 1,6 3,6 4,5 4,4 0,0 4,0"},
+    {'9', 5.4f, "4,4 3,3 1,3 0,4 0,5 1,6 3,6 4,5 4,1 3,0 1,0 0,1"},
+    {'m', 5.4f, "0,0 0,4|0,3 1,4 1.6,4 2,3 2,0|2,3 2.6,4 3.4,4 4,3 4,0"},
+    {'.', 2.4f, "0.4,0 0.9,0 0.9,0.5 0.4,0.5 0.4,0"},
+    {'-', 4.6f, "0.6,3 3.4,3"},
+    {' ', 3.6f, ""},
+};
+
+// One stroke from a to b (gun mm, on the face at w = `w`), `half` mm either side of the line: a
+// block from a hair proud of the face to a little inside it, square-ended so strokes meet cleanly.
+void cut_stroke(MeshBuilder& b, Vector2 a, Vector2 c, float w, float half) {
+    Vector2 d = Vector2Subtract(c, a);
+    const float len = Vector2Length(d);
+    d = len > 1e-6f ? Vector2Scale(d, half / len) : Vector2{half, 0};
+    const Vector2 n{-d.y, d.x};
+    Outline bar;
+    bar.to(a.x - d.x - n.x, a.y - d.y - n.y).to(c.x + d.x - n.x, c.y + d.y - n.y).to(c.x + d.x + n.x, c.y + d.y + n.y)
+        .to(a.x - d.x + n.x, a.y - d.y + n.y);
+    const float out = w < 0 ? -1.0f : 1.0f, proud = 0.04f, sunk = 0.15f;   // mm
+    b.slab(pistol(bar).p, (w + out * (proud - sunk) / 2) * MM, (proud + sunk) / 2 * MM, 0, 0);
+}
+
+// `text` on a flat side of the pistol: its first letter's bottom left (as you read it) at gun
+// (u0, v0), letters `h` mm tall, reading toward the muzzle (`along` +1, the right side) or the
+// back (-1, the left side: seen from there the muzzle points left).
+void engrave(MeshBuilder& b, const char* text, float u0, float v0, float w, float h, float along) {
+    const float s = h / 6, half = 0.12f;
+    float pen = 0;
+    for (const char* ch = text; *ch; ++ch) {
+        const Glyph* g = nullptr;
+        for (const Glyph& f : FONT)
+            if (f.c == *ch) g = &f;
+        if (!g) continue;
+        const char* p = g->strokes;
+        while (*p) {   // each stroke: points until '|' or the end
+            Vector2 last{};
+            bool have = false;
+            while (*p && *p != '|') {
+                char* e;
+                const float x = std::strtof(p, &e);
+                const float y = std::strtof(e + 1, &e);
+                const Vector2 at{u0 + along * (pen + x) * s, v0 + y * s};
+                if (have) cut_stroke(b, last, at, w, half);
+                last = at;
+                have = true;
+                p = e;
+                while (*p == ' ') ++p;
+            }
+            if (*p == '|') ++p;
+        }
+        pen += g->advance;
+    }
+}
+float text_width(const char* text, float h) {   // mm, as engrave() lays it
+    float pen = 0;
+    for (const char* ch = text; *ch; ++ch)
+        for (const Glyph& f : FONT)
+            if (f.c == *ch) pen += f.advance;
+    return pen * h / 6;
+}
+
 // ── Remington 870 ───────────────────────────────────────────────────────────────
 // u from the back of the receiver: the trigger at 27, the breech face at 174, the muzzle at 644
 // (18.5 inches of barrel), the butt at -327 (14 inches from the trigger). The right hand holds the
@@ -52,13 +142,21 @@ const Color BLUED{24, 26, 32, 255}, GILT{178, 140, 64, 255}, POLY{27, 27, 29, 25
     SLOT{12, 12, 13, 255}, BOLT{196, 198, 200, 255}, BEAD{232, 222, 190, 255};
 }  // namespace
 
-GunParts m92fs() {
+Vector3 m92fs_at(float u, float v, float w) { return pistol_at(u, v, w); }
+Vector3 r870_at(float u, float v, float w) { return rifle_at(u, v, w); }
+
+GunParts m92fs(const Matrix& hold) {
     GunParts g;
-    g.travel = {0, 0.045f, 0};   // the slide runs 45 mm back toward the wrist
-    g.centre = pistol_at(95, -52);
+    Matrix turn = hold;   // (the hold turns the travel; its shift doesn't move a direction)
+    turn.m12 = turn.m13 = turn.m14 = 0;
+    g.travel = Vector3Transform({0, 0.045f, 0}, turn);   // the slide runs 45 mm back toward the wrist
+    g.centre = Vector3Transform(pistol_at(95, -52), hold);
+    // Built in the gun's own frame, then turned into the hand (MeshData::append), so the surface
+    // patterns keep to the gun however it's held.
+    MeshData moving, fixed;
 
     // ── The slide (it moves) ─────────────────────────────────────────────────────
-    MeshBuilder s(g.moving);
+    MeshBuilder s(moving);
     s.material(MAT_STEEL).color(INOX);
     // Its side view: the full-height breech block at the back, a scoop down to the low walls either
     // side of the barrel (the open top the Beretta is known by), running on to the muzzle. The nose
@@ -124,9 +222,26 @@ GunParts m92fs() {
     s.ellipsoid(pistol_at(194.9f, 15.4f), {1.0f * MM, 0.25f * MM, 1.0f * MM}, 10, 4);
     // The red dot under the right-hand lever: showing means ready to fire.
     s.color(FIRE_DOT).ellipsoid(pistol_at(21.5f, -4, 12.02f), {0.25f * MM, 1.3f * MM, 1.3f * MM}, 10, 4);
+    // The roll marks, on the flats ahead of the serrations. Left (read with the muzzle to your
+    // left): the maker and the town, and under them PB in an oval. Right, under the ejection port:
+    // the model and the calibre.
+    {
+        const char* maker = "PIETRO BERETTA GARDONE V.T. - MADE IN ITALY";
+        const char* model = "MOD. 92FS - CAL. 9mm PARABELLUM - PATENTED";
+        s.material(MAT_METAL).color(Color{70, 71, 75, 255});   // the cuts catch the shadow
+        const float h = 2.2f, mid = 124;
+        engrave(s, maker, mid + text_width(maker, h) / 2, -7.0f, -12, h, -1);
+        engrave(s, model, mid - text_width(model, h) / 2, -9.5f, 12, h, 1);
+        const float ou = mid, ov = -12.1f, ra = 4.6f, rb = 2.7f;   // the oval
+        for (int i = 0; i < 28; ++i) {
+            const float a0 = 2 * PI * float(i) / 28, a1 = 2 * PI * float(i + 1) / 28;
+            cut_stroke(s, {ou + ra * std::cos(a0), ov + rb * std::sin(a0)}, {ou + ra * std::cos(a1), ov + rb * std::sin(a1)}, -12, 0.12f);
+        }
+        engrave(s, "PB", ou + text_width("PB", 2.6f) / 2 - 0.25f, ov - 1.3f, -12, 2.6f, -1);
+    }
 
     // ── The rest (it stays put) ──────────────────────────────────────────────────
-    MeshBuilder f(g.fixed);
+    MeshBuilder f(fixed);
     // The barrel: the chamber block showing in the port, then the bare barrel along the open top,
     // just proud of the bridge at the muzzle.
     f.material(MAT_STEEL).color(INOX);
@@ -251,6 +366,8 @@ GunParts m92fs() {
         radii.push_back(0.9f * MM);
     }
     f.chain(loop, radii, 6);
+    g.moving.append(moving, hold);
+    g.fixed.append(fixed, hold);
     return g;
 }
 

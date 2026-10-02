@@ -21,6 +21,7 @@
 #include "dw/anatomy.hpp"
 #include "dw/combat.hpp"
 #include "dw/mesh_builder.hpp"
+#include "dw/two_bone.hpp"
 
 namespace dw {
 
@@ -29,9 +30,26 @@ struct FilePart;
 enum Joint : int {
     J_PELVIS, J_SPINE, J_CHEST, J_NECK, J_HEAD, J_JAW, J_SHO_L, J_ELB_L, J_WRI_L, J_SHO_R, J_ELB_R, J_WRI_R,
     J_HIP_L, J_KNE_L, J_ANK_L, J_HIP_R, J_KNE_R, J_ANK_R,
-    J_FING1_L, J_FING2_L, J_THUMB_L, J_FING1_R, J_FING2_R, J_THUMB_R,   // knuckles, middle joints, thumb
+    // The hands, left then right: three joints along each finger (the knuckle, the middle joint, the
+    // joint by the nail) and along the thumb (its root down by the wrist, its knuckle, the joint by
+    // its nail), so a hand can close round a grip one segment at a time.
+    J_THUMB1_L, J_THUMB2_L, J_THUMB3_L, J_INDEX1_L, J_INDEX2_L, J_INDEX3_L, J_MIDDLE1_L, J_MIDDLE2_L, J_MIDDLE3_L,
+    J_RING1_L, J_RING2_L, J_RING3_L, J_LITTLE1_L, J_LITTLE2_L, J_LITTLE3_L,
+    J_THUMB1_R, J_THUMB2_R, J_THUMB3_R, J_INDEX1_R, J_INDEX2_R, J_INDEX3_R, J_MIDDLE1_R, J_MIDDLE2_R, J_MIDDLE3_R,
+    J_RING1_R, J_RING2_R, J_RING3_R, J_LITTLE1_R, J_LITTLE2_R, J_LITTLE3_R,
     J_COUNT
 };
+enum Finger : int { F_THUMB, F_INDEX, F_MIDDLE, F_RING, F_LITTLE };
+// Finger f's joint k (0 the knuckle or the thumb's root, 1 the middle, 2 by the nail) on one hand.
+constexpr int finger_joint(bool right, int f, int k) { return (right ? J_THUMB1_R : J_THUMB1_L) + f * 3 + k; }
+// Which hand a joint is part of: 0 neither, 1 the left, 2 the right (the wrist counts: the palm is its).
+constexpr int hand_of(int j) {
+    return j == J_WRI_L || (j >= J_THUMB1_L && j < J_THUMB1_R) ? 1 : j == J_WRI_R || (j >= J_THUMB1_R && j < J_COUNT) ? 2 : 0;
+}
+// How a hand holds a gun (fitted by --fitgrips into grips_fitted.inc): where the gun sits in the
+// hand (gun space -> that wrist's), and the hand's 15 finger joints (thumb, index, middle, ring,
+// little; each from the knuckle out) as this rig's angles.
+struct Grip { Matrix hold; Vector3 fingers[15]; };
 enum class Kind { Survivor, Drowned };
 enum class Pose {
     Idle, Walk, Run, Aim, Hurt, Dead,                       // shared
@@ -75,17 +93,17 @@ public:
     bool has_lamp() const { return lamp_joint_ >= 0; }
     Vector3 lamp() const;
     Vector3 lamp_dir() const;
-    // How the Remington 870 sits in the right hand: the middle of its grip in the fist where the
-    // pistol's is, turned about the fist by GRIP_TILT (radians about the wrist's x; negative tips
-    // the muzzle down in the hand) so the hand closes round the stock's wrist, fingers under it
-    // toward the trigger. The wrist, not the gun, then bends to bring the bore level (the aim poses;
-    // --fit870 puts the butt in the shoulder to within a centimetre with this grip).
-    static constexpr float GRIP_TILT = -0.6f;
-    static Matrix shotgun_hold(float tilt = GRIP_TILT) {
-        const Vector3 fist{0, -0.0473f, 0.017f};   // the middle of the fist, wrist space
-        return MatrixMultiply(MatrixMultiply(MatrixTranslate(-fist.x, -fist.y, -fist.z), MatrixRotateX(tilt)),
-                              MatrixTranslate(fist.x, fist.y, fist.z));
-    }
+    // How each gun sits in the right hand (gun space -> the wrist's), as --fitgrips fitted it to the
+    // way people hold them (grips_fitted.inc). The wrist, not the gun, then turns to aim it.
+    static Matrix pistol_hold();
+    static Matrix shotgun_hold();
+    // Debugging the grips: >= 0 shows one hand on its gun with the arms at rest (0 the pistol in the
+    // right hand, 1 the 870's wrist in the right, 2 its fore-end in the left; 3 the pistol in both,
+    // the left hand put on by support_hand()), whatever the pose.
+    int grip_view = -1;
+    const Grip& view_grip() const;   // the grip of the hand the gun is in
+    bool r_gun_on_left() const { return grip_view == 2; }
+    Matrix grip_view_frame() const { return MatrixMultiply(view_grip().hold, W_[r_gun_on_left() ? J_WRI_L : J_WRI_R]); }   // gun space -> world
     // A joint's angles (this rig's order: z, then x, then y) with a further pitch `a` about its
     // parent's x axis on top. Aiming a long gun up or down the way a shooter does, from the waist:
     // the gun, both arms and the cheek on the stock move as one.
@@ -111,6 +129,15 @@ public:
         Pose pose = Pose::Aim;                    // the body the arms are fitted on
     };
     std::string fit_shotgun(const ShotgunFit& goal);
+    // A tool (--fitpistol): the two-handed pistol aim, thumbs forward. Search the right arm, its
+    // wrist and the head so the bore lies along `aim` and the right eye sits on the sight line an
+    // arm's length behind the rear sight, the head up and looking along it; and where the left
+    // elbow goes, so support_hand() turns the left wrist no further than it must. Returns the
+    // result as text for the pose tables.
+    std::string fit_pistol(Vector3 aim = {0, 0, -1});
+    // A tool (--fitgrips, grip_fit.cpp): fit his hands to his guns the way people hold them, write
+    // the result to `out_path` (src/grips_fitted.inc) and say how close it came.
+    std::string fit_grips(const std::string& out_path);
     float limp = 0;                           // 0..1: how badly the survivor limps (the only sign of his health)
     float pump = 0;                           // 0..1: the 870's fore-end racked back
     float slide = 0;                          // 0..1: the M92FS's slide back (1 and staying: locked open, empty)
@@ -158,7 +185,14 @@ private:
     };
 
     void fk();
+    // The left hand onto the gun, after fk(): the left arm bent (two-bone IK) to put it where
+    // `support_` holds the gun, blended in by support_w_ (character.cpp says how).
+    void support_hand();
     void targets(Pose pose, float speed, float dt, float aim_pitch, Vector3* T, float& bob);
+    // Curl one finger toward the palm (radians at its knuckle, middle joint and the joint by the
+    // nail; for the thumb, its root, knuckle and tip joint), each about that joint's own hinge.
+    void curl(Vector3* T, bool right, int finger, float k0, float k1, float k2) const;
+    void find_hinges();   // the fingers' hinges, from the rest pose (load_body)
     void step_dangles(float dt);
     bool load_body(const std::string& path);   // skinned body + rest joints from a .dwc file
     const Anchor* anchor(const std::string& name) const;
@@ -173,6 +207,7 @@ private:
     void add_skinned(const FilePart& p);
     void add_rigid(int joint, int region, MeshData& d, int tag = 0, int drive = 0, Vector3 travel = {});
     Matrix gun_frame() const;                                       // the gun in hand -> world
+    Vector3 right_eye() const;                                      // the middle of the right eyeball (head space)
     Vector3 skin_point(const Skinned& s, int v) const;             // a skinned vertex where it is this frame
     Vector3 skin_normal(const Skinned& s, int v) const;
     void add_sweep(Sweep s, std::vector<Pt> pts);
@@ -181,6 +216,7 @@ private:
 
     Vector3 pattern_offset();                                       // a fresh pattern space per part
     Vector3 off_[J_COUNT]{}, ang_[J_COUNT]{}, twitch_[J_COUNT]{}, head_c_{0, 0.1f, 0};
+    Vector3 hinge_[J_COUNT]{};                                      // a finger joint's axis: + curls it toward the palm
     Matrix W_[J_COUNT]{};
     Vector3 rest_[J_COUNT]{};                                       // rest-pose joint positions (skinned bodies)
     Matrix bones_[J_COUNT]{};                                       // skinning matrices, this frame
@@ -205,6 +241,10 @@ private:
     Mesh drip_mesh_{}, blood_drip_mesh_{};
     unsigned hidden_ = 0;                                           // bit per Region: cut off
     int weapon_ = 0, wounds_ = 0;
+    const Grip* support_ = nullptr;                                 // the left hand's grip, while both hands hold the gun
+    const Grip* want_support_ = nullptr;                            // ... as this pose has it (targets())
+    float support_w_ = 0;                                           // 0..1: how far the left hand has gone onto it
+    Vector3 support_wrist_{};                                       // the left wrist's turn that took (this rig's angles)
     int lamp_joint_ = -1;                                           // the flashlight's lens: joint and offset (joint space)
     Vector3 lamp_off_{};
     Vector3 chin_{0, -0.05f, -0.085f};                              // jaw space: the chin (for the jaw's hit capsule)

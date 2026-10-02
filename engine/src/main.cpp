@@ -12,6 +12,10 @@
 //                                   (who, orbit, elevation, distance, target x, target height, fov), then exit;
 //                                   who: survivor | drowned[N] [@head | @chest | @pelvis | @hand],
 //                                   or a gun, catalogue-lit: m92fs | r870 (see Game::gun_view)
+//   ./damned_waters --fitgrips      a tool: fit his hands to both guns as people hold them, write
+//                                   src/grips_fitted.inc, then exit
+//   ./damned_waters --fitpistol     a tool: fit the two-handed pistol aim (the right arm and wrist,
+//                                   the head; the left hand goes on by IK), print it, exit
 //   ./damned_waters --fit870        a tool: fit the hold on the 870 (aim, low ready, reload: arms,
 //                                   wrists and the turn of his back; aiming, also his head and lean,
 //                                   the cheek down on the stock), print it for the pose tables, exit
@@ -22,6 +26,7 @@
 #include <string>
 
 #include "dw/character.hpp"
+#include "dw/room_spec.hpp"
 #include "dw/telemetry.hpp"
 #include "game.hpp"
 
@@ -37,10 +42,12 @@ int main(int argc, char** argv) {
         else if (a == "--room") room = argv[++i];
         else if (a == "--frames") max_frames = std::stol(argv[++i]);
     }
-    bool flashlight = false, fit870 = false;
+    bool flashlight = false, fit870 = false, fitgrips = false, fitpistol = false;
     for (int i = 1; i < argc; ++i) {
         flashlight = flashlight || std::string(argv[i]) == "--flashlight";
         fit870 = fit870 || std::string(argv[i]) == "--fit870";   // a tool: fit the shotgun hold, print it, exit
+        fitgrips = fitgrips || std::string(argv[i]) == "--fitgrips";   // a tool: fit the hands to the guns, write them, exit
+        fitpistol = fitpistol || std::string(argv[i]) == "--fitpistol";   // a tool: fit the two-handed pistol aim, print it, exit
     }
     SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
     InitWindow(dw::Game::W, dw::Game::H, "Damned Waters");
@@ -58,7 +65,15 @@ int main(int argc, char** argv) {
     }
     double start = GetTime(), worst = 0;
     long frames = 0;
-    if (fit870) {
+    if (fitgrips) {
+        dw::Character c = dw::Character::make(dw::Kind::Survivor);
+        TraceLog(LOG_INFO, "FITGRIPS\n%s", c.fit_grips(dw::repo_root() + "/engine/src/grips_fitted.inc").c_str());
+        c.unload();
+    } else if (fitpistol) {
+        dw::Character c = dw::Character::make(dw::Kind::Survivor);
+        TraceLog(LOG_INFO, "FIT pistol %s", c.fit_pistol().c_str());
+        c.unload();
+    } else if (fit870) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);
         dw::Character::ShotgunFit aim, low, reload;
         low.aim = {0, -0.64f, -0.77f};   // the low ready: still in the shoulder, the muzzle 40 degrees down

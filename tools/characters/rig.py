@@ -4,7 +4,7 @@
 #      legs straight), skinning with MakeHuman's own 163 bones so the shoulders keep
 #      their shape: the rotation is spread over clavicle, shoulder and upper arm;
 #   2. convert to engine space: metres, facing -Z, soles on the floor;
-#   3. fold the 163 bones onto the engine's 18 joints (every bone joins its nearest
+#   3. fold the 163 bones onto the engine's 48 joints (every bone joins its nearest
 #      mapped ancestor), keeping the four strongest influences per vertex.
 # Engine joints, in the order of dw::Joint (engine/include/dw/character.hpp):
 from __future__ import annotations
@@ -13,20 +13,34 @@ import numpy as np
 
 from mhdata import BaseMesh, Skeleton
 
-ENGINE_JOINTS = ["pelvis", "spine", "chest", "neck", "head", "jaw", "sho_l", "elb_l", "wri_l", "sho_r", "elb_r", "wri_r",
-                 "hip_l", "kne_l", "ank_l", "hip_r", "kne_r", "ank_r",
-                 "fing1_l", "fing2_l", "thumb_l", "fing1_r", "fing2_r", "thumb_r"]
-ENGINE_PARENT = [-1, 0, 1, 2, 3, 4, 2, 6, 7, 2, 9, 10, 0, 12, 13, 0, 15, 16, 8, 18, 8, 11, 21, 11]
+BODY_JOINTS = ["pelvis", "spine", "chest", "neck", "head", "jaw", "sho_l", "elb_l", "wri_l", "sho_r", "elb_r", "wri_r",
+               "hip_l", "kne_l", "ank_l", "hip_r", "kne_r", "ank_r"]
+# The hands, left then right: three joints along each finger (the knuckle, the middle joint, the
+# joint by the nail) and along the thumb (its root down by the wrist, its knuckle, the joint by its
+# nail), so the fingers close round a grip one segment at a time. MakeHuman's finger1 is the thumb.
+FINGERS = ("thumb", "index", "middle", "ring", "little")
+FINGER_JOINTS = [f"{f}{k}_{s}" for s in ("l", "r") for f in FINGERS for k in (1, 2, 3)]
+ENGINE_JOINTS = BODY_JOINTS + FINGER_JOINTS
+ENGINE_PARENT = [-1, 0, 1, 2, 3, 4, 2, 6, 7, 2, 9, 10, 0, 12, 13, 0, 15, 16] + [
+    (BODY_JOINTS.index(f"wri_{n[-1]}") if n[-3] == "1" else len(BODY_JOINTS) + i - 1) for i, n in enumerate(FINGER_JOINTS)]
 # Which MakeHuman bone head each engine joint sits on, and which bones fold into it.
 # (MakeHuman ".L" is the body's left; the engine's left is "_l".)
 JOINT_BONE = {"pelvis": "spine05", "spine": "spine03", "chest": "spine01", "neck": "neck01", "head": "head", "jaw": "jaw",
               "sho_l": "upperarm01.L", "elb_l": "lowerarm01.L", "wri_l": "wrist.L",
               "sho_r": "upperarm01.R", "elb_r": "lowerarm01.R", "wri_r": "wrist.R",
               "hip_l": "upperleg01.L", "kne_l": "lowerleg01.L", "ank_l": "foot.L",
-              "hip_r": "upperleg01.R", "kne_r": "lowerleg01.R", "ank_r": "foot.R",
-              "thumb_l": "finger1-2.L", "thumb_r": "finger1-2.R"}
-# Finger joints pivot on the whole knuckle line: the mean of the four fingers' segment heads.
-KNUCKLES = {"fing1_l": ("L", 1), "fing2_l": ("L", 2), "fing1_r": ("R", 1), "fing2_r": ("R", 2)}
+              "hip_r": "upperleg01.R", "kne_r": "lowerleg01.R", "ank_r": "foot.R"}
+for _s in ("L", "R"):
+    for _i, _f in enumerate(FINGERS):
+        for _k in (1, 2, 3):
+            JOINT_BONE[f"{_f}{_k}_{_s.lower()}"] = f"finger{_i + 1}-{_k}.{_s}"
+
+
+def hand_joints(*sides: str) -> list[str]:
+    """Every joint of the hand(s) on the given side(s) ("l", "r"): the wrist and the fingers."""
+    return [n for s in sides for n in [f"wri_{s}"] + [f"{f}{k}_{s}" for f in FINGERS for k in (1, 2, 3)]]
+
+
 FOLD = {"root": "pelvis", "spine05": "pelvis", "pelvis.L": "pelvis", "pelvis.R": "pelvis",
         "spine04": "spine", "spine03": "spine", "spine02": "chest", "spine01": "chest",
         "neck01": "neck", "neck02": "neck", "neck03": "neck", "head": "head", "jaw": "jaw",
@@ -37,12 +51,11 @@ FOLD = {"root": "pelvis", "spine05": "pelvis", "pelvis.L": "pelvis", "pelvis.R":
         "upperleg01.L": "hip_l", "upperleg02.L": "hip_l", "lowerleg01.L": "kne_l", "lowerleg02.L": "kne_l", "foot.L": "ank_l",
         "upperleg01.R": "hip_r", "upperleg02.R": "hip_r", "lowerleg01.R": "kne_r", "lowerleg02.R": "kne_r", "foot.R": "ank_r"}
 for _s in ("L", "R"):
-    for _f in range(2, 6):   # index..little: base segment curls at the knuckles, the rest at the middle joints
-        FOLD[f"finger{_f}-1.{_s}"] = f"fing1_{_s.lower()}"
-        FOLD[f"finger{_f}-2.{_s}"] = f"fing2_{_s.lower()}"
-        FOLD[f"finger{_f}-3.{_s}"] = f"fing2_{_s.lower()}"
-    FOLD[f"finger1-2.{_s}"] = f"thumb_{_s.lower()}"
-    FOLD[f"finger1-3.{_s}"] = f"thumb_{_s.lower()}"
+    for _m in range(1, 5):   # the palm's bones move with the wrist
+        FOLD[f"metacarpal{_m}.{_s}"] = f"wri_{_s.lower()}"
+    for _name, _bone in JOINT_BONE.items():
+        if _name in FINGER_JOINTS and _bone.endswith(f".{_s}"):
+            FOLD[_bone] = _name
 DM_TO_M = 0.1
 
 
@@ -149,11 +162,6 @@ def engine_joints(skel: Skeleton, rest_verts: np.ndarray, posed: Posed) -> np.nd
     """Engine joint positions in the rest pose (MakeHuman space; convert with to_engine)."""
     out = []
     for name in ENGINE_JOINTS:
-        if name in KNUCKLES:
-            side, seg = KNUCKLES[name]
-            bones = [f"finger{f}-{seg}.{side}" for f in range(2, 6)]
-            out.append(np.mean([posed.point(b, skel.head(posed.verts, b)) for b in bones], axis=0))
-            continue
         bone = JOINT_BONE[name]
         out.append(posed.point(bone, skel.head(posed.verts, bone)))
     return np.array(out)

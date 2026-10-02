@@ -30,7 +30,7 @@ std::string write_temp(const std::string& name, const std::vector<char>& bytes) 
 TEST(CharacterFile, ShippedSurvivorLoadsWithAFullRig) {
     const CharacterFile f = CharacterFile::load(SURVIVOR);
     ASSERT_TRUE(f.ok()) << f.error;
-    EXPECT_EQ(f.joints.size(), 24u);                       // dw::J_COUNT
+    EXPECT_EQ(f.joints.size(), 48u);                       // dw::J_COUNT
     for (const char* name : {"body", "jeans", "hoodie", "jacket", "boot_l", "boot_r"})
         EXPECT_NE(f.part(name), nullptr) << name;
     EXPECT_EQ(f.part("cape"), nullptr);
@@ -59,7 +59,7 @@ TEST(CharacterFile, ShippedCitizensLoadAndFitSixteenBitIndices) {
     for (const char* id : {"office_worker", "pieter", "woman_dress"}) {
         const CharacterFile f = CharacterFile::load(repo_root() + "/engine/assets/characters/" + id + ".dwc");
         ASSERT_TRUE(f.ok()) << id << ": " << f.error;
-        EXPECT_EQ(f.joints.size(), 24u) << id;
+        EXPECT_EQ(f.joints.size(), 48u) << id;
         EXPECT_NE(f.part("body"), nullptr) << id;
         bool drips = false;
         for (const auto& a : f.anchors) drips |= a.name == "drip_chin";
@@ -93,8 +93,11 @@ TEST(CharacterFile, ForeignOrMissingFileIsRejected) {
 TEST(CharacterFile, OutOfRangeJointIsRejected) {
     std::vector<char> b = read_all(SURVIVOR);
     ASSERT_GT(b.size(), 4096u);
-    // The first part's header follows the joint table: magic, version, count, 24 x 12 bytes, part count.
-    const size_t part0 = 4 + 4 + 4 + 24 * 12 + 4;
+    // The first part's header follows the joint table: magic, version, count, count x 12 bytes, part count.
+    uint32_t nj = 0;
+    std::memcpy(&nj, &b[8], 4);
+    ASSERT_EQ(nj, 48u);
+    const size_t part0 = 4 + 4 + 4 + size_t(nj) * 12 + 4;
     uint32_t nv = 0;
     std::memcpy(&nv, &b[part0 + 24], 4);
     const size_t joint_ids = part0 + 24 + 8 + size_t(nv) * (12 + 12 + 4 + 1 + 1);

@@ -15,6 +15,7 @@ import drowned as dr
 import dwc
 import garments as gm
 import mhdata
+import rig
 from body import J
 from cast import Face, brow_field, eyeball, eyes, hair_cap, helper, lift, rigid_part, scalp_anchors, scalp_field, scalp_select
 from parts import MAT
@@ -27,7 +28,7 @@ def landmarks(b: bm.Body):
     dom = b.dominant
     return jp, dict(
         arm=np.isin(dom, [J[n] for n in ("sho_l", "elb_l", "sho_r", "elb_r")]),
-        hand=np.isin(dom, [J[n] for n in ("wri_l", "wri_r", "fing1_l", "fing2_l", "thumb_l", "fing1_r", "fing2_r", "thumb_r")]),
+        hand=np.isin(dom, [J[n] for n in rig.hand_joints("l", "r")]),
         torso=np.isin(dom, [J[n] for n in ("pelvis", "spine", "chest", "neck")]),
         legs=np.isin(dom, [J[n] for n in ("hip_l", "kne_l", "ank_l", "hip_r", "kne_r", "ank_r")]),
     )
@@ -131,7 +132,7 @@ def drip_anchors(b: bm.Body, f: Face, parts: list, hems: tuple = ()) -> list[dwc
     body_v = np.zeros(len(b.V), bool)
     body_v[b.body_ids] = True
     for sd in ("l", "r"):
-        hand = body_v & np.isin(b.dominant, [J[f"{n}_{sd}"] for n in ("wri", "fing1", "fing2", "thumb")])
+        hand = body_v & np.isin(b.dominant, [J[n] for n in rig.hand_joints(sd)])
         v = np.nonzero(hand)[0][np.argmin(b.V[hand, 1])]
         j = int(b.dominant[v])
         out.append(dwc.Anchor(f"drip_hand_{sd}", j, (b.V[v] - b.joints[j]).astype(np.float32), np.array([0, -1, 0], np.float32)))

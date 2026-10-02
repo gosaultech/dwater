@@ -21,6 +21,7 @@ import numpy as np
 
 import dwc
 import garments as gm
+import rig
 from body import Body
 from parts import MAT
 
@@ -233,7 +234,7 @@ def paint_body(b: Body, part, ids: np.ndarray, face, skin, w: Wounds, degloved: 
     col = mix(col, PUTRID, np.clip((value_noise(V * 7.0, seed + 3) - 0.52) * 3 + belly * 0.35, 0, 1) * 0.5 * (1 - 0.8 * face_w))
     col = mix(col, BLOTCH, np.clip((value_noise(V * 11.0, seed + 11) - 0.6) * 4, 0, 1) * 0.55)
     # Blood settles low once the heart stops: hands, feet, earlobes go purple.
-    ext = b.weight_of("wri_l", "wri_r", "fing1_l", "fing2_l", "thumb_l", "fing1_r", "fing2_r", "thumb_r", "ank_l", "ank_r")[ids]
+    ext = b.weight_of(*rig.hand_joints("l", "r"), "ank_l", "ank_r")[ids]
     col = mix(col, LIVID, np.clip(ext * 1.3 - 0.2, 0, 1) * 0.55 * lividity)
     for k, e in enumerate(face.eyes):   # hollow sockets: bruised almost black at the lids
         d = np.linalg.norm(V - e, axis=1)
@@ -263,7 +264,7 @@ def paint_body(b: Body, part, ids: np.ndarray, face, skin, w: Wounds, degloved: 
     # Hands: one degloved to the wrist (raw dermis), the other bleached and wrinkled.
     for s in (-1.0, 1.0):
         sd = "l" if s < 0 else "r"
-        hw = b.weight_of(f"wri_{sd}", f"fing1_{sd}", f"fing2_{sd}", f"thumb_{sd}")[ids]
+        hw = b.weight_of(*rig.hand_joints(sd))[ids]
         hand = np.clip(hw * 2 - 0.6, 0, 1)
         if s == degloved:
             ragged = hand * (0.75 + 0.5 * value_noise(V * 60.0, seed + 7)) > 0.55

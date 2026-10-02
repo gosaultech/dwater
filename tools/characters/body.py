@@ -16,7 +16,8 @@ import rig
 # dw::Region for each engine joint (see engine/include/dw/anatomy.hpp).
 R_BODY, R_HEAD, R_JAW, R_UARM_L, R_FARM_L, R_UARM_R, R_FARM_R, R_THIGH_L, R_SHIN_L, R_THIGH_R, R_SHIN_R = range(11)
 JOINT_REGION = [R_BODY, R_BODY, R_BODY, R_BODY, R_HEAD, R_JAW, R_UARM_L, R_FARM_L, R_FARM_L, R_UARM_R, R_FARM_R, R_FARM_R,
-                R_THIGH_L, R_SHIN_L, R_SHIN_L, R_THIGH_R, R_SHIN_R, R_SHIN_R, R_FARM_L, R_FARM_L, R_FARM_L, R_FARM_R, R_FARM_R, R_FARM_R]
+                R_THIGH_L, R_SHIN_L, R_SHIN_L, R_THIGH_R, R_SHIN_R, R_SHIN_R] + [
+                    R_FARM_L if n.endswith("_l") else R_FARM_R for n in rig.FINGER_JOINTS]   # a hand goes with its forearm
 J = {n: i for i, n in enumerate(rig.ENGINE_JOINTS)}
 
 
@@ -47,7 +48,7 @@ class Body:
     groups: dict              # helper group -> (G,4) quads (global vertex ids)
     jid: np.ndarray           # (N,4) engine joint ids
     jw: np.ndarray            # (N,4) weights
-    joints: np.ndarray        # (18,3) engine joint rest positions
+    joints: np.ndarray        # (48,3) engine joint rest positions
     bone_w: dict              # MakeHuman bone -> (N,) weight, for painting
     body_ids: np.ndarray      # vertex ids used by the body group
 

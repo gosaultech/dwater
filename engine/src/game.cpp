@@ -700,10 +700,10 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     char who[48] = {};
     float orbit = 0, elev = 0, dist = 1, tx = 0, ty = 1, fovy = 30;
     if (std::sscanf(spec.c_str(), "%47[^,],%f,%f,%f,%f,%f,%f", who, &orbit, &elev, &dist, &tx, &ty, &fovy) != 7) return false;
-    // who = survivor | drowned[N] (N: the citizen), optionally @head / @chest / @pelvis to orbit that
+    // who = survivor | drowned[N] (N: the citizen), optionally @head / @chest / @pelvis / @hand / @lhand to orbit that
     // joint instead (the target is then offset from it by target_x, target_y; @head orbits from the face),
     // then any of /pose=aim /gun=1 /limp=1 /cut=3+8 (regions cut off first; anatomy.hpp) /pitch=20
-    // (aiming 20 degrees up; negative is down).
+    // (aiming 20 degrees up; negative is down) /grip=0..3 (one hand on its gun: Character::grip_view).
     std::string w = who, at_joint, opts;
     if (const auto k = w.find('/'); k != std::string::npos) { opts = w.substr(k); w.resize(k); }
     if (const auto k = w.find('@'); k != std::string::npos) { at_joint = w.substr(k + 1); w.resize(k); }
@@ -728,6 +728,10 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
         if (key == "gun") c.set_weapon(std::atoi(val.c_str()));
         if (key == "limp") c.limp = float(std::atof(val.c_str()));
         if (key == "pitch") pitch = float(std::atof(val.c_str())) * DEG2RAD;
+        if (key == "grip") {   // one hand on its gun, the arms at rest (Character::grip_view)
+            c.grip_view = std::atoi(val.c_str());
+            c.set_weapon(c.grip_view == 1 || c.grip_view == 2 ? 1 : 0);
+        }
         if (key == "cut")
             for (size_t a = 0; a < val.size();) { cuts.push_back(std::atoi(val.c_str() + a)); a = std::min(val.find('+', a), val.size()) + 1; }
         i = j;
@@ -747,7 +751,7 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     Vector3 at{tx, ty, 0};
     if (!at_joint.empty()) {
         const Vector3 j = at_joint == "head" ? c.head_point() : at_joint == "hand" ? c.joint(J_WRI_R)
-                        : c.joint(at_joint == "chest" ? J_CHEST : J_PELVIS);
+                        : at_joint == "lhand" ? c.joint(J_WRI_L) : c.joint(at_joint == "chest" ? J_CHEST : J_PELVIS);
         at = {j.x + tx, j.y + ty, j.z};
         if (at_joint == "head") { const Vector3 f = c.face_dir(); a += std::atan2(f.x, -f.z); }
     }
@@ -755,6 +759,16 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     cam.position = {at.x + dist * std::sin(a) * std::cos(e), at.y + dist * std::sin(e), at.z - dist * std::cos(a) * std::cos(e)};
     cam.target = at;
     cam.up = {0, 1, 0};
+    if (c.grip_view >= 0) {   // a grip: orbit the gun in its own frame (orbit 90 = its right side, 0 = muzzle-on)
+        const Matrix G = c.grip_view_frame();
+        const Vector3 centre = c.grip_view == 0 || c.grip_view == 3 ? cast::m92fs_at(40 + tx * 1000, -55 + ty * 1000)
+                             : c.grip_view == 1                     ? cast::r870_at(-15 + tx * 1000, -45 + ty * 1000)
+                                                                    : cast::r870_at(335 + tx * 1000, -35 + ty * 1000);
+        const Vector3 dir{std::sin(a) * std::cos(e), -std::cos(a) * std::cos(e), -std::sin(e)};   // (u, v, w) -> gun space
+        cam.position = Vector3Transform(Vector3Add(centre, Vector3Scale(dir, dist)), G);
+        cam.target = Vector3Transform(centre, G);
+        cam.up = Vector3Subtract(Vector3Transform({0, 0, -1}, G), Vector3Transform({0, 0, 0}, G));
+    }
     cam.fovy = fovy;
     cam.projection = CAMERA_PERSPECTIVE;
     BeginTextureMode(rt_);

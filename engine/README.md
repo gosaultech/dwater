@@ -69,14 +69,19 @@ the shaders are GLSL 3.30 core, which both platforms support.
 ../build/macos/damned_waters --view drowned1@head,0,5,0.5,0,-0.05,30 face.png     # one close-up
 ../build/macos/damned_waters --view m92fs,0,0,2.0,0,0,8.3 pistol.png              # a gun, catalogue-lit
 ../build/macos/damned_waters --view r870,30,14,1.6,0.05,0,14 shotgun.png           # the 870
+../build/macos/damned_waters --fitgrips  # fit his hands to both guns as people hold them, write src/grips_fitted.inc, exit
+../build/macos/damned_waters --fitpistol # fit the two-handed pistol aim (right arm, wrist, head), print it, exit
 ../build/macos/damned_waters --fit870    # fit the hold on the 870 (arms, wrists, back; aiming, the cheek on the stock), print it, exit
 ```
 
 `--view` takes `who,orbit,elevation,distance,target_x,target_y,fov`. `who` is `survivor` or
-`drowned0`..`drowned2` (the office worker, Sanne, Pieter). Add `@head`, `@chest`, `@pelvis` or
-`@hand` to orbit that joint; the target is then an offset from it, and `@head` starts from the
+`drowned0`..`drowned2` (the office worker, Sanne, Pieter). Add `@head`, `@chest`, `@pelvis`,
+`@hand` or `@lhand` (the right or left wrist) to orbit that joint; the target is then an offset from it, and `@head` starts from the
 face. Then any of `/pose=aim`, `/gun=1` (the 870 in hand), `/limp=1`, `/cut=3+8`, `/pitch=20` (aiming 20
-degrees up; negative is down).
+degrees up; negative is down), `/grip=0..3` (one grip on its own, held out clear of the body: 0 the
+pistol in the right hand, 1 the 870's wrist in the right, 2 its fore-end in the left, 3 the pistol
+in both hands). With `/grip`, the camera orbits the gun instead: orbit 90 looks at its right side,
+-90 its left, 0 down the muzzle.
 
 `who` can also be a gun, `m92fs` or `r870`, lit like a catalogue photo so it can be held up
 against reference photos: `/slide=1` works the slide or fore-end back, `/roll=20` turns the
@@ -88,6 +93,44 @@ Dependencies are fetched on the first configure and pinned: raylib 5.5, nlohmann
 and GoogleTest 1.14. SQLite comes from the macOS SDK, or from the amalgamation if the SDK copy
 isn't found. The engine reads `../game/data/rooms` and `../game/assets/rooms` through
 `DW_REPO_ROOT`, which CMake sets at compile time.
+
+## How he holds the guns
+
+The way a shooting instructor would check it, and fitted rather than posed by eye:
+
+- **The pistol, two hands, thumbs forward.** The web of the right hand high under the tang, the
+  middle finger tight under the trigger guard, ring and little fingers round the front strap,
+  the pad of the trigger finger on the trigger and the rest of that finger off the frame, the
+  thumb forward along the left of the frame. The left hand's heel fills the gap the right
+  fingers leave on the left grip panel, its fingers wrap over the right ones (the forefinger
+  pressed up under the guard), its thumb lies forward under the right thumb, the wrist cammed
+  down. Arms out, the gun brought up to the eye rather than the head down to the gun.
+- **The 870.** The right hand shakes hands with the stock's wrist (thumb round it, not along
+  the top), the butt in the shoulder pocket, the cheek down on the comb. The left hand holds the
+  fore-end across the palm on a slant, fingers round its right side, thumb along its left, and
+  goes back and forth with it when he racks the pump.
+
+**The grips** (`--fitgrips`, `src/grip_fit.cpp`, written to `src/grips_fitted.inc`). Think of
+fitting a glove in the dark. Each gun becomes a distance field (for any point near it: how far
+the surface is, negative inside the steel or wood), so the fitter can feel the gun everywhere at
+once. The hand is his own skin, bent by its 15 finger joints the way the engine bends it. A
+search moves the gun about in the hand while the fingers close round it by themselves, the way
+robot hands grasp (each joint closes until its segment touches, then the next one carries on
+curling, so the finger wraps what it meets). It keeps whatever puts the instructor's check
+points (the web, the trigger pad, the knuckle line, the thumb) where the technique says, with no
+skin sinking more than a millimetre or two into the gun. The pistol's support hand is fitted
+second, onto the first: the right hand, as fitted, is drawn into the pistol's field so the left
+fingers close over it. Change a goal and run the tool again rather than editing the numbers.
+
+**The left hand stays on the gun** (`Character::support_hand`, `src/two_bone.cpp`). The right
+hand carries the gun, and the left arm is solved every frame so its hand lands exactly where its
+grip says, whatever the right hand has done: aimed up or down, bucking from a shot, or (the
+870) with the fore-end racked back under it. An arm is two bones, so it's solved outright, no
+searching: the elbow bends until the arm is as long as the gap to the grip, and of the ways the
+arm can then reach it, it takes the one with the elbow where the pose had it (down and out). It
+costs a few dozen multiplications a frame. The pose tables (`--fitpistol`, `--fit870`) give the
+rest: the right arm and wrist so the bore lies along the aim, the head so the right eye sits on
+the sight line or the cheek on the comb.
 
 ## Controls
 
@@ -128,7 +171,10 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 | `include/dw/core.hpp` | Pure logic: depth codec, shot selection, movement maths, 2D collision, enemy brain. Header-only and unit-tested. |
 | `include/dw/room_spec.hpp`, `src/room_spec.cpp` | Parses the RoomSpec JSON into colliders, shots, lights and spawns. It is the same file Blender renders from. |
 | `include/dw/mesh_builder.hpp`, `src/mesh_builder.cpp` | Ellipsoids with sculpt bumps, drapes and chains, plus `Sweep`, the per-frame tube along a Catmull-Rom curve with parallel-transport frames. |
-| `include/dw/character.hpp`, `src/character.cpp` | Joint forward kinematics, the cast, and the pose tables. |
+| `include/dw/character.hpp`, `src/character.cpp` | Joint forward kinematics, the cast, the pose tables, and the left hand put on the gun each frame. |
+| `src/grip_fit.cpp`, `src/grips_fitted.inc` | The grip fitter (`--fitgrips`) and what it wrote: where each gun sits in each hand and how the fingers wrap it. |
+| `include/dw/two_bone.hpp`, `src/two_bone.cpp` | The two-bone arm solve that keeps the left hand on the gun. Pure maths, unit-tested. |
+| `src/character_combat.cpp` | Hit capsules, wounds, severing, the guns in hand, and the aim fitters (`--fitpistol`, `--fit870`). |
 | `src/shaders.cpp` | All GLSL, embedded. |
 | `src/game.cpp` | Room, cameras, input, AI, and render order. |
 | `src/main.cpp` | Entry point, capture mode, and telemetry. |
