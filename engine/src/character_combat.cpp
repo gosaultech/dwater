@@ -36,12 +36,13 @@ Matrix own_turn(const Matrix& joint, const Matrix& parent, Vector3 off) {
 }
 // How far a wrist is bent past what it does without strain: 30 degrees toward the little finger
 // (-x on either hand: at rest the thumbs point forward), 15 toward the thumb; 50 toward the palm,
-// `back` radians back (45 degrees; a long gun's grip cocks the wrist back further, 60) (+z bends
+// `back` radians back (45 degrees; a long gun's grip cocks the wrist further, 60 back and 40
+// toward the little finger) (+z bends
 // the right hand back, the left toward its palm); and barely any twist, which is the forearm's job
 // (this rig has none). Plus a little for any bend at all.
-float wrist_strain(Vector3 w, bool right, float back = 0.79f) {
+float wrist_strain(Vector3 w, bool right, float back = 0.79f, float ulnar = 0.52f) {
     const float flex = right ? -w.z : w.z;
-    const float x = std::max(0.0f, std::max(-w.x - 0.52f, w.x - 0.26f)), z = std::max(0.0f, std::max(flex - 0.87f, -flex - back));
+    const float x = std::max(0.0f, std::max(-w.x - ulnar, w.x - 0.26f)), z = std::max(0.0f, std::max(flex - 0.87f, -flex - back));
     const float y = std::max(0.0f, std::fabs(w.y) - 0.2f);
     return 0.05f * (w.x * w.x + w.y * w.y + w.z * w.z) + 4.0f * (x * x + 2 * y * y + z * z);
 }
@@ -323,7 +324,7 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
     // Without `cheek`, the neck, the head and the lean stay as `goal.pose` has them; the turn is
     // still his to find.
     constexpr int K = 23;
-    float lo[K] = {-0.6f, -1.6f, -1.6f, 0.0f, -0.55f, -2.4f, -1.3f, -0.3f, -1.2f, -1.4f, 0.0f, -1.2f, -1.2f,
+    float lo[K] = {-0.6f, -1.6f, -1.6f, 0.0f, -0.85f, -2.4f, -1.3f, -0.3f, -1.2f, -1.4f, 0.0f, -1.2f, -1.2f,
                    -0.7f, -0.6f, -0.45f, 0.0f, -0.4f, -0.5f, -0.35f, -0.5f, -0.3f, -0.7f};
     float hi[K] = {2.6f, 1.6f, 2.4f, 2.6f, 0.55f, 2.4f, 1.3f, 2.8f, 1.2f, 1.4f, 2.4f, 1.2f, 1.2f,
                    0.3f, 0.6f, 0.45f, 0.0f, 0.35f, 0.5f, 0.35f, 0.5f, 0.05f, 0.5f};
@@ -376,20 +377,15 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
         parts[1] = 4000.0f * gaps[0] * gaps[0];
         parts[2] = (support_ ? 4000.0f : 1000.0f) * gaps[1] * gaps[1];
         parts[3] = cheek ? 3000.0f * gaps[2] * gaps[2] : 0.0f;
-        const float over = joint(J_ELB_R).y - (joint(J_SHO_R).y + 0.04f);   // the elbow out, but not above the shoulder
-        parts[4] = over > 0 ? 200.0f * over * over : 0.0f;
-        if (support_) {   // the left elbow under the fore-end, not winged out above the line to the hand
-            const Vector3 sh = joint(J_SHO_L), el = joint(J_ELB_L), wr = joint(J_WRI_L);
-            const float t = std::clamp(Vector3DotProduct(Vector3Subtract(el, sh), Vector3Subtract(wr, sh)) /
-                                           std::max(Vector3LengthSqr(Vector3Subtract(wr, sh)), 1e-6f), 0.0f, 1.0f);
-            const float up = el.y - Lerp(sh.y, wr.y, t);
-            parts[4] += up > 0 ? 2000.0f * up * up : 0.0f;
-        }
+        // The elbows down, the modern way: the right one dropped under the stock rather than winged
+        // out to make a pocket, the left one under the fore-end.
+        parts[4] = elbow_not_down(joint(J_SHO_R), joint(J_ELB_R), joint(J_WRI_R));
+        if (support_) parts[4] += elbow_not_down(joint(J_SHO_L), joint(J_ELB_L), joint(J_WRI_L));
         // The wrists bent no further than they must (the left one as the IK turned it, or as searched).
         // (The right wrist may twist: on a shotgun's stock the forearm turns the palm onto it, and this
         // rig, without a forearm twist, lets the wrist do it; the skin shares it along the forearm.)
         const Vector3 rw{q[4], 0.25f * q[5], q[6]};
-        parts[5] = wrist_strain(rw, true, 1.05f) + (support_ ? wrist_strain(support_wrist_, false) : 0.0f);
+        parts[5] = wrist_strain(rw, true, 1.05f, 0.7f) + (support_ ? wrist_strain(support_wrist_, false) : 0.0f);
         // The neck, the head and the back turned no further than they must: a shooter's head comes
         // down to the stock, but a strained one looks wrong.
         float strain = 0;
@@ -489,10 +485,9 @@ std::string Character::fit_pistol(Vector3 aim_dir) {
         float off(float x) const { return x < lo ? lo - x : (x > hi ? x - hi : 0.0f); }
     };
     // The right eye on the sight line (the front sight's top and the rear sight's ears, 17-19 mm
-    // over the bore), 36-54 cm behind the rear sight: about as far as his arms put the gun, both of
-    // them out toward the middle, the support elbow a little bent so its wrist can cam the hand
-    // down onto the grip.
-    const Band eye_u{-540, -360}, eye_v{15.5f, 20.5f}, eye_w{-2.5f, 2.5f};
+    // over the bore), 28-44 cm behind the rear sight: the modern isosceles, the arms out but well
+    // bent, nobody's locked straight.
+    const Band eye_u{-440, -280}, eye_v{15.5f, 20.5f}, eye_w{-2.5f, 2.5f};
     auto gun_mm = [](Vector3 p) { return Vector3{(-0.0315f - p.y) * 1000, (-0.066f - p.z) * 1000, p.x * 1000}; };   // u v w
     // SHO_R xyz, ELB_R, WRI_R xyz, NECK xyz, HEAD xyz, then SHO_L xyz: where the IK starts the left
     // arm (only which way its elbow points matters), held near the elbow-down pose it was drawn in.
@@ -502,9 +497,9 @@ std::string Character::fit_pistol(Vector3 aim_dir) {
     // Then SPINE y and CHEST x y: his shoulders squared to the target (the isosceles stance), the
     // chest leaning in over the hips the way it's taught (the recoil goes into the body).
     constexpr int K = 19;
-    const float lo[K] = {1.1f, -0.7f, -0.7f, 0.0f, -0.65f, -0.5f, -0.9f, -0.45f, -0.35f, -0.3f, -0.3f, -0.35f, -0.3f, 0.6f, -1.2f, -0.6f,
+    const float lo[K] = {1.0f, -0.9f, -0.9f, 0.0f, -0.8f, -0.5f, -0.9f, -0.45f, -0.35f, -0.3f, -0.3f, -0.35f, -0.3f, 0.6f, -1.2f, -0.6f,
                          -0.3f, -0.25f, -0.3f};
-    const float hi[K] = {2.1f, 0.7f, 0.7f, 0.4f, 0.3f, 0.5f, 0.9f, 0.2f, 0.35f, 0.3f, 0.3f, 0.35f, 0.3f, 2.4f, 1.2f, 1.4f,
+    const float hi[K] = {2.1f, 0.9f, 0.9f, 1.0f, 0.3f, 0.5f, 0.9f, 0.2f, 0.35f, 0.3f, 0.3f, 0.35f, 0.3f, 2.4f, 1.2f, 1.4f,
                          0.3f, 0.05f, 0.3f};
     float parts[7]{}, eye_gap = 0, reach = 0, look = 0, roll = 0;
     Vector3 eye_g{};
@@ -533,7 +528,7 @@ std::string Character::fit_pistol(Vector3 aim_dir) {
         // Both wrists bent no further than they must (x tips the hand in the plane of the palm, y
         // twists it, z bends it toward the palm or its back); the strong elbow a touch bent.
         const Vector3 lw = support_wrist_;
-        parts[3] = wrist_strain({q[4], q[5], q[6]}, true) + wrist_strain(lw, false) + 0.5f * (q[3] - 0.08f) * (q[3] - 0.08f);
+        parts[3] = wrist_strain({q[4], q[5], q[6]}, true) + wrist_strain(lw, false);
         float strain = 0;
         for (int k = 7; k < 13; ++k) strain += q[k] * q[k];
         parts[4] = 0.2f * strain + 0.1f * (q[16] * q[16] + q[17] * q[17] + q[18] * q[18]);
@@ -544,15 +539,12 @@ std::string Character::fit_pistol(Vector3 aim_dir) {
         roll = std::asin(std::clamp(Vector3Normalize({H.m0, H.m1, H.m2}).y, -1.0f, 1.0f));
         const float over_look = std::max(0.0f, look - 0.2f), over_roll = std::max(0.0f, std::fabs(roll) - 0.12f);
         parts[5] = 300.0f * (over_look * over_look + over_roll * over_roll);
-        // Both elbows bend down, not out and up: each elbow no higher than the line from its shoulder
-        // to its wrist.
+        // Both arms bent about 40 degrees, never locked, the elbows hanging down under the gun.
         parts[6] = 0;
         for (int side = 0; side < 2; ++side) {
             const Vector3 sh = joint(side ? J_SHO_R : J_SHO_L), el = joint(side ? J_ELB_R : J_ELB_L), wr = joint(side ? J_WRI_R : J_WRI_L);
-            const float t = std::clamp(Vector3DotProduct(Vector3Subtract(el, sh), Vector3Subtract(wr, sh)) /
-                                           std::max(Vector3LengthSqr(Vector3Subtract(wr, sh)), 1e-6f), 0.0f, 1.0f);
-            const float over = el.y - Lerp(sh.y, wr.y, t);
-            parts[6] += over > 0 ? 2000.0f * over * over : 0.0f;
+            const float bend = elbow_bend(sh, el, wr) - 0.7f;
+            parts[6] += elbow_not_down(sh, el, wr) + 8.0f * bend * bend;
         }
         return parts[0] + parts[1] + parts[2] + parts[3] + parts[4] + parts[5] + parts[6];
     };

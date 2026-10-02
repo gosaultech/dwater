@@ -658,23 +658,23 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
             bob = -std::fabs(s) * 0.035f;
             break;
         }
-        case Pose::Aim: {   // two-handed pistol: strong arm straight, support arm crossing in
+        case Pose::Aim: {   // both hands on the gun, elbows down: the pistol in the modern isosceles, or the shotgun shouldered
             if (weapon_ == 1) {   // the shotgun at the shoulder: bladed, the head down, the cheek on the comb
                 // (fitted with --fit870: the butt in the shoulder, the bore level, the right eye over
-                // it just above the receiver). The right elbow comes up and out, lifting the shoulder
-                // into a pocket for the butt, the hand wrapped round the stock's wrist; the left hand
-                // stays on the fore-end by support_hand(). He aims up or down from the waist, all of a
-                // piece.
-                T[J_SHO_R] = {0.158f, 1.040f, 2.032f};
-                T[J_ELB_R] = {1.788f, 0, 0};
-                T[J_WRI_R] = {-0.550f, -1.986f, 0.477f};
-                T[J_SHO_L] = {2.922f, -1.441f, -1.077f};
-                T[J_ELB_L] = {0.279f, 0, 0};
-                T[J_WRI_L] = {-0.390f, 0.040f, -0.052f};
-                T[J_NECK] = {-0.580f, 0.153f, -0.450f};
-                T[J_HEAD] = {0.350f, 0.500f, 0.290f};
-                T[J_SPINE] = pitched({-0.08f, -0.498f, 0}, ap);
-                T[J_CHEST] = {-0.300f, -0.177f, 0};
+                // it just above the receiver). The elbows down, the modern way: the right one dropped
+                // under the stock, the hand wrapped round the stock's wrist and the wrist cocked; the
+                // left hand stays on the fore-end by support_hand(). He aims up or down from the
+                // waist, all of a piece.
+                T[J_SHO_R] = {0.628f, 1.035f, 0.997f};
+                T[J_ELB_R] = {1.916f, 0, 0};
+                T[J_WRI_R] = {-0.850f, -1.095f, 0.396f};
+                T[J_SHO_L] = {2.989f, -1.321f, -1.043f};
+                T[J_ELB_L] = {-0.000f, 0, 0};
+                T[J_WRI_L] = {-0.263f, 0.033f, -0.051f};
+                T[J_NECK] = {-0.563f, 0.131f, -0.450f};
+                T[J_HEAD] = {0.350f, 0.500f, 0.264f};
+                T[J_SPINE] = pitched({-0.08f, -0.313f, 0}, ap);
+                T[J_CHEST] = {-0.300f, -0.347f, 0};
                 T[J_HIP_L] = {0.25f, 0, -0.05f};
                 T[J_KNE_L] = {-0.22f, 0, 0};
                 T[J_HIP_R] = {-0.2f, 0, 0.06f};
@@ -682,22 +682,23 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
                 bob = -0.025f;
                 break;
             }
-            // The isosceles stance, thumbs forward (--fitpistol): both arms out, the strong wrist tipped
-            // toward the little finger, the support wrist cammed down; the gun brought up to the eye,
-            // the right eye on the sights; the shoulders squared to the target, the chest leaning in.
+            // The modern isosceles, thumbs forward (--fitpistol): both arms out but bent, the elbows
+            // hanging down under the gun, the strong wrist tipped toward the little finger, the support
+            // wrist cammed down; the gun brought up to the eye, the right eye on the sights; the
+            // shoulders squared to the target, the chest leaning in.
             // Aiming up or down, the arms swing at the shoulders and the head goes with them, and he
             // bends a little at the waist; the left hand stays on the gun by support_hand().
             const float arms = 0.6f * ap, waist = 0.4f * ap;
-            T[J_SHO_R] = pitched({2.053f, 0.169f, -0.183f}, arms);
-            T[J_ELB_R] = {0.019f, 0, 0};
-            T[J_WRI_R] = {-0.590f, 0.224f, 0.215f};
-            T[J_SHO_L] = pitched({2.058f, -0.791f, -0.214f}, arms);
-            T[J_ELB_L] = {0.0f, 0, 0};
-            T[J_WRI_L] = {-0.529f, 0.163f, -0.587f};
-            T[J_SPINE] = pitched({-0.06f, -0.103f, 0}, waist);
-            T[J_CHEST] = {-0.091f, 0.039f, 0};
-            T[J_NECK] = pitched({0.026f, -0.064f, -0.134f}, 0.5f * arms);
-            T[J_HEAD] = pitched({0.019f, -0.036f, 0.001f}, 0.5f * arms);
+            T[J_SHO_R] = pitched({1.433f, 0.853f, 0.469f}, arms);
+            T[J_ELB_R] = {0.759f, 0, 0};
+            T[J_WRI_R] = {-0.591f, -0.211f, 0.564f};
+            T[J_SHO_L] = pitched({0.979f, -1.670f, -1.382f}, arms);
+            T[J_ELB_L] = {0.691f, 0, 0};
+            T[J_WRI_L] = {-0.572f, 0.204f, -0.177f};
+            T[J_SPINE] = pitched({-0.06f, 0.289f, 0}, waist);
+            T[J_CHEST] = {0.050f, -0.255f, 0};
+            T[J_NECK] = pitched({-0.302f, -0.033f, -0.116f}, 0.5f * arms);
+            T[J_HEAD] = pitched({0.107f, 0.039f, -0.011f}, 0.5f * arms);
             T[J_HIP_L] = {0.22f, 0, -0.04f};
             T[J_KNE_L] = {-0.2f, 0, 0};
             T[J_HIP_R] = {-0.2f, 0, 0.06f};
@@ -739,14 +740,14 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
             T[J_NECK] = {-0.3f, 0, 0};
             T[J_SPINE] = {-0.08f, 0, 0};
             if (weapon_ == 1) {   // under the arm, muzzle up a little, the left hand at the loading port (--fit870)
-                T[J_SHO_R] = {-0.505f, 0.468f, 0.733f};
-                T[J_ELB_R] = {2.487f, 0, 0};
-                T[J_WRI_R] = {-0.440f, -1.086f, 0.359f};
-                T[J_SHO_L] = {0.666f + work, -0.579f, -0.097f};
-                T[J_ELB_L] = {1.414f, 0, 0};
-                T[J_WRI_L] = {0.175f, 0.000f, 1.198f};
-                T[J_SPINE].y = -0.130f;   // turned, the gun side back
-                T[J_CHEST].y = -0.369f;
+                T[J_SHO_R] = {-0.439f, 0.248f, -0.050f};
+                T[J_ELB_R] = {2.569f, 0, 0};
+                T[J_WRI_R] = {-0.602f, 0.358f, -0.220f};
+                T[J_SHO_L] = {1.066f + work, -0.038f, 0.772f};
+                T[J_ELB_L] = {0.452f, 0, 0};
+                T[J_WRI_L] = {1.142f, 0.000f, 0.479f};
+                T[J_SPINE].y = -0.305f;   // turned, the gun side back
+                T[J_CHEST].y = 0.250f;
             } else {
                 T[J_SHO_R] = {0.6f, 0, -0.08f};
                 T[J_ELB_R] = {1.35f, 0, 0};
@@ -849,14 +850,14 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
     if (!drowned && weapon_ == 1 && (pose == Pose::Idle || pose == Pose::Walk || pose == Pose::Run || pose == Pose::Hurt)) {
         // The shotgun carried at the low ready: the butt still in the shoulder, both hands on it, the
         // muzzle 40 degrees down ahead (--fit870).
-        T[J_SHO_R] = {0.013f, 0.547f, -0.039f};
-        T[J_ELB_R] = {1.906f, 0, 0};
-        T[J_WRI_R] = {-0.550f, -2.400f, 1.160f};
-        T[J_SHO_L] = {0.786f, 0.964f, 0.813f};
+        T[J_SHO_R] = {0.045f, 0.749f, 0.393f};
+        T[J_ELB_R] = {1.975f, 0, 0};
+        T[J_WRI_R] = {-0.741f, -1.849f, 0.932f};
+        T[J_SHO_L] = {0.247f, 1.516f, 1.088f};
         T[J_ELB_L] = {0.000f, 0, 0};
-        T[J_WRI_L] = {-0.757f, 0.215f, -0.861f};
-        T[J_SPINE].y += -0.452f;   // turned, the gun side back
-        T[J_CHEST].y += -0.467f;
+        T[J_WRI_L] = {-0.349f, 0.041f, -0.336f};
+        T[J_SPINE].y += -0.384f;   // turned, the gun side back
+        T[J_CHEST].y += -0.386f;
     }
     // Both hands on the gun: the left one round the 870's fore-end, or over the right on the
     // pistol's grip (--fitgrips), support_hand() bending the arm to put it there; or a shell.

@@ -2,6 +2,7 @@
 // Purpose: the two-bone arm solve (two_bone.hpp) that keeps the survivor's left hand on a gun held
 // in both hands: the wrist lands on the goal whenever it can, the elbow stays on the side the pose
 // put it, the turn is a true rotation, and a goal out of reach gets the arm pointed straight at it.
+// And the aim fitters' arm measures: an elbow hanging down costs nothing, a winged one does.
 #include <gtest/gtest.h>
 
 #include <cmath>
@@ -96,4 +97,20 @@ TEST(TwoBone, ReachingForwardBendsTheElbowForward) {
     EXPECT_GT(s.elbow, 0.5f);
     EXPECT_LT(w.z, elbow.z);
     EXPECT_LT(elbow.y, 0.0f);   // the elbow down, below the shoulder, with the hinge across the body
+}
+
+// The aim fitters' elbow measures. Shoulder at the origin, the hand out in front (-z) at shoulder
+// height: the elbow below the line hangs down, out to the side or above it doesn't.
+TEST(ArmLook, AnElbowHangingDownCostsNothingAWingedOneDoes) {
+    const Vector3 sh{0, 0, 0}, wr{0, 0, -0.5f};
+    EXPECT_FLOAT_EQ(elbow_not_down(sh, {0, -0.08f, -0.25f}, wr), 0.0f);           // straight down
+    EXPECT_FLOAT_EQ(elbow_not_down(sh, {0.04f, -0.08f, -0.25f}, wr), 0.0f);       // down and a little out
+    EXPECT_GT(elbow_not_down(sh, {0.08f, 0, -0.25f}, wr), 5.0f);                   // winged out level
+    EXPECT_GT(elbow_not_down(sh, {0, 0.08f, -0.25f}, wr), elbow_not_down(sh, {0.08f, 0, -0.25f}, wr));   // up is worse
+    EXPECT_FLOAT_EQ(elbow_not_down(sh, {0, 0, -0.25f}, wr), 0.0f);                 // a straight arm points nowhere
+}
+
+TEST(ArmLook, BendIsTheAngleBetweenUpperArmAndForearm) {
+    EXPECT_NEAR(elbow_bend({0, 0, 0}, {0, 0, -0.3f}, {0, 0, -0.6f}), 0.0f, 1e-3f);       // straight
+    EXPECT_NEAR(elbow_bend({0, 0, 0}, {0, -0.3f, 0}, {0, -0.3f, -0.3f}), PI / 2, 1e-5f);  // a right angle
 }

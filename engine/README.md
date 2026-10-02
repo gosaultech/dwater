@@ -108,9 +108,11 @@ The way a shooting instructor would check it, and fitted rather than posed by ey
   thumb forward along the left of the frame. The left hand's heel fills the gap the right
   fingers leave on the left grip panel, its fingers wrap over the right ones (the forefinger
   pressed up under the guard), its thumb lies forward under the right thumb, the wrist cammed
-  down. Arms out, the gun brought up to the eye rather than the head down to the gun.
+  down. The modern isosceles: both arms out but bent about 40 degrees, never locked, the elbows
+  hanging down under the gun; the gun brought up to the eye rather than the head down to it.
 - **The 870.** The right hand shakes hands with the stock's wrist (thumb round it, not along
-  the top), the butt in the shoulder pocket, the cheek down on the comb. The left hand holds the
+  the top), the butt in the shoulder pocket, the cheek down on the comb, and the elbows down:
+  the right one dropped under the stock rather than winged out to make a pocket. The left hand holds the
   fore-end across the palm on a slant, fingers round its right side, thumb along its left, and
   goes back and forth with it when he racks the pump.
 
@@ -137,11 +139,12 @@ rest: the right arm and wrist so the bore lies along the aim, the head so the ri
 the sight line or the cheek on the comb, each wrist bent no further than a wrist goes.
 
 A grip has to suit the arm as well as the gun. A hand placed however suits the fingers can leave
-the wrist bent past what wrists do, so each pistol grip is fitted against the way the forearm
-comes in (a wrist tips about 30 degrees toward the little finger, 15 toward the thumb). The 870's
-right hand sits 30 degrees down across the stock's wrist: square across it the fingers wrap best
-but the wrist ends up by his face once the butt is in the shoulder. A forearm turns the hand by
-twisting along its length; this rig has no joint for that, so the wrist turns the hand and the
+the wrist bent past what wrists do, so each grip is fitted against the way the forearm comes in,
+elbows down (a wrist tips about 30 degrees toward the little finger, 15 toward the thumb). The
+870's right hand sits level across the stock's wrist so the elbow can hang down; its half pistol
+grip is raked about 45 degrees and this rig's palm is one rigid piece, so the wrist cocks hard
+toward the little finger, as holding a sporting stock elbows-down does. A forearm turns the hand
+by twisting along its length; this rig has no joint for that, so the wrist turns the hand and the
 forearm's skin takes half the twist, the way a sleeve wrings along an arm rather than at the cuff.
 
 ## Controls
@@ -185,7 +188,7 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 | `include/dw/mesh_builder.hpp`, `src/mesh_builder.cpp` | Ellipsoids with sculpt bumps, drapes and chains, plus `Sweep`, the per-frame tube along a Catmull-Rom curve with parallel-transport frames. |
 | `include/dw/character.hpp`, `src/character.cpp` | Joint forward kinematics, the cast, the pose tables, and the left hand put on the gun each frame. |
 | `src/grip_fit.cpp`, `src/grips_fitted.inc` | The grip fitter (`--fitgrips`) and what it wrote: where each gun sits in each hand and how the fingers wrap it. |
-| `include/dw/two_bone.hpp`, `src/two_bone.cpp` | The two-bone arm solve that keeps the left hand on the gun. Pure maths, unit-tested. |
+| `include/dw/two_bone.hpp`, `src/two_bone.cpp` | The two-bone arm solve that keeps the left hand on the gun, and the aim fitters' arm measures (elbow hanging down, its bend). Pure maths, unit-tested. |
 | `src/character_combat.cpp` | Hit capsules, wounds, severing, the guns in hand, and the aim fitters (`--fitpistol`, `--fit870`). |
 | `src/shaders.cpp` | All GLSL, embedded. |
 | `src/game.cpp` | Room, cameras, input, AI, and render order. |

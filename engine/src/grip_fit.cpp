@@ -524,7 +524,7 @@ std::string Character::fit_grips(const std::string& out_path) {
     // round it onto the left panel. A real palm folds round the backstrap to put the web dead
     // centre; this rig's palm is one rigid piece, so the web sits a little right.)
     const auto dir = [](float u, float v, float w) { return Vector3Normalize({w, -u, -v}); };   // a gun-space direction
-    goals.push_back({"PISTOL_RIGHT", "pistol, strong hand", true, &pistol_field, INDEX_KNUCKLE, P(42, -47, 34), dir(0, 0, -1), dir(0.99f, -0.12f, 0), P(20, -70, 0),
+    goals.push_back({"PISTOL_RIGHT", "pistol, strong hand", true, &pistol_field, INDEX_KNUCKLE, P(42, -47, 34), dir(0, 0, -1), dir(1.0f, -0.04f, 0), P(20, -70, 0),
                      {{WEB, P(-6, -31, 9), 4 * MM},                    // (his palm doesn't bend: the web sits at the backstrap's top right)
                       {INDEX_PAD, P(84.7f, -42.5f, 0), 2 * MM},        // on the trigger's face
                       {INDEX_KNUCKLE, P(34, -46, 34), 12 * MM},        // the trigger finger's knuckle: right of the frame, behind the trigger
@@ -535,7 +535,7 @@ std::string Character::fit_grips(const std::string& out_path) {
                       {THUMB_TIP, P(72, -22, -20), 7 * MM},            // the thumb forward along the left of the frame,
                       {THUMB_JOINT, P(45, -25, -21), 9 * MM}},         //   under the slide
                      gripping, trigger_finger_clear, wrapping, &support_sdf,
-                     dir(-0.87f, -0.3f, 0.39f)});                      // the arm out from the right shoulder, up to the eye
+                     dir(-0.9f, -0.41f, 0.12f)});                      // the arm bent, its elbow down, up to the eye
     // The support hand over it (the same thumbs-forward grip): the wrist cammed forward and down,
     // so the heel of the hand fills the gap the strong fingers leave on the left grip panel; the
     // fingers wrap round the front of the strong fingers, the forefinger high, pressed up under the
@@ -545,35 +545,33 @@ std::string Character::fit_grips(const std::string& out_path) {
     // the bottom of the magazine. Fitted onto the strong hand as fitted above: its fingers and palm
     // are drawn into this field.)
     goals.push_back({"PISTOL_LEFT", "pistol, support hand", false, &support_field, INDEX_KNUCKLE, P(28, -66, -40), dir(0, 0, 1),
-                     dir(0.97f, -0.24f, 0), P(5, -70, -25),
+                     dir(1.0f, -0.03f, 0), P(5, -70, -25),
                      {{INDEX_KNUCKLE, P(28, -66, -40), 10 * MM},       // under the trigger guard, over the strong fingertips
                       {THUMB_TIP, P(88, -36, -17), 10 * MM},           // forward along the frame, under the strong thumb
                       {THUMB_JOINT, P(58, -38, -20), 12 * MM},
                       {INDEX_TIP, P(64, -68, 14), 16 * MM},            // round the front of the strong fingers, the tips
                       {MIDDLE_TIP, P(56, -88, 14), 18 * MM}},          //   on their right side
                      gripping | bit(F_INDEX, 0) | bit(F_INDEX, 1) | bit(F_INDEX, 2), 0, wrapping | (1u << F_INDEX), nullptr,
-                     dir(-0.85f, -0.35f, -0.4f)});                     // from the left shoulder, the wrist cammed down
+                     dir(-0.8f, -0.46f, -0.38f)});                     // from the left, the elbow down, the wrist cammed
     // The 870's wrist in the strong hand, shaken hands with: the palm along its right side, the web
-    // high on its top behind the receiver, the thumb round over the top to the far side (not along
+    // up toward its top behind the receiver, the thumb round over the top to the far side (not along
     // the top, where it would block the view); the trigger finger's pad on the trigger; the other
-    // three fingers round the front of the half pistol grip, the middle one under the guard. The hand
-    // reaches 30 degrees down across the stock's wrist: square across it the fingers wrap it best but
-    // the wrist ends up by his face once the butt is in the shoulder; flatter, the forearm drops
-    // better but the fingers slide off. (Picked by fitting the arms, --fit870, to each in turn;
-    // DW_FIT_870_REACH tries another, in degrees.)
-    const float reach870 = std::getenv("DW_FIT_870_REACH") ? float(std::atof(std::getenv("DW_FIT_870_REACH"))) * DEG2RAD : 30.0f * DEG2RAD;
-    goals.push_back({"SHOTGUN_RIGHT", "870, strong hand", true, &stock_field, INDEX_KNUCKLE, S(-16, -42, 34), dir(0, 0, -1),
+    // three fingers round the front of the half pistol grip. Held the modern way, elbow down: the
+    // wrist below and beside the stock's wrist, the hand reaching forward and up across it, the palm
+    // cupping its right side. (DW_FIT_870_REACH: the hand's slant, degrees below the bore.)
+    const float reach870 = std::getenv("DW_FIT_870_REACH") ? float(std::atof(std::getenv("DW_FIT_870_REACH"))) * DEG2RAD : 0.0f;
+    goals.push_back({"SHOTGUN_RIGHT", "870, strong hand", true, &stock_field, INDEX_KNUCKLE, S(-12, -50, 32), dir(0, 0.3f, -0.95f),
                      dir(std::cos(reach870), -std::sin(reach870), 0), S(-35, -60, 0),
-                     {{WEB, S(-28, -3, 11), 4 * MM},
+                     {{WEB, S(-30, -15, 15), 15 * MM},
                       {INDEX_PAD, S(33, -60, 0), 2 * MM},              // on the trigger's face
-                      {INDEX_KNUCKLE, S(-16, -42, 34), 12 * MM},       // knuckles down the right of the grip
-                      {LITTLE_KNUCKLE, S(-38, -90, 34), 12 * MM},
-                      {MIDDLE_TIP, S(-14, -70, -16), 6 * MM},          // the fingers round its front, tips on the left
-                      {RING_TIP, S(-27, -86, -16), 6 * MM},
-                      {LITTLE_TIP, S(-40, -100, -15), 7 * MM},
-                      {THUMB_PAD, S(-32, -14, -17), 6 * MM},           // the thumb over the top, its pad on the left
-                      {THUMB_JOINT, S(-40, -4, -14), 8 * MM}},
-                     gripping, trigger_finger_clear, wrapping});
+                      {INDEX_KNUCKLE, S(-12, -50, 32), 12 * MM},       // knuckles down the right of the grip
+                      {MIDDLE_TIP, S(-14, -70, -16), 12 * MM},         // the fingers round its front, tips on the left
+                      {RING_TIP, S(-27, -86, -16), 14 * MM},
+                      {LITTLE_TIP, S(-40, -100, -15), 16 * MM},
+                      {THUMB_PAD, S(-32, -14, -17), 12 * MM},          // the thumb over the top, its pad on the left
+                      {THUMB_JOINT, S(-40, -4, -14), 14 * MM}},
+                     gripping, trigger_finger_clear, wrapping, nullptr,
+                     dir(-0.55f, -0.65f, 0.5f)});                      // the elbow down and a little out, the butt in the shoulder
     // The fore-end in the support hand: across the palm on a slant, from the heel of the hand (under
     // its right side, toward the back) to between thumb and forefinger (its left side, toward the
     // front); the fingers round its right side, the thumb along its left; the hand toward the front

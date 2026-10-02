@@ -25,6 +25,16 @@ struct TwoBone {
 };
 TwoBone solve_two_bone(Vector3 oe, Vector3 ow, Vector3 goal, Vector3 hinge);
 
+// Two measures of an arm's look, for the aim fitters (shoulder, elbow and wrist joints, world).
+// How far the elbow is from hanging down: the modern stances keep the elbows down under the gun,
+// not winged out (the old shotgun "chicken wing") or up. From the line between shoulder and wrist
+// the elbow should sit below it, within 35 degrees of straight down (world -y); 0 when it does,
+// growing with how far off it is, weighted by how far off the line the elbow sits (a straight
+// arm's elbow points nowhere).
+float elbow_not_down(Vector3 shoulder, Vector3 elbow, Vector3 wrist);
+// How far the arm is bent at the elbow (radians; 0 straight).
+float elbow_bend(Vector3 shoulder, Vector3 elbow, Vector3 wrist);
+
 }  // namespace dw
 
 #endif

@@ -1,7 +1,8 @@
 // damned_waters/engine/src/two_bone.cpp
 // Purpose: the two-bone arm solve (two_bone.hpp): the elbow from the triangle the bones make with
 // the gap to the goal, then the upper arm turned onto the goal with the elbow kept where the pose
-// had it. Pure maths, no window: the tests run it directly.
+// had it; and two measures of how an arm looks (its elbow hanging down, its bend) for the aim
+// fitters. Pure maths, no window: the tests run it directly.
 #include "dw/two_bone.hpp"
 
 #include <algorithm>
@@ -34,5 +35,19 @@ TwoBone solve_two_bone(Vector3 oe, Vector3 ow, Vector3 goal, Vector3 hinge) {
             *m[r][c] = sum;
         }
     return out;
+}
+
+float elbow_not_down(Vector3 sh, Vector3 el, Vector3 wr) {
+    const Vector3 sw = Vector3Subtract(wr, sh);
+    const float t = std::clamp(Vector3DotProduct(Vector3Subtract(el, sh), sw) / std::max(Vector3LengthSqr(sw), 1e-6f), 0.0f, 1.0f);
+    const Vector3 off = Vector3Subtract(el, Vector3Add(sh, Vector3Scale(sw, t)));
+    const float len = Vector3Length(off);
+    if (len < 1e-4f) return 0;
+    const float shy = std::max(0.0f, 0.82f + off.y / len);   // short of pointing down (cos 35 degrees)
+    return 3000.0f * len * len * shy * shy + (off.y > 0 ? 2000.0f * off.y * off.y : 0.0f);
+}
+
+float elbow_bend(Vector3 sh, Vector3 el, Vector3 wr) {
+    return std::acos(std::clamp(Vector3DotProduct(Vector3Normalize(Vector3Subtract(el, sh)), Vector3Normalize(Vector3Subtract(wr, el))), -1.0f, 1.0f));
 }
 }  // namespace dw
