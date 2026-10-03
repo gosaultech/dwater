@@ -493,9 +493,20 @@ std::string Character::fit_grips(const std::string& out_path) {
 
     // The guns as built (no hold), each as a distance field round where the hands go.
     const cast::GunParts pistol = cast::m92fs(), shotgun = cast::r870(MatrixIdentity());
+    // The magazine is in: of it, only the base plate under the grip (the box is inside the frame,
+    // where no hand goes).
+    MeshData plate;
+    {
+        const float top = cast::m92fs_at(0, cast::MAG_PLATE_TOP).z;   // (v up is -z)
+        for (size_t t = 0; t + 2 < pistol.load.count(); t += 3) {
+            bool below = true;
+            for (size_t k = 0; k < 3; ++k) below = below && pistol.load.pos[(t + k) * 3 + 2] > top;
+            if (below) plate.pos.insert(plate.pos.end(), pistol.load.pos.begin() + std::ptrdiff_t(t * 3), pistol.load.pos.begin() + std::ptrdiff_t(t * 3 + 9));
+        }
+    }
     auto box_of = [](Vector3 a, Vector3 b) { return std::make_pair(Vector3Min(a, b), Vector3Max(a, b)); };
     const auto pbox = box_of(cast::m92fs_at(-45, 25, -45), cast::m92fs_at(150, -140, 45));
-    const Sdf pistol_sdf = make_sdf({&pistol.fixed, &pistol.moving}, pbox.first, pbox.second, 0.001f, 0.008f);
+    const Sdf pistol_sdf = make_sdf({&pistol.fixed, &pistol.moving, &plate}, pbox.first, pbox.second, 0.001f, 0.008f);
     const auto sbox = box_of(cast::r870_at(-170, 45, -55), cast::r870_at(110, -150, 55));
     const Sdf stock_sdf = make_sdf({&shotgun.fixed}, sbox.first, sbox.second, 0.001f, 0.008f);
     const auto fbox = box_of(cast::r870_at(215, 25, -65), cast::r870_at(470, -95, 65));
@@ -503,8 +514,15 @@ std::string Character::fit_grips(const std::string& out_path) {
     // The pistol again, wider (the support hand wraps the strong one), the strong hand drawn in once
     // it's fitted.
     const auto sbox2 = box_of(cast::m92fs_at(-80, 25, -80), cast::m92fs_at(150, -150, 65));
-    Sdf support_sdf = make_sdf({&pistol.fixed, &pistol.moving}, sbox2.first, sbox2.second, 0.001f, 0.008f);
-    Field pistol_field{&pistol_sdf}, stock_field{&stock_sdf}, fore_field{&fore_sdf}, support_field{&support_sdf};
+    Sdf support_sdf = make_sdf({&pistol.fixed, &pistol.moving, &plate}, sbox2.first, sbox2.second, 0.001f, 0.008f);
+    // What the support hand loads, each where it sits as it goes in: the magazine in the grip, a
+    // shell in the 870's loading port.
+    const auto mbox = box_of(cast::m92fs_at(-40, 5, -45), cast::m92fs_at(90, -150, 45));
+    const Sdf mag_sdf = make_sdf({&pistol.load}, mbox.first, mbox.second, 0.001f, 0.008f);
+    const auto lbox = box_of(cast::r870_at(95, 25, -50), cast::r870_at(235, -80, 50));
+    const Sdf shell_sdf = make_sdf({&shotgun.load}, lbox.first, lbox.second, 0.001f, 0.008f);
+    Field pistol_field{&pistol_sdf}, stock_field{&stock_sdf}, fore_field{&fore_sdf}, support_field{&support_sdf}, mag_field{&mag_sdf},
+        shell_field{&shell_sdf};
     std::snprintf(line, sizeof line, "fields: pistol %dx%dx%d, stock %dx%dx%d, fore-end %dx%dx%d, both hands %dx%dx%d (1 mm)\n",
                   pistol_sdf.n[0], pistol_sdf.n[1], pistol_sdf.n[2], stock_sdf.n[0], stock_sdf.n[1], stock_sdf.n[2], fore_sdf.n[0],
                   fore_sdf.n[1], fore_sdf.n[2], support_sdf.n[0], support_sdf.n[1], support_sdf.n[2]);
@@ -584,6 +602,31 @@ std::string Character::fit_grips(const std::string& out_path) {
                       {RING_TIP, S(348, -42, 26), 9 * MM},
                       {LITTLE_TIP, S(332, -46, 25), 10 * MM}},
                      gripping | bit(F_INDEX, 0) | bit(F_INDEX, 1) | bit(F_INDEX, 2), 0, wrapping | (1u << F_INDEX)});
+    // A fresh magazine in the support hand, the way a fast reload is taught: the base plate in the
+    // hand (it's the heel of the hand that slaps it home), the forefinger straight up the front
+    // with its tip just under the top round's bullet (it steers the magazine into the grip), the
+    // thumb and the middle finger either side, the last two fingers curled under. The palm up
+    // under the plate, the forefinger turned up at its knuckle; the arm comes up from below, from
+    // the left.
+    goals.push_back({"MAG_LEFT", "magazine, support hand", false, &mag_field, INDEX_KNUCKLE, P(42, -138, -4), dir(0.243f, 0.97f, 0),
+                     dir(0.97f, -0.243f, 0), P(15, -100, 0),
+                     {{INDEX_TIP, P(51, -52, 0), 8 * MM},              // up the front, toward the top round
+                      {INDEX_KNUCKLE, P(42, -138, -4), 10 * MM},       // turned up in front of the plate, under it
+                      {PALM, P(15, -133, 18), 15 * MM},                // the palm under the plate
+                      {THUMB_PAD, P(8, -100, -12), 10 * MM}},          // up its left side
+                     bit(F_INDEX, 0) | bit(F_INDEX, 1) | bit(F_INDEX, 2) | (1u << PALM_SEG), 0,
+                     (1u << F_MIDDLE) | (1u << F_RING) | (1u << F_LITTLE), nullptr, dir(-0.8f, -0.5f, -0.33f)});
+    // A shell in the support hand, to push into the 870's loading port: held in the fingertips
+    // under it, the brass back against the thumb, the primer on its pad (the thumb pushes it home
+    // into the tube). The palm up, under the gun.
+    goals.push_back({"SHELL_LEFT", "870 shell, support hand", false, &shell_field, INDEX_KNUCKLE, S(148, -52, -6), dir(0, 1, 0), dir(1, 0, 0),
+                     S(165, -40, 0),
+                     {{THUMB_PAD, S(132.5f, -27, 0), 3 * MM},          // on the primer
+                      {INDEX_PAD, S(176, -38, -4), 6 * MM},            // the fingertips under the hull, clear of its nose
+                      {MIDDLE_TIP, S(170, -36, 7), 8 * MM},
+                      {INDEX_KNUCKLE, S(148, -52, -6), 12 * MM}},      // the hand under it, the palm up
+                     bit(F_INDEX, 2) | bit(F_MIDDLE, 2) | bit(F_THUMB, 2), 0, (1u << F_RING) | (1u << F_LITTLE),
+                     nullptr, dir(-0.6f, -0.6f, -0.5f)});
 
     // ── The search ──────────────────────────────────────────────────────────────
     // A hand at rest, its fingers half closed: the shape the first guess seats on the gun.
@@ -611,7 +654,8 @@ std::string Character::fit_grips(const std::string& out_path) {
     // grips_fitted.inc has them.
     const char* only = std::getenv("DW_FIT_ONLY");
     const std::pair<const char*, const Grip*> table[] = {{"PISTOL_RIGHT", &grips::PISTOL_RIGHT}, {"PISTOL_LEFT", &grips::PISTOL_LEFT},
-                                                        {"SHOTGUN_RIGHT", &grips::SHOTGUN_RIGHT}, {"SHOTGUN_LEFT", &grips::SHOTGUN_LEFT}};
+                                                        {"SHOTGUN_RIGHT", &grips::SHOTGUN_RIGHT}, {"SHOTGUN_LEFT", &grips::SHOTGUN_LEFT},
+                                                        {"MAG_LEFT", &grips::MAG_LEFT}, {"SHELL_LEFT", &grips::SHELL_LEFT}};
     for (const Goal& g : goals) {
         const Hand hd = make_hand(g.right);
         std::vector<Vector3> pts;
@@ -870,7 +914,7 @@ std::string Character::fit_grips(const std::string& out_path) {
         const bool quick = std::getenv("DW_FIT_QUICK") != nullptr;
         const int N = quick ? 200 : 1500;
         const bool trace = std::getenv("DW_FIT_TRACE") != nullptr;
-        const Vector3 o = g.field == &pistol_field || g.field == &support_field ? P(0, 0, 0) : S(0, 0, 0);
+        const Vector3 o = g.field == &pistol_field || g.field == &support_field || g.field == &mag_field ? P(0, 0, 0) : S(0, 0, 0);
         auto mm = [&](Vector3 p) { return Vector3{(o.y - p.y) / MM, (o.z - p.z) / MM, p.x / MM}; };
         const char* keep_stage = std::getenv("DW_FIT_STAGE");   // write out this stage, not the last (debugging)
         float kept[K];

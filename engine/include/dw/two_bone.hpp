@@ -1,7 +1,8 @@
 // damned_waters/engine/include/dw/two_bone.hpp
 // Purpose: an arm of two bones (upper arm, forearm) reaching for a point, solved outright rather
 // than searched for: how far the elbow bends and how the upper arm turns so the wrist lands on the
-// point. Character::support_hand uses it to keep the left hand on a gun held in both hands.
+// point. Character::arm_to uses it to keep the left hand on a gun held in both hands, and to move
+// the hands through a reload.
 //
 // Like reaching for a cup: how far you open your elbow is fixed by how far away the cup is (the
 // two bones and the gap make a triangle); what's left is which way the elbow points, and you keep

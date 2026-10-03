@@ -15,6 +15,7 @@
 #include <array>
 #include <cmath>
 
+#include "cast_guns.hpp"
 #include "game.hpp"
 
 namespace dw {
@@ -107,6 +108,9 @@ void Game::reset_fight() {
     aim_target_ = kick_target_ = -1;
     pump_t_ = slide_t_ = -1;
     hero_.pump = hero_.slide = 0;
+    hero_.reloading = {};
+    slide_locked_ = false;
+    shell_from_grip_ = true;
     holding_ = false;
 }
 
@@ -151,6 +155,7 @@ void Game::update_player(float dt) {
         const bool was_empty = guns_[k].mag == 0;
         for (int in = guns_[k].tick(dt); in > 0; --in) load_shell(was_empty && guns_[k].mag == 1);
     }
+    reload_hands();
     invuln_ = std::max(0.0f, invuln_ - dt);
     dodge_cd_ = std::max(0.0f, dodge_cd_ - dt);
     focus_t_ = std::max(0.0f, focus_t_ - dt);
@@ -662,20 +667,73 @@ void Game::cut_off(Enemy& e, int region, Vector3 dir) {
 void Game::reload() {
     Firearm& g = guns_[gun_];
     const WeaponSpec& s = g.spec();
+    const bool was_reloading = g.is_reloading();
     const int taken = g.reload(inv_.count_of(s.ammo));
-    if (s.single_load) return;   // the 870's shells go in one at a time: see load_shell
+    if (s.single_load) {   // the 870's shells go in one at a time: see load_shell
+        if (!was_reloading && g.is_reloading()) shell_from_grip_ = true;   // the first comes off the fore-end
+        return;
+    }
     if (taken <= 0) return;
     inv_.remove(s.ammo, taken);
-    sfx_.play("reload", 0.9f, 0.03f);
-    slide_t_ = -1;               // a fresh magazine, and the slide runs home
-    hero_.slide = 0;
+    // The hands change the magazine (reload_hands); a slide locked open stays back until the support
+    // thumb drops the slide stop, once the fresh magazine is home.
+    slide_locked_ = slide_t_ >= 0 && hero_.slide > 0.5f;
+    slide_t_ = -1;
 }
 
-// The 870: a shell pushed up into the tube, out of the case. Into an empty gun, he racks it too.
+// The 870: a shell pushed up into the tube, out of the case (it clicked home as the hand pushed it:
+// reload_hands). Into an empty gun the hand racked it into the chamber too, and starts the next
+// shell from the fore-end.
 void Game::load_shell(bool first_into_empty) {
     inv_.remove(I_SHELLS, 1);
-    sfx_.play("shell_insert", 0.8f, 0.06f);
-    if (first_into_empty) { pump_t_ = 0; pump_eject_ = false; }   // rack it into the chamber: no spent hull to throw
+    shell_from_grip_ = first_into_empty;
+}
+
+// The hands through a reload, as the gun's timing has it (Character::reloading, reload.hpp's steps),
+// and what happens on the way: the empty magazine falls and clatters on the floor, the fresh one
+// clicks home, the slide runs forward; each shell clicks past the latch; an empty 870 is racked.
+void Game::reload_hands() {
+    const Firearm& g = guns_[gun_];
+    const WeaponSpec& s = g.spec();
+    Character::Reloading& r = hero_.reloading;
+    const Character::Reloading was = r;
+    r.on = g.is_reloading();
+    if (!r.on) return;
+    if (!s.single_load) {
+        r.kind = reload::Kind::Magazine;
+        r.t = 1.0f - g.reloading / s.reload_time;
+    } else {   // this shell (an empty gun's first takes longer: it's racked into the chamber too)
+        const bool rack = g.mag == 0;
+        r.kind = rack ? reload::Kind::ShellRack : reload::Kind::Shell;
+        r.t = 1.0f - g.reloading / (s.reload_time + (rack ? s.rack_time : 0.0f));
+        r.from_grip = shell_from_grip_;
+    }
+    r.t = std::clamp(r.t, 0.0f, 1.0f);
+    const bool same = was.on && was.kind == r.kind && r.t >= was.t;
+    auto passed = [&](float at) { return same && was.t < at && r.t >= at; };
+    const Vector3 at = hero_.joint(J_WRI_R);
+    if (r.kind == reload::Kind::Magazine) {
+        if (passed(reload::MAG_DROP)) {   // the strong thumb on the release: the empty one drops out of the grip
+            const Matrix f = hero_.load_frame();
+            const Vector3 out = Vector3Normalize(Vector3Subtract(Vector3Transform(Vector3Transform(cast::m92fs_well_out(), Character::pistol_hold()), f),
+                                                                 Vector3Transform(Vector3Transform({0, 0, 0}, Character::pistol_hold()), f)));
+            fx_.magazine(f, Vector3Scale(out, 1.1f));
+            sfx_.play_at("mag_out", at, ear(), ear_right(), 0.8f, 0.04f);
+        }
+        if (passed(reload::MAG_HOME)) sfx_.play_at("mag_in", at, ear(), ear_right(), 0.9f, 0.04f);
+        if (passed(reload::SLIDE_HOME) && slide_locked_) {
+            slide_locked_ = false;
+            hero_.slide = 0;
+            sfx_.play_at("slide_release", at, ear(), ear_right(), 1.0f, 0.04f);
+        }
+        return;
+    }
+    const float u0 = reload::shell_time(was.kind, was.t), u1 = reload::shell_time(r.kind, r.t);
+    if (same && u0 < reload::SHELL_HOME && u1 >= reload::SHELL_HOME) sfx_.play_at("shell_insert", at, ear(), ear_right(), 0.8f, 0.06f);
+    if (r.kind == reload::Kind::ShellRack) {   // the hand racks the fore-end: back, a beat, home
+        if (passed(reload::RACK_BACK0)) sfx_.play_at("shotgun_pump", at, ear(), ear_right(), 0.9f, 0.04f);
+        hero_.pump = reload::pump(r.kind, r.t);
+    }
 }
 
 // The actions that work between shots. The 870: a beat after the shot he racks the fore-end back

@@ -1,9 +1,9 @@
 // damned_waters/engine/tests/test_grips.cpp
 // Purpose: GoogleTest suite for the fitted grips (grips_fitted.inc, written by --fitgrips): each one
-// places the gun by a true rotation and shift (no stretch, no mirror), puts the gun in the hand
-// rather than somewhere near it, keeps each hand on its own side of the pistol, and bends the
-// fingers within what finger joints do. A refit that went wrong shows up here before it shows up
-// on screen.
+// places the gun (or the magazine, or the shell, the left hand loads) by a true rotation and shift
+// (no stretch, no mirror), puts it in the hand rather than somewhere near it, keeps each hand on its
+// own side of the pistol, and bends the fingers within what finger joints do. A refit that went
+// wrong shows up here before it shows up on screen.
 #include <gtest/gtest.h>
 
 #include <cmath>
@@ -16,7 +16,8 @@ using namespace dw;
 namespace {
 struct Named { const char* name; const Grip* grip; };
 const Named ALL[] = {{"PISTOL_RIGHT", &grips::PISTOL_RIGHT}, {"PISTOL_LEFT", &grips::PISTOL_LEFT},
-                     {"SHOTGUN_RIGHT", &grips::SHOTGUN_RIGHT}, {"SHOTGUN_LEFT", &grips::SHOTGUN_LEFT}};
+                     {"SHOTGUN_RIGHT", &grips::SHOTGUN_RIGHT}, {"SHOTGUN_LEFT", &grips::SHOTGUN_LEFT},
+                     {"MAG_LEFT", &grips::MAG_LEFT}, {"SHELL_LEFT", &grips::SHELL_LEFT}};
 // Where a hold puts its wrist, in the gun's own measure (mm: u forward, v up, w right).
 Vector3 wrist_in_gun(const Grip& g, bool pistol) {
     const Vector3 at = Vector3Transform({0, 0, 0}, MatrixInvert(g.hold));   // the wrist, built space
@@ -39,11 +40,13 @@ TEST(Grips, EachHoldIsATrueTurnAndShift) {
 }
 
 // The middle of each gripped part, in its wrist's space, is a hand's breadth away at most: the gun
-// is in the hand, not floating beside it.
+// (the magazine, the shell) is in the hand, not floating beside it.
 TEST(Grips, TheGunIsInTheHand) {
     const Vector3 pistol_grip = cast::m92fs_at(20, -75, 0), stock_wrist = cast::r870_at(-35, -60, 0), fore_end = cast::r870_at(335, -33, 0);
+    const Vector3 magazine = cast::m92fs_at(10, -118), shell = cast::r870_at(140, -27);   // (a magazine's base; a shell's brass, at the thumb)
     const struct { const Grip* g; Vector3 part; } held[] = {
-        {&grips::PISTOL_RIGHT, pistol_grip}, {&grips::PISTOL_LEFT, pistol_grip}, {&grips::SHOTGUN_RIGHT, stock_wrist}, {&grips::SHOTGUN_LEFT, fore_end}};
+        {&grips::PISTOL_RIGHT, pistol_grip}, {&grips::PISTOL_LEFT, pistol_grip}, {&grips::SHOTGUN_RIGHT, stock_wrist}, {&grips::SHOTGUN_LEFT, fore_end},
+        {&grips::MAG_LEFT, magazine}, {&grips::SHELL_LEFT, shell}};
     for (const auto& h : held) {
         const float d = Vector3Length(Vector3Transform(h.part, h.g->hold));
         EXPECT_GT(d, 0.03f);   // past the wrist joint, in the palm

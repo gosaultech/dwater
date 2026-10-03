@@ -21,6 +21,7 @@
 #include "dw/anatomy.hpp"
 #include "dw/combat.hpp"
 #include "dw/mesh_builder.hpp"
+#include "dw/reload.hpp"
 #include "dw/two_bone.hpp"
 
 namespace dw {
@@ -99,10 +100,11 @@ public:
     static Matrix shotgun_hold();
     // Debugging the grips: >= 0 shows one hand on its gun with the arms at rest (0 the pistol in the
     // right hand, 1 the 870's wrist in the right, 2 its fore-end in the left; 3 the pistol in both,
-    // the left hand put on by support_hand()), whatever the pose.
+    // the left hand put on by hands(); 4 a magazine in the left hand, 5 an 870 shell), whatever
+    // the pose.
     int grip_view = -1;
     const Grip& view_grip() const;   // the grip of the hand the gun is in
-    bool r_gun_on_left() const { return grip_view == 2; }
+    bool r_gun_on_left() const { return grip_view == 2 || grip_view >= 4; }
     Matrix grip_view_frame() const { return MatrixMultiply(view_grip().hold, W_[r_gun_on_left() ? J_WRI_L : J_WRI_R]); }   // gun space -> world
     // A joint's angles (this rig's order: z, then x, then y) with a further pitch `a` about its
     // parent's x axis on top. Aiming a long gun up or down the way a shooter does, from the waist:
@@ -132,7 +134,7 @@ public:
     // A tool (--fitpistol): the two-handed pistol aim, thumbs forward. Search the right arm, its
     // wrist and the head so the bore lies along `aim` and the right eye sits on the sight line an
     // arm's length behind the rear sight, the head up and looking along it; and where the left
-    // elbow goes, so support_hand() turns the left wrist no further than it must. Returns the
+    // elbow goes, so hands() turns the left wrist no further than it must. Returns the
     // result as text for the pose tables.
     std::string fit_pistol(Vector3 aim = {0, 0, -1});
     // A tool (--fitgrips, grip_fit.cpp): fit his hands to his guns the way people hold them, write
@@ -142,10 +144,20 @@ public:
     float pump = 0;                           // 0..1: the 870's fore-end racked back
     float slide = 0;                          // 0..1: the M92FS's slide back (1 and staying: locked open, empty)
     float lean = 0;                           // dodge: -1 hops to his left, 1 to his right, 0 straight back
+    // A reload under way, as the game has it each frame (the gun's timing, combat.hpp): which kind,
+    // how far through it (0..1; a shell: through this shell), and for a shell whether the hand
+    // starts on the fore-end (the first shell, or the one after a rack) or at the loading port.
+    // In the Reload pose, the hands follow reload.hpp's steps.
+    struct Reloading { bool on = false; reload::Kind kind = reload::Kind::Magazine; float t = 0; bool from_grip = true; };
+    Reloading reloading;
+    // Where the gun's load (cast::GunParts::load: the magazine in the grip) is, its space -> world:
+    // for the game to drop the empty magazine from where it was.
+    Matrix load_frame() const;
 
 private:
     // tag: 0 always shown; 1 + weapon: only while that gun is in hand. drive: 1 the slide, 2 the
-    // fore-end: the part sits `travel` further along (joint space) when the gun is worked all the way.
+    // fore-end: the part sits `travel` further along (joint space) when the gun is worked all the way;
+    // 3 what the gun's loaded with (the magazine, a shell), wherever a reload has it (load_at_).
     struct Rigid { int joint, region; Mesh mesh; int tag = 0; int drive = 0; Vector3 travel{}; };
     struct Pt { int joint; Vector3 off; int region; };   // sweep control point (region: the segment ENDING here)
     struct Dyn { Sweep sweep; std::vector<Pt> pts; Mesh mesh; };
@@ -185,9 +197,20 @@ private:
     };
 
     void fk();
-    // The left hand onto the gun, after fk(): the left arm bent (two-bone IK) to put it where
-    // `support_` holds the gun, blended in by support_w_ (character.cpp says how).
-    void support_hand();
+    // The hands, after fk(): in the pistol's reload, the right arm brings the gun in close; the left
+    // hand onto the gun where `support_` holds it, or through a reload's steps (reload.hpp). Each arm
+    // bent by two-bone IK, blended in and out (character.cpp says how).
+    void hands(float dt);
+    // Put a hand's wrist at `want` (world), `w` of the way from where the pose put it: the elbow
+    // bent and the upper arm turned to reach (two_bone.hpp), the elbow kept where the pose had it,
+    // the wrist turned onto `want`, the fingers carried along. Returns the wrist's own turn (this
+    // rig's angles), for the forearm's skin.
+    Vector3 arm_to(bool right, const Matrix& want, float w);
+    // Where the left wrist goes for a reload's step (world): on the gun, in the pocket, or holding
+    // the load on its way in. `G` is the gun (its built space -> world).
+    Matrix reload_place(const reload::Step& s, const Matrix& G) const;
+    // The left hand's fingers for a step's hand (15 joints, as Grip::fingers).
+    void reload_fingers(reload::Hand h, Vector3* f) const;
     void targets(Pose pose, float speed, float dt, float aim_pitch, Vector3* T, float& bob);
     // Curl one finger toward the palm (radians at its knuckle, middle joint and the joint by the
     // nail; for the thumb, its root, knuckle and tip joint), each about that joint's own hinge.
@@ -244,7 +267,18 @@ private:
     const Grip* support_ = nullptr;                                 // the left hand's grip, while both hands hold the gun
     const Grip* want_support_ = nullptr;                            // ... as this pose has it (targets())
     float support_w_ = 0;                                           // 0..1: how far the left hand has gone onto it
-    Vector3 support_wrist_{};                                       // the left wrist's turn that took (this rig's angles)
+    bool steps_ = false;                                            // the left hand follows a reload's steps (targets())
+    // When what the left hand follows changes (the grip, a reload's steps, the other gun), it
+    // eases over from where it was, held on the gun meanwhile: lh_from_ (the gun's built space),
+    // lh_fade_ 0..1 of the way.
+    int lh_source_ = 0;
+    Matrix lh_from_ = MatrixIdentity(), lh_last_ = MatrixIdentity();
+    float lh_fade_ = 1;
+    float close_w_ = 0;                                             // 0..1: the right arm bringing the pistol in to reload
+    bool ik_[2]{};                                                  // this frame, the left / right arm was put by arm_to
+    Vector3 ik_wrist_[2]{};                                         // ... and its wrist's own turn
+    int load_at_ = 0;                                               // the load: 0 in the gun, 1 nowhere, 2 in the left hand, 3 going in
+    float load_along_ = 0;                                          // (3) how far along its way in
     int lamp_joint_ = -1;                                           // the flashlight's lens: joint and offset (joint space)
     Vector3 lamp_off_{};
     Vector3 chin_{0, -0.05f, -0.085f};                              // jaw space: the chin (for the jaw's hit capsule)

@@ -134,9 +134,11 @@ Character build_survivor() {
     cast::GunParts gun = cast::m92fs(Character::pistol_hold());   // held as --fitgrips fitted it
     c.add_rigid(J_WRI_R, R_FARM_R, gun.fixed, 1);   // shown while the M92FS is in hand
     c.add_rigid(J_WRI_R, R_FARM_R, gun.moving, 1, 1, gun.travel);
+    c.add_rigid(J_WRI_R, R_FARM_R, gun.load, 1, 3);   // its magazine (out and in again when he reloads)
     gun = cast::r870(Character::shotgun_hold());
     c.add_rigid(J_WRI_R, R_FARM_R, gun.fixed, 2);   // ... or the Remington 870
     c.add_rigid(J_WRI_R, R_FARM_R, gun.moving, 2, 2, gun.travel);
+    c.add_rigid(J_WRI_R, R_FARM_R, gun.load, 2, 3);   // a shell for it, while he loads one
     if (const auto* a = c.anchor("backpack")) { d = {}; backpack(d, a->pos); c.add_rigid(a->joint, R_BODY, d); }
     if (const auto* a = c.anchor("flashlight")) {
         d = {};

@@ -12,6 +12,8 @@
 //    and one in the chamber. Blued steel with the bolt bright in the ejection port and a gold
 //    trigger, an oiled walnut stock and fore-end, a black recoil pad. (Its trigger group sits at
 //    the back of the receiver, the ejection port in the front half, as in the photos.)
+//  * What goes into them: the M92FS's 15-round magazine (a blued box on a black base plate, the
+//    top round in its lips) and a 2 3/4-inch 12-gauge buckshot shell, red on a brass head.
 // Gun space: u runs forward along the bore (the pistol's from the rear of the frame's rails, 6 mm
 // behind the slide; the shotgun's from the back of the receiver), v up from the bore's
 // centreline, w across to the gun's right (all mm). It's placed in the right hand's wrist space,
@@ -38,7 +40,7 @@ Vector3 pistol_at(float u, float v, float w = 0) { return {w * MM, P_Y0 - u * MM
 // and sights; dark grey rubber grips.
 const Color INOX{206, 207, 209, 255}, ALLOY{190, 190, 192, 255}, OXIDE{24, 24, 26, 255}, RUBBER{74, 74, 78, 255},
     STIPPLE{86, 86, 90, 255}, GROOVE{96, 96, 100, 255}, BORE{8, 8, 10, 255}, DOT{236, 234, 226, 255}, FIRE_DOT{196, 22, 20, 255}, GAP{14, 14, 15, 255},
-    MAG{26, 26, 28, 255};
+    MAG{26, 26, 28, 255}, MAG_BOX{40, 41, 46, 255}, CASE{181, 145, 72, 255}, JACKET{178, 112, 64, 255};
 // ── Roll marks ──────────────────────────────────────────────────────────────────
 // Lettering stamped into steel, in a plain stroke font: each glyph a few pen strokes on a grid 4
 // wide and 6 tall (the capitals' height; m, the one lower-case letter, is 4). Each stroke is laid
@@ -139,7 +141,7 @@ Vector3 rifle_at(float u, float v, float w = 0) { return {w * MM, R_Y0 - u * MM,
 // Blued steel, a gold trigger, the bolt bright in its port; the furniture oiled walnut (or black
 // synthetic).
 const Color BLUED{24, 26, 32, 255}, GILT{178, 140, 64, 255}, POLY{27, 27, 29, 255}, WALNUT{104, 54, 30, 255}, PAD{16, 16, 17, 255},
-    SLOT{12, 12, 13, 255}, BOLT{196, 198, 200, 255}, BEAD{232, 222, 190, 255};
+    SLOT{12, 12, 13, 255}, BOLT{196, 198, 200, 255}, BEAD{232, 222, 190, 255}, SHELL_BRASS{176, 136, 62, 255}, HULL{128, 22, 20, 255};
 }  // namespace
 
 Vector3 m92fs_at(float u, float v, float w) { return pistol_at(u, v, w); }
@@ -351,12 +353,7 @@ GunParts m92fs(const Matrix& hold) {
             f.material(MAT_STEEL).color(INOX);
         }
     }
-    // The magazine's black base plate under the grip, and the lanyard loop at the heel.
-    f.material(MAT_POLYMER).color(MAG);
-    Outline base;
-    base.to(-18.5f, -117).to(38, -117).curve(40.5f, -117, 40.5f, -120, 2).curve(40.5f, -123, 37, -123, 2).to(-17, -123)
-        .curve(-20, -123, -20, -120, 2);
-    f.slab(pistol(base).p, 0, 11.5f * MM, 1.5f * MM, 2);
+    // The lanyard loop at the heel.
     f.material(MAT_STEEL).color(INOX);
     std::vector<Vector3> loop;
     std::vector<float> radii;
@@ -366,9 +363,65 @@ GunParts m92fs(const Matrix& hold) {
         radii.push_back(0.9f * MM);
     }
     f.chain(loop, radii, 6);
+
+    // ── The magazine (it drops out to reload) ────────────────────────────────────
+    // Fifteen rounds in a blued steel box raked with the grip, on a black polymer base plate: the
+    // plate is all that shows while it's in. Out of the gun: witness holes up its back, and the top
+    // round in the feed lips, its bullet forward.
+    MeshData load;
+    MeshBuilder l(load);
+    l.material(MAT_POLYMER).color(MAG);
+    Outline base;
+    base.to(-18.5f, -117).to(38, -117).curve(40.5f, -117, 40.5f, -120, 2).curve(40.5f, -123, 37, -123, 2).to(-17, -123)
+        .curve(-20, -123, -20, -120, 2);
+    l.slab(pistol(base).p, 0, 11.5f * MM, 1.5f * MM, 2);
+    // (The box stops a hair above the plate, at MAG_PLATE_TOP: the grip fitter's field takes the
+    // plate alone.)
+    l.material(MAT_METAL).color(MAG_BOX);
+    Outline box;
+    box.to(-4, -116.9f).to(32, -116.9f).to(53.7f, -30).to(41, -26).to(35, -24).to(19.2f, -24);
+    l.slab(pistol(box).p, 0, 10 * MM, 1.5f * MM, 2);
+    l.material(MAT_METAL).color(BORE);
+    for (const float f : {0.25f, 0.42f, 0.59f, 0.76f})   // witness holes: 6, 9, 12, 15 rounds left
+        l.ellipsoid(pistol_at(-4 + 23.2f * f - 0.15f, -116.9f + 92.9f * f), {1.2f * MM, 0.3f * MM, 1.2f * MM}, 10, 4);
+    l.material(MAT_STEEL).color(CASE).tube(pistol_at(21, -21.5f, -2.5f), pistol_at(40.2f, -21.5f, -2.5f), 4.95f * MM, 4.85f * MM, 16);
+    {   // its jacketed bullet, rounding to the nose
+        std::vector<Vector3> nose;
+        std::vector<float> rr;
+        const float us[] = {40, 44, 46.5f, 48.5f, 49.9f, 50.7f}, rs[] = {4.5f, 4.5f, 4.0f, 3.1f, 2.0f, 0.6f};
+        for (int i = 0; i < 6; ++i) { nose.push_back(pistol_at(us[i], -21.5f, -2.5f)); rr.push_back(rs[i] * MM); }
+        l.material(MAT_METAL).color(JACKET).chain(nose, rr, 16);
+    }
     g.moving.append(moving, hold);
     g.fixed.append(fixed, hold);
+    g.load.append(load, hold);
     return g;
+}
+
+Vector3 m92fs_well_out() { return Vector3Normalize(Vector3Subtract(pistol_at(-0.243f, -0.970f), pistol_at(0, 0))); }
+
+// The shell's way in, as keys: where its brass sits (gun mm) and how far its nose is tipped up
+// (degrees). Under the loading port, nose up; the nose into the port; rising and levelling into the
+// receiver under the tube's mouth; pushed forward by the thumb, into the tube.
+Matrix shell_in(float s) {
+    struct Key { float s, u, v, pitch; };
+    static constexpr Key K[] = {{0.0f, 95, -95, 40}, {0.4f, 120, -82, 48}, {0.6f, 130, -45, 15}, {0.75f, 135, -27, 0}, {1.0f, 165, -27, 0}};
+    constexpr int N = int(sizeof K / sizeof K[0]);
+    s = std::clamp(s, 0.0f, 1.0f);
+    int i = 0;
+    while (i < N - 2 && s > K[i + 1].s) ++i;
+    const float t = (s - K[i].s) / (K[i + 1].s - K[i].s);
+    // Through the keys smoothly (Catmull-Rom, the slopes from the keys either side, by time).
+    auto at = [&](float Key::*f) {
+        const float a = K[i].*f, b = K[i + 1].*f, h = K[i + 1].s - K[i].s;
+        const float ma = i > 0 ? (K[i + 1].*f - K[i - 1].*f) / (K[i + 1].s - K[i - 1].s) * h : b - a;
+        const float mb = i + 2 < N ? (K[i + 2].*f - K[i].*f) / (K[i + 2].s - K[i].s) * h : b - a;
+        const float t2 = t * t, t3 = t2 * t;
+        return (2 * t3 - 3 * t2 + 1) * a + (t3 - 2 * t2 + t) * ma + (-2 * t3 + 3 * t2) * b + (t3 - t2) * mb;
+    };
+    const Vector3 from = rifle_at(135, -27), to = rifle_at(at(&Key::u), at(&Key::v));
+    return MatrixMultiply(MatrixMultiply(MatrixTranslate(-from.x, -from.y, -from.z), MatrixRotateX(at(&Key::pitch) * DEG2RAD)),
+                          MatrixTranslate(to.x, to.y, to.z));
 }
 
 GunParts r870(const Matrix& hold, Stock stock) {
@@ -515,8 +568,24 @@ GunParts r870(const Matrix& hold, Stock stock) {
     pad.to(-300, -32).to(-322, -31).curve(-327, -31, -327, -36, 2).to(-327, -165).curve(-327, -170, -322, -170, 2).to(-300, -170);
     f.slab(rifle(pad).p, 0, 22 * MM, 7 * MM, 3);
     f.material(MAT_METAL).color(BLUED).tube(rifle_at(-250, -146, 0), rifle_at(-252, -154, 0), 3 * MM, 3 * MM, 10);   // sling stud
+
+    // ── A shell to load ──────────────────────────────────────────────────────────
+    // 2 3/4-inch 12-gauge buckshot: a red hull on a brass head, the primer in its middle, the far
+    // end folded shut in a star crimp. Lying in the loading port under the tube's mouth (shell_in()
+    // moves it from there), brass to the back.
+    MeshData load;
+    MeshBuilder l(load);
+    l.material(MAT_METAL).color(SHELL_BRASS);
+    l.tube(rifle_at(135, -27), rifle_at(136.4f, -27), 11.2f * MM, 11.2f * MM, 24);   // the rim
+    l.tube(rifle_at(136.4f, -27), rifle_at(148, -27), 10.9f * MM, 10.9f * MM, 24);   // the head
+    l.color(Color{150, 116, 56, 255}).tube(rifle_at(134.8f, -27), rifle_at(135.1f, -27), 2.6f * MM, 2.6f * MM, 12);   // the primer
+    l.material(MAT_NYLON).color(HULL);
+    l.tube(rifle_at(148, -27), rifle_at(203.5f, -27), 10.45f * MM, 10.45f * MM, 24);
+    l.tube(rifle_at(203.5f, -27), rifle_at(205, -27), 10.45f * MM, 9.4f * MM, 24);
+    l.color(Color{96, 16, 15, 255}).tube(rifle_at(204.8f, -27), rifle_at(205.1f, -27), 7.5f * MM, 7.5f * MM, 12);   // the crimp's fold
     g.moving.append(moving, tip);
     g.fixed.append(fixed, tip);
+    g.load.append(load, tip);
     return g;
 }
 

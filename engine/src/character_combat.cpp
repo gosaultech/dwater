@@ -334,12 +334,14 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
         for (int i = 0; i < 6; ++i) lo[head_k[i]] = hi[head_k[i]] = body[i];
         lo[21] = hi[21] = T[J_CHEST].x;
     }
-    // The left hand: round the fore-end by support_hand() when this pose holds the gun in both hands
+    // The left hand: round the fore-end by hands() when this pose holds the gun in both hands
     // (aiming, carrying it at the low ready), and then the search only picks which way its elbow
     // points (the left shoulder: where the IK starts the arm), so its wrist bends no further than it
     // must; loading, the search takes it to `goal.left` (a shell at the port).
-    support_ = want_support_;
+    support_ = goal.pose == Pose::Reload ? nullptr : want_support_;   // (in the game, a reload's steps move the hand from there)
     support_w_ = support_ ? 1.0f : 0.0f;
+    reloading.on = false;
+    close_w_ = 0;
     pump = 0;
     float gaps[3]{};   // how far off the butt, the left hand and the eye end up (m)
     Vector3 eye_g{};   // the eye in the gun's measure: u v w (mm)
@@ -358,7 +360,7 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
         ang_[J_SPINE].y = q[20];
         ang_[J_CHEST] = {q[21], q[22], T[J_CHEST].z};
         fk();
-        support_hand();
+        hands(0);
         const Matrix G = MatrixMultiply(shotgun_hold(), W_[J_WRI_R]);
         const Vector3 bore = Vector3Normalize(rotate_only({0, -1, 0}, G));
         // The pocket rides the chest: it's the hollow inside the shoulder, wherever he's turned.
@@ -385,7 +387,7 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
         // (The right wrist may twist: on a shotgun's stock the forearm turns the palm onto it, and this
         // rig, without a forearm twist, lets the wrist do it; the skin shares it along the forearm.)
         const Vector3 rw{q[4], 0.25f * q[5], q[6]};
-        parts[5] = wrist_strain(rw, true, 1.05f, 0.7f) + (support_ ? wrist_strain(support_wrist_, false) : 0.0f);
+        parts[5] = wrist_strain(rw, true, 1.05f, 0.7f) + (support_ ? wrist_strain(ik_wrist_[0], false) : 0.0f);
         // The neck, the head and the back turned no further than they must: a shooter's head comes
         // down to the stock, but a strained one looks wrong.
         float strain = 0;
@@ -443,7 +445,7 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
     if (support_) {
         sho_l = rig_angles(own_turn(W_[J_SHO_L], W_[J_CHEST], off_[J_SHO_L]));
         elb_l = rig_angles(own_turn(W_[J_ELB_L], W_[J_SHO_L], off_[J_ELB_L])).x;
-        wri_l = support_wrist_;
+        wri_l = ik_wrist_[0];
     }
     char buf[1200];
     std::snprintf(buf, sizeof(buf),
@@ -465,7 +467,7 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
 // The isosceles stance, thumbs forward: both arms out, the strong one straight but not locked; the
 // gun up in front of the eye rather than the head down to the gun; the head upright, looking along
 // the sights. The search moves the right arm, its wrist, the neck and the head; the left hand goes
-// on by support_hand(), and the search only picks which way its elbow points (the left shoulder's
+// on by hands(), and the search only picks which way its elbow points (the left shoulder's
 // angles: the pose the IK starts from), so its wrist bends no further than it must.
 std::string Character::fit_pistol(Vector3 aim_dir) {
     weapon_ = 0;
@@ -479,6 +481,8 @@ std::string Character::fit_pistol(Vector3 aim_dir) {
     for (auto& t : twitch_) t = {};
     support_ = want_support_;
     support_w_ = 1;
+    reloading.on = false;
+    close_w_ = 0;
     const Vector3 aim = Vector3Normalize(aim_dir), eye = right_eye();
     struct Band {
         float lo, hi;
@@ -515,7 +519,7 @@ std::string Character::fit_pistol(Vector3 aim_dir) {
         ang_[J_SPINE].y = q[16];
         ang_[J_CHEST] = {q[17], q[18], T[J_CHEST].z};
         fk();
-        support_hand();
+        hands(0);
         const Matrix G = gun_frame();
         const Vector3 bore = Vector3Normalize(rotate_only({0, -1, 0}, G));
         eye_g = gun_mm(Vector3Transform(Vector3Transform(eye, W_[J_HEAD]), MatrixInvert(G)));
@@ -527,7 +531,7 @@ std::string Character::fit_pistol(Vector3 aim_dir) {
         parts[2] = 4000.0f * reach * reach;
         // Both wrists bent no further than they must (x tips the hand in the plane of the palm, y
         // twists it, z bends it toward the palm or its back); the strong elbow a touch bent.
-        const Vector3 lw = support_wrist_;
+        const Vector3 lw = ik_wrist_[0];
         parts[3] = wrist_strain({q[4], q[5], q[6]}, true) + wrist_strain(lw, false);
         float strain = 0;
         for (int k = 7; k < 13; ++k) strain += q[k] * q[k];
@@ -597,7 +601,7 @@ std::string Character::fit_pistol(Vector3 aim_dir) {
                   best, parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6],   //
                   eye_gap * 100, eye_g.x, eye_g.y, eye_g.z, look * RAD2DEG, roll * RAD2DEG, reach * 1000,   //
                   q[0], q[1], q[2], q[3], q[4], q[5], q[6],                                                    //
-                  sho_l.x, sho_l.y, sho_l.z, elb_l, support_wrist_.x, support_wrist_.y, support_wrist_.z,       //
+                  sho_l.x, sho_l.y, sho_l.z, elb_l, ik_wrist_[0].x, ik_wrist_[0].y, ik_wrist_[0].z,       //
                   q[7], q[8], q[9], q[10], q[11], q[12], q[16], q[17], q[18],   //
                   Vector3Length(off_[J_ELB_L]) * 1000, Vector3Length(off_[J_WRI_L]) * 1000,
                   Vector3Distance(joint(J_SHO_L), [&] {

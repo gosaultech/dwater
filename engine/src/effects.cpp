@@ -9,7 +9,7 @@
 
 namespace dw {
 namespace {
-constexpr size_t MAX_DROPS = 500, MAX_SPLATS = 260, MAX_BRASS = 48, MAX_GIBS = 16, MAX_CHIPS = 80;
+constexpr size_t MAX_DROPS = 500, MAX_SPLATS = 260, MAX_BRASS = 48, MAX_GIBS = 16, MAX_CHIPS = 80, MAX_MAGS = 8;
 constexpr float G = 9.8f;
 const Color BLOOD{88, 6, 6, 255}, BLOOD_DARK{48, 3, 3, 255}, BRASS{176, 136, 62, 255}, HULL{128, 22, 20, 255}, BONE{190, 174, 140, 255};
 }  // namespace
@@ -83,13 +83,16 @@ void Effects::init() {
 
 void Effects::shutdown() {
     clear();
-    for (Mesh* m : {&drop_mesh_, &chip_mesh_, &casing_mesh_, &shell_mesh_, &flash_mesh_[0], &flash_mesh_[1], &splat_mesh_[0], &splat_mesh_[1], &splat_mesh_[2]})
+    for (Mesh* m : {&drop_mesh_, &chip_mesh_, &casing_mesh_, &shell_mesh_, &flash_mesh_[0], &flash_mesh_[1], &splat_mesh_[0], &splat_mesh_[1], &splat_mesh_[2],
+                    &mag_mesh_})
         if (m->vertexCount) { UnloadMesh(*m); *m = {}; }
 }
 
 void Effects::clear() {
     for (auto& g : gibs_) UnloadMesh(g.mesh);
     gibs_.clear();
+    mags_.clear();
+    landings_.clear();
     drops_.clear();
     splats_.clear();
     brass_.clear();
@@ -125,6 +128,40 @@ void Effects::casing(Vector3 at, Vector3 right, bool shell) {
     const Vector3 v = shell ? Vector3{(rnd() - 0.5f) * 0.4f, -0.3f, (rnd() - 0.5f) * 0.4f}   // shells drop out of the breech
                             : Vector3Add(Vector3Scale(right, 1.4f + 0.6f * rnd()), {0, 1.8f + 0.6f * rnd(), 0});
     brass_.push_back({at, v, Vector3Normalize({rnd() - 0.5f, rnd() - 0.5f, rnd() - 0.5f}), 0, 12 + 10 * rnd(), rnd() * 2 * PI, shell, false});
+}
+
+void Effects::set_magazine(const MeshData& d, Vector3 along, Vector3 side) {
+    if (d.count() < 3) return;
+    Vector3 lo{1e9f, 1e9f, 1e9f}, hi{-1e9f, -1e9f, -1e9f};
+    for (size_t i = 0; i < d.count(); ++i) {
+        const Vector3 p{d.pos[i * 3], d.pos[i * 3 + 1], d.pos[i * 3 + 2]};
+        lo = Vector3Min(lo, p);
+        hi = Vector3Max(hi, p);
+    }
+    mag_c_ = Vector3Scale(Vector3Add(lo, hi), 0.5f);   // it tumbles about its middle
+    MeshData local;
+    local.append(d, MatrixTranslate(-mag_c_.x, -mag_c_.y, -mag_c_.z));
+    if (mag_mesh_.vertexCount) UnloadMesh(mag_mesh_);
+    mag_mesh_ = upload(local);
+    mag_pts_.clear();
+    for (size_t i = 0; i < local.count(); i += 9) mag_pts_.push_back({local.pos[i * 3], local.pos[i * 3 + 1], local.pos[i * 3 + 2]});
+    mag_along_ = Vector3Normalize(along);
+    mag_side_ = Vector3Normalize(side);
+}
+
+void Effects::magazine(const Matrix& at, Vector3 v) {
+    if (!mag_mesh_.vertexCount) return;
+    if (mags_.size() >= MAX_MAGS) mags_.erase(mags_.begin());
+    Matrix base = at;
+    base.m12 = base.m13 = base.m14 = 0;
+    mags_.push_back({Vector3Transform(mag_c_, at), v, Vector3Normalize({rnd() - 0.5f, rnd() - 0.5f, rnd() - 0.5f}), base, base, 0, 3 + 3 * rnd(), false, false});
+}
+
+bool Effects::landed(Vector3& at) {
+    if (landings_.empty()) return false;
+    at = landings_.back();
+    landings_.pop_back();
+    return true;
 }
 
 void Effects::gib(const MeshData& piece, Vector3 centre, Vector3 push) {
@@ -190,6 +227,40 @@ void Effects::update(float dt) {
             if (std::fabs(b.v.y) < 0.25f) { b.rest = true; b.axis = {0, 0, 1}; b.angle = PI / 2; }   // tink, tink... still
         }
     }
+    for (auto& g : mags_) {   // an empty magazine: tumbling down, a clatter, then still on its side
+        if (g.rest) continue;
+        g.v.y -= G * dt;
+        g.p = inside(Vector3Add(g.p, Vector3Scale(g.v, dt)));
+        g.angle += g.spin * dt;
+        g.turn = MatrixMultiply(g.base, MatrixRotate(g.axis, g.angle));
+        float low = 1e9f;
+        for (const Vector3& q : mag_pts_) low = std::min(low, Vector3Transform(q, g.turn).y);
+        if (g.p.y + low < 0.001f) {
+            g.p.y = 0.001f - low;
+            if (!g.hit) { g.hit = true; landings_.push_back(g.p); }
+            if (g.v.y < 0) g.v.y = -g.v.y * 0.3f;
+            g.v.x *= 0.5f;
+            g.v.z *= 0.5f;
+            g.spin *= 0.4f;
+            if (Vector3Length(g.v) < 0.3f) {   // still: it lies on its side, along the way it fell
+                const Vector3 a = Vector3Transform(mag_along_, g.turn), s = Vector3Transform(mag_side_, g.turn);
+                Vector3 flat = Vector3Normalize({a.x, 0, a.z});
+                if (Vector3Length({a.x, 0, a.z}) < 1e-3f) flat = {1, 0, 0};
+                const Vector3 up{0, s.y >= 0 ? 1.0f : -1.0f, 0}, third = Vector3CrossProduct(flat, up);
+                // The turn taking (along, side, along x side) onto (flat, up, flat x up).
+                const Vector3 a0 = mag_along_, s0 = mag_side_, t0 = Vector3CrossProduct(mag_along_, mag_side_);
+                Matrix from = MatrixIdentity(), to = MatrixIdentity();
+                from.m0 = a0.x; from.m1 = a0.y; from.m2 = a0.z; from.m4 = s0.x; from.m5 = s0.y; from.m6 = s0.z; from.m8 = t0.x; from.m9 = t0.y; from.m10 = t0.z;
+                to.m0 = flat.x; to.m1 = flat.y; to.m2 = flat.z; to.m4 = up.x; to.m5 = up.y; to.m6 = up.z; to.m8 = third.x; to.m9 = third.y; to.m10 = third.z;
+                g.turn = MatrixMultiply(MatrixTranspose(from), to);
+                low = 1e9f;
+                for (const Vector3& q : mag_pts_) low = std::min(low, Vector3Transform(q, g.turn).y);
+                g.p.y = 0.001f - low;
+                g.v = {};
+                g.rest = true;
+            }
+        }
+    }
     for (auto& g : gibs_) {
         if (g.rest) continue;
         g.v.y -= G * dt;
@@ -225,6 +296,7 @@ void Effects::draw(const Material& m) const {
         DrawMesh(b.shell ? shell_mesh_ : casing_mesh_, m,
                  MatrixMultiply(MatrixMultiply(MatrixRotate(b.axis, b.angle), MatrixRotateY(b.yaw)), MatrixTranslate(b.p.x, b.p.y, b.p.z)));
     for (const auto& g : gibs_) DrawMesh(g.mesh, m, MatrixMultiply(g.spun, MatrixTranslate(g.p.x, g.p.y, g.p.z)));
+    for (const auto& g : mags_) DrawMesh(mag_mesh_, m, MatrixMultiply(g.turn, MatrixTranslate(g.p.x, g.p.y, g.p.z)));
 }
 
 void Effects::draw_flash(const Material& m) const {

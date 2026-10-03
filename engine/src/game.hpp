@@ -54,7 +54,7 @@ public:
     void update(float dt);          // input, AI, animation
     void render();                  // scene -> offscreen target
     void present() const;           // post-process to the window + HUD
-    int capture_count() const { return 13; }
+    int capture_count() const { return 15; }
     std::string stage(int i);       // pose a capture setup; returns its name
     // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
     // only: a comma-separated list of subjects to render (empty: all).
@@ -116,6 +116,7 @@ private:
     void switch_gun(int g);
     void load_shell(bool first_into_empty);      // the 870: one shell went into the tube
     void work_actions(float dt);                 // the 870's pump and the M92FS's slide, and the brass they throw
+    void reload_hands();                         // the hands through a reload (reload.hpp), and what they drop and click home
     bool common_actions();                       // dodge, reload, weapon buttons: true if a dodge took over
     void start_dodge(Vector2 in);
     bool try_kick();                             // what's in front of him: a counter, a kick, or a whiff
@@ -178,6 +179,8 @@ private:
     float pump_t_ = -1;                          // the 870: time since the pump began (-1: at rest)
     bool pump_eject_ = false;                    // ... and whether it throws out a spent hull (not when racking a fresh load)
     float slide_t_ = -1;                         // the M92FS: time since the slide last cycled (-1: at rest)
+    bool slide_locked_ = false;                  // ... locked open on an empty magazine, until a reload drops it home
+    bool shell_from_grip_ = true;                // the 870's next shell: the hand starts from the fore-end (else the port)
     unsigned rng_ = 0x9E3779B9u;
     Stats stats_;
     bool staged_aim_ = false;                    // capture setups hold the aim and the stick from code

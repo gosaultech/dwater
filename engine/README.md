@@ -74,18 +74,21 @@ the shaders are GLSL 3.30 core, which both platforms support.
 ../build/macos/damned_waters --fit870    # fit the hold on the 870 (arms, wrists, back; aiming, the cheek on the stock), print it, exit
 ```
 
-`--fitgrips` takes a few minutes. `DW_FIT_ONLY=PISTOL_LEFT` (or a comma list) refits just those
-grips and keeps the rest, `DW_FIT_QUICK=1` makes a fast rough pass, and `DW_FIT_TRACE=1` reports
-each stage of the search.
+`--fitgrips` takes a few minutes. `DW_FIT_ONLY=PISTOL_LEFT` (or a comma list: `PISTOL_RIGHT`,
+`PISTOL_LEFT`, `SHOTGUN_RIGHT`, `SHOTGUN_LEFT`, `MAG_LEFT`, `SHELL_LEFT`) refits just those grips and
+keeps the rest, `DW_FIT_QUICK=1` makes a fast rough pass, and `DW_FIT_TRACE=1` reports each stage
+of the search.
 
 `--view` takes `who,orbit,elevation,distance,target_x,target_y,fov`. `who` is `survivor` or
 `drowned0`..`drowned2` (the office worker, Sanne, Pieter). Add `@head`, `@chest`, `@pelvis`,
 `@hand` or `@lhand` (the right or left wrist) to orbit that joint; the target is then an offset from it, and `@head` starts from the
 face. Then any of `/pose=aim`, `/gun=1` (the 870 in hand), `/limp=1`, `/cut=3+8`, `/pitch=20` (aiming 20
-degrees up; negative is down), `/grip=0..3` (one grip on its own, held out clear of the body: 0 the
+degrees up; negative is down), `/grip=0..5` (one grip on its own, held out clear of the body: 0 the
 pistol in the right hand, 1 the 870's wrist in the right, 2 its fore-end in the left, 3 the pistol
-in both hands). With `/grip`, the camera orbits the gun instead: orbit 90 looks at its right side,
--90 its left, 0 down the muzzle.
+in both hands, 4 a magazine in the left hand, 5 an 870 shell). With `/grip`, the camera orbits the
+gun (or what's in the hand) instead: orbit 90 looks at its right side, -90 its left, 0 down the
+muzzle. `/reload=0.4` shows him that far through a reload (the 870's: one shell; add `/rack` for
+the first shell into an empty gun, `/port` for a shell after the first).
 
 `who` can also be a gun, `m92fs` or `r870`, lit like a catalogue photo so it can be held up
 against reference photos: `/slide=1` works the slide or fore-end back, `/roll=20` turns the
@@ -128,7 +131,7 @@ skin sinking more than a millimetre or two into the gun. The pistol's support ha
 second, onto the first: the right hand, as fitted, is drawn into the pistol's field so the left
 fingers close over it. Change a goal and run the tool again rather than editing the numbers.
 
-**The left hand stays on the gun** (`Character::support_hand`, `src/two_bone.cpp`). The right
+**The left hand stays on the gun** (`Character::hands`, `Character::arm_to`, `src/two_bone.cpp`). The right
 hand carries the gun, and the left arm is solved every frame so its hand lands exactly where its
 grip says, whatever the right hand has done: aimed up or down, bucking from a shot, or (the
 870) with the fore-end racked back under it. An arm is two bones, so it's solved outright, no
@@ -146,6 +149,33 @@ grip is raked about 45 degrees and this rig's palm is one rigid piece, so the wr
 toward the little finger, as holding a sporting stock elbows-down does. A forearm turns the hand
 by twisting along its length; this rig has no joint for that, so the wrist turns the hand and the
 forearm's skin takes half the twist, the way a sleeve wrings along an arm rather than at the cuff.
+
+## How he reloads
+
+The hands do the work, timed to the gun's rules (`include/dw/reload.hpp`, `src/reload.cpp`):
+
+- **The M92FS (1.4 s).** He brings the gun in close in front of his chest, its top canted over
+  to the left so the magazine well faces the left hand. As the right thumb drops the empty
+  magazine (it falls, clatters and lies on the floor), the left hand is already on its way to his
+  coat pocket. It comes out with the fresh magazine held the way a fast reload is taught: the
+  base plate in the hand, the forefinger straight up the front with its tip under the top round
+  (it steers the magazine into the grip), thumb and middle finger either side. Up into the grip,
+  slapped home with the heel of the hand, and back onto the gun; if the slide was locked open,
+  the left thumb drops the slide stop on the way and the slide slams home.
+- **The 870 (0.5 s a shell).** Each shell comes out of the same pocket held in the fingertips,
+  the brass against the thumb, goes up nose first through the loading port, levels under the
+  tube and is thumbed home past the shell latch. Into an empty gun, the first shell is followed
+  by the hand going to the fore-end and racking it into the chamber. He can stop to fire, or walk
+  off, between shells.
+
+The reload is written down like dance notation: a list of steps, each a place for the left hand
+(on the gun, in the pocket, or holding the load somewhere along its way in) and the moment it
+gets there. Between steps the hand travels on a smooth curve, stopping only where a step says (to
+grab, to slap the magazine home); the arm is bent there by the same two-bone solve that keeps the
+hand on the gun. The magazine and the shell in the hand are held by grips fitted like the guns'
+(`MAG_LEFT`, `SHELL_LEFT`), so the fingers close round them rather than through them. The sounds
+are timed to the steps: the release's click, the slap home, the slide slamming forward, the
+magazine hitting the floor, each shell's click, the pump.
 
 ## Controls
 
@@ -186,9 +216,11 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 | `include/dw/core.hpp` | Pure logic: depth codec, shot selection, movement maths, 2D collision, enemy brain. Header-only and unit-tested. |
 | `include/dw/room_spec.hpp`, `src/room_spec.cpp` | Parses the RoomSpec JSON into colliders, shots, lights and spawns. It is the same file Blender renders from. |
 | `include/dw/mesh_builder.hpp`, `src/mesh_builder.cpp` | Ellipsoids with sculpt bumps, drapes and chains, plus `Sweep`, the per-frame tube along a Catmull-Rom curve with parallel-transport frames. |
-| `include/dw/character.hpp`, `src/character.cpp` | Joint forward kinematics, the cast, the pose tables, and the left hand put on the gun each frame. |
-| `src/grip_fit.cpp`, `src/grips_fitted.inc` | The grip fitter (`--fitgrips`) and what it wrote: where each gun sits in each hand and how the fingers wrap it. |
+| `include/dw/character.hpp`, `src/character.cpp` | Joint forward kinematics, the cast, the pose tables, and the hands put on the gun (and through a reload) each frame. |
+| `src/grip_fit.cpp`, `src/grips_fitted.inc` | The grip fitter (`--fitgrips`) and what it wrote: where each gun (and the magazine and shell the left hand loads) sits in each hand and how the fingers wrap it. |
 | `include/dw/two_bone.hpp`, `src/two_bone.cpp` | The two-bone arm solve that keeps the left hand on the gun, and the aim fitters' arm measures (elbow hanging down, its bend). Pure maths, unit-tested. |
+| `include/dw/reload.hpp`, `src/reload.cpp` | The reloads' steps: where the left hand goes and what it holds, and when the magazine drops, goes home and the slide runs forward. Pure, unit-tested. |
+| `src/effects.cpp` | Blood, brass and spent shells, limbs that come away, the empty magazines he drops, the muzzle flash. |
 | `src/character_combat.cpp` | Hit capsules, wounds, severing, the guns in hand, and the aim fitters (`--fitpistol`, `--fit870`). |
 | `src/shaders.cpp` | All GLSL, embedded. |
 | `src/game.cpp` | Room, cameras, input, AI, and render order. |

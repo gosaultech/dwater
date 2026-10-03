@@ -35,7 +35,7 @@ double volume(const MeshData& d) {
 // Wrist space: the barrel runs along -y (length), the gun's up is -z (height), its right +x (width).
 TEST(Guns, TheBerettaIsTheSizeOfAnM92FS) {
     const cast::GunParts g = cast::m92fs();
-    const Box b = bounds(g.moving, bounds(g.fixed));
+    const Box b = bounds(g.load, bounds(g.moving, bounds(g.fixed)));   // (with its magazine in)
     EXPECT_GT(b.hi.y - b.lo.y, 0.225f);   // 217 mm, plus the lanyard loop and the tang behind the slide
     EXPECT_LT(b.hi.y - b.lo.y, 0.245f);
     EXPECT_GT(b.hi.z - b.lo.z, 0.135f);   // 137 mm from the sights to the magazine's base
@@ -67,6 +67,50 @@ TEST(Guns, EveryPartIsClosedAndFacesOutward) {
     for (const cast::GunParts& g : {cast::m92fs(), cast::r870(MatrixIdentity()), cast::r870(MatrixIdentity(), cast::Stock::Synthetic)}) {
         EXPECT_GT(volume(g.fixed), 0.0);
         EXPECT_GT(volume(g.moving), 0.0);
+        EXPECT_GT(volume(g.load), 0.0);
+    }
+}
+
+// The magazine: as long as a 15-round M92FS magazine, inside the grip but for its base plate, and
+// it slides out down the grip's rake. (Wrist space: up the gun is -z, back toward the wrist +y.)
+TEST(Guns, TheMagazineSitsInTheGripAndSlidesOutDownIt) {
+    const cast::GunParts g = cast::m92fs();
+    const Box m = bounds(g.load), f = bounds(g.fixed);
+    EXPECT_GT(m.hi.z - m.lo.z, 0.095f);   // the base plate to the top round: about 100 mm
+    EXPECT_LT(m.hi.z - m.lo.z, 0.110f);
+    EXPECT_LT(m.hi.x - m.lo.x, f.hi.x - f.lo.x);   // narrower than the grip it goes into
+    const float plate_top = cast::m92fs_at(0, cast::MAG_PLATE_TOP).z;
+    int below = 0;
+    for (size_t i = 0; i < g.load.count(); ++i) below += g.load.pos[i * 3 + 2] > plate_top;
+    EXPECT_GT(below, 50);                     // the base plate, under the grip
+    EXPECT_GT(m.hi.z, f.hi.z - 0.002f);       // which is the bottom of the gun
+    const Vector3 out = cast::m92fs_well_out();
+    EXPECT_NEAR(Vector3Length(out), 1.0f, 1e-5f);
+    EXPECT_GT(out.z, 0.95f);                  // down...
+    EXPECT_GT(out.y, 0.2f);                   // ... and back with the grip's rake (14 degrees)
+    EXPECT_LT(out.y, 0.3f);
+}
+
+// A 2 3/4-inch 12-gauge shell, and its way in: up from under the loading port, level in the port at
+// 0.75 (where it's built), then forward into the tube.
+TEST(Guns, TheShellGoesUpThroughThePortAndForwardIntoTheTube) {
+    const cast::GunParts g = cast::r870(MatrixIdentity());
+    const Box s = bounds(g.load);
+    EXPECT_NEAR(s.hi.y - s.lo.y, 0.070f, 0.0015f);   // 70 mm long
+    EXPECT_NEAR(s.hi.x - s.lo.x, 0.0224f, 0.001f);   // 22 mm across the rim
+    const Vector3 head = cast::r870_at(135, -27);    // its brass
+    const Vector3 in_port = Vector3Transform(head, cast::shell_in(0.75f));
+    EXPECT_NEAR(Vector3Distance(in_port, head), 0.0f, 1e-4f);
+    const Vector3 in_tube = Vector3Transform(head, cast::shell_in(1.0f));
+    EXPECT_NEAR(in_tube.y - head.y, -0.030f, 1e-4f);   // pushed 30 mm forward (-y)
+    const Vector3 below = Vector3Transform(head, cast::shell_in(0.0f));
+    EXPECT_GT(below.z, cast::r870_at(0, -39).z + 0.03f);   // it starts well under the receiver
+    // Nose up on the way in, level at the end.
+    const Vector3 nose0 = Vector3Transform(cast::r870_at(205, -27), cast::shell_in(0.0f));
+    EXPECT_LT(nose0.z, below.z - 0.03f);   // (up is -z)
+    for (float k = 0; k <= 1.0f; k += 0.05f) {   // never a jump along the way
+        const Vector3 a = Vector3Transform(head, cast::shell_in(k)), b = Vector3Transform(head, cast::shell_in(k + 0.05f));
+        EXPECT_LT(Vector3Distance(a, b), 0.02f) << k;
     }
 }
 

@@ -85,6 +85,11 @@ bool Game::init(const std::string& room_id) {
     sfx_.ambience(spec_.ambience, 0.45f);
     fx_.init();
     fx_.set_bounds(spec_.bounds.x0, spec_.bounds.z0, spec_.bounds.x1, spec_.bounds.z1);
+    {   // the pistol's magazine as he holds the gun, to drop when he reloads
+        Matrix turn = Character::pistol_hold();
+        turn.m12 = turn.m13 = turn.m14 = 0;
+        fx_.set_magazine(cast::m92fs(Character::pistol_hold()).load, Vector3Transform(cast::m92fs_well_out(), turn), Vector3Transform({1, 0, 0}, turn));
+    }
     settings_ = settings_path.empty() ? Settings{} : Settings::load(settings_path);
     input_.scheme = settings_.scheme;
     hero_ = Character::make(Kind::Survivor);
@@ -396,6 +401,7 @@ void Game::update(float dt) {
     update_player(g);
     update_enemies(g);
     fx_.update(g);
+    for (Vector3 at; fx_.landed(at);) sfx_.play_at("mag_drop", at, ear(), ear_right(), 0.9f, 0.08f);   // an empty magazine on the floor
     sfx_.update();
     std::string next = select_shot(spec_.zones(), shot_, player_.x, player_.z);
     if (next != shot_) cut_to(next);
@@ -592,6 +598,29 @@ std::string Game::stage(int i) {
             name = "pause_menu";
             break;
         }
+        case 13: {   // the M92FS run dry and reloaded: the empty magazine on the floor, the fresh one going up into the grip
+            player_ = {1.0f, 5.2f, kPi};
+            guns_[0].mag = 1;
+            staged_aim_ = true;
+            run(0.4f);
+            fire();   // the last round: the slide locks open
+            run(0.5f);
+            reload();
+            run(weapon_spec(Weapon::Pistol).reload_time * 0.56f);
+            name = "pistol_reload";
+            break;
+        }
+        case 14: {   // the 870 empty: the first shell on its way up into the loading port
+            switch_gun(1);
+            guns_[1].mag = 0;
+            player_ = {1.0f, 5.2f, kPi};
+            run(0.4f);
+            reload();
+            const WeaponSpec& s = weapon_spec(Weapon::Shotgun);
+            run((s.reload_time + s.rack_time) * 0.4f);
+            name = "shotgun_reload";
+            break;
+        }
         default: {   // bitten once too often
             join(1, 1.0f, 8.3f, 0.0f, EState::Pursuit);
             player_ = {1.0f, 7.4f, kPi};
@@ -703,7 +732,9 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     // who = survivor | drowned[N] (N: the citizen), optionally @head / @chest / @pelvis / @hand / @lhand to orbit that
     // joint instead (the target is then offset from it by target_x, target_y; @head orbits from the face),
     // then any of /pose=aim /gun=1 /limp=1 /cut=3+8 (regions cut off first; anatomy.hpp) /pitch=20
-    // (aiming 20 degrees up; negative is down) /grip=0..3 (one hand on its gun: Character::grip_view).
+    // (aiming 20 degrees up; negative is down) /grip=0..5 (one hand on its gun, or holding a magazine or
+    // a shell: Character::grip_view) /reload=0.4 (that far through a reload; the 870's: one shell, /rack
+    // into an empty gun, /port starting from the loading port).
     std::string w = who, at_joint, opts;
     if (const auto k = w.find('/'); k != std::string::npos) { opts = w.substr(k); w.resize(k); }
     if (const auto k = w.find('@'); k != std::string::npos) { at_joint = w.substr(k + 1); w.resize(k); }
@@ -730,13 +761,21 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
         if (key == "pitch") pitch = float(std::atof(val.c_str())) * DEG2RAD;
         if (key == "grip") {   // one hand on its gun, the arms at rest (Character::grip_view)
             c.grip_view = std::atoi(val.c_str());
-            c.set_weapon(c.grip_view == 1 || c.grip_view == 2 ? 1 : 0);
+            c.set_weapon(c.grip_view == 1 || c.grip_view == 2 || c.grip_view == 5 ? 1 : 0);
         }
         if (key == "cut")
             for (size_t a = 0; a < val.size();) { cuts.push_back(std::atoi(val.c_str() + a)); a = std::min(val.find('+', a), val.size()) + 1; }
+        if (key == "reload") {   // a reload, this far through (the pose is Reload): /reload=0.4, and for the 870 /rack /port
+            pose = Pose::Reload;
+            c.reloading.on = true;
+            c.reloading.t = float(std::atof(val.c_str()));
+        }
+        if (key == "rack") c.reloading.kind = reload::Kind::ShellRack;
+        if (key == "port") c.reloading.from_grip = false;
         i = j;
     }
     const float speed = pose == Pose::Walk || pose == Pose::Shamble ? 0.8f : 0.0f;
+    if (c.reloading.on && c.weapon() == 1 && c.reloading.kind == reload::Kind::Magazine) c.reloading.kind = reload::Kind::Shell;
     for (int f = 0; f < 90; ++f) c.animate(pose, speed, 1.0f / 60, pitch);
     for (int r : cuts) { MeshData piece; Vector3 centre; c.sever(r, piece, centre); }
     if (survivor) {   // how true the barrel lies to where he faces (the shots fly along his facing)
@@ -763,6 +802,8 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
         const Matrix G = c.grip_view_frame();
         const Vector3 centre = c.grip_view == 0 || c.grip_view == 3 ? cast::m92fs_at(40 + tx * 1000, -55 + ty * 1000)
                              : c.grip_view == 1                     ? cast::r870_at(-15 + tx * 1000, -45 + ty * 1000)
+                             : c.grip_view == 4                     ? cast::m92fs_at(25 + tx * 1000, -85 + ty * 1000)
+                             : c.grip_view == 5                     ? cast::r870_at(165 + tx * 1000, -35 + ty * 1000)
                                                                     : cast::r870_at(335 + tx * 1000, -35 + ty * 1000);
         const Vector3 dir{std::sin(a) * std::cos(e), -std::cos(a) * std::cos(e), -std::sin(e)};   // (u, v, w) -> gun space
         cam.position = Vector3Transform(Vector3Add(centre, Vector3Scale(dir, dist)), G);

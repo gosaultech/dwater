@@ -188,6 +188,19 @@ def build() -> dict[str, tuple[np.ndarray, bool]]:
     # A med kit: a wrapper torn open and a bandage pulled tight.
     rustle = bp(noise(0.9), 1500, 7000) * (0.5 + 0.5 * np.abs(np.sin(2 * np.pi * 9 * t(0.9)))) * env(round(0.9 * SR), 0.05, 0.4)
     s["med_use"] = (at(1.0, [(0.0, rustle * 0.6), (0.55, bp(noise(0.25), 2000, 8000) * env(round(0.25 * SR), 0.01, 0.06) * 0.8)]), False)
+    # ── the reloads, timed to the hands ──
+    # The M92FS's magazine release: a click, then the empty magazine scraping out of the grip.
+    scrape = bp(noise(0.09), 1200, 5000) * env(round(0.09 * SR), 0.01, 0.03)
+    s["mag_out"] = (at(0.2, [(0.0, click * 1.1), (0.02, scrape * 0.7)]), False)
+    # A fresh magazine slapped home: the palm's thump on the base plate and the catch's click.
+    thud = lp(noise(0.06), 600) * env(round(0.06 * SR), 0.001, 0.012) * 1.6
+    s["mag_in"] = (at(0.2, [(0.0, bp(noise(0.05), 900, 4000) * env(round(0.05 * SR), 0.004, 0.01) * 0.5), (0.04, thud), (0.042, click * 1.4)]), False)
+    # The slide slamming forward off the slide stop: steel on steel, a short ring.
+    ring = np.sin(2 * np.pi * 2900 * t(0.25)) * env(round(0.25 * SR), 0.0005, 0.04) * 0.25
+    s["slide_release"] = (tail(at(0.3, [(0.0, rail * 0.6), (0.03, clack * 1.6), (0.03, ring)]), 0.3, 0.1, 400, 6000, 0.2), False)
+    # An empty magazine dropping on a hard floor: a hollow knock and a bounce or two.
+    knock = bp(noise(0.05), 500, 3500) * env(round(0.05 * SR), 0.0005, 0.012) + np.sin(2 * np.pi * 760 * t(0.05)) * env(round(0.05 * SR), 0.0005, 0.015) * 0.6
+    s["mag_drop"] = (tail(at(0.6, [(0.0, knock * 1.4), (0.16, knock * 0.6), (0.27, knock * 0.3), (0.33, knock * 0.15)]), 0.4, 0.12, 300, 4000, 0.3), False)
     return s
 
 
@@ -231,7 +244,8 @@ def main():
     only = set(sys.argv[sys.argv.index("--only") + 1].split(",")) if "--only" in sys.argv else None
     OUT.mkdir(parents=True, exist_ok=True)
     levels = {"boss_theme": -9.0, "crawler_skitter": -10.0, "dodge": -8.0, "amb_house": -14.0, "amb_cellar": -12.0, "title_drone": -10.0, "step_marble": -8.0,
-              "step_wood": -6.0, "step_water": -8.0, "ui_move": -12.0, "shell_insert": -6.0, "med_use": -6.0}
+              "step_wood": -6.0, "step_water": -8.0, "ui_move": -12.0, "shell_insert": -6.0, "med_use": -6.0, "mag_out": -6.0, "mag_in": -4.0,
+              "slide_release": -3.0, "mag_drop": -6.0}
     for name, (x, loop) in build().items():
         if only is not None and name not in only:
             continue
