@@ -68,8 +68,14 @@ TEST(Reload, TheMagazineGoesFromThePocketIntoTheGrip) {
     EXPECT_EQ(st.to(MAG_GRAB).place, Place::Pocket);
     EXPECT_EQ(st.from(MAG_GRAB).hand, Hand::Open);
     EXPECT_EQ(st.to(MAG_GRAB).hand, Hand::Hold);
-    // From then until it's home the hand holds it, and it's home exactly when a step says so.
-    for (float t = MAG_GRAB + 0.02f; t < MAG_HOME; t += 0.01f) EXPECT_EQ(st.to(t).hand, Hand::Hold) << t;
+    // From then until it's home the hand holds it (the last of the way, as the magazine goes into
+    // the grip, the fingers open off it and the heel of the hand seats it), and it's home exactly
+    // when a step says so.
+    for (float t = MAG_GRAB + 0.02f; t < MAG_HOME; t += 0.01f) {
+        const Hand h = st.to(t).hand;
+        EXPECT_TRUE(h == Hand::Hold || (h == Hand::Slap && st.to(t).place == Place::Load)) << t;
+    }
+    EXPECT_EQ(st.to(MAG_HOME).hand, Hand::Slap);   // seated with the heel of the hand, the fingers clear of the strong hand
     bool home = false;
     for (int i = 0; i < st.n; ++i)
         if (st.s[i].place == Place::Load && st.s[i].along == 0.0f) {

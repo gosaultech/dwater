@@ -88,7 +88,8 @@ pistol in the right hand, 1 the 870's wrist in the right, 2 its fore-end in the 
 in both hands, 4 a magazine in the left hand, 5 an 870 shell). With `/grip`, the camera orbits the
 gun (or what's in the hand) instead: orbit 90 looks at its right side, -90 its left, 0 down the
 muzzle. `/reload=0.4` shows him that far through a reload (the 870's: one shell; add `/rack` for
-the first shell into an empty gun, `/port` for a shell after the first).
+the first shell into an empty gun, `/port` for a shell after the first; `/live` plays it there in
+real time from the aim, as the game would).
 
 `who` can also be a gun, `m92fs` or `r870`, lit like a catalogue photo so it can be held up
 against reference photos: `/slide=1` works the slide or fore-end back, `/roll=20` turns the
@@ -154,19 +155,23 @@ forearm's skin takes half the twist, the way a sleeve wrings along an arm rather
 
 The hands do the work, timed to the gun's rules (`include/dw/reload.hpp`, `src/reload.cpp`):
 
-- **The M92FS (1.4 s).** He brings the gun in close in front of his chest, its top canted over
-  to the left so the magazine well faces the left hand. As the right thumb drops the empty
+- **The M92FS (1.4 s).** He brings the gun in close in front of his chest, about 43 cm out,
+  its top canted over to his right so the magazine well faces down toward the incoming left hand
+  (`Character::ReloadShape`, fitted by `--fitreload`). As the right thumb drops the empty
   magazine (it falls, clatters and lies on the floor), the left hand is already on its way to his
   coat pocket. It comes out with the fresh magazine held the way a fast reload is taught: the
   base plate in the hand, the forefinger straight up the front with its tip under the top round
-  (it steers the magazine into the grip), thumb and middle finger either side. Up into the grip,
-  slapped home with the heel of the hand, and back onto the gun; if the slide was locked open,
-  the left thumb drops the slide stop on the way and the slide slams home.
+  (it steers the magazine into the grip), the other fingers wrapped loosely round it. Turned
+  upright on the way, it goes up into the grip; the fingers open off it and the heel of the hand
+  slaps it home. Then the gun is pushed back out to the aim and the left hand rejoins it there;
+  if the slide was locked open, the left thumb drops the slide stop on the way.
 - **The 870 (0.5 s a shell).** Each shell comes out of the same pocket held in the fingertips,
   the brass against the thumb, goes up nose first through the loading port, levels under the
-  tube and is thumbed home past the shell latch. Into an empty gun, the first shell is followed
-  by the hand going to the fore-end and racking it into the chamber. He can stop to fire, or walk
-  off, between shells.
+  tube and is thumbed home past the shell latch. He loads with the gun brought down to his hip,
+  the stock against it and the muzzle angled up across his body, so the port is in front of his
+  belly where the left hand reaches it without crossing his chest. Into an empty gun, the first
+  shell is followed by the hand sliding forward onto the fore-end and racking it right there (he
+  doesn't turn away to do it). He can stop to fire, or walk off, between shells.
 
 The reload is written down like dance notation: a list of steps, each a place for the left hand
 (on the gun, in the pocket, or holding the load somewhere along its way in) and the moment it
@@ -176,6 +181,46 @@ hand on the gun. The magazine and the shell in the hand are held by grips fitted
 (`MAG_LEFT`, `SHELL_LEFT`), so the fingers close round them rather than through them. The sounds
 are timed to the steps: the release's click, the slap home, the slide slamming forward, the
 magazine hitting the floor, each shell's click, the pump.
+
+### Nothing goes through anything
+
+A hand that goes through a coat, or a wrist bent like a broken doll's, is the first thing a player
+notices. Three things keep the arms honest.
+
+- **The torso as a stack of oval plates** (`include/dw/clearance.hpp`). At load, the body's own
+  vertices are sliced every 2 cm up the chest and the pelvis. Each slice keeps how wide, how far
+  forward and how far back it is, ignoring the few strays (a seam under the arm) that would make
+  it look fatter than it is. Asking "is this elbow inside him?" then costs a few multiplies, like
+  holding a ruler up to a tailor's dummy.
+- **The elbow finds its own way** (`Character::arm_to`). Once the IK has put the hand where it
+  must be, the elbow is still free to swing round the shoulder-to-hand line, the way you can lift
+  or drop your elbow with your hand flat on a table. Every frame it tries that circle every 10
+  degrees and takes the cheapest: out of the body first, then (in a reload, where no fitted pose
+  says where the elbow goes) the wrist least bent and twisted, then the elbow kept down, never
+  winged up by the shoulder. The choice is eased, so the elbow glides rather than snaps.
+- **Wrists are measured the way a physio would** (`swing_twist`, `two_bone.hpp`). A wrist's turn
+  is split into twist (the forearm's bones rolling round each other, fine up to about 75
+  degrees) and swing (the hand tipping off the forearm's line, comfortable to about 40). Finger
+  poses blend as true turns (`slerp_angles`), not angle by angle, so a finger never swings out
+  sideways halfway between two grips. Flat-handed, the fingers close together (`curl`'s
+  `together`), and the end of each sleeve follows the wrist a little, so a bent wrist's skin
+  never pokes through the cuff.
+
+Two tools check it and tune it:
+
+```bash
+../build/macos/damned_waters --clearance    # play every reload through, frame by frame: how deep the arms,
+                                            # hands and gun go into the body (and each other), and both wrists
+../build/macos/damned_waters --fitreload    # search where the pistol is brought in to reload (least wrist strain,
+                                            # nothing through anything); paste the result into ReloadShape
+DW_CLASH=1 ../build/macos/damned_waters --view "survivor@chest/gun=0/live/reload=0.6,-30,10,1.3,0,-0.1,38" out.png
+                                            # a still with every point that's gone in marked red
+```
+
+`/live` in a `--view` plays the reload up to that moment as the game does (from the aim, in real
+time) instead of posing him there and letting him settle. `--fit870` also scores the loading pose
+by where the reload's IK really puts the left hand, and keeps the stock out of the coat;
+`DW_FIT_ONLY=aim`, `low` or `reload` fits just that one.
 
 ## Controls
 
@@ -218,7 +263,9 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 | `include/dw/mesh_builder.hpp`, `src/mesh_builder.cpp` | Ellipsoids with sculpt bumps, drapes and chains, plus `Sweep`, the per-frame tube along a Catmull-Rom curve with parallel-transport frames. |
 | `include/dw/character.hpp`, `src/character.cpp` | Joint forward kinematics, the cast, the pose tables, and the hands put on the gun (and through a reload) each frame. |
 | `src/grip_fit.cpp`, `src/grips_fitted.inc` | The grip fitter (`--fitgrips`) and what it wrote: where each gun (and the magazine and shell the left hand loads) sits in each hand and how the fingers wrap it. |
-| `include/dw/two_bone.hpp`, `src/two_bone.cpp` | The two-bone arm solve that keeps the left hand on the gun, and the aim fitters' arm measures (elbow hanging down, its bend). Pure maths, unit-tested. |
+| `include/dw/two_bone.hpp`, `src/two_bone.cpp` | The two-bone arm solve that keeps the left hand on the gun, the aim fitters' arm measures (elbow hanging down, its bend), a wrist's swing and twist, and blending joint turns the short way. Pure maths, unit-tested. |
+| `include/dw/clearance.hpp`, `src/clearance.cpp` | How far one surface sinks into another, and the torso as stacked oval slices for the elbows to keep out of. Pure, unit-tested. |
+| `src/character_clearance.cpp` | The clearance check on the posed body (`--clearance`) and the pistol's reload-position fitter (`--fitreload`). |
 | `include/dw/reload.hpp`, `src/reload.cpp` | The reloads' steps: where the left hand goes and what it holds, and when the magazine drops, goes home and the slide runs forward. Pure, unit-tested. |
 | `src/effects.cpp` | Blood, brass and spent shells, limbs that come away, the empty magazines he drops, the muzzle flash. |
 | `src/character_combat.cpp` | Hit capsules, wounds, severing, the guns in hand, and the aim fitters (`--fitpistol`, `--fit870`). |

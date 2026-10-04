@@ -114,3 +114,30 @@ TEST(ArmLook, BendIsTheAngleBetweenUpperArmAndForearm) {
     EXPECT_NEAR(elbow_bend({0, 0, 0}, {0, 0, -0.3f}, {0, 0, -0.6f}), 0.0f, 1e-3f);       // straight
     EXPECT_NEAR(elbow_bend({0, 0, 0}, {0, -0.3f, 0}, {0, -0.3f, -0.3f}), PI / 2, 1e-5f);  // a right angle
 }
+
+// Blending two joint turns goes the short way round and lands on each end.
+TEST(SlerpAngles, EndsAndMiddle) {
+    const Vector3 a{0.3f, -0.2f, 0.1f}, b{1.1f, 0.4f, -0.5f};
+    const Vector3 a0 = slerp_angles(a, b, 0), b1 = slerp_angles(a, b, 1);
+    EXPECT_NEAR(a0.x, a.x, 1e-4f); EXPECT_NEAR(a0.y, a.y, 1e-4f); EXPECT_NEAR(a0.z, a.z, 1e-4f);
+    EXPECT_NEAR(b1.x, b.x, 1e-4f); EXPECT_NEAR(b1.y, b.y, 1e-4f); EXPECT_NEAR(b1.z, b.z, 1e-4f);
+    // A bend about one axis blends to half that bend about the same axis.
+    const Vector3 h = slerp_angles({0, 0, 0}, {0.8f, 0, 0}, 0.5f);
+    EXPECT_NEAR(h.x, 0.4f, 1e-4f); EXPECT_NEAR(h.y, 0.0f, 1e-4f); EXPECT_NEAR(h.z, 0.0f, 1e-4f);
+}
+
+// A turn about the forearm's line is all twist; one across it all swing; and a mix splits back
+// into the two it was made of.
+TEST(SwingTwist, SplitsAWristTurn) {
+    float sw = 0, tw = 0;
+    swing_twist(QuaternionFromAxisAngle({0, 1, 0}, 0.7f), {0, 1, 0}, sw, tw);
+    EXPECT_NEAR(tw, 0.7f, 1e-4f);
+    EXPECT_NEAR(sw, 0.0f, 1e-3f);
+    swing_twist(QuaternionFromAxisAngle({1, 0, 0}, 0.5f), {0, 1, 0}, sw, tw);
+    EXPECT_NEAR(tw, 0.0f, 1e-4f);
+    EXPECT_NEAR(sw, 0.5f, 1e-4f);
+    const Quaternion mix = QuaternionMultiply(QuaternionFromAxisAngle({0, 0, 1}, 0.4f), QuaternionFromAxisAngle({0, 1, 0}, -1.2f));   // twist, then swing
+    swing_twist(mix, {0, 1, 0}, sw, tw);
+    EXPECT_NEAR(sw, 0.4f, 1e-3f);
+    EXPECT_NEAR(tw, -1.2f, 1e-3f);
+}

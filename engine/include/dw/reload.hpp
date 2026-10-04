@@ -27,6 +27,8 @@ enum class Hand : int {
     Open,   // open, reaching
     Hold,   // closed on the magazine or the shell
     Push,   // the thumb pushing the shell home, the fingers coming off it
+    Slap,   // flat, the fingers straight out: the heel of the hand seating the magazine (the fingers
+            // come off it as it goes in, so they never run into the strong hand round the grip)
 };
 struct Step {
     float t;        // 0..1: when the hand gets there
@@ -54,6 +56,7 @@ constexpr float MAG_DROP = 0.08f;      // the strong thumb on the release: the e
 constexpr float MAG_GRAB = 0.335f;     // the hand closes on the fresh one in the pocket
 constexpr float MAG_HOME = 0.645f;     // the heel of the hand slaps it home
 constexpr float SLIDE_HOME = 0.8f;     // locked open (it was empty): the support thumb drops the slide stop
+constexpr float DRIVE_OUT = 0.8f;      // from here the gun is pushed back out to the aim, the support hand rejoining it on the way
 constexpr float SHELL_GRAB = 0.34f;    // (of a shell's own time) the fingers close on a shell in the pocket
 constexpr float SHELL_LET_GO = 0.88f;  // level in the port: the fingers come off, the thumb pushes
 constexpr float SHELL_HOME = 0.95f;    // it clicks past the shell latch into the tube

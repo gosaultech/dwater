@@ -109,12 +109,23 @@ void Character::find_hinges() {
     }
 }
 
-void Character::curl(Vector3* T, bool right, int finger, float k0, float k1, float k2) const {
+void Character::curl(Vector3* T, bool right, int finger, float k0, float k1, float k2, float together) const {
     const float a[3] = {k0, k1, k2};
+    // Brought in toward the middle finger at the knuckle (`together` of the way): the rest pose's
+    // hand is splayed, and a flat hand with its fingers apart looks like a starfish, not a hand.
+    Matrix in = MatrixIdentity();
+    if (together != 0 && finger != F_THUMB && finger != F_MIDDLE) {
+        const int j0 = finger_joint(right, finger, 0), m0 = finger_joint(right, F_MIDDLE, 0);
+        const Vector3 d = Vector3Normalize(Vector3Subtract(rest_[j0 + 1], rest_[j0]));
+        const Vector3 dm = Vector3Normalize(Vector3Subtract(rest_[m0 + 1], rest_[m0]));
+        const Vector3 axis = Vector3CrossProduct(d, dm);
+        const float len = Vector3Length(axis);
+        if (len > 1e-4f) in = MatrixRotate(Vector3Scale(axis, 1.0f / len), together * std::atan2(len, Vector3DotProduct(d, dm)));
+    }
     for (int k = 0; k < 3; ++k) {
         const int j = finger_joint(right, finger, k);
         // The bend as this rig's three angles (z, then x, then y): R = Ry Rx Rz.
-        const Matrix m = MatrixRotate(hinge_[j], a[k]);
+        const Matrix m = k == 0 ? MatrixMultiply(in, MatrixRotate(hinge_[j], a[k])) : MatrixRotate(hinge_[j], a[k]);
         T[j] = {std::asin(std::clamp(-m.m9, -1.0f, 1.0f)), std::atan2(m.m8, m.m10), std::atan2(m.m1, m.m5)};
     }
 }
@@ -132,6 +143,22 @@ bool Character::load_body(const std::string& path) {
     find_hinges();
     pelvis_h_ = rest_[J_PELVIS].y;
     for (const auto& p : f.parts) add_skinned(p);
+    // The torso's shape, for keeping the elbows and forearms out of it (arm_to): the body's own
+    // vertices (torso, coat), each in the frame of the joint that carries it most, the chest's
+    // for the upper half and the pelvis's for the lower.
+    for (const auto& p : f.parts)
+        for (size_t v = 0; v < p.vertices(); ++v) {
+            if (v < p.region.size() && p.region[v] != R_BODY) continue;
+            int top = 0;
+            for (int k = 1; k < 4; ++k)
+                if (p.weight[v * 4 + k] > p.weight[v * 4 + top]) top = k;
+            const int j = p.joint[v * 4 + top];
+            const Vector3 at{p.pos[v * 3], p.pos[v * 3 + 1], p.pos[v * 3 + 2]};
+            auto in = [&](int frame) { const Vector3 l = Vector3Subtract(at, rest_[frame]); return clearance::V3{l.x, l.y, l.z}; };
+            if (j == J_CHEST || j == J_SPINE) torso_[0].add(in(J_CHEST));
+            if (j == J_PELVIS || j == J_SPINE) torso_[1].add(in(J_PELVIS));
+        }
+    for (auto& t : torso_) t.finish();
     for (const auto& a : f.anchors)
         anchors_.push_back({a.name, a.joint, {a.pos[0], a.pos[1], a.pos[2]}, {a.dir[0], a.dir[1], a.dir[2]}});
     return true;
@@ -306,6 +333,9 @@ void Character::step_strands(float dt) {
     }
 }
 
+// How much of the wrist's turn a sleeve's very end takes (add_skinned).
+constexpr float CUFF_FOLLOWS = 0.55f;
+
 // Upload one skinned part. Vertex layout as the character shader expects (see mesh_builder.hpp),
 // plus four joint ids and weights; the shader blends the joints' matrices (GPU skinning).
 void Character::add_skinned(const FilePart& p) {
@@ -346,6 +376,32 @@ void Character::add_skinned(const FilePart& p) {
         m.texcoords2[i * 2 + 1] = 0;
         by_region[size_t(reg)].push_back(i);
     }
+    // A sleeve's cuff follows the hand a little as the wrist bends, the way cloth gathered round a
+    // wrist does: skinned to the forearm alone, a bent wrist's skin pokes out through it.
+    if (p.name != "body")
+        for (int i = 0; i < n; ++i) {
+            if (m.texcoords2[i * 2] != float(R_FARM_L) && m.texcoords2[i * 2] != float(R_FARM_R)) continue;
+            const int wrist = m.texcoords2[i * 2] == float(R_FARM_L) ? J_WRI_L : J_WRI_R;
+            const float d = Vector3Distance({p.pos[size_t(i) * 3], p.pos[size_t(i) * 3 + 1], p.pos[size_t(i) * 3 + 2]}, rest_[wrist]);
+            constexpr float REACH = 0.06f;
+            if (d >= REACH) continue;
+            float* w = &m.boneWeights[i * 4];
+            unsigned char* id = &m.boneIds[i * 4];
+            const float share = CUFF_FOLLOWS * (1.0f - d / REACH);
+            int slot = -1;
+            for (int k = 0; k < 4; ++k) if (id[k] == wrist) slot = k;
+            if (slot < 0) {   // (the slot with the least weight makes room)
+                slot = 0;
+                for (int k = 1; k < 4; ++k) if (w[k] < w[slot]) slot = k;
+                const float freed = w[slot];
+                w[slot] = 0;
+                id[slot] = static_cast<unsigned char>(wrist);
+                const float rest = 1.0f - freed;
+                if (rest > 1e-5f) for (int k = 0; k < 4; ++k) w[k] /= rest;
+            }
+            for (int k = 0; k < 4; ++k) w[k] *= 1.0f - share;
+            w[slot] += share;
+        }
     for (int j = 0; j < J_COUNT; ++j) m.boneMatrices[j] = MatrixIdentity();
     UploadMesh(&m, false);
     skinned_.push_back({p.name, m, std::move(by_region)});
@@ -373,7 +429,7 @@ void Character::fk() {
 //     can to where the pose had it (so the elbow stays down and out, the way the pose was made);
 //  3. the wrist turns the hand onto the place, and the fingers ride along.
 // `w` blends it in from where the pose put the hand (the goal slides from there to the place).
-Vector3 Character::arm_to(bool right, const Matrix& want, float w) {
+Vector3 Character::arm_to(bool right, const Matrix& want, float w, bool free) {
     const int sho = right ? J_SHO_R : J_SHO_L, elb = right ? J_ELB_R : J_ELB_L, wri = right ? J_WRI_R : J_WRI_L;
     const Matrix now = W_[wri];
     const Vector3 goal = Vector3Lerp({now.m12, now.m13, now.m14}, {want.m12, want.m13, want.m14}, w);
@@ -386,6 +442,61 @@ Vector3 Character::arm_to(bool right, const Matrix& want, float w) {
     const TwoBone arm = solve_two_bone(oe, ow, Vector3Transform(goal, Si), hinge);
     W_[sho] = MatrixMultiply(arm.turn, S);
     W_[elb] = MatrixMultiply(MatrixMultiply(MatrixRotateX(arm.elbow), MatrixTranslate(oe.x, oe.y, oe.z)), W_[sho]);
+    // ... and then the elbow swung round the shoulder-to-wrist line (the hand stays put) to where
+    // the arm is out of his body and, when `free` (working a reload, where nothing fitted says
+    // where the elbow goes), the wrist is least bent and twisted: an elbow finds its own way, the
+    // way you lift it off your ribs or turn it out to bring a hand round. Eased, so it never snaps.
+    const int side = right ? 1 : 0;
+    float want_swivel = 0;
+    if (!torso_[0].empty()) {
+        const Vector3 s0 = joint(sho), e0 = joint(elb);
+        const Vector3 axis = Vector3Normalize(Vector3Subtract(goal, s0));
+        const Matrix T = QuaternionToMatrix(turn);
+        auto about = [&](float a) {
+            return MatrixMultiply(MatrixMultiply(MatrixTranslate(-s0.x, -s0.y, -s0.z), MatrixRotate(axis, a)), MatrixTranslate(s0.x, s0.y, s0.z));
+        };
+        auto into = [&](float a) {   // how far the arm, swivelled by a, is in the body (m)
+            const Vector3 e = Vector3Add(s0, Vector3RotateByAxisAngle(Vector3Subtract(e0, s0), axis, a));
+            float d = -1;
+            for (float k : {0.6f, 1.0f}) d = std::max(d, torso_in(Vector3Lerp(s0, e, k), 0.05f));   // the upper arm, the elbow
+            for (float k : {0.3f, 0.6f}) d = std::max(d, torso_in(Vector3Lerp(e, goal, k), 0.042f));   // the forearm
+            return d;
+        };
+        auto strain = [&](float a) {   // how far past comfortable the wrist would be (radians)
+            Matrix X = MatrixMultiply(MatrixTranslate(ow.x, ow.y, ow.z), MatrixMultiply(W_[elb], about(a)));
+            X.m12 = X.m13 = X.m14 = 0;
+            float sw = 0, tw = 0;
+            swing_twist(QuaternionFromMatrix(MatrixMultiply(T, MatrixInvert(X))), ow, sw, tw);
+            return std::max(sw - 40.0f * DEG2RAD, 0.0f) + 0.6f * std::max(std::fabs(tw) - 75.0f * DEG2RAD, 0.0f);
+        };
+        // The cost of a swivel: being in the body above all, then a strained wrist, then lifting
+        // the elbow (people keep their elbows down), then how far it swings.
+        auto cost = [&](float a) {
+            const Vector3 e = Vector3RotateByAxisAngle(Vector3Subtract(e0, s0), axis, a);   // (from the shoulder)
+            const float lift = e.y - (e0.y - s0.y);
+            const float wing = std::max(e.y + 0.08f, 0.0f);   // the elbow up near the shoulder's height or over it: a chicken wing
+            return std::max(into(a), 0.0f) * 60.0f + (free ? strain(a) * 0.8f : 0.0f) + std::max(lift, 0.0f) * 1.5f +
+                   wing * 25.0f + std::fabs(a) * 0.01f;
+        };
+        if (free || into(0) > 0) {
+            float best = cost(0);
+            for (int i = -17; i <= 18; ++i) {   // every 10 degrees round
+                const float a = float(i) * (10.0f * DEG2RAD), c = cost(a);
+                if (c < best) { best = c; want_swivel = a; }
+            }
+        }
+    }
+    // (eased the short way round)
+    const float gap = std::remainder(want_swivel * w - swivel_[side], 2 * PI);
+    swivel_[side] = std::remainder(swivel_[side] + gap * smoothing(18.0f, dt_), 2 * PI);
+    if (std::fabs(swivel_[side]) > 1e-4f) {
+        const Vector3 s0 = joint(sho);
+        const Vector3 axis = Vector3Normalize(Vector3Subtract(goal, s0));
+        const Matrix about = MatrixMultiply(MatrixMultiply(MatrixTranslate(-s0.x, -s0.y, -s0.z), MatrixRotate(axis, swivel_[side])),
+                                            MatrixTranslate(s0.x, s0.y, s0.z));
+        W_[sho] = MatrixMultiply(W_[sho], about);
+        W_[elb] = MatrixMultiply(W_[elb], about);
+    }
     // 3. The wrist: whatever turn takes the forearm's end to the place's.
     const Matrix X = MatrixMultiply(MatrixTranslate(ow.x, ow.y, ow.z), W_[elb]);
     Matrix Xr = X;
@@ -401,6 +512,18 @@ Vector3 Character::arm_to(bool right, const Matrix& want, float w) {
     return {std::asin(std::clamp(-bend.m9, -1.0f, 1.0f)), std::atan2(bend.m8, bend.m10), std::atan2(bend.m1, bend.m5)};
 }
 
+// How far a ball at `p` (world) of radius `r` is into his torso (m; <= 0: clear), by the shape
+// load_body took of it.
+float Character::torso_in(Vector3 p, float r) const {
+    float d = -1;
+    for (int i = 0; i < 2; ++i) {
+        if (torso_[i].empty()) continue;
+        const Vector3 l = Vector3Transform(p, MatrixInvert(W_[i == 0 ? J_CHEST : J_PELVIS]));
+        d = std::max(d, torso_[i].depth({l.x, l.y, l.z}, r));
+    }
+    return d;
+}
+
 namespace {
 // Between two wrist places: the position along a curve, the turn the shortest way round.
 Matrix blend_frames(const Matrix& a, const Matrix& b, Vector3 at, float k) {
@@ -409,15 +532,6 @@ Matrix blend_frames(const Matrix& a, const Matrix& b, Vector3 at, float k) {
     return m;
 }
 Vector3 origin(const Matrix& m) { return {m.m12, m.m13, m.m14}; }
-// The pistol brought in close to reload, in the chest's frame: in front of his chest, muzzle up a
-// little and turned in toward his middle, its top canted over to the left so the magazine well
-// faces the left hand and he can see into it (the "workspace" shooters are taught). Its grip there.
-constexpr float CLOSE_CANT = 0.55f, CLOSE_PITCH = 0.35f, CLOSE_YAW = 0.15f;
-const Vector3 CLOSE_AT{0.03f, -0.04f, -0.3f};
-// His left coat pocket, by the hip (the pelvis's frame): the hand in it fingers first, its palm
-// toward him.
-const Vector3 POCKET_AT{-0.17f, 0.03f, -0.12f};
-constexpr float POCKET_TILT = 0.25f, POCKET_TURN = -1.2f;
 }  // namespace
 
 Matrix Character::reload_place(const reload::Step& s, const Matrix& G) const {
@@ -433,8 +547,9 @@ Matrix Character::reload_place(const reload::Step& s, const Matrix& G) const {
             return MatrixMultiply(MatrixInvert(support_ ? support_->hold : MatrixIdentity()), at);
         }
         case reload::Place::Pocket: {
-            const Matrix in = MatrixMultiply(MatrixMultiply(MatrixRotateX(POCKET_TILT), MatrixRotateY(POCKET_TURN)),
-                                             MatrixTranslate(POCKET_AT.x, POCKET_AT.y, POCKET_AT.z));
+            const ReloadShape& r = reload_shape;
+            const Matrix in = MatrixMultiply(MatrixMultiply(MatrixRotateX(r.pocket_tilt), MatrixRotateY(r.pocket_turn)),
+                                             MatrixTranslate(r.pocket_at.x, r.pocket_at.y, r.pocket_at.z));
             return MatrixMultiply(in, W_[J_PELVIS]);
         }
         case reload::Place::Load:
@@ -454,13 +569,26 @@ void Character::reload_fingers(reload::Hand h, Vector3* f) const {
         curl(T, false, k, 0.12f + more, 0.2f + more, 0.1f);
     }
     curl(T, false, F_THUMB, 0, 0.1f, 0.05f);
+    Vector3 flat[J_COUNT]{};   // the heel of the hand: the fingers nearly straight, close together, the thumb along them
+    for (int k = F_INDEX; k <= F_LITTLE; ++k) curl(flat, false, k, 0.05f, 0.08f, 0.04f, 1.2f);
+    curl(flat, false, F_THUMB, 0.6f, 0.4f, 0.05f);
+    // Holding the magazine: the forefinger up its front and the thumb along its side as fitted
+    // (MAG_LEFT); the last three fingers wrapped loosely under the plate as a hand rests, not
+    // clenched as tight as the fit pulls them (a fist's worth of bend at every joint folds the
+    // fingers into the palm).
+    Vector3 mag[J_COUNT]{};
+    for (int k = F_MIDDLE; k <= F_LITTLE; ++k) {
+        const float more = 0.08f * float(k - F_MIDDLE);
+        curl(mag, false, k, 0.95f + more, 1.05f + more, 0.55f, 0.5f);
+    }
     for (int k = 0; k < 15; ++k) {
         const Vector3 open = T[J_THUMB1_L + k];
         switch (h) {
             case reload::Hand::Grip: f[k] = grip ? grip->fingers[k] : open; break;
             case reload::Hand::Open: f[k] = open; break;
-            case reload::Hand::Hold: f[k] = held.fingers[k]; break;
+            case reload::Hand::Hold: f[k] = weapon_ == 0 && k >= 6 ? mag[J_THUMB1_L + k] : held.fingers[k]; break;
             case reload::Hand::Push: f[k] = k < 3 ? held.fingers[k] : Vector3Lerp(held.fingers[k], open, 0.7f); break;   // the thumb stays
+            case reload::Hand::Slap: f[k] = flat[J_THUMB1_L + k]; break;
         }
     }
 }
@@ -498,7 +626,9 @@ void Character::hands(float dt) {
     }
     // 1. The pistol brought in close.
     if (close_w_ > 1e-3f && weapon_ == 0) {
-        float cant = CLOSE_CANT, lift = 0;
+        float cant = reload_shape.cant, lift = 0;
+        const Vector3 CLOSE_AT = reload_shape.close_at;
+        const float CLOSE_PITCH = reload_shape.pitch, CLOSE_YAW = reload_shape.yaw;
         if (reloading.on && reloading.kind == reload::Kind::Magazine) {   // a flick as the empty one drops; the slap lifts it
             const float t = reloading.t;
             cant += 0.12f * std::max(0.0f, 1.0f - std::fabs(t - 0.1f) / 0.06f);
@@ -509,7 +639,7 @@ void Character::hands(float dt) {
         const Vector3 grip = Vector3Transform(cast::m92fs_at(20, -75), turn);
         const Matrix G = MatrixMultiply(MatrixMultiply(turn, MatrixTranslate(CLOSE_AT.x - grip.x, CLOSE_AT.y + lift - grip.y, CLOSE_AT.z - grip.z)),
                                         W_[J_CHEST]);
-        ik_wrist_[1] = arm_to(true, MatrixMultiply(MatrixInvert(pistol_hold()), G), close_w_);
+        ik_wrist_[1] = arm_to(true, MatrixMultiply(MatrixInvert(pistol_hold()), G), close_w_, reloading.on);
         ik_[1] = true;
     }
     // 2. The left hand.
@@ -549,25 +679,28 @@ void Character::hands(float dt) {
         want = blend_frames(from, want, Vector3Lerp(origin(from), origin(want), k), k);
     }
     lh_last_ = MatrixMultiply(want, MatrixInvert(G));
-    ik_wrist_[0] = arm_to(false, want, support_w_);
+    ik_wrist_[0] = arm_to(false, want, support_w_, steps_ && reloading.on);
     ik_[0] = true;
 }
 
 void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     t_ += dt;
+    dt_ = dt;
     Vector3 T[J_COUNT]{};
     float bob = 0;
     targets(pose, speed, dt, aim_pitch, T, bob);
     const bool sharp = pose == Pose::Windup || pose == Pose::Strike || pose == Pose::Hurt || pose == Pose::Stagger ||
                        pose == Pose::CrawlStrike || pose == Pose::Kick || pose == Pose::Dodge;
     const float k = smoothing(sharp ? 16.0f : 9.0f, dt);
-    for (int j = 0; j < J_COUNT; ++j) ang_[j] = Vector3Lerp(ang_[j], T[j], k);
+    for (int j = 0; j < J_COUNT; ++j)   // (the fingers turn the shortest way: their poses differ a lot)
+        ang_[j] = j >= J_THUMB1_L ? slerp_angles(ang_[j], T[j], k) : Vector3Lerp(ang_[j], T[j], k);
     if (steps_)   // a reload's steps time the fingers themselves: they follow closely
-        for (int j = J_THUMB1_L; j < J_THUMB1_R; ++j) ang_[j] = Vector3Lerp(ang_[j], T[j], smoothing(40.0f, dt));
+        for (int j = J_THUMB1_L; j < J_THUMB1_R; ++j) ang_[j] = slerp_angles(ang_[j], T[j], smoothing(40.0f, dt));
     bob_ = Lerp(bob_, bob, k);
     if (want_support_) support_ = want_support_;   // (letting go, the hand eases off the grip it had)
     support_w_ = Lerp(support_w_, want_support_ ? 1.0f : 0.0f, k);
-    close_w_ = Lerp(close_w_, pose == Pose::Reload && weapon_ == 0 && kind == Kind::Survivor ? 1.0f : 0.0f, k);
+    const bool out = reloading.on && reloading.kind == reload::Kind::Magazine && reloading.t >= reload::DRIVE_OUT;   // (targets(): pushed back out)
+    close_w_ = Lerp(close_w_, pose == Pose::Reload && weapon_ == 0 && kind == Kind::Survivor && !out ? 1.0f : 0.0f, k);
 
     // Twitches: the Drowned's nerves still fire. A joint snaps, then drifts back.
     const float decay = std::exp(-dt * 6.0f);
@@ -728,9 +861,6 @@ void Character::step_dangles(float dt) {
 
 void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, float& bob) {
     const bool drowned = kind == Kind::Drowned;
-    // An empty 870's first shell is in: up to the low ready, and the left hand racks the fore-end.
-    const bool racking = !drowned && weapon_ == 1 && pose == Pose::Reload && reloading.on && reloading.kind == reload::Kind::ShellRack &&
-                         reloading.t >= reload::RACK_SHELL;
     for (float s : {-1.0f, 1.0f}) {   // relaxed baseline
         T[s < 0 ? J_SHO_L : J_SHO_R] = {0.05f, 0, -0.1f * s};
         T[s < 0 ? J_ELB_L : J_ELB_R] = {0.2f, 0, 0};
@@ -769,7 +899,11 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         T[J_KNE_L] = {-0.16f, 0, 0};
         T[J_HIP_R] = {-0.04f, 0, 0.04f};
     }
-    switch (pose) {
+    // The pistol's magazine in: the gun pushed back out to the aim, the support hand joining it on
+    // the way (its wrist sits easy there, not bent round a gun held in at the chest).
+    const bool driving_out = !drowned && weapon_ == 0 && pose == Pose::Reload && reloading.on && reloading.kind == reload::Kind::Magazine &&
+                             reloading.t >= reload::DRIVE_OUT;
+    switch (driving_out ? Pose::Aim : pose) {
         case Pose::Walk:
         case Pose::Run: {
             const bool run = pose == Pose::Run;
@@ -814,16 +948,16 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
                 // under the stock, the hand wrapped round the stock's wrist and the wrist cocked; the
                 // left hand stays on the fore-end by hands(). He aims up or down from the
                 // waist, all of a piece.
-                T[J_SHO_R] = {0.628f, 1.035f, 0.997f};
-                T[J_ELB_R] = {1.916f, 0, 0};
-                T[J_WRI_R] = {-0.850f, -1.095f, 0.396f};
-                T[J_SHO_L] = {2.989f, -1.321f, -1.043f};
-                T[J_ELB_L] = {-0.000f, 0, 0};
-                T[J_WRI_L] = {-0.263f, 0.033f, -0.051f};
-                T[J_NECK] = {-0.563f, 0.131f, -0.450f};
-                T[J_HEAD] = {0.350f, 0.500f, 0.264f};
-                T[J_SPINE] = pitched({-0.08f, -0.313f, 0}, ap);
-                T[J_CHEST] = {-0.300f, -0.347f, 0};
+                T[J_SHO_R] = {0.629f, 1.116f, 1.064f};
+                T[J_ELB_R] = {1.809f, 0, 0};
+                T[J_WRI_R] = {-0.850f, -0.941f, 0.217f};
+                T[J_SHO_L] = {3.065f, -1.296f, -1.078f};
+                T[J_ELB_L] = {0.000f, 0, 0};
+                T[J_WRI_L] = {-0.237f, 0.029f, 0.022f};
+                T[J_NECK] = {-0.611f, 0.221f, -0.450f};
+                T[J_HEAD] = {0.350f, 0.500f, 0.314f};
+                T[J_SPINE] = pitched({-0.08f, -0.500f, 0}, ap);
+                T[J_CHEST] = {-0.300f, -0.228f, 0};
                 T[J_HIP_L] = {0.25f, 0, -0.05f};
                 T[J_KNE_L] = {-0.22f, 0, 0};
                 T[J_HIP_R] = {-0.2f, 0, 0.06f};
@@ -887,16 +1021,16 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         case Pose::Reload: {   // head down over the gun; the hands do the work (hands(), reload.hpp)
             T[J_NECK] = {-0.3f, 0, 0};
             T[J_SPINE] = {-0.08f, 0, 0};
-            if (racking) {   // the 870 brought up to the low ready to rack it (below), where the fore-end is in reach
-            } else if (weapon_ == 1) {   // under the arm, muzzle up a little, the left hand at the loading port (--fit870)
-                T[J_SHO_R] = {-0.439f, 0.248f, -0.050f};
-                T[J_ELB_R] = {2.569f, 0, 0};
-                T[J_WRI_R] = {-0.602f, 0.358f, -0.220f};
-                T[J_SHO_L] = {1.066f, -0.038f, 0.772f};
-                T[J_ELB_L] = {0.452f, 0, 0};
-                T[J_WRI_L] = {1.142f, 0.000f, 0.479f};
-                T[J_SPINE].y = -0.305f;   // turned, the gun side back
-                T[J_CHEST].y = 0.250f;
+            if (weapon_ == 1) {   // under the arm, the left hand at the loading port (--fit870); an empty gun is racked right
+                                  // there, the hand sliding forward from the port onto the fore-end (no turning away to rack it)
+                T[J_SHO_R] = {-0.179f, 0.944f, 0.262f};
+                T[J_ELB_R] = {1.754f, 0, 0};
+                T[J_WRI_R] = {0.164f, 0.008f, 0.232f};
+                T[J_SHO_L] = {0.576f, 0.094f, 0.392f};
+                T[J_ELB_L] = {1.249f, 0, 0};
+                T[J_WRI_L] = {1.200f, 0.000f, 1.200f};
+                T[J_SPINE].y = -0.500f;
+                T[J_CHEST].y = 0.353f;
             } else {   // the pistol in close (where hands() takes it), the left hand low, toward the pocket
                 T[J_SHO_R] = {0.6f, 0, -0.08f};
                 T[J_ELB_R] = {1.35f, 0, 0};
@@ -997,17 +1131,17 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         }
         default: break;
     }
-    if (!drowned && weapon_ == 1 && (pose == Pose::Idle || pose == Pose::Walk || pose == Pose::Run || pose == Pose::Hurt || racking)) {
+    if (!drowned && weapon_ == 1 && (pose == Pose::Idle || pose == Pose::Walk || pose == Pose::Run || pose == Pose::Hurt)) {
         // The shotgun carried at the low ready: the butt still in the shoulder, both hands on it, the
-        // muzzle 40 degrees down ahead (--fit870). (Loading an empty one, he comes up to it to rack.)
-        T[J_SHO_R] = {0.045f, 0.749f, 0.393f};
-        T[J_ELB_R] = {1.975f, 0, 0};
-        T[J_WRI_R] = {-0.741f, -1.849f, 0.932f};
-        T[J_SHO_L] = {0.247f, 1.516f, 1.088f};
+        // muzzle 40 degrees down ahead (--fit870).
+        T[J_SHO_R] = {0.142f, 0.787f, 0.444f};
+        T[J_ELB_R] = {1.850f, 0, 0};
+        T[J_WRI_R] = {-0.850f, -1.859f, 0.876f};
+        T[J_SHO_L] = {0.206f, 1.598f, 1.092f};
         T[J_ELB_L] = {0.000f, 0, 0};
-        T[J_WRI_L] = {-0.349f, 0.041f, -0.336f};
-        T[J_SPINE].y += -0.384f;   // turned, the gun side back
-        T[J_CHEST].y += -0.386f;
+        T[J_WRI_L] = {-0.316f, 0.037f, -0.313f};
+        T[J_SPINE].y += -0.475f;   // turned, the gun side back
+        T[J_CHEST].y += -0.368f;
     }
     // Both hands on the gun: the left one round the 870's fore-end, or over the right on the
     // pistol's grip (--fitgrips), hands() bending the arm to put it there; reloading, it goes
@@ -1060,7 +1194,7 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         reload_fingers(st[i].hand, a);
         reload_fingers(st[std::min(i + 1, n - 1)].hand, b);
         const float k = f * f * (3 - 2 * f);
-        for (int j = 0; j < 15; ++j) T[J_THUMB1_L + j] = Vector3Lerp(a[j], b[j], k);
+        for (int j = 0; j < 15; ++j) T[J_THUMB1_L + j] = slerp_angles(a[j], b[j], k);
     }
 }
 

@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include "dw/anatomy.hpp"
+#include "dw/clearance.hpp"
 #include "dw/combat.hpp"
 #include "dw/mesh_builder.hpp"
 #include "dw/reload.hpp"
@@ -125,7 +126,7 @@ public:
         Vector3 aim{0, 0, -1};
         // The shoulder pocket (from the shoulder joint, chest frame): on the front of his jacket, the
         // pad's top about level with the top of his shoulder.
-        Vector3 pocket{-0.05f, 0.02f, -0.12f};
+        Vector3 pocket{-0.05f, 0.02f, -0.15f};   // (the pad pressing the coat in, not through it)
         Vector3 left{0, -0.3547f, 0.0032f};       // under the fore-end, near its back
         bool cheek = true;
         Pose pose = Pose::Aim;                    // the body the arms are fitted on
@@ -148,11 +149,42 @@ public:
     // how far through it (0..1; a shell: through this shell), and for a shell whether the hand
     // starts on the fore-end (the first shell, or the one after a rack) or at the loading port.
     // In the Reload pose, the hands follow reload.hpp's steps.
+    // Where the reloads take the hands. The pistol brought in close, in the chest's frame: its grip
+    // at `close_at` (x to his right, y up, -z ahead), in front of his chest where he can see into
+    // the magazine well (the "workspace" shooters are taught), its top canted over to his left by
+    // `cant`, the muzzle up by `pitch` and turned in by `yaw` (radians), so the well faces the
+    // left hand coming up from the pocket. His left coat pocket, in the pelvis's frame: where the
+    // wrist goes as the hand dips into it, and how the hand is turned there. --fitreload fits the
+    // pistol's numbers so both wrists stay within what wrists do and nothing goes through him.
+    struct ReloadShape {
+        Vector3 close_at{0.030f, -0.020f, -0.430f};
+        float cant = -0.388f, pitch = 0.338f, yaw = 0.0f;
+        Vector3 pocket_at{-0.13f, 0.08f, -0.18f};
+        float pocket_tilt = -0.35f, pocket_turn = -1.6f;
+    };
+    ReloadShape reload_shape;
+    // A tool (--fitreload): search the pistol's close position and turn (reload_shape) for the
+    // magazine change that strains his wrists least with nothing going through anything; returns
+    // the result as text, the numbers to put in ReloadShape.
+    std::string fit_reload();
     struct Reloading { bool on = false; reload::Kind kind = reload::Kind::Magazine; float t = 0; bool from_grip = true; };
     Reloading reloading;
     // Where the gun's load (cast::GunParts::load: the magazine in the grip) is, its space -> world:
     // for the game to drop the empty magazine from where it was.
     Matrix load_frame() const;
+    // A tool (--clearance, character_clearance.cpp): how far anything goes through anything this
+    // frame (m): each arm into the body, the gun into the body, the left hand into the right hand
+    // and into the gun. Each the deepest point, how many points go in, and (for the first three)
+    // where the deepest is (world).
+    struct Clearance { clearance::Worst larm, rarm, gun, hands, lhand_gun; Vector3 larm_at{}, rarm_at{}, gun_at{}; };
+    Clearance clearance(std::vector<Vector3>* clashes = nullptr) const;
+    // How far a wrist is bent (radians): the angle between the forearm and the hand (wrist to the
+    // middle knuckle), whichever way. Comfortable to about 40 degrees, a strain past 60.
+    float wrist_bend(bool right) const;
+    Vector3 chest_local(Vector3 p) const { return Vector3Transform(p, MatrixInvert(W_[J_CHEST])); }   // (tuning) a point in the chest's frame   // clashes: each arm point that's in (world)
+    // A tool (--clearance): each reload played through as the game plays it, the clearance at every
+    // step of it, as a table.
+    std::string reload_clearance();
 
 private:
     // tag: 0 always shown; 1 + weapon: only while that gun is in hand. drive: 1 the slide, 2 the
@@ -205,7 +237,9 @@ private:
     // bent and the upper arm turned to reach (two_bone.hpp), the elbow kept where the pose had it,
     // the wrist turned onto `want`, the fingers carried along. Returns the wrist's own turn (this
     // rig's angles), for the forearm's skin.
-    Vector3 arm_to(bool right, const Matrix& want, float w);
+    // `free`: no fitted pose says where this elbow goes (a reload's moves), so it also turns to
+    // spare the wrist (character.cpp says how).
+    Vector3 arm_to(bool right, const Matrix& want, float w, bool free = false);
     // Where the left wrist goes for a reload's step (world): on the gun, in the pocket, or holding
     // the load on its way in. `G` is the gun (its built space -> world).
     Matrix reload_place(const reload::Step& s, const Matrix& G) const;
@@ -213,8 +247,9 @@ private:
     void reload_fingers(reload::Hand h, Vector3* f) const;
     void targets(Pose pose, float speed, float dt, float aim_pitch, Vector3* T, float& bob);
     // Curl one finger toward the palm (radians at its knuckle, middle joint and the joint by the
-    // nail; for the thumb, its root, knuckle and tip joint), each about that joint's own hinge.
-    void curl(Vector3* T, bool right, int finger, float k0, float k1, float k2) const;
+    // nail; for the thumb, its root, knuckle and tip joint), each about that joint's own hinge;
+    // `together` (0..1) closes the finger toward the middle one at the knuckle (the rest pose splays them).
+    void curl(Vector3* T, bool right, int finger, float k0, float k1, float k2, float together = 0) const;
     void find_hinges();   // the fingers' hinges, from the rest pose (load_body)
     void step_dangles(float dt);
     bool load_body(const std::string& path);   // skinned body + rest joints from a .dwc file
@@ -277,6 +312,10 @@ private:
     float close_w_ = 0;                                             // 0..1: the right arm bringing the pistol in to reload
     bool ik_[2]{};                                                  // this frame, the left / right arm was put by arm_to
     Vector3 ik_wrist_[2]{};                                         // ... and its wrist's own turn
+    float swivel_[2]{};                                             // each elbow swung out of the body (arm_to), radians
+    float dt_ = 1.0f / 60;                                          // this frame's step (animate)
+    clearance::Torso torso_[2]{{-0.45f, 0.35f}, {-0.3f, 0.45f}};    // his torso's shape about the chest and the pelvis (load_body)
+    float torso_in(Vector3 p, float r) const;                       // a ball into it (m; <= 0 clear)
     int load_at_ = 0;                                               // the load: 0 in the gun, 1 nowhere, 2 in the left hand, 3 going in
     float load_along_ = 0;                                          // (3) how far along its way in
     int lamp_joint_ = -1;                                           // the flashlight's lens: joint and offset (joint space)

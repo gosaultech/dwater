@@ -734,7 +734,7 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     // then any of /pose=aim /gun=1 /limp=1 /cut=3+8 (regions cut off first; anatomy.hpp) /pitch=20
     // (aiming 20 degrees up; negative is down) /grip=0..5 (one hand on its gun, or holding a magazine or
     // a shell: Character::grip_view) /reload=0.4 (that far through a reload; the 870's: one shell, /rack
-    // into an empty gun, /port starting from the loading port).
+    // into an empty gun, /port starting from the loading port; /live plays it there in real time).
     std::string w = who, at_joint, opts;
     if (const auto k = w.find('/'); k != std::string::npos) { opts = w.substr(k); w.resize(k); }
     if (const auto k = w.find('@'); k != std::string::npos) { at_joint = w.substr(k + 1); w.resize(k); }
@@ -747,6 +747,7 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     Pose pose = Pose::Idle;
     std::vector<int> cuts;
     float pitch = 0;
+    bool live = false;   // /live: a reload played up to its moment as the game plays it, not posed and settled there
     for (size_t i = 0; i < opts.size();) {
         const size_t j = std::min(opts.find('/', i + 1), opts.size());
         const std::string o = opts.substr(i + 1, j - i - 1), key = o.substr(0, o.find('=')), val = o.substr(o.find('=') + 1);
@@ -772,17 +773,35 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
         }
         if (key == "rack") c.reloading.kind = reload::Kind::ShellRack;
         if (key == "port") c.reloading.from_grip = false;
+        if (key == "live") live = true;
         i = j;
     }
     const float speed = pose == Pose::Walk || pose == Pose::Shamble ? 0.8f : 0.0f;
     if (c.reloading.on && c.weapon() == 1 && c.reloading.kind == reload::Kind::Magazine) c.reloading.kind = reload::Kind::Shell;
-    for (int f = 0; f < 90; ++f) c.animate(pose, speed, 1.0f / 60, pitch);
+    if (live && c.reloading.on) {   // played as the game plays it: from the aim, the reload running in real time up to t
+        const float until = c.reloading.t;
+        const float secs = c.weapon() == 0 ? 1.4f : c.reloading.kind == reload::Kind::ShellRack ? 0.9f : 0.5f;
+        Character::Reloading r = c.reloading;
+        c.reloading.on = false;
+        for (int f = 0; f < 90; ++f) c.animate(Pose::Aim, 0, 1.0f / 60, pitch);
+        for (float t = 0; t < until; t += 1.0f / 60 / secs) {
+            r.t = std::min(t, until);
+            c.reloading = r;
+            c.pump = reload::pump(r.kind, r.t);
+            c.animate(Pose::Reload, 0, 1.0f / 60, pitch);
+        }
+        r.t = until;
+        c.reloading = r;
+    } else {
+        for (int f = 0; f < 90; ++f) c.animate(pose, speed, 1.0f / 60, pitch);
+    }
     for (int r : cuts) { MeshData piece; Vector3 centre; c.sever(r, piece, centre); }
     if (survivor) {   // how true the barrel lies to where he faces (the shots fly along his facing)
         const Vector3 b = c.barrel_dir();
         TraceLog(LOG_INFO, "VIEW barrel dir %.2f %.2f %.2f  muzzle %.2f %.2f %.2f", b.x, b.y, b.z, c.muzzle().x, c.muzzle().y, c.muzzle().z);
     }
-    for (int f = 0; f < 60; ++f) c.animate(pose, speed, 1.0f / 60, pitch);
+    if (!live) for (int f = 0; f < 60; ++f) c.animate(pose, speed, 1.0f / 60, pitch);
+    else c.animate(pose, speed, 1.0f / 60, pitch);
     render_shadows({&c});
     bind_shadows();
     float a = orbit * DEG2RAD;
@@ -819,6 +838,16 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     rlDisableBackfaceCulling();
     c.draw(char_mat_);
     rlEnableBackfaceCulling();
+    if (std::getenv("DW_CLASH")) {   // (tuning) mark every arm point that's gone into the body (Character::clearance)
+        std::vector<Vector3> clashes;
+        const Character::Clearance cl = c.clearance(&clashes);
+        rlDisableDepthTest();
+        for (const Vector3& p : clashes) DrawSphere(p, 0.004f, RED);
+        rlEnableDepthTest();
+        TraceLog(LOG_INFO, "VIEW wrist bend (elbow-wrist vs wrist-knuckle) L %.0f R %.0f", c.wrist_bend(false) * RAD2DEG, c.wrist_bend(true) * RAD2DEG);
+        TraceLog(LOG_INFO, "VIEW clearance (mm) larm %.0f rarm %.0f gun %.0f hands %.0f lhand-gun %.0f", cl.larm.depth * 1000, cl.rarm.depth * 1000,
+                 cl.gun.depth * 1000, cl.hands.depth * 1000, cl.lhand_gun.depth * 1000);
+    }
     EndMode3D();
     EndTextureMode();
     Image img = LoadImageFromTexture(rt_.texture);

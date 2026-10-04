@@ -36,6 +36,18 @@ float elbow_not_down(Vector3 shoulder, Vector3 elbow, Vector3 wrist);
 // How far the arm is bent at the elbow (radians; 0 straight).
 float elbow_bend(Vector3 shoulder, Vector3 elbow, Vector3 wrist);
 
+// Part of the way from one joint turn to another, given as this rig's angles (x, y, z, applied z,
+// then x, then y), turning the shortest way round (a slerp) rather than easing each angle on its
+// own: blending the angles themselves can swing a finger out sideways halfway between two poses
+// (like walking between two map pins along the lines of latitude rather than straight).
+Vector3 slerp_angles(Vector3 a, Vector3 b, float k);
+
+// A wrist's turn split in two (swing-twist): the twist about the forearm's own length (`axis`;
+// the forearm's two bones roll round each other for that, up to about 80 degrees either way from
+// the hand's rest), and the swing, how far the hand then tips off the forearm's line (a wrist
+// bends about 40 degrees comfortably, 60 at a strain). Both radians; twist signed, swing >= 0.
+void swing_twist(Quaternion q, Vector3 axis, float& swing, float& twist);
+
 }  // namespace dw
 
 #endif

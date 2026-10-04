@@ -50,4 +50,28 @@ float elbow_not_down(Vector3 sh, Vector3 el, Vector3 wr) {
 float elbow_bend(Vector3 sh, Vector3 el, Vector3 wr) {
     return std::acos(std::clamp(Vector3DotProduct(Vector3Normalize(Vector3Subtract(el, sh)), Vector3Normalize(Vector3Subtract(wr, el))), -1.0f, 1.0f));
 }
+Vector3 slerp_angles(Vector3 a, Vector3 b, float k) {
+    auto turn = [](Vector3 e) { return MatrixMultiply(MatrixMultiply(MatrixRotateZ(e.z), MatrixRotateX(e.x)), MatrixRotateY(e.y)); };
+    const Matrix m = QuaternionToMatrix(QuaternionSlerp(QuaternionFromMatrix(turn(a)), QuaternionFromMatrix(turn(b)), k));
+    return {std::asin(std::clamp(-m.m9, -1.0f, 1.0f)), std::atan2(m.m8, m.m10), std::atan2(m.m1, m.m5)};
+}
+
+void swing_twist(Quaternion q, Vector3 axis, float& swing, float& twist) {
+    axis = Vector3Normalize(axis);
+    const float d = q.x * axis.x + q.y * axis.y + q.z * axis.z;
+    Quaternion t{axis.x * d, axis.y * d, axis.z * d, q.w};   // the part of q about the axis
+    const float n = std::sqrt(t.x * t.x + t.y * t.y + t.z * t.z + t.w * t.w);
+    if (n < 1e-6f) {   // turned half round about some line across the axis: all swing
+        swing = PI;
+        twist = 0;
+        return;
+    }
+    t = {t.x / n, t.y / n, t.z / n, t.w / n};
+    twist = 2.0f * std::atan2(t.x * axis.x + t.y * axis.y + t.z * axis.z, t.w);
+    if (twist > PI) twist -= 2 * PI;
+    if (twist < -PI) twist += 2 * PI;
+    const Quaternion sw = QuaternionMultiply(q, QuaternionInvert(t));   // q = swing * twist
+    swing = 2.0f * std::acos(std::clamp(std::fabs(sw.w), 0.0f, 1.0f));
+}
+
 }  // namespace dw

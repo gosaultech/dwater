@@ -19,10 +19,16 @@
 //   ./damned_waters --fit870        a tool: fit the hold on the 870 (aim, low ready, reload: arms,
 //                                   wrists and the turn of his back; aiming, also his head and lean,
 //                                   the cheek down on the stock), print it for the pose tables, exit
+//   ./damned_waters --clearance     a tool: play each reload through and print, step by step, how
+//                                   deep his arms, hands and gun go into his body (and each other)
+//   ./damned_waters --fitreload     a tool: fit where the pistol is brought in to reload (least wrist
+//                                   strain, nothing through anything), print it, exit
 //   ./damned_waters --frames 600    auto-exit (smoke tests)
 #include <raylib.h>
 #include <rlgl.h>
 #include <algorithm>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
 
 #include "dw/character.hpp"
@@ -42,12 +48,14 @@ int main(int argc, char** argv) {
         else if (a == "--room") room = argv[++i];
         else if (a == "--frames") max_frames = std::stol(argv[++i]);
     }
-    bool flashlight = false, fit870 = false, fitgrips = false, fitpistol = false;
+    bool flashlight = false, fit870 = false, fitgrips = false, fitpistol = false, clear = false, fitreload = false;
     for (int i = 1; i < argc; ++i) {
         flashlight = flashlight || std::string(argv[i]) == "--flashlight";
         fit870 = fit870 || std::string(argv[i]) == "--fit870";   // a tool: fit the shotgun hold, print it, exit
         fitgrips = fitgrips || std::string(argv[i]) == "--fitgrips";   // a tool: fit the hands to the guns, write them, exit
-        fitpistol = fitpistol || std::string(argv[i]) == "--fitpistol";   // a tool: fit the two-handed pistol aim, print it, exit
+        fitpistol = fitpistol || std::string(argv[i]) == "--fitpistol";
+        clear = clear || std::string(argv[i]) == "--clearance";   // a tool: play the reloads through, say what goes through what, exit
+        fitreload = fitreload || std::string(argv[i]) == "--fitreload";   // a tool: fit where the pistol goes to reload, print it, exit
     }
     SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
     InitWindow(dw::Game::W, dw::Game::H, "Damned Waters");
@@ -65,7 +73,15 @@ int main(int argc, char** argv) {
     }
     double start = GetTime(), worst = 0;
     long frames = 0;
-    if (fitgrips) {
+    if (fitreload) {
+        dw::Character c = dw::Character::make(dw::Kind::Survivor);
+        TraceLog(LOG_INFO, "FITRELOAD%s", c.fit_reload().c_str());
+        c.unload();
+    } else if (clear) {
+        dw::Character c = dw::Character::make(dw::Kind::Survivor);
+        TraceLog(LOG_INFO, "CLEARANCE%s", c.reload_clearance().c_str());
+        c.unload();
+    } else if (fitgrips) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);
         TraceLog(LOG_INFO, "FITGRIPS\n%s", c.fit_grips(dw::repo_root() + "/engine/src/grips_fitted.inc").c_str());
         c.unload();
@@ -83,10 +99,14 @@ int main(int argc, char** argv) {
         reload.pocket = {0.0f, -0.2f, 0.02f};
         reload.left = {0, -0.2447f, -0.0068f};
         reload.cheek = false;
+        if (const char* e = std::getenv("DW_870_RELOAD"))   // (trying others: aim xyz, pocket xyz)
+            std::sscanf(e, "%f,%f,%f,%f,%f,%f", &reload.aim.x, &reload.aim.y, &reload.aim.z, &reload.pocket.x, &reload.pocket.y, &reload.pocket.z);
         reload.pose = dw::Pose::Reload;
-        TraceLog(LOG_INFO, "FIT aim %s", c.fit_shotgun(aim).c_str());
-        TraceLog(LOG_INFO, "FIT low ready %s", c.fit_shotgun(low).c_str());
-        TraceLog(LOG_INFO, "FIT reload %s", c.fit_shotgun(reload).c_str());
+        const char* only = std::getenv("DW_FIT_ONLY");   // (aim, low or reload: just that one)
+        auto want = [only](const char* id) { return !only || std::string(only) == id; };
+        if (want("aim")) TraceLog(LOG_INFO, "FIT aim %s", c.fit_shotgun(aim).c_str());
+        if (want("low")) TraceLog(LOG_INFO, "FIT low ready %s", c.fit_shotgun(low).c_str());
+        if (want("reload")) TraceLog(LOG_INFO, "FIT reload %s", c.fit_shotgun(reload).c_str());
         c.unload();
     } else if (!view.empty()) {
         if (!game.studio_view(view, view_png)) TraceLog(LOG_ERROR, "bad --view spec: %s", view.c_str());

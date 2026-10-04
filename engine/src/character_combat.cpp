@@ -338,7 +338,8 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
     // (aiming, carrying it at the low ready), and then the search only picks which way its elbow
     // points (the left shoulder: where the IK starts the arm), so its wrist bends no further than it
     // must; loading, the search takes it to `goal.left` (a shell at the port).
-    support_ = goal.pose == Pose::Reload ? nullptr : want_support_;   // (in the game, a reload's steps move the hand from there)
+    const bool loading = goal.pose == Pose::Reload;
+    support_ = loading ? nullptr : want_support_;   // (in the game, a reload's steps move the hand from there)
     support_w_ = support_ ? 1.0f : 0.0f;
     reloading.on = false;
     close_w_ = 0;
@@ -346,7 +347,7 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
     float gaps[3]{};   // how far off the butt, the left hand and the eye end up (m)
     Vector3 eye_g{};   // the eye in the gun's measure: u v w (mm)
     float look = 0, roll = 0;   // the face: how far it turns from the aim, and how far it tips over
-    float parts[8]{};
+    float parts[10]{};
     auto eval = [&](const float* q) {
         for (int j = 0; j < J_COUNT; ++j) ang_[j] = T[j];
         ang_[J_SHO_R] = {q[0], q[1], q[2]};
@@ -400,7 +401,45 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
         roll = std::asin(std::clamp(Vector3Normalize({H.m0, H.m1, H.m2}).y, -1.0f, 1.0f));
         const float over_look = std::max(0.0f, look - 0.44f), over_roll = std::max(0.0f, std::fabs(roll) - 0.44f);
         parts[7] = cheek ? 300.0f * (over_look * over_look + over_roll * over_roll) : 0.0f;
-        return parts[0] + parts[1] + parts[2] + parts[3] + parts[4] + parts[5] + parts[6] + parts[7];
+        // Loading: the left hand as the game puts it, thumbing a shell into the port (the reload's
+        // steps, the arm by the IK, its elbow free to find its way): nothing through his body (the
+        // arms, the gun) and the left wrist no further bent or twisted than wrists go.
+        parts[8] = parts[9] = 0;
+        if (!loading) {   // the stock through his coat (past the butt pad, which presses into the shoulder pocket)
+            float in = 0;
+            for (float k : {0.25f, 0.6f}) in = std::max(in, torso_in(Vector3Transform(Vector3Lerp(butt, belly, k), G), 0.03f));
+            parts[8] = 40000.0f * std::max(in, 0.0f) * std::max(in, 0.0f) + 400.0f * std::max(in, 0.0f);
+        }
+        if (loading) {
+            support_ = &grips::SHOTGUN_LEFT;
+            support_w_ = 1;
+            steps_ = true;
+            reloading = {true, reload::Kind::Shell, 0.92f, false};
+            lh_source_ = 6;   // (as hands() names a shell's steps: no easing over from elsewhere)
+            lh_fade_ = 1;
+            swivel_[0] = 0;
+            dt_ = 10.0f;      // (the elbow's swivel settles at once)
+            hands(0);
+            float in = 0;
+            for (int side = 0; side < 2; ++side) {
+                const Vector3 s0 = joint(side ? J_SHO_R : J_SHO_L), e0 = joint(side ? J_ELB_R : J_ELB_L), w0 = joint(side ? J_WRI_R : J_WRI_L);
+                for (float k : {0.6f, 1.0f}) in = std::max(in, torso_in(Vector3Lerp(s0, e0, k), 0.05f));
+                for (float k : {0.3f, 0.6f}) in = std::max(in, torso_in(Vector3Lerp(e0, w0, k), 0.042f));
+            }
+            const Matrix Gl = MatrixMultiply(shotgun_hold(), W_[J_WRI_R]);
+            for (float k : {0.25f, 0.6f}) in = std::max(in, torso_in(Vector3Transform(Vector3Lerp(butt, belly, k), Gl), 0.03f));
+            float sw = 0, tw = 0;
+            const Vector3 a = ik_wrist_[0];
+            swing_twist(QuaternionFromMatrix(MatrixMultiply(MatrixMultiply(MatrixRotateZ(a.z), MatrixRotateX(a.x)), MatrixRotateY(a.y))), off_[J_WRI_L], sw, tw);
+            parts[8] = 40000.0f * std::max(in, 0.0f) * std::max(in, 0.0f) + 400.0f * std::max(in, 0.0f);
+            parts[9] = 30.0f * (std::max(sw - 0.7f, 0.0f) + 0.6f * std::max(std::fabs(tw) - 1.3f, 0.0f));
+            support_ = nullptr;
+            support_w_ = 0;
+            steps_ = false;
+            reloading.on = false;
+            dt_ = 1.0f / 60;
+        }
+        return parts[0] + parts[1] + parts[2] + parts[3] + parts[4] + parts[5] + parts[6] + parts[7] + parts[8] + parts[9];
     };
     unsigned rng = 0x2545F491u;
     auto rnd = [&rng]() { rng ^= rng << 13; rng ^= rng >> 17; rng ^= rng << 5; return float(rng & 0xFFFFFF) / 16777215.0f; };
@@ -412,13 +451,14 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
     float bestq[K];
     std::copy(start, start + K, bestq);
     float best = eval(bestq);
-    const int iters = cheek ? 60000 : 40000;
+    const int iters = int(float(cheek ? 60000 : 40000) * (std::getenv("DW_FIT_QUICK") ? 0.15f : 1.0f));
     // A second fixed start: the right elbow raised out to the side, the way a shotgun is shouldered
     // (it lifts the shoulder into a pocket for the butt).
     float elbow_out[K];
     std::copy(start, start + K, elbow_out);
     elbow_out[0] = 0.5f; elbow_out[1] = 0.5f; elbow_out[2] = 1.1f; elbow_out[3] = 1.6f;
-    for (int restart = 0; restart < 14; ++restart) {   // several starts: the arms have more than one way to hold a gun
+    const int restarts = std::getenv("DW_FIT_QUICK") ? 4 : 14;
+    for (int restart = 0; restart < restarts; ++restart) {   // several starts: the arms have more than one way to hold a gun
         float q[K];
         for (int k = 0; k < K; ++k)
             q[k] = restart == 0 ? start[k] : restart == 1 ? std::clamp(elbow_out[k], lo[k], hi[k]) : lo[k] + (hi[k] - lo[k]) * rnd();
@@ -449,13 +489,13 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
     }
     char buf[1200];
     std::snprintf(buf, sizeof(buf),
-                  "cost %.4f (bore %.4f butt %.4f hand %.4f eye %.4f elbow %.4f wrist %.4f strain %.4f face %.4f)\n"
+                  "cost %.4f (bore %.4f butt %.4f hand %.4f eye %.4f elbow %.4f wrist %.4f strain %.4f face %.4f into %.4f left wrist %.4f)\n"
                   "  gaps: butt %.1f cm, left hand %.1f cm, eye %.1f cm (u %.0f v %.0f w %.0f mm); face %.0f deg off the aim,"
                   " tipped %.0f deg\n"
                   "  SHO_R {%.3f, %.3f, %.3f} ELB_R %.3f WRI_R {%.3f, %.3f, %.3f}\n"
                   "  SHO_L {%.3f, %.3f, %.3f} ELB_L %.3f WRI_L {%.3f, %.3f, %.3f}%s\n"
                   "  NECK {%.3f, %.3f, %.3f} HEAD {%.3f, %.3f, %.3f} SPINE.y %.3f CHEST {%.3f, %.3f}",
-                  best, parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7],   //
+                  best, parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7], parts[8], parts[9],   //
                   gaps[0] * 100, gaps[1] * 100, gaps[2] * 100, eye_g.x, eye_g.y, eye_g.z, look * RAD2DEG, roll * RAD2DEG,
                   q[0], q[1], q[2], q[3], q[4], q[5], q[6],                                             // the right arm
                   sho_l.x, sho_l.y, sho_l.z, elb_l, wri_l.x, wri_l.y, wri_l.z, support_ ? " (as the IK left it)" : "",

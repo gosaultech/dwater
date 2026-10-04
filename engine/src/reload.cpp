@@ -19,9 +19,10 @@ int steps(Kind kind, bool from_grip, Step* out) {
         put(0.0f, Place::Grip, 0, Hand::Grip);
         put(0.3f, Place::Pocket, 0, Hand::Open);       // (the empty one falls at MAG_DROP, the hand already on its way)
         put(0.37f, Place::Pocket, 0, Hand::Hold);      // closed on the fresh one: out it comes
-        put(0.52f, Place::Load, 60, Hand::Hold, false);   // up under the grip, lined up with it
-        put(0.6f, Place::Load, 12, Hand::Hold, false);    // in
-        put(MAG_HOME, Place::Load, 0, Hand::Hold);     // home
+        put(0.45f, Place::Load, 170, Hand::Hold, false);  // out and turned upright on the way, lined up below the grip
+        put(0.52f, Place::Load, 60, Hand::Hold, false);   // up under the grip
+        put(0.6f, Place::Load, 12, Hand::Slap, false);    // in, the fingers opening off it
+        put(MAG_HOME, Place::Load, 0, Hand::Slap);     // home, under the heel of the hand
         put(0.86f, Place::Grip, 0, Hand::Grip);        // back on the gun (the slide stop on the way)
         put(1.0f, Place::Grip, 0, Hand::Grip);
         return n;
