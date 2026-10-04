@@ -344,9 +344,16 @@ sqlite3 build/damned_waters.db "SELECT mode, status, runtime_s, frames, worst_fr
 
 ## Next milestones
 
-1. Combat port: pistol and shotgun, kick, dodge, hit-stop; the three Drowned in the hall.
-2. The cyclist (yellow rain jacket, chain lock) for a later room; water drips on the Drowned.
-3. Rooms `voorkamer` and `kelder`, with doors and transitions.
-4. UI, inventory, saves.
-5. Audio: a C++ synth like Bumper Ball Maze's.
-6. Remaining creatures in the stylized-grotesque style.
+Done in the C++ engine: combat (both guns, kick, dodge, counters, gore), the reloads, the
+status screen (items, files, map, pickups), the death screen. Still to come, in order:
+
+1. **More of the house, and the city.** The canal house's other rooms (`voorkamer`, `kelder`
+   and new ones), with doors and room-to-room transitions; then the streets along the canals,
+   Amsterdam Centraal, and the metro north under the IJ to Station Noord. All pre-rendered
+   backgrounds from RoomSpecs (`docs/handoff/areas_session_prompt.md` is the brief).
+2. Saves (the typewriter), a title screen.
+3. **#27 (polish, deferred): a palm arch joint**, so the 870's right wrist cocks less (about 49
+   degrees toward the little finger now). A rig change: rebuild `survivor.dwc`, then refit the
+   grips (`--fitgrips`) and the poses (`--fitpistol`, `--fit870`).
+4. Reload tuning from play-testing (timing, the 870's hip load).
+5. Rumble and the SDL3 backend; the cyclist and the other creatures.
