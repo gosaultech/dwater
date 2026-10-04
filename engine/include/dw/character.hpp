@@ -174,9 +174,10 @@ public:
     Matrix load_frame() const;
     // A tool (--clearance, character_clearance.cpp): how far anything goes through anything this
     // frame (m): each arm into the body, the gun into the body, the left hand into the right hand
-    // and into the gun. Each the deepest point, how many points go in, and (for the first three)
+    // and into the gun, and the right forefinger into the gun (the trigger finger going on and off
+    // the trigger). Each the deepest point, how many points go in, and (for the first three)
     // where the deepest is (world).
-    struct Clearance { clearance::Worst larm, rarm, gun, hands, lhand_gun; Vector3 larm_at{}, rarm_at{}, gun_at{}; };
+    struct Clearance { clearance::Worst larm, rarm, gun, hands, lhand_gun, rindex_gun; Vector3 larm_at{}, rarm_at{}, gun_at{}; };
     Clearance clearance(std::vector<Vector3>* clashes = nullptr) const;
     // How far a wrist is bent (radians): the angle between the forearm and the hand (wrist to the
     // middle knuckle), whichever way. Comfortable to about 40 degrees, a strain past 60.
@@ -185,6 +186,10 @@ public:
     // A tool (--clearance): each reload played through as the game plays it, the clearance at every
     // step of it, as a table.
     std::string reload_clearance();
+    // A tool (--clearance): each gun carried as the game carries it (standing at the ready, a
+    // walking and a running stride, the raise to the aim and back down), frame by frame: the
+    // clearance, both wrists, and how far the trigger finger is from the trigger.
+    std::string stance_clearance();
 
 private:
     // tag: 0 always shown; 1 + weapon: only while that gun is in hand. drive: 1 the slide, 2 the

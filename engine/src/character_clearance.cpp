@@ -2,8 +2,10 @@
 // Purpose: Character::clearance(), the check that nothing goes through anything as he moves: his
 // arms and hands against his body and coat, the gun against his body, his left hand against the
 // right and against the gun. Measured from the skinned vertices as they are this frame
-// (clearance.hpp), so it sees what the camera would. Used by --clearance to sweep the reloads
+// (clearance.hpp), so it sees what the camera would. Used by --clearance to sweep the reloads, and
+// the ways he carries each gun (standing, walking, running, raising it to the aim and lowering it),
 // frame by frame while tuning them; never run in play.
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -11,6 +13,7 @@
 
 #include "dw/character.hpp"
 #include "dw/clearance.hpp"
+#include "cast_guns.hpp"
 
 namespace dw {
 namespace {
@@ -30,7 +33,7 @@ Character::Clearance Character::clearance(std::vector<Vector3>* clashes) const {
     using clearance::V3;
     // The surfaces: the body (torso, coat, pelvis), each forearm with its hand, the gun in hand.
     Cloud body(0.025f), rhand(0.015f), gun(0.012f);
-    std::vector<V3> larm, rarm, lhand;
+    std::vector<V3> larm, rarm, lhand, rindex;
     const Vector3 sho_l = joint(J_SHO_L), sho_r = joint(J_SHO_R), wri_l = joint(J_WRI_L);
     for (const Skinned& s : skinned_) {
         for (int v : s.by_region[R_BODY]) body.add(v3(skin_point(s, v)), v3(skin_normal(s, v)));
@@ -43,6 +46,13 @@ Character::Clearance Character::clearance(std::vector<Vector3>* clashes) const {
                 (left ? larm : rarm).push_back(v3(p));
                 if (r == R_FARM_R) rhand.add(v3(p), v3(skin_normal(s, v)));
                 if (r == R_FARM_L && Vector3Distance(p, wri_l) < 0.2f) lhand.push_back(v3(p));
+                if (r == R_FARM_R && s.mesh.boneIds) {   // the forefinger's skin: carried mostly by its middle or last joint
+                    int top = 0;
+                    for (int k = 1; k < 4; ++k)
+                        if (s.mesh.boneWeights[v * 4 + k] > s.mesh.boneWeights[v * 4 + top]) top = k;
+                    const int j = s.mesh.boneIds[v * 4 + top];
+                    if (j == J_INDEX2_R || j == J_INDEX3_R) rindex.push_back(v3(p));
+                }
             }
     }
     std::vector<V3> gun_pts;
@@ -64,7 +74,8 @@ Character::Clearance Character::clearance(std::vector<Vector3>* clashes) const {
     c.gun = clearance::worst(gun_pts, body, REACH, TOL);
     c.hands = clearance::worst(lhand, rhand, 0.025f, TOL);
     c.lhand_gun = clearance::worst(lhand, gun, 0.015f, TOL);
-    if (clashes)   // every point more than a whisker in, for drawing
+    c.rindex_gun = clearance::worst(rindex, gun, 0.015f, 0.002f);
+    if (clashes)  // every point more than a whisker in, for drawing
         for (const auto* set : {&larm, &rarm, &gun_pts})
             for (const V3& p : *set)
                 if (body.depth(p, REACH) > 0.008f) clashes->push_back({p.x, p.y, p.z});
@@ -152,6 +163,114 @@ std::string Character::reload_clearance() {
 }  // namespace dw
 
 namespace dw {
+
+// Each gun carried as the game carries it, at 60 frames a second: standing at the ready (settled),
+// a walking stride and a running one (at the game's speeds, 1.9 and 3.8 m/s), the raise to the
+// aim and the lowering back to the ready, the worst of every 0.05 s. Beside the clearance: both
+// wrists (swing, twist; comfortable to about 40 and 75 degrees), and where the trigger finger is:
+// how near the skin of its last segment comes to the trigger's face (mm), and whether any of it is
+// inside the trigger guard.
+std::string Character::stance_clearance() {
+    std::string out;
+    char line[320];
+    const float dt = 1.0f / 60;
+    auto wrist = [&](int k) {   // swing and twist (radians) of a wrist as this frame has it
+        const Vector3 a = ik_[k] ? ik_wrist_[k] : Vector3Add(ang_[k ? J_WRI_R : J_WRI_L], twitch_[k ? J_WRI_R : J_WRI_L]);
+        const Matrix m = MatrixMultiply(MatrixMultiply(MatrixRotateZ(a.z), MatrixRotateX(a.x)), MatrixRotateY(a.y));
+        Vector2 st{};
+        swing_twist(QuaternionFromMatrix(m), off_[k ? J_WRI_R : J_WRI_L], st.x, st.y);
+        return st;
+    };
+    struct Row { Clearance c; Vector2 wl, wr; float trig; bool in_guard; };
+    auto sample = [&]() {
+        Row r{clearance(), wrist(0), wrist(1), 1e9f, false};
+        // The skin of the forefinger's last segment, in the gun's own measure (mm: u forward, v up,
+        // w to its right), against the trigger's face and the guard's opening (cast_guns.cpp).
+        const Matrix to_gun = MatrixInvert(gun_frame());
+        const Vector3 o = weapon_ == 1 ? cast::r870_at(0, 0, 0) : cast::m92fs_at(0, 0, 0);
+        const Vector3 face = weapon_ == 1 ? Vector3{31, -60, 0} : Vector3{84.7f, -42.5f, 0};
+        for (const Skinned& s : skinned_) {
+            if (!s.mesh.boneIds || R_FARM_R >= int(s.by_region.size())) continue;
+            for (int v : s.by_region[R_FARM_R]) {
+                int top = 0;
+                for (int k = 1; k < 4; ++k)
+                    if (s.mesh.boneWeights[v * 4 + k] > s.mesh.boneWeights[v * 4 + top]) top = k;
+                if (s.mesh.boneIds[v * 4 + top] != J_INDEX3_R) continue;
+                const Vector3 g = Vector3Transform(skin_point(s, v), to_gun);
+                const Vector3 p{(o.y - g.y) * 1000, (o.z - g.z) * 1000, g.x * 1000};
+                r.trig = std::min(r.trig, Vector3Distance(p, face));
+                r.in_guard = r.in_guard || (std::fabs(p.z) < 5 && (weapon_ == 1 ? p.x > 16 && p.x < 87 && p.y < -45 && p.y > -73
+                                                                                 : p.x > 56 && p.x < 116 && p.y < -28 && p.y > -57));
+            }
+        }
+        return r;
+    };
+    auto fold = [](Row& a, const Row& b) {
+        auto keep = [](clearance::Worst& x, const clearance::Worst& y) { if (y.depth > x.depth) x = y; };
+        keep(a.c.larm, b.c.larm); keep(a.c.rarm, b.c.rarm); keep(a.c.gun, b.c.gun); keep(a.c.hands, b.c.hands);
+        keep(a.c.lhand_gun, b.c.lhand_gun); keep(a.c.rindex_gun, b.c.rindex_gun);
+        a.wl = {std::max(a.wl.x, b.wl.x), std::fabs(b.wl.y) > std::fabs(a.wl.y) ? b.wl.y : a.wl.y};
+        a.wr = {std::max(a.wr.x, b.wr.x), std::fabs(b.wr.y) > std::fabs(a.wr.y) ? b.wr.y : a.wr.y};
+        a.trig = std::min(a.trig, b.trig);
+        a.in_guard = a.in_guard || b.in_guard;
+    };
+    auto print = [&](const char* label, const Row& r) {
+        std::snprintf(line, sizeof line, "  %-6s %5.0f %5.0f %5.0f %5.0f %6.0f %6.0f   %4.0f %4.0f / %4.0f %4.0f   %5.0f %s\n", label,
+                      r.c.larm.depth * 1000, r.c.rarm.depth * 1000, r.c.gun.depth * 1000, r.c.hands.depth * 1000, r.c.lhand_gun.depth * 1000,
+                      r.c.rindex_gun.depth * 1000, r.wl.x * RAD2DEG, r.wl.y * RAD2DEG, r.wr.x * RAD2DEG, r.wr.y * RAD2DEG, r.trig,
+                      r.in_guard ? "in the guard" : "out");
+        out += line;
+    };
+    const char* header = "         larm  rarm   gun hands lh-gun finger   wrists L / R (deg: swing, twist)   trigger (mm: the fingertip from its face)\n";
+    for (int gun = 0; gun < 2; ++gun) {
+        set_weapon(gun);
+        reloading = {};
+        pump = slide = 0;
+        limp = 0;
+        Row all{};
+        all.trig = 1e9f;
+        auto settle = [&](Pose p, float speed) { for (int f = 0; f < 120; ++f) animate(p, speed, dt); };
+        auto play = [&](const char* name, Pose p, float speed, float secs, bool rows) {
+            std::snprintf(line, sizeof line, "\n%s, %s\n%s", gun ? "870" : "M92FS", name, header);
+            out += line;
+            Row bin{}, worst{};
+            bin.trig = worst.trig = 1e9f;
+            const int frames = int(std::lround(secs / dt));
+            for (int f = 1; f <= frames; ++f) {
+                animate(p, speed, dt);
+                fold(bin, sample());
+                if (f % 3 == 0 || f == frames) {
+                    if (rows) {
+                        char label[16];
+                        std::snprintf(label, sizeof label, "%.2f", float(f) * dt);
+                        print(label, bin);
+                    }
+                    fold(worst, bin);
+                    bin = {};
+                    bin.trig = 1e9f;
+                }
+            }
+            print("WORST", worst);
+            fold(all, worst);
+        };
+        settle(Pose::Idle, 0);
+        play("standing at the ready", Pose::Idle, 0, 1.0f, false);
+        settle(Pose::Walk, 1.9f);
+        play("walking (1.9 m/s)", Pose::Walk, 1.9f, 1.4f, false);
+        settle(Pose::Run, 3.8f);
+        play("running (3.8 m/s)", Pose::Run, 3.8f, 1.0f, false);
+        settle(Pose::Idle, 0);
+        play("raised to the aim", Pose::Aim, 0, 0.6f, true);
+        settle(Pose::Aim, 0);
+        play("lowered to the ready", Pose::Idle, 0, 0.6f, true);
+        settle(Pose::Walk, 1.9f);
+        play("walking, then aiming", Pose::Aim, 0, 0.6f, false);
+        std::snprintf(line, sizeof line, "\n%s, all of it\n%s", gun ? "870" : "M92FS", header);
+        out += line;
+        print("WORST", all);
+    }
+    return out;
+}
 
 // --fitreload. The pistol's close position and turn, searched (coordinate descent: each number
 // nudged either way while that helps, the nudges halved when nothing does) to make the magazine

@@ -22,8 +22,10 @@
 //   ./damned_waters --fit870        a tool: fit the hold on the 870 (aim, low ready, reload: arms,
 //                                   wrists and the turn of his back; aiming, also his head and lean,
 //                                   the cheek down on the stock), print it for the pose tables, exit
-//   ./damned_waters --clearance     a tool: play each reload through and print, step by step, how
-//                                   deep his arms, hands and gun go into his body (and each other)
+//   ./damned_waters --clearance     a tool: play each way he carries a gun (standing, walking, running,
+//                                   raising it and lowering it) and each reload through and print, step
+//                                   by step, how deep his arms, hands and gun go into his body (and each
+//                                   other), his wrists, and where his trigger finger is
 //   ./damned_waters --fitreload     a tool: fit where the pistol is brought in to reload (least wrist
 //                                   strain, nothing through anything), print it, exit
 //   ./damned_waters --frames 600    auto-exit (smoke tests)
@@ -84,7 +86,9 @@ int main(int argc, char** argv) {
         c.unload();
     } else if (clear) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);
-        TraceLog(LOG_INFO, "CLEARANCE%s", c.reload_clearance().c_str());
+        const char* part = std::getenv("DW_CLEAR_ONLY");   // (stance or reload: just that half)
+        if (!part || std::string(part) == "stance") TraceLog(LOG_INFO, "CLEARANCE (carrying the guns)%s", c.stance_clearance().c_str());
+        if (!part || std::string(part) == "reload") TraceLog(LOG_INFO, "CLEARANCE (the reloads)%s", c.reload_clearance().c_str());
         c.unload();
     } else if (fitgrips) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);
