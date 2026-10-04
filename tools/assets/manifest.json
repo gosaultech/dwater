@@ -1,0 +1,82 @@
+{
+ "_file": "damned_waters/tools/assets/manifest.json: the CC0 assets the room sets use (written by tools/assets/polyhaven.py fetch).",
+ "assets": {
+  "brick_wall_003": {
+   "kind": "texture",
+   "name": "Brick Wall 003",
+   "authors": [
+    "Dimitrios Savva",
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/brick_wall_003"
+  },
+  "dark_wood": {
+   "kind": "texture",
+   "name": "Dark Wood",
+   "authors": [
+    "Dario Barresi",
+    "Dimitrios Savva",
+    "Rico Cilliers"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/dark_wood"
+  },
+  "dirty_carpet": {
+   "kind": "texture",
+   "name": "Dirty Carpet",
+   "authors": [
+    "Rohit Seervi"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/dirty_carpet"
+  },
+  "herringbone_parquet": {
+   "kind": "texture",
+   "name": "Herringbone Parquet",
+   "authors": [
+    "Jenelle van Heerden",
+    "Sergej Majboroda"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/herringbone_parquet"
+  },
+  "hessian_230": {
+   "kind": "texture",
+   "name": "Hessian 230",
+   "authors": [
+    "Rico Cilliers",
+    "colormass"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/hessian_230"
+  },
+  "marble_01": {
+   "kind": "texture",
+   "name": "Marble 01",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/marble_01"
+  },
+  "plastered_wall": {
+   "kind": "texture",
+   "name": "Plastered Wall",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/plastered_wall"
+  },
+  "red_brick_03": {
+   "kind": "texture",
+   "name": "Red Brick 03",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/red_brick_03"
+  }
+ }
+}

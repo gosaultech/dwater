@@ -6,6 +6,9 @@
 //                                   T tank/modern, F3 debug; Enter after dying to try again
 //   --flashlight                    start with the flashlight on (also for --capture)
 //   ./damned_waters --capture out   stage + screenshot every setup, then exit
+//   ./damned_waters --room proef --still 3.2,2.2,163 out.png [--shot c]
+//                                   the survivor standing in a room (x, z, yaw degrees), one frame, then exit;
+//                                   DW_ROOT=<dir> reads rooms, plates and audio from another tree
 //   ./damned_waters --sheet out     studio turnaround of the cast (model review), then exit
 //                                   (--only pieter,survivor: just those subjects)
 //   ./damned_waters --view survivor,25,10,0.6,0,0.9,30 out.png   one full-resolution studio shot
@@ -37,7 +40,7 @@
 #include "game.hpp"
 
 int main(int argc, char** argv) {
-    std::string capture, sheet, only, view, view_png, room = "gang";
+    std::string capture, sheet, only, view, view_png, room = "gang", still, still_png, shot;
     long max_frames = -1;
     for (int i = 1; i + 1 < argc; ++i) {
         std::string a = argv[i];
@@ -46,6 +49,8 @@ int main(int argc, char** argv) {
         else if (a == "--only") only = argv[++i];
         else if (a == "--view" && i + 2 < argc) { view = argv[++i]; view_png = argv[++i]; }
         else if (a == "--room") room = argv[++i];
+        else if (a == "--still" && i + 2 < argc) { still = argv[++i]; still_png = argv[++i]; }
+        else if (a == "--shot") shot = argv[++i];
         else if (a == "--frames") max_frames = std::stol(argv[++i]);
     }
     bool flashlight = false, fit870 = false, fitgrips = false, fitpistol = false, clear = false, fitreload = false;
@@ -108,6 +113,25 @@ int main(int argc, char** argv) {
         if (want("low")) TraceLog(LOG_INFO, "FIT low ready %s", c.fit_shotgun(low).c_str());
         if (want("reload")) TraceLog(LOG_INFO, "FIT reload %s", c.fit_shotgun(reload).c_str());
         c.unload();
+    } else if (!still.empty()) {   // the survivor standing in a room: --still x,z,yaw out.png [--shot id]
+        float x = 0, z = 0, yaw = 0;
+        if (std::sscanf(still.c_str(), "%f,%f,%f", &x, &z, &yaw) == 3) {
+            game.pose_still(x, z, yaw, shot);
+            for (int warm = 0; warm < 2; ++warm) {
+                game.render();
+                BeginDrawing();
+                game.present();
+                if (warm == 1) {
+                    rlDrawRenderBatchActive();
+                    Image img = LoadImageFromScreen();
+                    ExportImage(img, still_png.c_str());
+                    UnloadImage(img);
+                }
+                EndDrawing();
+            }
+        } else {
+            TraceLog(LOG_ERROR, "bad --still spec: %s (want x,z,yaw)", still.c_str());
+        }
     } else if (!view.empty()) {
         if (!game.studio_view(view, view_png)) TraceLog(LOG_ERROR, "bad --view spec: %s", view.c_str());
     } else if (!sheet.empty()) {

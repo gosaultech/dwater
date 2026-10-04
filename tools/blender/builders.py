@@ -12,6 +12,7 @@ import random
 
 import bpy
 
+import surfaces
 from roomspec import g2b, wall_segments
 
 WALL_T = 0.3  # wall thickness, grows outward from the room bounds
@@ -179,7 +180,15 @@ def _brick(nt, vec, c1, c2, mortar, width, row, mortar_size, offset=0.5, bias=0.
 
 
 def material(key):
-    """Material library keyed by the names used in RoomSpec JSON."""
+    """Material library keyed by the names used in RoomSpec JSON. A Poly Haven reference
+    ("ph:<id>" or {"ph": ...}) or a painted surface ({"color": ...}) goes to surfaces.py."""
+    if surfaces.is_ref(key):
+        ck = surfaces.cache_key(key)
+        if ck not in _MATS:
+            m, nt, out = _new_mat(ck[:60])
+            surfaces.build(nt, out, key)
+            _MATS[ck] = m
+        return _MATS[ck]
     if key in _MATS:
         return _MATS[key]
     m, nt, out = _new_mat(key)
@@ -332,7 +341,7 @@ def build_shell(spec):
         if cursor < length + t:
             _wall_box(spec, side, cursor, length + t, 0, h, 0, t, wall_mat, f"wall_{side}")
         # Wainscot / skirting: thin layer on the interior face, skipping doorways.
-        doors = [_opening_span(o) for o in ops if o["kind"] in ("door", "gate")]
+        doors = [_opening_span(o) for o in ops if o["kind"] in ("door", "gate") or o.get("sill", 1.0) < 0.05]
         spans, c = [], 0.0
         for du0, du1, _, _ in sorted(doors):
             spans.append((c, du0))
@@ -344,10 +353,16 @@ def build_shell(spec):
             if wain_key and wain_h > 0:
                 _wall_box(spec, side, su0, su1, 0, wain_h, -0.025, 0, material(wain_key), "wainscot")
                 _wall_box(spec, side, su0, su1, wain_h - 0.03, wain_h + 0.03, -0.045, 0, material("dark_wood"), "rail")
-            _wall_box(spec, side, su0, su1, 0, 0.14, -0.04, 0, material("dark_wood"), "skirting")
+            sk = mats.get("skirting", "dark_wood")
+            if sk:
+                _wall_box(spec, side, su0, su1, 0, mats.get("skirting_height", 0.14), -0.02, 0, material(sk), "skirting")
 
 
 def _build_opening(spec, side, op):
+    if op.get("arch"):   # round-headed, steel-framed (kit.py)
+        import kit
+        kit.arch_opening(spec, side, op)
+        return
     u0, u1, v0, v1 = _opening_span(op)
     wood, dark = material("dark_wood"), material("soot")
     # Interior casing around every opening.
@@ -391,6 +406,10 @@ def build_water(spec):
 def build_exterior(spec, rng):
     """Cheap, atmospheric outside world visible through windows/gates."""
     ext = spec.get("exterior")
+    if isinstance(ext, dict):   # the canal and the houses across it (kit.py)
+        import kit
+        kit.build_exterior(spec, rng)
+        return
     (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
     if ext == "south":
         box_aabb("canal", (x0 - 30, -1.4, z1 + 0.5), (x1 + 30, -1.38, z1 + 13), material("water"))
@@ -422,6 +441,9 @@ def build_exterior(spec, rng):
 # ───────────────────────────── prop kit ─────────────────────────────────────
 def build_prop(p, room_h):
     t = p["type"]
+    import kit
+    if t in kit.PROPS:   # the detailed kit: sofas, kasten, the marble mantel, models...
+        return kit.build_prop(p, room_h)
     size = p.get("size", [0.45, 0.95, 0.45])
     w, h, d = size
     yaw, tip = p.get("yaw", 0.0), 0.0
@@ -521,7 +543,7 @@ def build_prop(p, room_h):
         cyl(root, "shade", (0, 0.1, 0), 0.24, 0.16, material("brass"), r_top=0.05)
         cyl(root, "bulb", (0, 0.0, 0), 0.04, 0.07, emissive("bulb", (1.0, 0.6, 0.3), 12.0))
     elif t == "rug":
-        part(root, "rug", (0, 0.004, 0), (w, 0.008, d), material("rug"))
+        part(root, "rug", (0, 0.004, 0), (w, 0.008, d), material(p.get("material", "rug")))
     elif t == "paper":
         part(root, "paper", (0, 0.001, 0), (0.21, 0.002, 0.297), material("paper"))
     elif t == "candle":

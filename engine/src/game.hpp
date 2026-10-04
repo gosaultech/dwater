@@ -58,6 +58,9 @@ public:
     void present() const;           // post-process to the window + HUD
     int capture_count() const { return 27; }
     std::string stage(int i);       // pose a capture setup; returns its name
+    // A still of the room (--still): the survivor standing at (x, z) facing yaw (degrees), no
+    // Drowned, seen from `shot` (empty: whichever shot covers him). Render and present after.
+    void pose_still(float x, float z, float yaw_deg, const std::string& shot);
     // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
     // only: a comma-separated list of subjects to render (empty: all).
     void model_sheet(const std::string& dir, const std::string& only = "");

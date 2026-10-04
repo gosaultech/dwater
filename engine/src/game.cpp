@@ -756,6 +756,17 @@ std::string Game::stage(int i) {
     return name;
 }
 
+void Game::pose_still(float x, float z, float yaw_deg, const std::string& shot) {
+    constexpr float DT = 1.0f / 60;
+    for (auto& e : enemies_) e.active = false;
+    banner_t_ = 0;
+    paused_ = false;
+    player_ = {x, z, yaw_deg * DEG2RAD};
+    cut_to(shot.empty() ? select_shot(spec_.zones(), "", x, z) : shot);
+    for (int f = 0; f < 90; ++f) { time_ += DT; animate(DT); }
+    upload_lights();
+}
+
 void Game::upload_studio_lights() {
     // Neutral three-point rig for judging a model: warm key front-left, cold fill, cold rim behind.
     const Vector4 pos[8] = {{-1.3f, 2.7f, -1.7f, 8.0f}, {1.6f, 1.2f, -1.3f, 8.0f}, {0.4f, 2.5f, 1.9f, 8.0f}};

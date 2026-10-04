@@ -3,6 +3,8 @@
 // (walls as slabs outside the bounds, props from their footprint size + yaw).
 #include "dw/room_spec.hpp"
 
+#include <cstdlib>
+
 #include <fstream>
 #include <nlohmann/json.hpp>
 
@@ -17,6 +19,7 @@ Rect2 rect(const json& lo, const json& hi) { return {lo[0].get<float>(), lo[1].g
 }  // namespace
 
 std::string repo_root() {
+    if (const char* e = std::getenv("DW_ROOT"); e && *e) return e;   // (a test tree elsewhere: rooms, plates, audio)
 #ifdef DW_REPO_ROOT
     return DW_REPO_ROOT;
 #else
