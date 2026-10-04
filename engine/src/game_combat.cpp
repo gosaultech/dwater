@@ -91,6 +91,7 @@ void Game::reset_fight() {
     inv_.add(I_SHOTGUN, 1);
     inv_.add(I_HANDGUN_AMMO, 30);
     inv_.add(I_SHELLS, 4);
+    reset_world();
     guns_[0] = {Weapon::Pistol, weapon_spec(Weapon::Pistol).mag};
     guns_[1] = {Weapon::Shotgun, weapon_spec(Weapon::Shotgun).mag};   // 6 in the tube, 1 in the chamber
     gun_ = 0;
@@ -244,6 +245,7 @@ void Game::update_player(float dt) {
         return;
     }
     if (in_.hit(ACT_KICK) && try_kick()) return;
+    if (in_.hit(ACT_INTERACT) && interact()) { vel_ = {}; return; }   // nothing to kick: whatever he's facing
     if (guns_[gun_].is_reloading()) {   // he stands still to reload; walking off stops the 870's shells
         const bool moving = Vector2Length(in) > 0.2f;
         if (!moving || !guns_[gun_].spec().single_load) { p.pose = Pose::Reload; vel_ = {}; return; }

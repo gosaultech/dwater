@@ -93,6 +93,7 @@ bool Game::init(const std::string& room_id) {
     settings_ = settings_path.empty() ? Settings{} : Settings::load(settings_path);
     input_.scheme = settings_.scheme;
     hero_ = Character::make(Kind::Survivor);
+    init_status();
     reset_fight();
     cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
     upload_lights();
@@ -101,6 +102,7 @@ bool Game::init(const std::string& room_id) {
 }
 
 void Game::shutdown() {
+    unload_status();
     for (auto& [id, p] : plates_) { UnloadTexture(p.first); UnloadTexture(p.second); }
     hero_.unload();
     for (auto& e : enemies_) e.body.unload();
@@ -385,6 +387,28 @@ void Game::update(float dt) {
     time_ += dt;
     banner_t_ -= dt;
     if (IsKeyPressed(KEY_F3)) debug = !debug;
+    // A line of text being read (something looked at, a locked door): time stands still.
+    if (!text_queue_.empty()) {
+        ui_t_ += dt;
+        text_t_ += dt;
+        if (in_.hit(ACT_CONFIRM) || in_.hit(ACT_BACK)) {
+            if (size_t(text_t_ * 55.0f) < text_queue_.front().size()) {
+                text_t_ = 1e3f;   // the rest at once
+            } else {
+                text_queue_.erase(text_queue_.begin());
+                text_t_ = 0;
+                sfx_.play("ui_move", 0.4f);
+            }
+        }
+        sfx_.update();
+        return;
+    }
+    // The case open (or something found): time stands still.
+    if (status_.is_open()) {
+        update_status(dt);
+        sfx_.update();
+        return;
+    }
     if (in_.hit(ACT_PAUSE) && pmode_ != PMode::Dead) {
         paused_ = !paused_;
         menu_sel_ = 0;
@@ -393,6 +417,13 @@ void Game::update(float dt) {
         update_menu();
     }
     if (paused_) { sfx_.update(); return; }   // time stands still
+    if (in_.hit(ACT_STATUS) && pmode_ != PMode::Dead) {   // the case
+        status_.open(status::Tab::Items);
+        for (size_t i = 0; i < storeys_.size(); ++i)   // the map opens on the floor he's on
+            if (storeys_[i] == spec_.floor) status_.show_floor(int(i));
+        sfx_.play("case_open", 0.7f);
+        return;
+    }
     if (in_.hit(ACT_FLASHLIGHT)) { flashlight = !flashlight; sfx_.play("dry_fire", 0.3f, 0.05f); }   // its switch clicks
     // The slow-motion beat after a perfect dodge (an option): the world slows, then catches up.
     slowmo_t_ = std::max(0.0f, slowmo_t_ - dt);
@@ -619,6 +650,95 @@ std::string Game::stage(int i) {
             const WeaponSpec& s = weapon_spec(Weapon::Shotgun);
             run((s.reload_time + s.rack_time) * 0.4f);
             name = "shotgun_reload";
+            break;
+        }
+        case 15: case 16: case 17: case 18: case 19: case 20: case 21: case 22: case 23: case 24: case 25: {
+            // The status screen and the room's things, driven through the screen's own rules as a
+            // player's thumbs would (status.hpp), then left open on the frame.
+            auto press = [&](status::Pad p) {
+                const status::Command c = status_.update(p, inv_, gun_, int(notes_.size()), int(storeys_.size()));
+                if (c.kind != status::Command::None) apply(c);
+            };
+            auto nav = [](int dx, int dy) { status::Pad p; p.dx = dx; p.dy = dy; return p; };
+            status::Pad ok, combine, examine, tab;
+            ok.confirm = true;
+            combine.combine = true;
+            examine.examine = true;
+            tab.tab = 1;
+            auto marit = [&] {   // the parlour's note, as if he'd found it
+                const RoomSpec v = RoomSpec::load(repo_root() + "/game/data/rooms/voorkamer.json");
+                for (const auto& it : v.interactables)
+                    if (it.kind == "note") { notes_.push_back({"voorkamer/" + it.id, it.title, it.text}); world_.notes.push_back("voorkamer/" + it.id); }
+            };
+            player_ = {1.05f, 6.4f, 0.0f};
+            run(0.3f);
+            guns_[0].mag = 9;
+            if (i == 15) {
+                status_.open();
+                name = "status_items";
+            } else if (i == 16) {
+                health_ = 45;
+                hero_.limp = limp_of(condition(health_));
+                status_.open();
+                press(nav(1, 0));
+                press(ok);
+                name = "status_actions";
+            } else if (i == 17) {
+                status_.open();
+                press(nav(1, 0));
+                press(nav(1, 0));
+                press(combine);
+                press(nav(-1, 0));
+                press(nav(-1, 0));
+                name = "status_combine";
+            } else if (i == 18) {
+                health_ = 18;
+                hero_.limp = limp_of(condition(health_));
+                status_.open();
+                press(nav(1, 0));
+                press(examine);
+                name = "status_examine";
+            } else if (i == 19) {
+                marit();
+                status_.open();
+                press(tab);
+                name = "status_files";
+            } else if (i == 20) {
+                marit();
+                status_.open();
+                press(tab);
+                press(ok);
+                name = "status_read";
+            } else if (i == 21) {
+                world_.dropped.push_back({spec_.id, I_MED_S, 1, 1.0f, 3.0f});
+                refresh_loot();
+                status_.open();
+                press(tab);
+                press(tab);
+                name = "status_map";
+            } else if (i == 22 || i == 23 || i == 24) {
+                player_ = {1.6f, 6.4f, 0.0f};   // in front of the shells on the hall floor
+                for (const auto& it : spec_.interactables)
+                    if (it.id == "shells_gang") player_ = {it.pos.x - 0.1f, it.pos.z - 0.6f, yaw_towards(it.pos.x - 0.1f, it.pos.z - 0.6f, it.pos.x, it.pos.z)};
+                run(0.5f);   // (settled where he stands)
+                inv_.remove(I_SHELLS, 4);
+                if (i > 22)
+                    for (int k = 0; k < 8; ++k) inv_.add(k % 3 ? I_MED_S : I_MED_M, 1);   // a case with no room left
+                const bool found = interact();
+                TraceLog(LOG_INFO, "STAGE pickup: found %d", int(found));
+                if (i > 22) press(ok);   // Take: no room
+                if (i > 23) press(ok);   // Make room
+                name = i == 22 ? "pickup_prompt" : i == 23 ? "pickup_no_room" : "pickup_make_room";
+            } else {
+                for (const auto& it : spec_.interactables)
+                    if (it.id == "clock") player_ = {it.pos.x - 0.3f, it.pos.z - 0.7f, yaw_towards(it.pos.x - 0.3f, it.pos.z - 0.7f, it.pos.x, it.pos.z)};
+                run(0.5f);
+                const bool found = interact();
+                text_t_ = 30;   // typed out
+                TraceLog(LOG_INFO, "STAGE examine: found %d", int(found));
+                name = "examine_text";
+            }
+            animate(DT);
             break;
         }
         default: {   // bitten once too often
@@ -982,6 +1102,7 @@ void Game::render() {
     for (const auto& e : enemies_)
         if (e.active) e.body.draw(char_mat_);
     fx_.draw(char_mat_);   // blood, brass, what came off
+    draw_loot();           // what's lying about to be picked up
     rlEnableBackfaceCulling();
     rlDisableDepthMask();
     BeginBlendMode(BLEND_ADDITIVE);   // the flash glows over whatever is behind it
@@ -1004,6 +1125,8 @@ void Game::render() {
     rlEnableDepthMask();
     EndMode3D();
     EndTextureMode();
+    status_drawn_ = false;
+    if (status_.is_open()) render_status();
 }
 
 void Game::present() const {
@@ -1014,6 +1137,12 @@ void Game::present() const {
     BeginShaderMode(post_);
     DrawTexturePro(rt_.texture, {0, 0, float(W), -float(H)}, {0, 0, float(GetScreenWidth()), float(GetScreenHeight())}, {0, 0}, 0, WHITE);
     EndShaderMode();
+    if (status_.is_open() && status_drawn_) {   // the case, over everything
+        DrawTexturePro(ui_rt_.texture, {0, 0, float(W), -float(H)}, {0, 0, float(GetScreenWidth()), float(GetScreenHeight())}, {0, 0}, 0, WHITE);
+        return;
+    }
+    draw_glints();
+    draw_text_box();
     if (banner_t_ > 0) {
         unsigned char a = static_cast<unsigned char>(std::min(1.0f, banner_t_) * 210);
         DrawText(spec_.display_name.c_str(), 40, 34, 26, Color{210, 200, 180, a});

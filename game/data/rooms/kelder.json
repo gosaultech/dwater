@@ -13,6 +13,7 @@
     ]
   },
   "height": 2.5,
+  "storey": -1,
   "materials": {
     "floor": "stone_floor",
     "wall": "brick",

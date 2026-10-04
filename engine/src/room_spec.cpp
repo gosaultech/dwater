@@ -58,6 +58,20 @@ RoomSpec RoomSpec::load(const std::string& path) {
     for (const auto& e : d.value("enemies", json::array()))
         r.enemies.push_back({e["id"], e.value("kind", "verdronkene"), e.value("requires_flag", ""), v3(e["pos"]),
                              e.value("yaw", 0.0f) * DEG, e.value("emerge", false)});
+    for (const auto& i : d.value("interactables", json::array())) {
+        Interactable I;
+        I.id = i.value("id", "");
+        I.kind = i.value("kind", "");
+        if (i.contains("pos")) I.pos = v3(i["pos"]);
+        I.radius = i.value("radius", 1.0f);
+        I.count = i.value("count", 1);
+        for (auto [field, key] : {std::pair{&I.item, "item"}, {&I.title, "title"}, {&I.text, "text"}, {&I.target_room, "target_room"},
+                                  {&I.target_spawn, "target_spawn"}, {&I.lock, "lock"}, {&I.locked_text, "locked_text"},
+                                  {&I.unlock_text, "unlock_text"}, {&I.sets_flag, "sets_flag"}, {&I.then_text, "then_text"}})
+            *field = i.value(key, "");
+        r.interactables.push_back(I);
+    }
+    r.floor = d.value("storey", 0);
     const Rect2& b = r.bounds;
     const float w = b.x1 - b.x0, dz = b.z1 - b.z0, t = WALL_T;
     r.colliders.push_back({(b.x0 + b.x1) / 2, b.z0 - t / 2, w / 2 + t, t / 2, 0});   // north

@@ -201,6 +201,17 @@ def build() -> dict[str, tuple[np.ndarray, bool]]:
     # An empty magazine dropping on a hard floor: a hollow knock and a bounce or two.
     knock = bp(noise(0.05), 500, 3500) * env(round(0.05 * SR), 0.0005, 0.012) + np.sin(2 * np.pi * 760 * t(0.05)) * env(round(0.05 * SR), 0.0005, 0.015) * 0.6
     s["mag_drop"] = (tail(at(0.6, [(0.0, knock * 1.4), (0.16, knock * 0.6), (0.27, knock * 0.3), (0.33, knock * 0.15)]), 0.4, 0.12, 300, 4000, 0.3), False)
+    # The status screen: backing out (a lower, softer blip than confirm), a refusal (two dull
+    # low knocks), the case's latches and lid opening and closing, and a page of paper turning.
+    s["ui_back"] = (np.sin(2 * np.pi * 440 * t(0.18)) * env(round(0.18 * SR), 0.003, 0.05) * 0.3, False)
+    thud = lp(noise(0.08), 400) * env(round(0.08 * SR), 0.001, 0.02) + np.sin(2 * np.pi * 150 * t(0.08)) * env(round(0.08 * SR), 0.001, 0.03) * 0.6
+    s["ui_deny"] = (at(0.3, [(0.0, thud), (0.11, thud * 0.8)]), False)
+    latch = bp(noise(0.03), 1200, 6000) * env(1323, 0.0005, 0.005)
+    lid = bp(noise(0.35), 150, 1200) * env(round(0.35 * SR), 0.04, 0.1) * 0.6
+    s["case_open"] = (tail(at(0.6, [(0.0, latch), (0.07, latch * 0.9), (0.14, lid)]), 0.3, 0.1, 200, 2500, 0.2), False)
+    s["case_close"] = (tail(at(0.5, [(0.0, lid[::-1] * 0.7), (0.3, latch * 1.2)]), 0.3, 0.08, 200, 2500, 0.2), False)
+    rustle = bp(noise(0.45), 2000, 9000) * env(round(0.45 * SR), 0.06, 0.12) * (0.6 + 0.4 * np.abs(np.sin(2 * np.pi * 9 * t(0.45))))
+    s["paper"] = (rustle * 0.5, False)
     return s
 
 
@@ -245,7 +256,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     levels = {"boss_theme": -9.0, "crawler_skitter": -10.0, "dodge": -8.0, "amb_house": -14.0, "amb_cellar": -12.0, "title_drone": -10.0, "step_marble": -8.0,
               "step_wood": -6.0, "step_water": -8.0, "ui_move": -12.0, "shell_insert": -6.0, "med_use": -6.0, "mag_out": -6.0, "mag_in": -4.0,
-              "slide_release": -3.0, "mag_drop": -6.0}
+              "slide_release": -3.0, "mag_drop": -6.0, "ui_back": -12.0, "ui_deny": -8.0, "case_open": -6.0, "case_close": -6.0, "paper": -9.0}
     for name, (x, loop) in build().items():
         if only is not None and name not in only:
             continue

@@ -20,6 +20,13 @@ struct InputFrame {
     bool down[ACT_COUNT]{}, pressed[ACT_COUNT]{};
     bool pad = false;                        // the controller is what's being played with right now
     int nav_x = 0, nav_y = 0;                // menus: -1/+1 on the frame a direction is pushed (repeats while held)
+    // The status screen's own buttons, by position on any pad (and their keys): the shoulders
+    // change tab (L1 / R1; Q / R), the left face button combines (Square / X; C), the top one
+    // examines (Triangle / Y; X).
+    int ui_tab = 0;
+    bool ui_combine = false, ui_examine = false;
+    // Which buttons to draw for help: 0 the keyboard, 1 a PlayStation pad, 2 an Xbox (or any other) pad.
+    int glyphs = 0;
     bool held(int a) const { return down[a]; }
     bool hit(int a) const { return pressed[a]; }
 };

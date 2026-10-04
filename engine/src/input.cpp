@@ -4,6 +4,7 @@
 #include "input.hpp"
 
 #include <cmath>
+#include <string>
 
 namespace dw {
 
@@ -82,6 +83,20 @@ InputFrame Input::poll() {
     }
     stick_x_ = sx;
     stick_y_ = sy;
+    f.ui_tab = int(IsKeyPressed(KEY_R)) - int(IsKeyPressed(KEY_Q));
+    f.ui_combine = IsKeyPressed(KEY_C);
+    f.ui_examine = IsKeyPressed(KEY_X);
+    if (pad_ >= 0) {
+        f.ui_tab += int(IsGamepadButtonPressed(pad_, GAMEPAD_BUTTON_RIGHT_TRIGGER_1)) - int(IsGamepadButtonPressed(pad_, GAMEPAD_BUTTON_LEFT_TRIGGER_1));
+        f.ui_combine = f.ui_combine || IsGamepadButtonPressed(pad_, GAMEPAD_BUTTON_RIGHT_FACE_LEFT);
+        f.ui_examine = f.ui_examine || IsGamepadButtonPressed(pad_, GAMEPAD_BUTTON_RIGHT_FACE_UP);
+    }
+    if (f.pad) {   // PlayStation pads name themselves; anything else gets Xbox letters
+        const std::string name = GetGamepadName(pad_);
+        const bool ps = name.find("PS") != std::string::npos || name.find("Sony") != std::string::npos || name.find("DualSense") != std::string::npos ||
+                        name.find("DualShock") != std::string::npos || name.find("Wireless Controller") != std::string::npos;
+        f.glyphs = ps ? 1 : 2;
+    }
     f.nav_x = f.nav_x > 0 ? 1 : f.nav_x < 0 ? -1 : 0;
     f.nav_y = f.nav_y > 0 ? 1 : f.nav_y < 0 ? -1 : 0;
     return f;

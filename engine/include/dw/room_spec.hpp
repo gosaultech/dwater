@@ -16,6 +16,15 @@ struct Shot { std::string id; V3 pos, look_at; float fov = 55; Rect2 zone{}; int
 struct Spawn { V3 pos; float yaw = 0; };
 struct Light { std::string kind; V3 pos, look_at, dir_from; V3 color{1, 1, 1}; float energy = 1, range = 6, spot_angle = 60; bool flicker = false; };
 struct EnemySpawn { std::string id, kind, requires_flag; V3 pos; float yaw = 0; bool emerge = false; };
+// Something to walk up to and press Interact at. kind: "pickup" (item, count), "note" (title,
+// text), "examine" (text), "door" (target_room, target_spawn; lock: the key it needs), "save",
+// "end". Text fields hold what that kind shows.
+struct Interactable {
+    std::string id, kind, item, title, text, target_room, target_spawn, lock, locked_text, unlock_text, sets_flag, then_text;
+    V3 pos;
+    float radius = 1;
+    int count = 1;
+};
 
 struct RoomSpec {
     std::string id, display_name;
@@ -26,6 +35,8 @@ struct RoomSpec {
     std::map<std::string, Spawn> spawns;
     std::vector<Light> lights;
     std::vector<EnemySpawn> enemies;
+    std::vector<Interactable> interactables;
+    int floor = 0;                 // which storey it's on ("storey": 0 the ground floor, -1 a cellar): for the map
     std::vector<Obb2> colliders;   // walls + solid props, on the floor plane
     std::vector<std::string> errors;
 

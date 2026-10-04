@@ -19,6 +19,8 @@
 #include "dw/core.hpp"
 #include "dw/room_spec.hpp"
 #include "dw/settings.hpp"
+#include "dw/status.hpp"
+#include "dw/world_map.hpp"
 #include "effects.hpp"
 #include "input.hpp"
 
@@ -54,7 +56,7 @@ public:
     void update(float dt);          // input, AI, animation
     void render();                  // scene -> offscreen target
     void present() const;           // post-process to the window + HUD
-    int capture_count() const { return 15; }
+    int capture_count() const { return 26; }
     std::string stage(int i);       // pose a capture setup; returns its name
     // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
     // only: a comma-separated list of subjects to render (empty: all).
@@ -138,6 +140,30 @@ private:
     void say(const Enemy& e, const char* sound, float volume = 1.0f);   // a sound from a Drowned
     float frand() { rng_ ^= rng_ << 13; rng_ ^= rng_ >> 17; rng_ ^= rng_ << 5; return float(rng_ & 0xFFFFFF) / 16777215.0f; }
 
+    // The status screen (status_view.cpp) and what lies about in the room to be picked up, read or
+    // looked at (game_world.cpp). Time stands still while either has the screen.
+    struct Loot { std::string key; int item = I_NONE, count = 0; Vector3 pos{}; int dropped = -1; };   // still lying here
+    struct NoteRead { std::string key, title, text; };
+    void init_status();
+    void unload_status();
+    void reset_world();                          // a fresh start (and after dying): nothing taken, nothing read
+    void refresh_loot();                         // this room's pickups, as the world remembers them
+    bool interact();                             // Cross with nothing to kick: whatever he's facing, close enough
+    int loot_in_reach() const;                   // the pickup he's facing (-1: none)
+    int spot_in_reach() const;                   // the interactable he's facing (-1: none)
+    void update_status(float dt);
+    void apply(const status::Command& c);
+    status::Pad status_pad() const;
+    void render_status();                        // the preview, his figure and the screen, into ui_rt_
+    void draw_status_ui();
+    void draw_loot();                            // in the 3D pass: what lies in the room, and its glint
+    void draw_text_box() const;                  // a line of text at the bottom (present)
+    void draw_glints() const;                    // the glint that marks each pickup (present)
+    void draw_glyph(float x, float y, int which, const char* label, float size) const;   // a button, as this pad shows it
+    float draw_hint(float x, float y, int which, const char* what) const;
+    void show_text(const std::string& text);     // shown at the bottom, time stopped until it's read
+    void notice(const std::string& s) { notice_ = s; notice_t_ = 3.0f; }
+
     // The pause menu (time stands still) with the options, saved to the database.
     void update_menu();
     void draw_menu() const;
@@ -186,6 +212,28 @@ private:
     bool staged_aim_ = false;                    // capture setups hold the aim and the stick from code
     Vector2 staged_in_{};
     std::vector<const Character*> casters_, gun_lit_;   // who casts shadows this frame (kept: no allocation per frame)
+    // The status screen and the room's things.
+    status::Screen status_;
+    status::WorldState world_;
+    std::vector<NoteRead> notes_;                // read, in the order found
+    std::vector<worldmap::Room> map_;
+    std::vector<int> storeys_;
+    std::vector<Loot> loot_;
+    int pickup_loot_ = -1;                       // the pickup the screen is asking about
+    std::vector<std::string> text_queue_;        // lines waiting to be read (examine, a door, what happens next)
+    float text_t_ = 0;                           // how long the current line has been up (it types itself out)
+    Font f_head_{}, f_head_b_{}, f_body_{}, f_body_b_{}, f_italic_{};
+    Mesh item_mesh_[I_COUNT]{};
+    Vector3 item_centre_[I_COUNT]{};
+    float item_size_[I_COUNT]{}, item_base_[I_COUNT]{};
+    RenderTexture2D preview_rt_{}, figure_rt_{}, ui_rt_{}, blur_rt_{};
+    RenderTexture2D icon_rt_{};                  // every item's icon, rendered once from its model (a row of 128 px cells)
+    bool icons_ready_ = false;
+    void draw_item(int item, float spin, float tilt, float aspect);   // the model, filling the current target's view
+    float ui_t_ = 0, spin_ = 0, tilt_ = 0;       // the screen's own clock; the preview's turn
+    std::string notice_;                         // what the last action did ("Loaded 12 rounds.")
+    float notice_t_ = 0;
+    bool status_drawn_ = false;                  // ui_rt_ holds this frame's screen
     float health_ = 100, time_ = 0, banner_t_ = 3.5f, qt_ = -1, qt_from_ = 0, near_ = 0.01f, far_ = 1000.0f;
     int static_lights_ = 0;                      // room lights; the flash and the flashlight come after them
     int flash_light_ = -1, lamp_light_ = -1;     // where the flash and the flashlight sit in the light arrays (-1: off)

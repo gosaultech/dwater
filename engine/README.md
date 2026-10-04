@@ -21,7 +21,7 @@ One room (`gang`, the entrance hall) with:
 - **A horror lighting model.** Procedural surface detail, bump detail, wet-versus-dry
   specular, room lights, a cold rim, and fog. Grain and vignette are added in post.
 
-**Not ported yet:** weapons and combat, the other rooms, doors, UI and inventory, saves and audio.
+**Not ported yet:** the other rooms (and walking between them through doors), and saves.
 
 ## Build and run (macOS and Windows)
 
@@ -62,7 +62,7 @@ the shaders are GLSL 3.30 core, which both platforms support.
 **Tools** (swap in `build\windows\Release\` on Windows):
 
 ```bash
-../build/macos/damned_waters --capture /tmp/dw   # stage the capture setups and save screenshots
+../build/macos/damned_waters --capture /tmp/dw   # stage the capture setups (the fight, the reloads, the status screen) and save screenshots
 ../build/macos/damned_waters --flashlight --capture /tmp/dw   # the same with the flashlight on
 ../build/macos/damned_waters --sheet /tmp/dw     # studio turnaround of every character
 ../build/macos/damned_waters --sheet /tmp/dw --only pieter,survivor               # just those
@@ -222,6 +222,35 @@ time) instead of posing him there and letting him settle. `--fit870` also scores
 by where the reload's IK really puts the left hand, and keeps the stock out of the coat;
 `DW_FIT_ONLY=aim`, `low` or `reload` fits just that one.
 
+## The status screen
+
+Tab (or the status button in your layout) opens the case, RE style, and time stands still. No
+HUD otherwise: this is where the ammo and his condition live. Like opening a field kit on a
+table: everything laid out, nothing moving until you close it.
+
+- **ITEMS.** His figure as he stands right now (a limp shows), a heart monitor's trace and one
+  word: FINE in green, CAUTION in amber, DANGER in red. The trace speeds up as he weakens. No
+  numbers: you read him the way the classics make you. Beside it, the case's eight slots (each
+  item's 3D model as its icon, the gun in hand marked E, rounds loaded and stack counts in the
+  corner), what's in hand and its spare rounds, and the selected thing turning in 3D, with its
+  description. Cross opens its actions: Equip, Use (med kits; refused at full health so none is
+  wasted), Combine (spare rounds into their gun loads it on the spot), Examine (big, turned with
+  the right stick or the mouse) and Discard (guns and keys stay; anything dropped lies on the floor
+  and can be picked up again). Square combines and Triangle examines straight away.
+- **FILES.** Every note he's read, to read again on the page.
+- **MAP.** The house as far as he knows it, worked out from the room files' doors (rooms meet
+  where their doorways do, so nobody draws the map): rooms he's been in, red while something is
+  still lying in one, blue once it's cleared; rooms seen through a door as dashed outlines; locked
+  doors in red; stairs; where he stands and which way he faces. Up and down change floor.
+- **Finding something.** It glints where it lies. Cross picks it up: it turns in the light,
+  "Take it?". If the case is full he can leave it, or open the case and drop something to make
+  room.
+- **Looking at things.** Cross by a door, the clock or the stairs says what he sees, typed out
+  at the bottom of the screen, time stopped until it's read.
+
+The buttons drawn are the pad in your hand: PlayStation shapes, Xbox letters, or key caps.
+Fonts are Cinzel and EB Garamond, under the SIL Open Font License (`engine/assets/fonts`).
+
 ## Controls
 
 Controller first: any DualSense, Xbox or Switch Pro controller (USB or Bluetooth) on both
@@ -244,6 +273,9 @@ are named by position (PlayStation / Xbox):
 | Flashlight | L1 | L2 | D-pad down | L |
 | M92FS / Remington 870 / next | D-pad left / right / up | D-pad left / right / up | D-pad left / right, Triangle/Y | 1 / 2 / F |
 | Pause and options | Options/Menu | Options/Menu | Options/Menu | Esc |
+| In the case: select / back | Cross/A / Circle/B | Cross/A / Circle/B | Cross/A / Circle/B | Enter / Esc |
+| In the case: combine / examine | Square/X / Triangle/Y | Square/X / Triangle/Y | Square/X / Triangle/Y | C / X |
+| In the case: change tab / turn the item | L1, R1 / right stick | L1, R1 / right stick | L1, R1 / right stick | Q, R / mouse drag |
 
 **Skill.** Dodge in the last moment of a lunge (a perfect dodge) and the Drowned bites air and
 stumbles past, open to a kick, and your next shot does double damage; slow motion on a perfect
@@ -267,6 +299,11 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 | `include/dw/clearance.hpp`, `src/clearance.cpp` | How far one surface sinks into another, and the torso as stacked oval slices for the elbows to keep out of. Pure, unit-tested. |
 | `src/character_clearance.cpp` | The clearance check on the posed body (`--clearance`) and the pistol's reload-position fitter (`--fitreload`). |
 | `include/dw/reload.hpp`, `src/reload.cpp` | The reloads' steps: where the left hand goes and what it holds, and when the magazine drops, goes home and the slide runs forward. Pure, unit-tested. |
+| `include/dw/status.hpp`, `src/status.cpp` | The status screen as rules: condition, what each item can do, loading from the case, what the world remembers, and the screen's state machine (browse, act, combine, discard, read, pick up, make room). Pure, unit-tested. |
+| `include/dw/world_map.hpp`, `src/world_map.cpp` | The map, laid out from the room files' doors and storeys. Pure, unit-tested. |
+| `src/status_view.cpp` | The status screen on screen: fonts, the 3D previews and icons, his figure, the tabs, the button glyphs. |
+| `src/game_world.cpp` | Pickups, notes, things to look at and doors in a room; carrying out what the screen asks for. |
+| `src/cast_items.cpp` | The case's items as 3D models (the guns are `cast_guns.cpp`'s). |
 | `src/effects.cpp` | Blood, brass and spent shells, limbs that come away, the empty magazines he drops, the muzzle flash. |
 | `src/character_combat.cpp` | Hit capsules, wounds, severing, the guns in hand, and the aim fitters (`--fitpistol`, `--fit870`). |
 | `src/shaders.cpp` | All GLSL, embedded. |
