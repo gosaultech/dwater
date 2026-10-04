@@ -16,6 +16,7 @@
 #include <cmath>
 
 #include "cast_guns.hpp"
+#include "dw/death.hpp"
 #include "game.hpp"
 
 namespace dw {
@@ -101,6 +102,7 @@ void Game::reset_fight() {
     player_ = {sp.pos.x, sp.pos.z, sp.yaw};
     set_pmode(PMode::Normal);
     invuln_ = dodge_cd_ = aim_pitch_ = aim_snap_ = dead_t_ = step_accum_ = 0;
+    death_sel_ = 0;
     focus_t_ = slowmo_t_ = 0;
     time_scale_ = 1;
     dodge_dir_ = knock_ = {};
@@ -175,7 +177,14 @@ void Game::update_player(float dt) {
         case PMode::Dead:
             dead_t_ += dt;
             p.pose = Pose::Dead;
-            if (dead_t_ > 2.5f && in_.hit(ACT_CONFIRM)) reset_fight();
+            if (death::choosing(dead_t_)) {   // try again, or quit
+                if (in_.nav_y || in_.nav_x) { death_sel_ ^= 1; sfx_.play("ui_move", 0.5f); }
+                if (in_.hit(ACT_CONFIRM)) {
+                    sfx_.play("ui_confirm", 0.6f);
+                    if (death_sel_ == 0) reset_fight();
+                    else quit_ = true;
+                }
+            }
             return;
         case PMode::QuickTurn: {   // 180 degrees in 0.3 s
             const float k = std::min(1.0f, pmode_t_ / QUICK_TURN_TIME);

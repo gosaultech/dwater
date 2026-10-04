@@ -56,7 +56,7 @@ public:
     void update(float dt);          // input, AI, animation
     void render();                  // scene -> offscreen target
     void present() const;           // post-process to the window + HUD
-    int capture_count() const { return 26; }
+    int capture_count() const { return 27; }
     std::string stage(int i);       // pose a capture setup; returns its name
     // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
     // only: a comma-separated list of subjects to render (empty: all).
@@ -159,6 +159,7 @@ private:
     void draw_loot();                            // in the 3D pass: what lies in the room, and its glint
     void draw_text_box() const;                  // a line of text at the bottom (present)
     void draw_glints() const;                    // the glint that marks each pickup (present)
+    void draw_death() const;                     // YOU DIED, and the choice after it (present; death.hpp times it)
     void draw_glyph(float x, float y, int which, const char* label, float size) const;   // a button, as this pad shows it
     float draw_hint(float x, float y, int which, const char* what) const;
     void show_text(const std::string& text);     // shown at the bottom, time stopped until it's read
@@ -223,6 +224,8 @@ private:
     std::vector<std::string> text_queue_;        // lines waiting to be read (examine, a door, what happens next)
     float text_t_ = 0;                           // how long the current line has been up (it types itself out)
     Font f_head_{}, f_head_b_{}, f_body_{}, f_body_b_{}, f_italic_{};
+    Font f_fell_{};                              // the death screen's words (IM FELL English)
+    int death_sel_ = 0;                          // dead: 0 try again, 1 quit
     Mesh item_mesh_[I_COUNT]{};
     Vector3 item_centre_[I_COUNT]{};
     float item_size_[I_COUNT]{}, item_base_[I_COUNT]{};

@@ -251,6 +251,15 @@ table: everything laid out, nothing moving until you close it.
 The buttons drawn are the pad in your hand: PlayStation shapes, Xbox letters, or key caps.
 Fonts are Cinzel and EB Garamond, under the SIL Open Font License (`engine/assets/fonts`).
 
+## The death screen
+
+When he goes down, the picture drains into a deep red-black and blood seeps in from the edges;
+YOU DIED rises out of the dark in IM FELL English (a 17th-century typeface, SIL OFL), blood red,
+settling as it comes, and drops gather at the letters' feet and run. Then the choice: Try again
+or Quit. Like a curtain coming down in a set order: lights, words, then the house lights.
+The timing lives in `include/dw/death.hpp` (pure, unit-tested); `Game::draw_death` draws it.
+`--capture` has it twice: `you_died_falling` (the words coming up) and `you_died` (all of it).
+
 ## Controls
 
 Controller first: any DualSense, Xbox or Switch Pro controller (USB or Bluetooth) on both
@@ -302,6 +311,7 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 | `include/dw/status.hpp`, `src/status.cpp` | The status screen as rules: condition, what each item can do, loading from the case, what the world remembers, and the screen's state machine (browse, act, combine, discard, read, pick up, make room). Pure, unit-tested. |
 | `include/dw/world_map.hpp`, `src/world_map.cpp` | The map, laid out from the room files' doors and storeys. Pure, unit-tested. |
 | `src/status_view.cpp` | The status screen on screen: fonts, the 3D previews and icons, his figure, the tabs, the button glyphs. |
+| `include/dw/death.hpp` | The death screen's timing: the fade, the words, the drips, the choice. Pure, unit-tested. |
 | `src/game_world.cpp` | Pickups, notes, things to look at and doors in a room; carrying out what the screen asks for. |
 | `src/cast_items.cpp` | The case's items as 3D models (the guns are `cast_guns.cpp`'s). |
 | `src/effects.cpp` | Blood, brass and spent shells, limbs that come away, the empty magazines he drops, the muzzle flash. |

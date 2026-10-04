@@ -741,13 +741,13 @@ std::string Game::stage(int i) {
             animate(DT);
             break;
         }
-        default: {   // bitten once too often
+        default: {   // bitten once too often: the words coming up (26), and all of it, the choice there (14)
             join(1, 1.0f, 8.3f, 0.0f, EState::Pursuit);
             player_ = {1.0f, 7.4f, kPi};
             health_ = 15;
             hurt_player(20, 1.0f, 8.3f);
-            run(3.2f);
-            name = "you_died";
+            run(i == 26 ? 2.4f : 6.0f);
+            name = i == 26 ? "you_died_falling" : "you_died";
             break;
         }
     }
@@ -1149,21 +1149,7 @@ void Game::present() const {
     }
     // No HUD: how hurt he is shows in his limp; ammo and health live on the status screen.
     // Only death gets words on the screen, as in the classic games.
-    if (pmode_ == PMode::Dead) {
-        const int sw = GetScreenWidth(), sh = GetScreenHeight();
-        const float k = std::clamp((dead_t_ - 0.8f) / 1.6f, 0.0f, 1.0f);
-        DrawRectangle(0, 0, sw, sh, Color{14, 0, 0, static_cast<unsigned char>(k * 190)});
-        if (k > 0) {
-            const int fs = sh / 9, tw = MeasureText("YOU DIED", fs);
-            DrawText("YOU DIED", (sw - tw) / 2, sh / 2 - fs, fs, Color{170, 16, 12, static_cast<unsigned char>(k * 255)});
-            if (dead_t_ > 2.5f) {
-                const char* again = in_.pad ? TextFormat("Press %s to try again", pad_button_name(pad_button(settings_.scheme, ACT_CONFIRM)))
-                                            : "Press Enter to try again";
-                const int ps = sh / 36, pw = MeasureText(again, ps);
-                DrawText(again, (sw - pw) / 2, sh / 2 + fs / 2, ps, Color{150, 140, 130, 200});
-            }
-        }
-    }
+    if (pmode_ == PMode::Dead) draw_death();
     if (paused_) draw_menu();
     if (debug) {
         std::string es;

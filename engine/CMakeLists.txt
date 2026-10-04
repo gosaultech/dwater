@@ -53,7 +53,7 @@ if(DW_BUILD_TESTS)
         FetchContent_MakeAvailable(googletest)
     endif()
     add_executable(dw_tests tests/test_core.cpp tests/test_character_file.cpp tests/test_combat.cpp tests/test_controls.cpp tests/test_mesh_builder.cpp tests/test_guns.cpp
-                            tests/test_two_bone.cpp tests/test_grips.cpp tests/test_reload.cpp tests/test_clearance.cpp tests/test_status.cpp tests/test_world_map.cpp src/mesh_builder.cpp src/cast_guns.cpp)
+                            tests/test_two_bone.cpp tests/test_grips.cpp tests/test_reload.cpp tests/test_clearance.cpp tests/test_status.cpp tests/test_world_map.cpp tests/test_death.cpp src/mesh_builder.cpp src/cast_guns.cpp)
     target_link_libraries(dw_tests PRIVATE dw_core GTest::gtest_main)
     enable_testing()
     add_test(NAME dw_tests COMMAND dw_tests)

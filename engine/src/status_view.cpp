@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "cast_items.hpp"
+#include "dw/death.hpp"
 #include "game.hpp"
 
 #include <rlgl.h>
@@ -88,6 +89,7 @@ void Game::init_status() {
     f_body_ = load("EBGaramond-Regular.ttf", 48);
     f_body_b_ = load("EBGaramond-SemiBold.ttf", 48);
     f_italic_ = load("EBGaramond-Italic.ttf", 48);
+    f_fell_ = load("IMFellEnglish-Regular.ttf", 160);
     UnloadCodepoints(cps);
     for (int i = I_NONE + 1; i < I_COUNT; ++i) {
         const cast::ItemModel m = cast::item_model(i);
@@ -112,7 +114,7 @@ void Game::init_status() {
 }
 
 void Game::unload_status() {
-    for (Font* f : {&f_head_, &f_head_b_, &f_body_, &f_body_b_, &f_italic_}) UnloadFont(*f);
+    for (Font* f : {&f_head_, &f_head_b_, &f_body_, &f_body_b_, &f_italic_, &f_fell_}) UnloadFont(*f);
     for (Mesh& m : item_mesh_)
         if (m.vertexCount) UnloadMesh(m);
     for (RenderTexture2D* r : {&preview_rt_, &figure_rt_, &ui_rt_, &blur_rt_, &icon_rt_}) UnloadRenderTexture(*r);
@@ -629,6 +631,74 @@ void Game::draw_status_ui() {
     key(C_RED_HI, "Locked");
     key(Color{240, 220, 120, 255}, "You");
     hints({{G_DPAD, "Floor"}, {G_BACK, "Close"}, {G_TAB_R, "Tab"}});
+}
+
+// ── The death screen ────────────────────────────────────────────────────────────
+// The picture drains into a red-black, blood seeping in from the edges; YOU DIED rises out of the
+// dark in IM FELL English, blood red, settling as it comes, and drops gather under the letters and
+// run; then Try again / Quit. Drawn at the window's size (death.hpp times it).
+void Game::draw_death() const {
+    const float t = dead_t_, sw = float(GetScreenWidth()), sh = float(GetScreenHeight()), k = sh / float(H);
+    const float dark = death::darkness(t), ti = death::title(t);
+    if (dark <= 0) return;
+    DrawRectangle(0, 0, int(sw), int(sh), Color{12, 0, 0, static_cast<unsigned char>(dark * 205)});
+    // Blood seeping in at the edges: soft blooms along the borders, each grown in on its own.
+    for (int i = 0; i < 18; ++i) {
+        const float u = float((i * 37) % 18) / 18.0f, side = float(i % 4);
+        const Vector2 at = side == 0 ? Vector2{u * sw, 0} : side == 1 ? Vector2{sw, u * sh} : side == 2 ? Vector2{u * sw, sh} : Vector2{0, u * sh};
+        const float grow = death::smooth(death::DARK_FROM + 0.1f * float(i % 5), death::DARK_TO + 1.2f + 0.2f * float(i % 3), t);
+        const float r = (120.0f + 90.0f * float((i * 13) % 7) / 6.0f) * k * grow;
+        DrawCircleGradient(int(at.x), int(at.y), r, Color{62, 2, 2, static_cast<unsigned char>(200 * grow)}, Color{20, 0, 0, 0});
+    }
+    if (ti > 0) {
+        const char* words = "YOU DIED";
+        const float size = 150 * k * death::title_scale(t), space = 14 * k;
+        const Vector2 m = MeasureTextEx(f_fell_, words, size, space);
+        const Vector2 at{(sw - m.x) / 2, sh * 0.42f - m.y / 2};
+        const unsigned char a = static_cast<unsigned char>(ti * 255);
+        for (int g = 0; g < 8; ++g) {   // a dark red bloom behind the letters
+            const float ang = float(g) * PI / 4;
+            DrawTextEx(f_fell_, words, {at.x + std::cos(ang) * 5 * k, at.y + std::sin(ang) * 5 * k}, size, space,
+                       Color{70, 0, 0, static_cast<unsigned char>(ti * 40)});
+        }
+        DrawTextEx(f_fell_, words, {at.x + 3 * k, at.y + 5 * k}, size, space, Color{0, 0, 0, static_cast<unsigned char>(ti * 170)});   // its shadow
+        const Color blood{142, 9, 7, a};
+        DrawTextEx(f_fell_, words, at, size, space, blood);
+        // Drops gathering under the letters, then running: each a bead where it leaves the letter's
+        // foot, a thread thinning as it runs, and the drop at its end.
+        for (int i = 0; i < death::DRIPS; ++i) {
+            const float run = death::drip(i, t);
+            if (run <= 0) continue;
+            const int c = death::drip_letter(i);
+            const std::string before(words, size_t(c)), letter(words + c, 1);
+            const float lx = c ? MeasureTextEx(f_fell_, before.c_str(), size, space).x + space : 0.0f;
+            const float lw = MeasureTextEx(f_fell_, letter.c_str(), size, space).x;
+            const float x = at.x + lx + lw * (0.5f + death::drip_offset(i)), y0 = at.y + m.y * 0.70f;
+            const float len = death::drip_length(i) * m.y * 0.55f * run, w = (2.4f + 0.8f * float(i % 3)) * k;
+            DrawCircleV({x, y0}, w * 1.3f, blood);   // the bead at the letter's foot
+            DrawTriangle({x - w * 0.8f, y0}, {x - w * 0.35f, y0 + len}, {x + w * 0.35f, y0 + len}, blood);
+            DrawTriangle({x - w * 0.8f, y0}, {x + w * 0.35f, y0 + len}, {x + w * 0.8f, y0}, blood);
+            DrawCircleV({x, y0 + len}, w * 0.9f * (0.6f + 0.4f * run), blood);   // the drop, filling as it goes
+        }
+    }
+    if (death::choosing(t)) {
+        const float c = death::smooth(death::CHOICE_AT, death::CHOICE_AT + 0.6f, t);
+        const char* opts[2] = {"Try again", "Quit"};
+        for (int i = 0; i < 2; ++i) {
+            const bool on = death_sel_ == i;
+            const float y = sh * 0.66f + float(i) * 44 * k, size = 30 * k;
+            const Color col = on ? Color{226, 214, 190, static_cast<unsigned char>(c * 255)} : Color{120, 104, 92, static_cast<unsigned char>(c * 200)};
+            const Font& f = on ? f_head_b_ : f_head_;
+            const Vector2 m = MeasureTextEx(f, opts[i], size, 0);
+            DrawTextEx(f, opts[i], {(sw - m.x) / 2, y - size / 2}, size, 0, col);
+            if (on) DrawPoly({(sw - m.x) / 2 - 22 * k, y + 1}, 4, 6 * k, 45, Color{170, 20, 16, static_cast<unsigned char>(c * 255)});
+        }
+        const float hy = sh - 44 * k, gs = 26 * k;
+        const float gw = in_.glyphs == 0 ? std::max(gs, MeasureTextEx(f_head_b_, "Enter", gs * 0.5f, 0).x + gs * 0.5f) : gs;   // (as draw_glyph sizes it)
+        const float tw = MeasureTextEx(f_body_, "Choose", 21 * k, 0).x, hx = (sw - gw - 8 * k - tw) / 2;
+        draw_glyph(hx, hy, 0, "Enter", gs);
+        DrawTextEx(f_body_, "Choose", {hx + gw + 8 * k, hy - 11 * k}, 21 * k, 0, Color{170, 160, 145, static_cast<unsigned char>(c * 230)});
+    }
 }
 
 }  // namespace dw
