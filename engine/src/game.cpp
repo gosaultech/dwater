@@ -522,10 +522,14 @@ void Game::draw_menu() const {
                                  : settings_.run == RunMode::HoldButton ? run_button
                                                                         : "L3";
     const size_t n = sizeof(acts) / sizeof(acts[0]);
+    int label_w = 0;   // the buttons in a column of their own, past the longest name
+    for (int a : acts) label_w = std::max(label_w, MeasureText(act_name(a), hs));
+    label_w += hs;
     for (size_t i = 0; i < n; ++i) {
-        const int col = int(i % 2), row = int(i / 2);
+        const int col = int(i % 2), row = int(i / 2), cx = x + col * (label_w + fs * 10), cy = y + row * (hs + 6);
         const char* b = acts[i] == ACT_QUICK_TURN ? turn.c_str() : acts[i] == ACT_RUN ? run_with.c_str() : pad_button_name(pad_button(s, acts[i]));
-        DrawText(TextFormat("%-12s %s", act_name(acts[i]), b), x + col * fs * 12, y + row * (hs + 6), hs, Color{150, 142, 130, 230});
+        DrawText(act_name(acts[i]), cx, cy, hs, Color{150, 142, 130, 230});
+        DrawText(b, cx + label_w, cy, hs, Color{150, 142, 130, 230});
     }
     y += int((n + 1) / 2) * (hs + 6) + fs / 2;
     line("Aim: the right stick moves the aim over the body (head, arms, legs); flick it to switch target.", Color{120, 114, 104, 220});
