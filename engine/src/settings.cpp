@@ -28,6 +28,8 @@ Settings Settings::load(const std::string& db_path) {
             if (key == "scheme" && v >= 0 && v < int(Scheme::Count)) s.scheme = Scheme(v);
             else if (key == "slowmo") s.slowmo = v != 0;
             else if (key == "tank") s.tank = v != 0;
+            else if (key == "run" && v >= 0 && v < int(RunMode::Count)) s.run = RunMode(v);
+            else if (key == "back_turn") s.back_turn = v != 0;
         }
     }
     sqlite3_finalize(st);
@@ -41,7 +43,8 @@ bool Settings::save(const std::string& db_path) const {
     bool ok = sqlite3_exec(db, SCHEMA, nullptr, nullptr, nullptr) == SQLITE_OK;
     sqlite3_stmt* st = nullptr;
     ok = ok && sqlite3_prepare_v2(db, "INSERT OR REPLACE INTO settings(key, value) VALUES(?, ?)", -1, &st, nullptr) == SQLITE_OK;
-    const std::pair<const char*, int> rows[] = {{"scheme", int(scheme)}, {"slowmo", slowmo ? 1 : 0}, {"tank", tank ? 1 : 0}};
+    const std::pair<const char*, int> rows[] = {{"scheme", int(scheme)}, {"slowmo", slowmo ? 1 : 0}, {"tank", tank ? 1 : 0},
+                                                {"run", int(run)}, {"back_turn", back_turn ? 1 : 0}};
     for (const auto& [key, value] : rows) {
         if (!ok) break;
         const std::string v = std::to_string(value);

@@ -4,7 +4,7 @@
 #include "input.hpp"
 
 #include <cmath>
-#include <string>
+#include <cstring>
 
 namespace dw {
 
@@ -16,14 +16,6 @@ InputFrame Input::poll() {
 
     // Keyboard and mouse.
     bool kb_touched = false;
-    Vector2 keys{float(IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) - float(IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)),
-                 float(IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) - float(IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN))};
-    const float kl = std::sqrt(keys.x * keys.x + keys.y * keys.y);
-    if (kl > 0) {
-        const bool run = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
-        keys = {keys.x / kl * (run ? 1.0f : 0.6f), keys.y / kl * (run ? 1.0f : 0.6f)};
-        kb_touched = true;
-    }
     for (int a = 0; a < ACT_COUNT; ++a) {
         const KeyPair k = key_binding(a);
         for (int key : {k.a, k.b}) {
@@ -31,6 +23,15 @@ InputFrame Input::poll() {
             f.down[a] = f.down[a] || IsKeyDown(key);
             f.pressed[a] = f.pressed[a] || IsKeyPressed(key);
         }
+    }
+    // The keys have no pressure: their length is the gait asked for (controls.hpp KEY_TILT_*).
+    Vector2 keys{float(IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) - float(IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)),
+                 float(IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) - float(IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN))};
+    const float kl = std::sqrt(keys.x * keys.x + keys.y * keys.y);
+    if (kl > 0) {
+        const float tilt = f.down[ACT_RUN_HOLD] ? KEY_TILT_RUN : f.down[ACT_SNEAK] ? KEY_TILT_SNEAK : KEY_TILT_WALK;
+        keys = {keys.x / kl * tilt, keys.y / kl * tilt};
+        kb_touched = true;
     }
     f.down[ACT_AIM] = f.down[ACT_AIM] || IsMouseButtonDown(MOUSE_BUTTON_RIGHT);
     f.pressed[ACT_AIM] = f.pressed[ACT_AIM] || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT);
@@ -62,7 +63,8 @@ InputFrame Input::poll() {
     else if (kb_touched) pad_active_ = false;
     f.pad = pad_active_ && pad_ >= 0;
     // Whichever is pushed further moves him (so a resting stick never fights the keys).
-    f.move = (stick.x * stick.x + stick.y * stick.y) >= (keys.x * keys.x + keys.y * keys.y) ? stick : keys;
+    f.move_keys = (stick.x * stick.x + stick.y * stick.y) < (keys.x * keys.x + keys.y * keys.y);
+    f.move = f.move_keys ? keys : stick;
 
     // Menus: arrows, WASD, the d-pad, or the stick pushed past halfway (repeating while held).
     f.nav_y = int(IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) - int(IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S));
@@ -91,10 +93,11 @@ InputFrame Input::poll() {
         f.ui_combine = f.ui_combine || IsGamepadButtonPressed(pad_, GAMEPAD_BUTTON_RIGHT_FACE_LEFT);
         f.ui_examine = f.ui_examine || IsGamepadButtonPressed(pad_, GAMEPAD_BUTTON_RIGHT_FACE_UP);
     }
-    if (f.pad) {   // PlayStation pads name themselves; anything else gets Xbox letters
-        const std::string name = GetGamepadName(pad_);
-        const bool ps = name.find("PS") != std::string::npos || name.find("Sony") != std::string::npos || name.find("DualSense") != std::string::npos ||
-                        name.find("DualShock") != std::string::npos || name.find("Wireless Controller") != std::string::npos;
+    if (f.pad) {   // PlayStation pads name themselves; anything else gets Xbox letters (no copy: nothing allocated per frame)
+        const char* n = GetGamepadName(pad_);
+        if (!n) n = "";
+        const bool ps = std::strstr(n, "PS") || std::strstr(n, "Sony") || std::strstr(n, "DualSense") || std::strstr(n, "DualShock") ||
+                        std::strstr(n, "Wireless Controller");
         f.glyphs = ps ? 1 : 2;
     }
     f.nav_x = f.nav_x > 0 ? 1 : f.nav_x < 0 ? -1 : 0;

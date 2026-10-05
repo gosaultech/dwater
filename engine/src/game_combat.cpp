@@ -28,7 +28,6 @@ constexpr float VIEW_HALF = 60.0f * kPi / 180.0f;          // ... and how wide (
 constexpr float STRIKE_HALF = 55.0f * kPi / 180.0f;        // a lunge only lands in front of it
 constexpr float PLAYER_R = 0.28f, ENEMY_R = 0.32f;         // bodies on the floor plane (m)
 constexpr float LOCK_HALF = 15.0f * kPi / 180.0f;          // auto-aim holds while the gun faces this close to the target
-constexpr float WALK = 1.9f, RUN = 3.8f;                   // m/s: half a stick (or the keys) walks, all of it runs
 constexpr float ACCEL = 24.0f, DECEL = 32.0f;              // m/s^2: full run in a sixth of a second, a stop in an eighth
 constexpr float TURN = 14.0f, PIVOT = 24.0f;               // rad/s turning to the stick; a reversal pivots faster
 constexpr int VARIANTS[] = {0, 2, 1};                      // who they were: the office worker, Pieter, Sanne
@@ -170,6 +169,15 @@ void Game::update_player(float dt) {
     hero_.limp += (limp_of(cond) - hero_.limp) * smoothing(3.0f, dt);
     if (IsKeyPressed(KEY_T)) { settings_.tank = !settings_.tank; save_settings(); }   // classic tank controls (keyboard)
     const Vector2 in = in_.move;
+    // How hard he's pushed (sneak, walk, run; controls.hpp) and the stick back + the right face
+    // button, read every frame whatever he's doing so a toggled run or the turn's grace never goes stale.
+    gait_ = gaits_.update(settings_.tank && !in_.move_keys ? std::fabs(in.y) : std::min(1.0f, Vector2Length(in)), in_.move_keys,
+                          settings_.run, in_.hit(ACT_RUN) && !in_.move_keys, in_.held(ACT_RUN), in_.held(ACT_RUN_HOLD));
+    const Vector3 cam_f = Vector3Subtract(cam_.target, cam_.position);
+    const V2 ahead = forward_from_yaw(p.yaw);
+    const bool chord_on = settings_.back_turn && back_turn_shares_dodge(settings_.scheme) && pmode_ == PMode::Normal;
+    const int chord = back_turn_.update(dt, settings_.tank ? in : stick_in_his_frame(in, {cam_f.x, cam_f.z}, {ahead.x, ahead.z}),
+                                        chord_on && in_.hit(ACT_BACK_TURN), chord_on);
     work_actions(dt);
     if (pmode_ != PMode::Aim) aim_pitch_ -= aim_pitch_ * smoothing(10.0f, dt);
     if (pmode_ != PMode::Normal) vel_ = approach(vel_, {0, 0}, DECEL * dt);   // verbs stop the walk
@@ -245,10 +253,13 @@ void Game::update_player(float dt) {
         case PMode::Normal:
             break;
     }
+    if (chord == BackTurnChord::DODGE && dodge_cd_ <= 0) { start_dodge(in_.move); return; }   // the button alone, after its grace
     if (common_actions()) return;
     if (aim_held()) { enter_aim(); return; }
     const bool run_tap = IsKeyPressed(KEY_LEFT_SHIFT) || IsKeyPressed(KEY_RIGHT_SHIFT);
-    if (in_.hit(ACT_QUICK_TURN) || (settings_.tank && in.y < -0.5f && run_tap)) {   // or back + run on tank controls (RE3)
+    // The layout's quick turn, stick back + the right face button (an option), or back + run on
+    // tank controls with the keys (RE3).
+    if (chord == BackTurnChord::TURN || in_.hit(ACT_QUICK_TURN) || (settings_.tank && in.y < -0.5f && run_tap)) {
         qt_from_ = p.yaw;
         set_pmode(PMode::QuickTurn);
         return;
@@ -256,39 +267,39 @@ void Game::update_player(float dt) {
     if (in_.hit(ACT_KICK) && try_kick()) return;
     if (in_.hit(ACT_INTERACT) && interact()) { vel_ = {}; return; }   // nothing to kick: whatever he's facing
     if (guns_[gun_].is_reloading()) {   // he stands still to reload; walking off stops the 870's shells
-        const bool moving = Vector2Length(in) > 0.2f;
+        const bool moving = gait_ != Gait::Still;
         if (!moving || !guns_[gun_].spec().single_load) { p.pose = Pose::Reload; vel_ = {}; return; }
         guns_[gun_].stop_loading();
     }
     move_player(dt, in, limp_speed(cond));
 }
 
-// Walking and running. The stick's tilt sets the speed (half walks, all the way runs); he gets up
-// to speed and stops in a few frames, and turns to the stick fast (a reversal pivots faster
-// still), so circling a Drowned is a matter of skill, not of fighting the controls.
+// Walking and running. How hard he's pushed picks the gait (update_player: a light touch sneaks,
+// half walks, all the way runs, or the run option's button); he gets up to speed and stops in a
+// few frames, and turns to the stick fast (a reversal pivots faster still), so circling a Drowned
+// is a matter of skill, not of fighting the controls.
 void Game::move_player(float dt, Vector2 in, float speed_scale) {
     Actor& p = player_;
-    const float tilt = std::min(1.0f, Vector2Length(in));
-    const float speed = stick_speed(tilt, WALK, RUN) * speed_scale;
+    const float speed = gait_speed(gait_) * speed_scale;
     Vector2 want{};
     if (settings_.tank) {   // classic: left/right turn him, forward/back move him (backing up is slower)
         p.yaw -= in.x * 2.6f * dt;
         const V2 f = forward_from_yaw(p.yaw);
-        const float k = (in.y < 0 ? -1.0f : 1.0f) * stick_speed(std::fabs(in.y), WALK, RUN) * speed_scale * (in.y < 0 ? 0.6f : 1.0f);
+        const float k = in.y > 0.02f ? speed : in.y < -0.02f ? -0.6f * speed : 0.0f;
         want = {f.x * k, f.z * k};
     } else {
         Vector3 fwd = Vector3Subtract(cam_.target, cam_.position);
         fwd.y = 0;
         fwd = Vector3Normalize(fwd);
         const Vector3 right{-fwd.z, 0, fwd.x};
-        if (tilt < 0.2f) holding_ = false;
+        if (gait_ == Gait::Still) holding_ = false;
         else if (!holding_ || std::fabs(Vector2Angle(in, held_in_)) > 35.0f * DEG2RAD) {
             holding_ = true;   // keep this camera's basis until the stick changes: no cut-induced reversals
             held_fwd_ = fwd;
             held_right_ = right;
             held_in_ = in;
         }
-        if (holding_ && tilt > 0) {
+        if (holding_) {
             const Vector3 d = Vector3Normalize(Vector3Add(Vector3Scale(held_right_, in.x), Vector3Scale(held_fwd_, in.y)));
             want = {d.x * speed, d.z * speed};
             const float to = yaw_towards(0, 0, d.x, d.z);
@@ -306,19 +317,23 @@ void Game::move_player(float dt, Vector2 in, float speed_scale) {
     if (dt > 0 && moved < Vector2Length(vel_) * dt * 0.5f) vel_ = Vector2Scale(vel_, 0.5f);   // ran into a wall: lose the momentum
     p.speed = dt > 0 ? moved / dt : 0.0f;
     p.pose = p.speed > 2.6f ? Pose::Run : p.speed > 0.1f ? Pose::Walk : Pose::Idle;
-    // Footsteps: one per stride, and the Drowned nearby hear them (running carries further).
-    const bool running = p.pose == Pose::Run;
+    // Footsteps: one a stride, as loud as the gait, and the Drowned in earshot hear them (a sneak
+    // only at arm's length; a run across the hall).
+    const Footfall ff = footfall(gait_);
     step_accum_ += moved;
-    if (p.speed > 0.1f && step_accum_ >= (running ? 0.85f : 0.62f)) {
+    if (p.speed > 0.1f && step_accum_ >= ff.stride) {
         step_accum_ = 0;
-        sfx_.play("step_" + spec_.footsteps, running ? 0.8f : 0.5f, 0.08f);
-        noise(p.x, p.z, running ? 6.0f : 2.5f);
+        sfx_.play("step_" + spec_.footsteps, ff.volume, 0.08f);
+        noise(p.x, p.z, ff.radius);
     }
 }
 
 // Dodge, reload and the weapon buttons work walking or aiming. True if a dodge took over.
 bool Game::common_actions() {
-    if (in_.hit(ACT_DODGE) && dodge_cd_ <= 0) {
+    // Where stick back + the right face button turns him (an option), update_player's chord settles
+    // what that button's press means, so it doesn't dodge here at once.
+    const bool chord_press = pmode_ == PMode::Normal && settings_.back_turn && back_turn_shares_dodge(settings_.scheme) && in_.hit(ACT_BACK_TURN);
+    if (in_.hit(ACT_DODGE) && !chord_press && dodge_cd_ <= 0) {
         start_dodge(in_.move);
         return true;
     }

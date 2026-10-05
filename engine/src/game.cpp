@@ -442,22 +442,31 @@ void Game::update(float dt) {
 
 // ── The pause menu ──────────────────────────────────────────────────────────────
 namespace {
-constexpr int MENU_ITEMS = 5;   // resume, controller layout, slow motion, movement, quit
+// resume, controller layout, run, quick turn on back + Circle, slow motion, movement, quit
+constexpr int MENU_ITEMS = 7;
 }
 
 void Game::update_menu() {
-    if (in_.hit(ACT_BACK)) { paused_ = false; return; }
+    // Closing the menu takes this frame's presses with it: the button that resumed (Cross, Circle)
+    // mustn't also kick, dodge or turn him as play picks up again on this same frame.
+    auto resume = [this] { paused_ = false; std::fill(std::begin(in_.pressed), std::end(in_.pressed), false); };
+    if (in_.hit(ACT_BACK)) { resume(); return; }
     if (in_.nav_y) { menu_sel_ = (menu_sel_ - in_.nav_y + MENU_ITEMS) % MENU_ITEMS; sfx_.play("ui_move", 0.6f); }
     const int change = in_.nav_x != 0 ? in_.nav_x : in_.hit(ACT_CONFIRM) ? 1 : 0;
     switch (menu_sel_) {
-        case 0: if (in_.hit(ACT_CONFIRM)) paused_ = false; return;
+        case 0: if (in_.hit(ACT_CONFIRM)) resume(); return;
         case 1:
             if (!change) return;
             settings_.scheme = Scheme((int(settings_.scheme) + change + int(Scheme::Count)) % int(Scheme::Count));
             input_.scheme = settings_.scheme;
             break;
-        case 2: if (!change) return; settings_.slowmo = !settings_.slowmo; break;
-        case 3: if (!change) return; settings_.tank = !settings_.tank; break;
+        case 2:
+            if (!change) return;
+            settings_.run = RunMode((int(settings_.run) + change + int(RunMode::Count)) % int(RunMode::Count));
+            break;
+        case 3: if (!change) return; settings_.back_turn = !settings_.back_turn; break;
+        case 4: if (!change) return; settings_.slowmo = !settings_.slowmo; break;
+        case 5: if (!change) return; settings_.tank = !settings_.tank; break;
         default: if (in_.hit(ACT_CONFIRM)) quit_ = true; return;
     }
     save_settings();
@@ -465,32 +474,61 @@ void Game::update_menu() {
 }
 
 void Game::draw_menu() const {
-    const int sw = GetScreenWidth(), sh = GetScreenHeight(), fs = std::max(14, sh / 26), x = sw / 2 - fs * 11, y0 = sh / 3;
+    const int sw = GetScreenWidth(), sh = GetScreenHeight(), fs = std::max(14, sh / 26), x = sw / 2 - fs * 11, y0 = sh / 5;
+    const int step = fs * 3 / 2, hs = std::max(12, fs * 3 / 4);
     DrawRectangle(0, 0, sw, sh, Color{0, 0, 0, 175});
     DrawText("PAUSED", x, y0 - fs * 3, fs * 2, Color{200, 190, 170, 255});
+    const Scheme s = settings_.scheme;
+    const char* circle = pad_button_name(pad_button(s, ACT_BACK_TURN));
+    const std::string run_button = pad_button_name(pad_button(s, ACT_RUN_HOLD));
+    const std::string run = settings_.run == RunMode::HoldButton ? "Hold " + run_button : run_mode_name(settings_.run);
     const std::string items[MENU_ITEMS] = {
         "Resume",
-        std::string("Controller layout:  < ") + scheme_name(settings_.scheme) + " >",
+        std::string("Controller layout:  < ") + scheme_name(s) + " >",
+        "Run:  < " + run + " >",
+        std::string("Quick turn on stick back + ") + circle + ":  < " + (settings_.back_turn ? "On" : "Off") + " >",
         std::string("Slow motion on a perfect dodge:  < ") + (settings_.slowmo ? "On" : "Off") + " >",
         std::string("Movement:  < ") + (settings_.tank ? "Tank (classic)" : "Modern") + " >",
         "Quit"};
     for (int i = 0; i < MENU_ITEMS; ++i) {
         const bool sel = i == menu_sel_;
-        DrawText(items[i].c_str(), x, y0 + i * fs * 2, fs, sel ? Color{235, 225, 200, 255} : Color{130, 122, 112, 255});
-        if (sel) DrawText(">", x - fs, y0 + i * fs * 2, fs, Color{170, 20, 16, 255});
+        DrawText(items[i].c_str(), x, y0 + i * step, fs, sel ? Color{235, 225, 200, 255} : Color{130, 122, 112, 255});
+        if (sel) DrawText(">", x - fs, y0 + i * step, fs, Color{170, 20, 16, 255});
     }
+    // What the highlighted option means, in a line (by default, how he moves under the run option).
+    std::string what;
+    if (menu_sel_ == 3)
+        what = !back_turn_shares_dodge(s) ? std::string("In this layout ") + circle + " turns him on its own; this matters in Type B and C, where it dodges."
+               : std::string("Stick back (behind him) and ") + circle + ": he turns round. " + circle + " alone, or with the stick any other way, dodges.";
+    else if (settings_.run == RunMode::Analog)
+        what = "Left stick: a light touch sneaks (he barely makes a sound), half way walks, all the way runs.";
+    else
+        what = "Left stick: a light touch sneaks, further walks; " +
+               (settings_.run == RunMode::StickHold     ? std::string("hold L3 in to run.")
+                : settings_.run == RunMode::StickToggle ? std::string("click L3 to run, until the stick comes back.")
+                                                        : "hold " + run_button + " to run (it fires only when aiming).");
+    int y = y0 + MENU_ITEMS * step + fs / 4;
+    auto line = [&](const char* t, Color c) {   // kept on screen, however long
+        DrawText(t, std::max(fs / 2, std::min(x, sw - MeasureText(t, hs) - fs / 2)), y, hs, c);
+    };
+    line(what.c_str(), Color{170, 160, 140, 235});
+    y += hs + fs / 2;
     // The chosen layout at a glance.
-    const int acts[] = {ACT_AIM, ACT_FIRE, ACT_DODGE, ACT_KICK, ACT_QUICK_TURN, ACT_RELOAD, ACT_STATUS, ACT_FLASHLIGHT, ACT_WEAPON_1, ACT_WEAPON_2};
-    int y = y0 + MENU_ITEMS * fs * 2 + fs;
-    const int hs = std::max(12, fs * 3 / 4);
-    for (size_t i = 0; i < sizeof(acts) / sizeof(acts[0]); ++i) {
+    const int acts[] = {ACT_AIM, ACT_FIRE, ACT_DODGE, ACT_KICK, ACT_QUICK_TURN, ACT_RELOAD, ACT_STATUS, ACT_FLASHLIGHT, ACT_WEAPON_1, ACT_WEAPON_2,
+                        ACT_RUN};
+    const std::string turn = std::string(pad_button_name(pad_button(s, ACT_QUICK_TURN))) +
+                             (settings_.back_turn && back_turn_shares_dodge(s) ? std::string(", back + ") + circle : "");
+    const std::string run_with = settings_.run == RunMode::Analog ? "push all the way"
+                                 : settings_.run == RunMode::HoldButton ? run_button
+                                                                        : "L3";
+    const size_t n = sizeof(acts) / sizeof(acts[0]);
+    for (size_t i = 0; i < n; ++i) {
         const int col = int(i % 2), row = int(i / 2);
-        DrawText(TextFormat("%-12s %s", act_name(acts[i]), pad_button_name(pad_button(settings_.scheme, acts[i]))),
-                 x + col * fs * 12, y + row * (hs + 6), hs, Color{150, 142, 130, 230});
+        const char* b = acts[i] == ACT_QUICK_TURN ? turn.c_str() : acts[i] == ACT_RUN ? run_with.c_str() : pad_button_name(pad_button(s, acts[i]));
+        DrawText(TextFormat("%-12s %s", act_name(acts[i]), b), x + col * fs * 12, y + row * (hs + 6), hs, Color{150, 142, 130, 230});
     }
-    y += 5 * (hs + 6) + fs / 2;
-    DrawText("Aim: the right stick moves the aim over the body (head, arms, legs); flick it to switch target.", x, y, hs,
-             Color{120, 114, 104, 220});
+    y += int((n + 1) / 2) * (hs + 6) + fs / 2;
+    line("Aim: the right stick moves the aim over the body (head, arms, legs); flick it to switch target.", Color{120, 114, 104, 220});
 }
 
 // The capture setups (--capture): the first four are posed (no AI); the rest play the fight out,
