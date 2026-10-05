@@ -5,6 +5,7 @@
 // And the aim fitters' arm measures: an elbow hanging down costs nothing, a winged one does.
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cmath>
 
 #include "dw/two_bone.hpp"
@@ -124,6 +125,39 @@ TEST(SlerpAngles, EndsAndMiddle) {
     // A bend about one axis blends to half that bend about the same axis.
     const Vector3 h = slerp_angles({0, 0, 0}, {0.8f, 0, 0}, 0.5f);
     EXPECT_NEAR(h.x, 0.4f, 1e-4f); EXPECT_NEAR(h.y, 0.0f, 1e-4f); EXPECT_NEAR(h.z, 0.0f, 1e-4f);
+}
+
+// The same turn, written the way nearest the one asked for: the 870 aim's left shoulder is written
+// with its arm swung right over (x near pi), and the slerp writes it the other way; angles_near
+// gives it back as the table has it, so the easing that follows goes the short way.
+TEST(AnglesNear, TheSameTurnWrittenTheNearestWay) {
+    auto turn = [](Vector3 e) { return MatrixMultiply(MatrixMultiply(MatrixRotateZ(e.z), MatrixRotateX(e.x)), MatrixRotateY(e.y)); };
+    auto same = [&](Vector3 a, Vector3 b) {
+        const Matrix m = turn(a), n = turn(b);
+        const float* p = &m.m0;
+        const float* q = &n.m0;
+        float worst = 0;
+        for (int i = 0; i < 16; ++i) worst = std::max(worst, std::fabs(p[i] - q[i]));
+        return worst;
+    };
+    const Vector3 table{3.065f, -1.296f, -1.078f};
+    const Vector3 slerped = slerp_angles(table, table, 1);   // (the first way: x within +-90 degrees)
+    EXPECT_LT(same(slerped, table), 1e-4f);
+    EXPECT_GT(std::fabs(slerped.x - table.x), 2.0f);
+    const Vector3 back = angles_near(slerped, table);
+    EXPECT_NEAR(back.x, table.x, 1e-4f);
+    EXPECT_NEAR(back.y, table.y, 1e-4f);
+    EXPECT_NEAR(back.z, table.z, 1e-4f);
+    // Any turn, put near any other: still the same turn, and never further than it was.
+    const Vector3 turns[] = {{0.3f, -0.2f, 0.1f}, {1.4f, 2.9f, -3.0f}, {-1.2f, 0.4f, 2.5f}, {2.8f, -2.6f, 0.9f}};
+    for (const Vector3& e : turns)
+        for (const Vector3& like : turns) {
+            const Vector3 n = angles_near(e, like);
+            EXPECT_LT(same(n, e), 1e-4f);
+            EXPECT_LE(Vector3Distance(n, like), Vector3Distance(e, like) + 1e-4f);
+        }
+    // Whole turns are taken off too: 350 degrees near 0 is -10.
+    EXPECT_NEAR(angles_near({0.1f, 0, 6.1f}, {0, 0, 0}).z, 6.1f - 2 * PI, 1e-4f);
 }
 
 // A turn about the forearm's line is all twist; one across it all swing; and a mix splits back

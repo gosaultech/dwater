@@ -11,6 +11,7 @@
 
 #include "dw/character_file.hpp"
 #include "dw/core.hpp"
+#include "dw/ready.hpp"
 #include "dw/room_spec.hpp"
 #include "cast_guns.hpp"
 #include "grips.hpp"
@@ -692,11 +693,37 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     const bool sharp = pose == Pose::Windup || pose == Pose::Strike || pose == Pose::Hurt || pose == Pose::Stagger ||
                        pose == Pose::CrawlStrike || pose == Pose::Kick || pose == Pose::Dodge;
     const float k = smoothing(sharp ? 16.0f : 9.0f, dt);
-    for (int j = 0; j < J_COUNT; ++j)   // (the fingers turn the shortest way: their poses differ a lot)
-        ang_[j] = j >= J_THUMB1_L ? slerp_angles(ang_[j], T[j], k) : Vector3Lerp(ang_[j], T[j], k);
+    // The fingers turn the shortest way: their poses differ a lot. So do his shoulders and wrists
+    // going to the ready, and up from it to the aim: eased angle by angle, an arm written down one
+    // way in one pose and another way in the next would swing the long way round, through his body,
+    // on the way up. (The other moves, into and out of a reload, a dodge or a kick, were tuned eased
+    // angle by angle, and keep it.)
+    const bool ready = pose == Pose::Idle || pose == Pose::Walk || pose == Pose::Run;
+    if (pose != Pose::Aim) from_ready_ = ready;
+    const bool carrying = kind == Kind::Survivor && (ready || (pose == Pose::Aim && from_ready_));
+    auto arm = [](int j) { return j == J_SHO_L || j == J_WRI_L || j == J_SHO_R || j == J_WRI_R; };
+    for (int j = 0; j < J_COUNT; ++j)
+        ang_[j] = j >= J_THUMB1_L ? slerp_angles(ang_[j], T[j], k)
+                  : carrying && arm(j) ? angles_near(slerp_angles(ang_[j], T[j], k), T[j])   // (written as the pose has it, once there)
+                                       : Vector3Lerp(ang_[j], T[j], k);
     if (steps_)   // a reload's steps time the fingers themselves: they follow closely
         for (int j = J_THUMB1_L; j < J_THUMB1_R; ++j) ang_[j] = slerp_angles(ang_[j], T[j], smoothing(40.0f, dt));
     bob_ = Lerp(bob_, bob, k);
+    // Trigger discipline (ready.hpp): the gun comes up as the arms ease to the aim, and only once
+    // it's nearly there does the trigger finger leave the frame for the trigger; it comes off first
+    // when he lowers it, and stays off through a reload, a dodge, a kick.
+    if (kind == Kind::Survivor && grip_view < 0) {
+        const bool aiming = pose == Pose::Aim;
+        raise_ = ready::raise(raise_, aiming, k);
+        trigger_ = ready::finger(trigger_, aiming, raise_, dt);
+        const Grip& off = weapon_ == 1 ? grips::SHOTGUN_RIGHT_INDEXED : grips::PISTOL_RIGHT_INDEXED;
+        const Grip& on = weapon_ == 1 ? grips::SHOTGUN_RIGHT : grips::PISTOL_RIGHT;
+        const float b = ready::blend(trigger_);
+        for (int j = 0; j < 3; ++j) {   // (the forefinger's three joints; the rest of the hand doesn't move on the gun)
+            const int f = F_INDEX * 3 + j;
+            ang_[J_THUMB1_R + f] = slerp_angles(off.fingers[f], on.fingers[f], b);
+        }
+    }
     if (want_support_) support_ = want_support_;   // (letting go, the hand eases off the grip it had)
     support_w_ = Lerp(support_w_, want_support_ ? 1.0f : 0.0f, k);
     const bool out = reloading.on && reloading.kind == reload::Kind::Magazine && reloading.t >= reload::DRIVE_OUT;   // (targets(): pushed back out)
@@ -1131,40 +1158,67 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         }
         default: break;
     }
-    if (!drowned && weapon_ == 1 && (pose == Pose::Idle || pose == Pose::Walk || pose == Pose::Run || pose == Pose::Hurt)) {
-        // The shotgun carried at the low ready: the butt still in the shoulder, both hands on it, the
-        // muzzle 40 degrees down ahead (--fit870).
-        T[J_SHO_R] = {0.142f, 0.787f, 0.444f};
-        T[J_ELB_R] = {1.850f, 0, 0};
-        T[J_WRI_R] = {-0.850f, -1.859f, 0.876f};
-        T[J_SHO_L] = {0.206f, 1.598f, 1.092f};
+    // Holding a gun without aiming it (standing, walking, running, knocked back): carried at the
+    // ready in both hands, the trigger finger along the frame (animate()), ready to come up.
+    const bool carried = pose == Pose::Idle || pose == Pose::Walk || pose == Pose::Run || pose == Pose::Hurt;
+    if (!drowned && weapon_ == 0 && carried) {
+        if (pose == Pose::Run) {
+            // Running, the low ready still, fitted on his running body as it leans into the run: the
+            // gun 4 cm nearer him, the muzzle 45 degrees down at the floor 1.6 m ahead (--fitpistol).
+            // (Not pulled in to the chest, a compressed ready: this rig's palm is one rigid piece,
+            // and that would bend his wrists past 55 degrees.)
+            T[J_SHO_R] = {0.319f, 0.903f, 0.476f};
+            T[J_ELB_R] = {1.043f, 0, 0};
+            T[J_WRI_R] = {-0.449f, -0.600f, 0.559f};
+            T[J_SHO_L] = {0.115f, -1.385f, -0.699f};
+            T[J_ELB_L] = {0.935f, 0, 0};
+            T[J_WRI_L] = {0.044f, 1.121f, -0.752f};
+        } else {
+            // The pistol at the low ready (--fitpistol): both hands on it as they are to shoot, the
+            // gun low in front of him on his middle line (between his belly and the bottom of his
+            // chest, a forearm out from his coat), the muzzle 42 degrees down at the floor 1.9 m
+            // ahead; the arms lowered from the aim at the shoulders, bent about as much, the elbows
+            // down by his sides, the wrists no more bent than aiming.
+            T[J_SHO_R] = {0.511f, 0.953f, 0.527f};
+            T[J_ELB_R] = {0.778f, 0, 0};
+            T[J_WRI_R] = {-0.557f, -0.600f, 0.430f};
+            T[J_SHO_L] = {0.253f, -1.371f, -0.732f};
+            T[J_ELB_L] = {0.772f, 0, 0};
+            T[J_WRI_L] = {-0.103f, 1.208f, -0.666f};
+        }
+    }
+    if (!drowned && weapon_ == 1 && carried) {
+        // The shotgun carried at the low ready (--fit870): both hands on it as they are to shoot,
+        // the butt dropped from the shoulder pocket to just under it, on his chest by the armpit,
+        // the muzzle 35 degrees down at the floor ahead; turned the way he aims, the left shoulder
+        // forward (the left arm reaches the fore-end that way). Raising it is the butt back up into
+        // the pocket and the muzzle up.
+        T[J_SHO_R] = {0.045f, 0.908f, 0.321f};
+        T[J_ELB_R] = {1.521f, 0, 0};
+        T[J_WRI_R] = {-0.829f, -1.105f, -0.025f};
+        T[J_SHO_L] = {0.280f, 1.701f, 0.890f};
         T[J_ELB_L] = {0.000f, 0, 0};
-        T[J_WRI_L] = {-0.316f, 0.037f, -0.313f};
-        T[J_SPINE].y += -0.475f;   // turned, the gun side back
-        T[J_CHEST].y += -0.368f;
+        T[J_WRI_L] = {-0.162f, 0.020f, -0.072f};
+        T[J_SPINE].y += -0.670f;   // turned, the gun side back
+        T[J_CHEST].y += -0.398f;
     }
     // Both hands on the gun: the left one round the 870's fore-end, or over the right on the
     // pistol's grip (--fitgrips), hands() bending the arm to put it there; reloading, it goes
     // through the reload's steps from there (reload.hpp).
     want_support_ = nullptr;
     steps_ = false;
-    if (!drowned && weapon_ == 1 && (pose == Pose::Aim || pose == Pose::Reload || pose == Pose::Idle || pose == Pose::Walk ||
-                                     pose == Pose::Run || pose == Pose::Hurt))
-        want_support_ = &grips::SHOTGUN_LEFT;
-    if (!drowned && weapon_ == 0 && (pose == Pose::Aim || pose == Pose::Reload)) want_support_ = &grips::PISTOL_LEFT;
+    if (!drowned && weapon_ == 1 && (pose == Pose::Aim || pose == Pose::Reload || carried)) want_support_ = &grips::SHOTGUN_LEFT;
+    if (!drowned && weapon_ == 0 && (pose == Pose::Aim || pose == Pose::Reload || carried)) want_support_ = &grips::PISTOL_LEFT;
     if (!drowned && pose == Pose::Reload && reloading.on) steps_ = true;
     if (!drowned && limp > 0 && pose != Pose::Dead) {
         // Hurt: he favours the right leg (it barely bends and drags), dips as it takes his weight,
-        // and when it's bad, his free hand holds his ribs.
+        // and hunches over. (Both hands stay on the gun however bad it is: he has no free hand to
+        // hold his ribs with.)
         const float s = std::sin(phase_), moving = (pose == Pose::Walk || pose == Pose::Run) ? 1.0f : 0.0f;
         T[J_KNE_R].x *= 1.0f - 0.75f * limp * moving;
         T[J_HIP_R].x *= 1.0f - 0.35f * limp * moving;
         T[J_SPINE] = Vector3Add(T[J_SPINE], {-0.1f * limp, 0, 0.12f * limp * std::max(0.0f, -s) * moving});
         bob -= 0.035f * limp * std::max(0.0f, -s) * moving;
-        if (limp > 0.7f && weapon_ == 0 && pose != Pose::Aim && pose != Pose::Reload && pose != Pose::Kick && pose != Pose::Dodge) {
-            T[J_SHO_L] = {0.05f, -1.3f, 0.3f};
-            T[J_ELB_L] = {1.75f, 0, 0};
-        }
     }
     for (float s : {-1.0f, 1.0f}) {   // keep the soles flat
         int hp = s < 0 ? J_HIP_L : J_HIP_R, kn = s < 0 ? J_KNE_L : J_KNE_R;
