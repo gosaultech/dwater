@@ -907,20 +907,25 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         case Pose::Walk:
         case Pose::Run: {
             const bool run = pose == Pose::Run;
-            phase_ += dt * std::max(speed, 0.4f) / (run ? 1.9f : 1.3f) * 2 * kPi;
-            float s = std::sin(phase_), c = std::cos(phase_), amp = run ? 0.62f : 0.42f;
-            T[J_HIP_L] = {s * amp, 0, -0.02f};
-            T[J_HIP_R] = {-s * amp, 0, 0.02f};
-            T[J_KNE_L] = {-0.1f - std::max(0.0f, c) * (run ? 1.3f : 0.8f), 0, 0};   // flex on the swing-through
-            T[J_KNE_R] = {-0.1f - std::max(0.0f, -c) * (run ? 1.3f : 0.8f), 0, 0};
-            T[J_SHO_L] = {-s * amp * 0.7f, 0, 0.12f};
-            T[J_SHO_R] = {s * amp * 0.7f, 0, -0.12f};
-            T[J_ELB_L] = {(run ? 1.3f : 0.3f) + std::max(0.0f, -s) * 0.3f, 0, 0};
-            T[J_ELB_R] = {(run ? 1.3f : 0.3f) + std::max(0.0f, s) * 0.3f, 0, 0};
-            T[J_SPINE] = {run ? -0.22f : -0.05f, s * 0.1f, 0};
+            // Sneaking (his walk at a sneak's pace, about 0.8 m/s): shorter steps placed carefully,
+            // knees bent, a little hunched, arms drawn in, the head kept up. Eased in by the speed.
+            const float sn = !drowned && !run ? std::clamp((1.15f - speed) / 0.3f, 0.0f, 1.0f) : 0.0f;
+            phase_ += dt * std::max(speed, 0.4f) / (run ? 1.9f : 1.3f - 0.4f * sn) * 2 * kPi;
+            float s = std::sin(phase_), c = std::cos(phase_), amp = run ? 0.62f : 0.42f - 0.12f * sn;
+            const float knee = run ? 1.3f : 0.8f - 0.1f * sn, swing = amp * 0.7f * (1.0f - 0.5f * sn);
+            T[J_HIP_L] = {s * amp + 0.12f * sn, 0, -0.02f};
+            T[J_HIP_R] = {-s * amp + 0.12f * sn, 0, 0.02f};
+            T[J_KNE_L] = {-0.1f - 0.25f * sn - std::max(0.0f, c) * knee, 0, 0};   // flex on the swing-through
+            T[J_KNE_R] = {-0.1f - 0.25f * sn - std::max(0.0f, -c) * knee, 0, 0};
+            T[J_SHO_L] = {-s * swing, 0, 0.12f};
+            T[J_SHO_R] = {s * swing, 0, -0.12f};
+            T[J_ELB_L] = {(run ? 1.3f : 0.3f + 0.4f * sn) + std::max(0.0f, -s) * 0.3f, 0, 0};
+            T[J_ELB_R] = {(run ? 1.3f : 0.3f + 0.4f * sn) + std::max(0.0f, s) * 0.3f, 0, 0};
+            T[J_SPINE] = {run ? -0.22f : -0.05f - 0.15f * sn, s * 0.1f, 0};
             T[J_CHEST] = {0, -s * 0.06f, 0};
             T[J_PELVIS] = {0, -s * 0.08f, 0};
-            bob = -std::fabs(s) * (run ? 0.045f : 0.022f);
+            T[J_NECK].x += 0.1f * sn;
+            bob = -std::fabs(s) * (run ? 0.045f : 0.022f - 0.01f * sn) - 0.013f * sn;
             break;
         }
         case Pose::Shamble: {   // the reach: both arms up at you, one leg dragging, the head rolling
