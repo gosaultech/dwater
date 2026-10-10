@@ -17,13 +17,16 @@
 //                                   or a gun, catalogue-lit: m92fs | r870 (see Game::gun_view)
 //   ./damned_waters --fitgrips      a tool: fit his hands to both guns as people hold them, write
 //                                   src/grips_fitted.inc, then exit
-//   ./damned_waters --fitpistol     a tool: fit the two-handed pistol aim (the right arm and wrist,
-//                                   the head; the left hand goes on by IK), print it, exit
+//   ./damned_waters --fitpistol     a tool: fit the pistol in both hands (aiming: the right arm and
+//                                   wrist, the head; at the low ready and running: the arms; the left
+//                                   hand goes on by IK), print it for the pose tables, exit
 //   ./damned_waters --fit870        a tool: fit the hold on the 870 (aim, low ready, reload: arms,
 //                                   wrists and the turn of his back; aiming, also his head and lean,
 //                                   the cheek down on the stock), print it for the pose tables, exit
-//   ./damned_waters --clearance     a tool: play each reload through and print, step by step, how
-//                                   deep his arms, hands and gun go into his body (and each other)
+//   ./damned_waters --clearance     a tool: play each way he carries a gun (standing, walking, running,
+//                                   raising it and lowering it) and each reload through and print, step
+//                                   by step, how deep his arms, hands and gun go into his body (and each
+//                                   other), his wrists, and where his trigger finger is
 //   ./damned_waters --fitreload     a tool: fit where the pistol is brought in to reload (least wrist
 //                                   strain, nothing through anything), print it, exit
 //   ./damned_waters --frames 600    auto-exit (smoke tests)
@@ -84,7 +87,9 @@ int main(int argc, char** argv) {
         c.unload();
     } else if (clear) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);
-        TraceLog(LOG_INFO, "CLEARANCE%s", c.reload_clearance().c_str());
+        const char* part = std::getenv("DW_CLEAR_ONLY");   // (stance or reload: just that half)
+        if (!part || std::string(part) == "stance") TraceLog(LOG_INFO, "CLEARANCE (carrying the guns)%s", c.stance_clearance().c_str());
+        if (!part || std::string(part) == "reload") TraceLog(LOG_INFO, "CLEARANCE (the reloads)%s", c.reload_clearance().c_str());
         c.unload();
     } else if (fitgrips) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);
@@ -92,14 +97,44 @@ int main(int argc, char** argv) {
         c.unload();
     } else if (fitpistol) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);
-        TraceLog(LOG_INFO, "FIT pistol %s", c.fit_pistol().c_str());
+        dw::Character::PistolFit aim, low, run;
+        // The low ready, standing and walking: the gun low in front of him on his middle line, between
+        // his belly and the bottom of his chest, the muzzle at the floor 1.5 to 2 m ahead.
+        low.sights = false;
+        low.grip_at = {0.02f, -0.30f, -0.48f};
+        low.grip_band = {0.04f, 0.06f, 0.1f};
+        low.floor_near = 1.5f;
+        low.floor_far = 2.0f;
+        low.pose = dw::Pose::Idle;
+        // Running: the low ready still, on his running body (leaning into it), the gun pulled in a
+        // little and the muzzle at the floor a little nearer. (Pulled in close to his chest, a
+        // compressed ready, this rig's one-piece palm would bend the wrists past 55 degrees.)
+        run.sights = false;
+        run.grip_at = {0.02f, -0.30f, -0.46f};
+        run.grip_band = {0.04f, 0.06f, 0.08f};
+        run.floor_near = 1.3f;
+        run.floor_far = 1.8f;
+        run.pose = dw::Pose::Run;
+        const char* only = std::getenv("DW_FIT_ONLY");   // (aim, low or run: just that one)
+        auto want = [only](const char* id) { return !only || std::string(only) == id; };
+        if (want("aim")) TraceLog(LOG_INFO, "FIT pistol aim %s", c.fit_pistol(aim).c_str());
+        if (want("low")) TraceLog(LOG_INFO, "FIT pistol low ready %s", c.fit_pistol(low).c_str());
+        if (want("run")) TraceLog(LOG_INFO, "FIT pistol running %s", c.fit_pistol(run).c_str());
         c.unload();
     } else if (fit870) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);
         dw::Character::ShotgunFit aim, low, reload;
-        low.aim = {0, -0.64f, -0.77f};   // the low ready: still in the shoulder, the muzzle 40 degrees down
+        // The low ready: the muzzle 35 degrees down, the butt dropped from the shoulder pocket to just
+        // under it, on the chest by the armpit (pinned in the pocket, the right wrist would have to
+        // turn round it, past what wrists do).
+        low.aim = {0, -0.574f, -0.819f};
+        low.pocket = {-0.03f, -0.14f, -0.17f};
         low.cheek = false;
+        low.wrist_easy = 60;               // (carried a long time: the wrists no more strained than aiming)
+        low.turn_as_aim = true;            // (bladed as he aims: raising it is the arms alone)
         low.pose = dw::Pose::Idle;          // carried like this while he stands, walks and runs
+        if (const char* e = std::getenv("DW_870_LOW"))   // (trying others: aim xyz, pocket xyz)
+            std::sscanf(e, "%f,%f,%f,%f,%f,%f", &low.aim.x, &low.aim.y, &low.aim.z, &low.pocket.x, &low.pocket.y, &low.pocket.z);
         reload.aim = {0, 0.2f, -0.98f};   // loading: under the armpit, muzzle up a little, left hand at the port
         reload.pocket = {0.0f, -0.2f, 0.02f};
         reload.left = {0, -0.2447f, -0.0068f};

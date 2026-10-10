@@ -130,14 +130,29 @@ public:
         Vector3 left{0, -0.3547f, 0.0032f};       // under the fore-end, near its back
         bool cheek = true;
         Pose pose = Pose::Aim;                    // the body the arms are fitted on
+        // Weight on both wrists as a physio measures them (swing past 45 degrees, twist past 75): the
+        // low ready, carried a long time, mustn't strain them more than the aim does.
+        float wrist_easy = 0;
+        bool turn_as_aim = false;                 // his back turned about as he aims, so raising the gun is mostly the arms
     };
     std::string fit_shotgun(const ShotgunFit& goal);
-    // A tool (--fitpistol): the two-handed pistol aim, thumbs forward. Search the right arm, its
-    // wrist and the head so the bore lies along `aim` and the right eye sits on the sight line an
-    // arm's length behind the rear sight, the head up and looking along it; and where the left
-    // elbow goes, so hands() turns the left wrist no further than it must. Returns the
-    // result as text for the pose tables.
-    std::string fit_pistol(Vector3 aim = {0, 0, -1});
+    // A tool (--fitpistol): the pistol in both hands, thumbs forward. Search the right arm and its
+    // wrist so the bore lies along `aim`, and where the left elbow goes, so hands() turns the left
+    // wrist no further than it must. Aiming (`sights`), the head joins the search: the right eye on
+    // the sight line an arm's length behind the rear sight, the head up and looking along it. At
+    // the ready, the body and head stay as `pose` has them and the gun is held low in front of
+    // him instead: the middle of its grip within `grip_band` of `grip_at` (the chest's frame: x to
+    // his right, y up, -z ahead), the bore's line meeting the floor `floor_near` to `floor_far`
+    // ahead of him (m) on his middle line, the arms bent and the elbows down, nothing through his
+    // body, both wrists as easy as the grip allows. Returns the result as text for the pose tables.
+    struct PistolFit {
+        Vector3 aim{0, 0, -1};
+        bool sights = true;
+        Vector3 grip_at{0.02f, -0.2f, -0.45f}, grip_band{0.04f, 0.08f, 0.1f};
+        float floor_near = 1.5f, floor_far = 2.0f;
+        Pose pose = Pose::Aim;
+    };
+    std::string fit_pistol(const PistolFit& goal);
     // A tool (--fitgrips, grip_fit.cpp): fit his hands to his guns the way people hold them, write
     // the result to `out_path` (src/grips_fitted.inc) and say how close it came.
     std::string fit_grips(const std::string& out_path);
@@ -174,9 +189,10 @@ public:
     Matrix load_frame() const;
     // A tool (--clearance, character_clearance.cpp): how far anything goes through anything this
     // frame (m): each arm into the body, the gun into the body, the left hand into the right hand
-    // and into the gun. Each the deepest point, how many points go in, and (for the first three)
+    // and into the gun, and the right forefinger into the gun (the trigger finger going on and off
+    // the trigger). Each the deepest point, how many points go in, and (for the first three)
     // where the deepest is (world).
-    struct Clearance { clearance::Worst larm, rarm, gun, hands, lhand_gun; Vector3 larm_at{}, rarm_at{}, gun_at{}; };
+    struct Clearance { clearance::Worst larm, rarm, gun, hands, lhand_gun, rindex_gun; Vector3 larm_at{}, rarm_at{}, gun_at{}; };
     Clearance clearance(std::vector<Vector3>* clashes = nullptr) const;
     // How far a wrist is bent (radians): the angle between the forearm and the hand (wrist to the
     // middle knuckle), whichever way. Comfortable to about 40 degrees, a strain past 60.
@@ -185,6 +201,10 @@ public:
     // A tool (--clearance): each reload played through as the game plays it, the clearance at every
     // step of it, as a table.
     std::string reload_clearance();
+    // A tool (--clearance): each gun carried as the game carries it (standing at the ready, a
+    // walking and a running stride, the raise to the aim and back down), frame by frame: the
+    // clearance, both wrists, and how far the trigger finger is from the trigger.
+    std::string stance_clearance();
 
 private:
     // tag: 0 always shown; 1 + weapon: only while that gun is in hand. drive: 1 the slide, 2 the
@@ -310,6 +330,9 @@ private:
     Matrix lh_from_ = MatrixIdentity(), lh_last_ = MatrixIdentity();
     float lh_fade_ = 1;
     float close_w_ = 0;                                             // 0..1: the right arm bringing the pistol in to reload
+    float raise_ = 0;                                               // 0..1: the gun from the ready up to the aim (ready.hpp)
+    float trigger_ = 0;                                             // 0..1: the trigger finger from along the frame onto the trigger
+    bool from_ready_ = true;                                        // the arms last came from the ready (not a reload, a dodge...)
     bool ik_[2]{};                                                  // this frame, the left / right arm was put by arm_to
     Vector3 ik_wrist_[2]{};                                         // ... and its wrist's own turn
     float swivel_[2]{};                                             // each elbow swung out of the body (arm_to), radians

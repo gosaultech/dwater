@@ -74,14 +74,15 @@ the shaders are GLSL 3.30 core, which both platforms support.
 ../build/macos/damned_waters --room voorkamer --still 3.2,4.5,163 still.png --shot a   # him standing in a room (x, z, yaw degrees), one frame
 DW_ROOT=/path/to/tree ../build/macos/damned_waters ...   # read rooms, plates and audio from another tree (a test room)
 ../build/macos/damned_waters --fitgrips  # fit his hands to both guns as people hold them, write src/grips_fitted.inc, exit
-../build/macos/damned_waters --fitpistol # fit the two-handed pistol aim (right arm, wrist, head), print it, exit
-../build/macos/damned_waters --fit870    # fit the hold on the 870 (arms, wrists, back; aiming, the cheek on the stock), print it, exit
+../build/macos/damned_waters --fitpistol # fit the pistol in both hands (the aim: right arm, wrist, head; the low ready, standing and running: the arms), print it, exit
+../build/macos/damned_waters --fit870    # fit the hold on the 870 (arms, wrists, back; aiming, the cheek on the stock; the low ready; the reload), print it, exit
 ```
 
 `--fitgrips` takes a few minutes. `DW_FIT_ONLY=PISTOL_LEFT` (or a comma list: `PISTOL_RIGHT`,
-`PISTOL_LEFT`, `SHOTGUN_RIGHT`, `SHOTGUN_LEFT`, `MAG_LEFT`, `SHELL_LEFT`) refits just those grips and
-keeps the rest, `DW_FIT_QUICK=1` makes a fast rough pass, and `DW_FIT_TRACE=1` reports each stage
-of the search.
+`PISTOL_LEFT`, `SHOTGUN_RIGHT`, `SHOTGUN_LEFT`, `MAG_LEFT`, `SHELL_LEFT`, `PISTOL_RIGHT_INDEXED`,
+`SHOTGUN_RIGHT_INDEXED`) refits just those grips and keeps the rest, `DW_FIT_QUICK=1` makes a fast
+rough pass, and `DW_FIT_TRACE=1` reports each stage of the search. `--fitpistol` takes
+`DW_FIT_ONLY=aim`, `low` or `run` (a few seconds each), `--fit870` `aim`, `low` or `reload`.
 
 `--view` takes `who,orbit,elevation,distance,target_x,target_y,fov`. `who` is `survivor` or
 `drowned0`..`drowned2` (the office worker, Sanne, Pieter). Add `@head`, `@chest`, `@pelvis`,
@@ -112,8 +113,8 @@ The way a shooting instructor would check it, and fitted rather than posed by ey
 
 - **The pistol, two hands, thumbs forward.** The web of the right hand high under the tang, the
   middle finger tight under the trigger guard, ring and little fingers round the front strap,
-  the pad of the trigger finger on the trigger and the rest of that finger off the frame, the
-  thumb forward along the left of the frame. The left hand's heel fills the gap the right
+  aiming, the pad of the trigger finger on the trigger and the rest of that finger off the frame
+  (otherwise it lies along the frame: below), the thumb forward along the left of the frame. The left hand's heel fills the gap the right
   fingers leave on the left grip panel, its fingers wrap over the right ones (the forefinger
   pressed up under the guard), its thumb lies forward under the right thumb, the wrist cammed
   down. The modern isosceles: both arms out but bent about 40 degrees, never locked, the elbows
@@ -123,6 +124,44 @@ The way a shooting instructor would check it, and fitted rather than posed by ey
   the right one dropped under the stock rather than winged out to make a pocket. The left hand holds the
   fore-end across the palm on a slant, fingers round its right side, thumb along its left, and
   goes back and forth with it when he racks the pump.
+
+**Ready for action, until he aims** (the pose tables in `Character::targets`,
+`include/dw/ready.hpp`). Holding a gun without aiming it (standing, walking, running, knocked back)
+he carries it at the ready: low in front of him in both hands, gripped exactly as he shoots with
+it, the muzzle at the floor a stride or two ahead, so bringing it up is one short move. Like a
+goalkeeper waiting with his knees bent and his hands up: everything is already where it needs to
+be.
+
+- **The M92FS at the low ready.** The arms lowered from the aim at the shoulders, bent about as
+  much (45 degrees) with the elbows down by his sides, the wrists no more bent than aiming; the
+  gun on his middle line between his belly and the bottom of his chest, a forearm out from his
+  coat; the muzzle 42 degrees down, at the floor 1.9 m ahead. Running, the same ready fitted on
+  his running body as it leans into the stride: 4 cm nearer him, the muzzle 45 degrees down at
+  1.6 m. (A compressed ready, the gun pulled in to the chest, would bend this rig's one-piece
+  palm past 55 degrees at the wrist.)
+- **The 870 at the low ready.** Both hands on it as to shoot, turned the way he aims, the left
+  shoulder forward (his left arm, straight, reaches the fore-end that way); the butt dropped from
+  the shoulder pocket to just under it, on his chest by the armpit, the muzzle 35 degrees down.
+  Raising it is the butt back up into the pocket and the muzzle up. (Kept in the pocket, the hand
+  on the stock's wrist would have to turn round it, further than a wrist goes.)
+- **Trigger discipline.** Off the trigger, the forefinger lies straight along the side of the
+  frame (the 870's receiver), its pad above the trigger guard, never inside it; the rest of the
+  hand doesn't move on the gun (`PISTOL_RIGHT_INDEXED`, `SHOTGUN_RIGHT_INDEXED`: the shooting grips
+  refitted with the forefinger alone moving). Aiming, the gun comes up as the arms ease to the aim
+  (a quarter of a second, most of the way), and only once it's 80 percent up does the finger go
+  to the trigger (0.12 s); lowering, it comes off first (0.08 s), and it stays off through a
+  reload, a dodge or a kick. Like holding a pen just above the paper until you know what you're
+  going to write. (A shot fired before the finger gets there snaps it on: he pulled the trigger.)
+- Carrying it, he keeps both hands on it however badly hurt he is: he no longer holds his ribs
+  with a free hand (he has none); the limp and the hunch show it.
+
+Going to the ready, and up from it to the aim, his shoulders and wrists turn the short way, as his
+fingers do (`slerp_angles`, written back the way the pose table writes them, `angles_near`): eased
+angle by angle, an arm written down one way in one pose and the other way in the next would swing
+the long way round, through his chest, on the way up. The ready is fitted like the aim:
+`fit_pistol` takes a goal (`PistolFit`: a box for the grip in front of him, where the bore's line
+meets the floor, both wrists as a physio measures them, nothing through his body), and the 870's
+low ready is fitted with the same care for the wrists and the left hand held on the wood.
 
 **The grips** (`--fitgrips`, `src/grip_fit.cpp`, written to `src/grips_fitted.inc`). Think of
 fitting a glove in the dark. Each gun becomes a distance field (for any point near it: how far
@@ -213,8 +252,10 @@ notices. Three things keep the arms honest.
 Two tools check it and tune it:
 
 ```bash
-../build/macos/damned_waters --clearance    # play every reload through, frame by frame: how deep the arms,
-                                            # hands and gun go into the body (and each other), and both wrists
+../build/macos/damned_waters --clearance    # play each way he carries a gun (standing, walking, running, raising
+                                            # it and lowering it) and every reload through, frame by frame: how deep
+                                            # the arms, hands and gun go into the body (and each other), both wrists,
+                                            # and where the trigger finger is (DW_CLEAR_ONLY=stance or reload: half)
 ../build/macos/damned_waters --fitreload    # search where the pistol is brought in to reload (least wrist strain,
                                             # nothing through anything); paste the result into ReloadShape
 DW_CLASH=1 ../build/macos/damned_waters --view "survivor@chest/gun=0/live/reload=0.6,-30,10,1.3,0,-0.1,38" out.png
@@ -374,7 +415,8 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 | `src/grip_fit.cpp`, `src/grips_fitted.inc` | The grip fitter (`--fitgrips`) and what it wrote: where each gun (and the magazine and shell the left hand loads) sits in each hand and how the fingers wrap it. |
 | `include/dw/two_bone.hpp`, `src/two_bone.cpp` | The two-bone arm solve that keeps the left hand on the gun, the aim fitters' arm measures (elbow hanging down, its bend), a wrist's swing and twist, and blending joint turns the short way. Pure maths, unit-tested. |
 | `include/dw/clearance.hpp`, `src/clearance.cpp` | How far one surface sinks into another, and the torso as stacked oval slices for the elbows to keep out of. Pure, unit-tested. |
-| `src/character_clearance.cpp` | The clearance check on the posed body (`--clearance`) and the pistol's reload-position fitter (`--fitreload`). |
+| `src/character_clearance.cpp` | The clearance check on the posed body (`--clearance`: the carries and the reloads) and the pistol's reload-position fitter (`--fitreload`). |
+| `include/dw/ready.hpp` | Trigger discipline: how far up the gun is, and when the trigger finger may go on and must come off. Pure, unit-tested. |
 | `include/dw/reload.hpp`, `src/reload.cpp` | The reloads' steps: where the left hand goes and what it holds, and when the magazine drops, goes home and the slide runs forward. Pure, unit-tested. |
 | `include/dw/status.hpp`, `src/status.cpp` | The status screen as rules: condition, what each item can do, loading from the case, what the world remembers, and the screen's state machine (browse, act, combine, discard, read, pick up, make room). Pure, unit-tested. |
 | `include/dw/world_map.hpp`, `src/world_map.cpp` | The map, laid out from the rooms' origins (or, without them, from their doors) and storeys. Pure, unit-tested. |
@@ -388,7 +430,7 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 | `src/game_world.cpp` | Pickups, notes, things to look at and doors in a room; carrying out what the screen asks for. |
 | `src/cast_items.cpp` | The case's items as 3D models (the guns are `cast_guns.cpp`'s). |
 | `src/effects.cpp` | Blood, brass and spent shells, limbs that come away, the empty magazines he drops, the muzzle flash. |
-| `src/character_combat.cpp` | Hit capsules, wounds, severing, the guns in hand, and the aim fitters (`--fitpistol`, `--fit870`). |
+| `src/character_combat.cpp` | Hit capsules, wounds, severing, the guns in hand, and the aim and ready fitters (`--fitpistol`, `--fit870`). |
 | `src/shaders.cpp` | All GLSL, embedded. |
 | `src/game.cpp` | Room, cameras, input, AI, and render order. |
 | `src/main.cpp` | Entry point, capture mode, and telemetry. |

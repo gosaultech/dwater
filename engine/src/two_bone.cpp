@@ -56,6 +56,13 @@ Vector3 slerp_angles(Vector3 a, Vector3 b, float k) {
     return {std::asin(std::clamp(-m.m9, -1.0f, 1.0f)), std::atan2(m.m8, m.m10), std::atan2(m.m1, m.m5)};
 }
 
+Vector3 angles_near(Vector3 e, Vector3 like) {
+    auto wrap = [](float a, float to) { return to + std::remainder(a - to, 2 * PI); };   // a, whole turns added or taken, nearest `to`
+    const Vector3 a{wrap(e.x, like.x), wrap(e.y, like.y), wrap(e.z, like.z)};
+    const Vector3 b{wrap(PI - e.x, like.x), wrap(e.y + PI, like.y), wrap(e.z + PI, like.z)};
+    return Vector3DistanceSqr(b, like) < Vector3DistanceSqr(a, like) ? b : a;
+}
+
 void swing_twist(Quaternion q, Vector3 axis, float& swing, float& twist) {
     axis = Vector3Normalize(axis);
     const float d = q.x * axis.x + q.y * axis.y + q.z * axis.z;
