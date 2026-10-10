@@ -1,7 +1,9 @@
 // damned_waters/engine/include/dw/room_spec.hpp
 // Purpose: the RoomSpec JSON (game/data/rooms/<id>.json) as C++ data. The SAME
 // file drives the Blender background renders, so collision, cameras and
-// pictures always agree.
+// pictures always agree. A room is written in its own coordinates (its corner at 0, 0); its
+// "origin" says where that corner lies in the house, and translate() moves it there, so rooms
+// on a storey share one floor plan (house.hpp).
 #ifndef DW_ROOM_SPEC_HPP
 #define DW_ROOM_SPEC_HPP
 #include <map>
@@ -24,6 +26,13 @@ struct Interactable {
     V3 pos;
     float radius = 1;
     int count = 1;
+    Shot peek;              // a door: the view through the crack when it's eased ajar (peek.id empty: none)
+};
+// A hole in a wall: "door", "window", "gate". side: north (the -z wall), south, west (-x), east.
+// center: along the wall from its low corner (x for north/south, z for west/east).
+struct Opening {
+    std::string side, kind, hinge;   // hinge: "left" / "right" as seen from inside this room (doors)
+    float center = 0, width = 1, height = 2, sill = 0;
 };
 
 struct RoomSpec {
@@ -37,13 +46,23 @@ struct RoomSpec {
     std::vector<EnemySpawn> enemies;
     std::vector<Interactable> interactables;
     int floor = 0;                 // which storey it's on ("storey": 0 the ground floor, -1 a cellar): for the map
-    std::vector<Obb2> colliders;   // walls + solid props, on the floor plane
+    float origin_x = 0, origin_z = 0;   // where the room's corner lies in the house ("origin": [x, z])
+    bool has_origin = false;
+    std::vector<Opening> openings;
+    std::vector<Obb2> colliders;   // walls (with gaps at the doors) + solid props, on the floor plane
+    size_t wall_count = 0;         // the first wall_count colliders are the walls (they block sight; props don't)
     std::vector<std::string> errors;
 
     static RoomSpec load(const std::string& path);
     std::vector<ShotZone> zones() const;
     bool ok() const { return errors.empty(); }
+    // Move everything (bounds, shots, spawns, lights, things, colliders) by (dx, dz).
+    void translate(float dx, float dz);
+    // An opening's ends on the wall's centre line, in this room's current coordinates.
+    void opening_ends(const Opening& o, float& ax, float& az, float& bx, float& bz) const;
 };
+
+constexpr float WALL_T = 0.3f;   // wall thickness: walls grow outward from a room's bounds (as Blender builds them)
 
 std::string repo_root();
 

@@ -608,7 +608,7 @@ void Game::draw_status_ui() {
                 if (locked) DrawRectangleRec({p.x - 5, p.y - 5, 10, 10}, C_RED_HI);
             }
             if (here) {   // where he stands, and which way he faces
-                const Vector2 p = to_screen(r->ox + player_.x, r->oz + player_.z);
+                const Vector2 p = to_screen(r->ox + player_.x - spec_.origin_x, r->oz + player_.z - spec_.origin_z);   // (he walks in house coordinates)
                 const V2 f = forward_from_yaw(player_.yaw);
                 const Vector2 fw{f.x, f.z}, side{-f.z, f.x};
                 const float s = 11 + 2 * std::sin(ui_t_ * 4);

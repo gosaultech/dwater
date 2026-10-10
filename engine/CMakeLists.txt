@@ -30,15 +30,16 @@ if(NOT SQLite3_FOUND)
 endif()
 
 # Core library: pure logic + data (no window needed) so tests link it without a GPU.
-add_library(dw_core STATIC src/room_spec.cpp src/telemetry.cpp src/character_file.cpp src/settings.cpp src/two_bone.cpp src/reload.cpp src/clearance.cpp src/status.cpp src/world_map.cpp)
+add_library(dw_core STATIC src/room_spec.cpp src/telemetry.cpp src/character_file.cpp src/settings.cpp src/two_bone.cpp src/reload.cpp src/clearance.cpp src/status.cpp src/world_map.cpp src/house.cpp)
 target_include_directories(dw_core PUBLIC include)
 target_link_libraries(dw_core PUBLIC nlohmann_json::nlohmann_json SQLite::SQLite3 raylib)
 target_compile_definitions(dw_core PUBLIC DW_REPO_ROOT="${CMAKE_SOURCE_DIR}/..")
 
 set(DW_CAST src/character.cpp src/character_combat.cpp src/grip_fit.cpp src/character_clearance.cpp src/cast_items.cpp src/cast_survivor.cpp src/cast_guns.cpp src/cast_drowned.cpp src/cast_citizens.cpp
             src/mesh_builder.cpp)
-add_executable(damned_waters src/main.cpp src/game.cpp src/game_combat.cpp src/game_world.cpp src/status_view.cpp src/input.cpp src/audio.cpp src/effects.cpp src/shaders.cpp ${DW_CAST})
-target_link_libraries(damned_waters PRIVATE dw_core raylib)
+find_package(Threads REQUIRED)
+add_executable(damned_waters src/main.cpp src/game.cpp src/game_combat.cpp src/game_world.cpp src/game_house.cpp src/plates.cpp src/status_view.cpp src/input.cpp src/audio.cpp src/effects.cpp src/shaders.cpp ${DW_CAST})
+target_link_libraries(damned_waters PRIVATE dw_core raylib Threads::Threads)
 if(MSVC)
     target_compile_options(damned_waters PRIVATE /W4)
 else()
@@ -53,7 +54,7 @@ if(DW_BUILD_TESTS)
         FetchContent_MakeAvailable(googletest)
     endif()
     add_executable(dw_tests tests/test_core.cpp tests/test_character_file.cpp tests/test_combat.cpp tests/test_controls.cpp tests/test_mesh_builder.cpp tests/test_guns.cpp
-                            tests/test_two_bone.cpp tests/test_grips.cpp tests/test_reload.cpp tests/test_clearance.cpp tests/test_status.cpp tests/test_world_map.cpp tests/test_death.cpp src/mesh_builder.cpp src/cast_guns.cpp)
+                            tests/test_two_bone.cpp tests/test_grips.cpp tests/test_reload.cpp tests/test_clearance.cpp tests/test_status.cpp tests/test_world_map.cpp tests/test_death.cpp tests/test_house.cpp tests/test_doors.cpp src/mesh_builder.cpp src/cast_guns.cpp)
     target_link_libraries(dw_tests PRIVATE dw_core GTest::gtest_main)
     enable_testing()
     add_test(NAME dw_tests COMMAND dw_tests)

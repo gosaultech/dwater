@@ -301,12 +301,18 @@ def _opening_span(op):
 
 
 def build_shell(spec):
-    """Floor, ceiling, beams, walls with openings, wainscot, doors, windows, gates."""
+    """Floor, ceiling, beams, walls with openings, wainscot, doors, windows, gates.
+    In a house (render_rooms.build_house): a wall shared with a neighbour ("_shared") is built half
+    thick by each room, so the two halves meet in its middle; a live doorway ("_live": the game
+    hangs its leaf) is left open; a live door with no room behind it ("_stairs") gets the stairs
+    down beyond it."""
     mats = spec["materials"]
     (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
     h, t = spec["height"], WALL_T
-    box_aabb("floor", (x0 - t, -0.2, z0 - t), (x1 + t, 0.0, z1 + t), material(mats["floor"]))
-    box_aabb("ceiling", (x0 - t, h, z0 - t), (x1 + t, h + 0.2, z1 + t), material(mats["ceiling"]))
+    shared = spec.get("_shared", set())
+    ts = {side: t / 2 if side in shared else t for side in ("north", "south", "west", "east")}
+    box_aabb("floor", (x0 - ts["west"], -0.2, z0 - ts["north"]), (x1 + ts["east"], 0.0, z1 + ts["south"]), material(mats["floor"]))
+    box_aabb("ceiling", (x0 - ts["west"], h, z0 - ts["north"]), (x1 + ts["east"], h + 0.2, z1 + ts["south"]), material(mats["ceiling"]))
     beams = spec.get("ceiling_beams")
     if beams:
         wood = material("dark_wood")
@@ -326,20 +332,25 @@ def build_shell(spec):
     for side, wall in wall_segments(spec).items():
         (ax, az), (bx, bz) = wall["line"]
         length = abs(bx - ax) + abs(bz - az)
-        ops = sorted(wall["openings"], key=lambda o: o["center"])
+        indexed = sorted(enumerate(wall["openings"]), key=lambda kv: kv[1]["center"])
+        ops = [op for _, op in indexed]
+        tw = ts[side]
         # Solid spans between openings (full height), extended past corners.
         cursor = -t
-        for op in ops:
+        for k, op in indexed:
             ou0, ou1, ov0, ov1 = _opening_span(op)
             if ou0 > cursor:
-                _wall_box(spec, side, cursor, ou0, 0, h, 0, t, wall_mat, f"wall_{side}")
-            _wall_box(spec, side, ou0, ou1, ov1, h, 0, t, wall_mat, f"lintel_{side}")
+                _wall_box(spec, side, cursor, ou0, 0, h, 0, tw, wall_mat, f"wall_{side}")
+            _wall_box(spec, side, ou0, ou1, ov1, h, 0, tw, wall_mat, f"lintel_{side}")
             if ov0 > 0:
-                _wall_box(spec, side, ou0, ou1, 0, ov0, 0, t, wall_mat, f"sill_{side}")
+                _wall_box(spec, side, ou0, ou1, 0, ov0, 0, tw, wall_mat, f"sill_{side}")
             cursor = max(cursor, ou1)
-            _build_opening(spec, side, op)
+            _build_opening(spec, side, op, live=(side, k) in spec.get("_live", set()))
+            if (side, k) in spec.get("_stairs", set()):
+                import kit
+                kit.stair_stub(spec, side, op)
         if cursor < length + t:
-            _wall_box(spec, side, cursor, length + t, 0, h, 0, t, wall_mat, f"wall_{side}")
+            _wall_box(spec, side, cursor, length + t, 0, h, 0, tw, wall_mat, f"wall_{side}")
         # Wainscot / skirting: thin layer on the interior face, skipping doorways.
         doors = [_opening_span(o) for o in ops if o["kind"] in ("door", "gate") or o.get("sill", 1.0) < 0.05]
         spans, c = [], 0.0
@@ -358,7 +369,7 @@ def build_shell(spec):
                 _wall_box(spec, side, su0, su1, 0, mats.get("skirting_height", 0.14), -0.02, 0, material(sk), "skirting")
 
 
-def _build_opening(spec, side, op):
+def _build_opening(spec, side, op, live=False):
     if op.get("arch"):   # round-headed, steel-framed (kit.py)
         import kit
         kit.arch_opening(spec, side, op)
@@ -368,7 +379,9 @@ def _build_opening(spec, side, op):
     # Interior casing around every opening.
     for (a, b, c, d) in ((u0 - 0.08, u0, v0, v1 + 0.08), (u1, u1 + 0.08, v0, v1 + 0.08), (u0, u1, v1, v1 + 0.08)):
         _wall_box(spec, side, a, b, c, d, -0.03, 0.0, wood, "casing")
-    if op["kind"] == "door":
+    if op["kind"] == "door" and live:
+        pass   # the game hangs this leaf itself (it opens): the picture shows the hole and what's beyond
+    elif op["kind"] == "door":
         _wall_box(spec, side, u0, u1, v0, v1, 0.06, 0.11, wood, "door_leaf")
         w, hh = u1 - u0, v1 - v0
         for (pu, pv, pw, ph) in ((0.5, 0.72, 0.7, 0.4), (0.5, 0.28, 0.7, 0.36)):

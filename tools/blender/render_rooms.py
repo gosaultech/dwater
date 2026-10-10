@@ -23,6 +23,7 @@ import bpy  # noqa: E402
 from mathutils import Vector  # noqa: E402
 
 import builders  # noqa: E402
+import house  # noqa: E402
 import roomspec  # noqa: E402
 from roomspec import g2b  # noqa: E402
 
@@ -207,14 +208,52 @@ def white_world():
     return w
 
 
-def build_room(spec):
+def build_room(spec, outside=True):
     builders.build_shell(spec)
     builders.build_water(spec)
-    builders.build_exterior(spec, random.Random(spec["id"]))
+    if outside:
+        builders.build_exterior(spec, random.Random(spec["id"]))
     for p in spec.get("props", []):
         builders.build_prop(p, spec["height"])
-    for i, light in enumerate(spec.get("lights", [])):
-        add_light(light, i)
+    return [add_light(light, i) for i, light in enumerate(spec.get("lights", []))]
+
+
+def build_house(specs, room_id):
+    """The whole storey `room_id` is on, each room at its origin, so an open doorway shows the
+    real room beyond it. Each room's objects go in their own collection and its lights light only
+    that collection (light linking): a lamp next door never spills through a doorway the game may
+    show shut. Shared walls are built half by each room; doorways the game swings are left open."""
+    for rid in house.storey_rooms(specs, room_id):
+        spec = dict(specs[rid])
+        spec["_shared"] = house.shared_sides(specs, rid)
+        spec["_live"] = house.live_openings(specs, rid)
+        spec["_stairs"] = house.stair_openings(specs, rid)
+        coll = bpy.data.collections.new("room_" + rid)
+        bpy.context.scene.collection.children.link(coll)
+        before = set(bpy.data.objects)
+        lights = build_room(spec, outside=rid == room_id)
+        ox, oz = house.origin(spec)
+        off = Vector(g2b((ox, 0.0, oz)))
+        for ob in [o for o in bpy.data.objects if o not in before]:
+            for c in list(ob.users_collection):
+                c.objects.unlink(ob)
+            coll.objects.link(ob)
+            if ob.parent is None:
+                ob.location += off
+        for L in lights:
+            L.light_linking.receiver_collection = coll
+
+
+def shots_of(spec):
+    """The room's camera shots and its doors' views through the crack, moved to its origin."""
+    ox, oz = house.origin(spec)
+    out = []
+    for shot in list(spec["shots"]) + house.peek_shots(spec):
+        s = dict(shot)
+        s["pos"] = [shot["pos"][0] + ox, shot["pos"][1], shot["pos"][2] + oz]
+        s["look_at"] = [shot["look_at"][0] + ox, shot["look_at"][1], shot["look_at"][2] + oz]
+        out.append(s)
+    return out
 
 
 def main():
@@ -230,11 +269,11 @@ def main():
         s = new_scene(spec, q, res)
         if a.gpu and enable_gpu():
             s.cycles.device = "GPU"
-        build_room(spec)
+        build_house(specs, room_id)
         dmat, wworld = depth_material(), white_world()
         out_dir = Path(a.out) / room_id
         out_dir.mkdir(parents=True, exist_ok=True)
-        for shot in spec["shots"]:
+        for shot in shots_of(spec):
             if shots_wanted and shot["id"] not in shots_wanted:
                 continue
             s.camera = add_camera(shot)

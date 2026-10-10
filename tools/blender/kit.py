@@ -479,11 +479,15 @@ def arch_opening(spec, side, op):
 
 # ── Outside: the canal and the houses across it ──────────────────────────────────
 def build_exterior(spec, rng):
-    """{"side": "north", "canal": 12, "facades": true}: water, a quay, and a row of gabled canal
-    houses across it, a few windows lit."""
+    """{"side": "south", "canal": 12, "bricks": [...], "lit": 0.06}: outside that wall, a pavement,
+    the canal, the far quay, and a row of gabled canal houses facing us, a few windows lit."""
     ext = spec["exterior"]
     (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
     side = ext.get("side", "north")
+    if side not in ("north", "south"):
+        raise NotImplementedError("exterior side " + side)
+    sgn = -1.0 if side == "north" else 1.0   # away from the house
+    wall = z0 if side == "north" else z1
     t = builders.WALL_T
     width = ext.get("canal", 12.0)
     water = builders.material("water")
@@ -491,22 +495,26 @@ def build_exterior(spec, rng):
     brick_keys = ext.get("bricks", ["ph:brick_wall_003"])
     lit = builders.emissive("window", (1.0, 0.55, 0.25), 3.0)
     dark_glass = builders.material({"color": [0.01, 0.012, 0.016], "rough": 0.08, "noise": 0.0})
-    if side != "north":
-        raise NotImplementedError("exterior side " + side)
-    zq = z0 - t - ext.get("pavement", 2.5)   # our side's quay edge
-    builders.box_aabb("street", (x0 - 40, -0.25, zq), (x1 + 40, 0.0, z0 - t), stone)
-    builders.box_aabb("canal", (x0 - 40, -1.6, zq - width), (x1 + 40, -1.58, zq), water)
-    builders.box_aabb("quay_wall", (x0 - 40, -1.6, zq - 0.3), (x1 + 40, 0.0, zq), builders.material(brick_keys[0]))
-    zf = zq - width - 3.0   # the far quay, then the far houses' fronts
-    builders.box_aabb("far_quay", (x0 - 40, -1.6, zf), (x1 + 40, 0.0, zq - width), stone)
+
+    def slab(name, za, zb, y0, y1, m, xa=x0 - 40, xb=x1 + 40):
+        o = builders.box_aabb(name, (xa, y0, min(za, zb)), (xb, y1, max(za, zb)), m)
+        return o
+
+    zw = wall + sgn * t                          # the house's outer face
+    zq = zw + sgn * ext.get("pavement", 2.5)     # our quay's edge
+    slab("street", zw, zq, -0.25, 0.0, stone)
+    slab("canal", zq, zq + sgn * width, -1.6, -1.58, water)
+    slab("quay_wall", zq, zq + sgn * 0.3, -1.6, 0.0, builders.material(brick_keys[0]))
+    zf = zq + sgn * (width + 3.0)                # the far houses' fronts
+    slab("far_quay", zq + sgn * width, zf, -1.6, 0.0, stone)
     x = x0 - 30
     while x < x1 + 30:
         w = rng.uniform(5.0, 7.0)
         hh = rng.uniform(12.0, 16.0)
         m = builders.material({"ph": rng.choice(brick_keys)[3:], "tint": [rng.uniform(0.18, 0.32)] * 3})
-        f = builders.box_aabb("house", (x, 0, zf - 10), (x + w - 0.08, hh, zf), m)
+        f = slab("house", zf, zf + sgn * 10, 0, hh, m, x, x + w - 0.08)
         f.visible_shadow = False
-        g = builders.box_aabb("gable", (x + w * 0.2, hh, zf - 10), (x + w * 0.8, hh + 2.6, zf), m)
+        g = slab("gable", zf, zf + sgn * 10, hh, hh + 2.6, m, x + w * 0.2, x + w * 0.8)
         g.visible_shadow = False
         for fl in range(4):
             for k in range(3):
@@ -514,7 +522,50 @@ def build_exterior(spec, rng):
                 y0 = 1.0 + fl * 3.1
                 if y0 + 2 > hh:
                     continue
-                win = builders.box_aabb("win", (wx - 0.42, y0, zf + 0.001), (wx + 0.42, y0 + 1.9, zf + 0.02),
-                                        lit if rng.random() < ext.get("lit", 0.06) else dark_glass)
+                win = slab("win", zf - sgn * 0.001, zf - sgn * 0.02, y0, y0 + 1.9,
+                           lit if rng.random() < ext.get("lit", 0.06) else dark_glass, wx - 0.42, wx + 0.42)
                 win.visible_shadow = False
         x += w
+
+
+def stair_stub(spec, side, op):
+    """Beyond a door that leads down (the cellar door): a short landing and a flight of worn steps
+    going down into the dark, walled in brick, so the open doorway shows where it goes."""
+    u0, u1, v0, v1 = builders._opening_span(op)
+    t = builders.WALL_T
+    (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
+    frames = {"north": ((x0, 0, z0), (1, 0, 0), (0, 0, -1)), "south": ((x0, 0, z1), (1, 0, 0), (0, 0, 1)),
+              "west": ((x0, 0, z0), (0, 0, 1), (-1, 0, 0)), "east": ((x1, 0, z0), (0, 0, 1), (1, 0, 0))}
+    o, U, Wd = frames[side]
+
+    def box(name, ua, ub, ya, yb, wa, wb, m):
+        pts = [tuple(o[i] + U[i] * u + Wd[i] * w for i in range(3)) for u in (ua, ub) for w in (wa, wb)]
+        lo = (min(p[0] for p in pts), ya, min(p[2] for p in pts))
+        hi = (max(p[0] for p in pts), yb, max(p[2] for p in pts))
+        return builders.box_aabb(name, lo, hi, m)
+
+    brick = builders.material("brick")
+    step_m = builders.material({"color": [0.07, 0.05, 0.035], "rough": 0.7, "noise": 0.3})
+    landing = 0.35
+    n, rise, run = 12, 0.21, 0.27
+    end = t + landing + n * run + 0.3
+    box("landing", u0 - 0.05, u1 + 0.05, -0.2, 0.0, t, t + landing, step_m)
+    for i in range(n):
+        top = -(i + 1) * rise
+        wa = t + landing + i * run
+        box("step", u0 - 0.05, u1 + 0.05, top - 0.2, top, wa, wa + run + 0.02, step_m)
+    for ua, ub in ((u0 - 0.35, u0 - 0.05), (u1 + 0.05, u1 + 0.35)):
+        box("stair_wall", ua, ub, -n * rise - 0.5, v1 + 0.4, t, end, brick)
+    box("stair_end", u0 - 0.35, u1 + 0.35, -n * rise - 0.5, v1 + 0.4, end, end + 0.3, brick)
+    box("stair_ceiling", u0 - 0.35, u1 + 0.35, v1 + 0.1, v1 + 0.4, t, end + 0.3, brick)
+    # the cellar's water, come up the stairs: a black sheet catching a little cold light from below
+    box("stair_water", u0 - 0.05, u1 + 0.05, -n * rise * 0.55, -n * rise * 0.55 + 0.01, t + landing + n * run * 0.45, end,
+        builders.material("water"))
+    ld = bpy.data.lights.new("stair_glow", "POINT")
+    ld.color = (0.45, 0.75, 0.68)
+    ld.energy = 6.0
+    ld.shadow_soft_size = 0.4
+    glow = bpy.data.objects.new("stair_glow", ld)
+    bpy.context.scene.collection.objects.link(glow)
+    c = tuple(o[i] + U[i] * (u0 + u1) / 2 + Wd[i] * (end - 0.6) for i in range(3))
+    glow.location = g2b((c[0], -n * rise * 0.55 + 0.35, c[2]))

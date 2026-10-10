@@ -2,16 +2,10 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cqhu2ystfca7a"
-path="res://.godot/imported/b_depth.png-643dc573b15e8ee1a8d040d362ed5112.ctex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://assets/rooms/kelder/b_depth.png"
-dest_files=["res://.godot/imported/b_depth.png-643dc573b15e8ee1a8d040d362ed5112.ctex"]
 
 [params]
 

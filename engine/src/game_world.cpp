@@ -1,6 +1,8 @@
 // damned_waters/engine/src/game_world.cpp
-// Purpose: the things in a room the survivor can walk up to: pickups lying where the room file
-// puts them (or where he dropped them to make room), notes, things to look at, doors. Interact
+// Purpose: the things in the house the survivor can walk up to: pickups lying where the room files
+// put them (or where he dropped them to make room), notes, things to look at, doors (whose leaves
+// and stairs live in game_house.cpp). Everything on his storey counts, so a thing in the next room
+// can be seen glinting through an open door. Interact
 // (Cross, when there's nothing to kick) takes the nearest one he's facing: a pickup opens the
 // "Take it?" screen, a note opens in the case's Files, anything else says its line at the bottom
 // of the screen while time stands still. And what the status screen asks for (status.hpp's
@@ -23,7 +25,6 @@ int fits(const Inventory& inv, int item, int count) {
 
 void Game::reset_world() {
     world_ = {};
-    world_.visited.insert(spec_.id);
     notes_.clear();
     text_queue_.clear();
     status_.close();
@@ -34,16 +35,19 @@ void Game::reset_world() {
 
 void Game::refresh_loot() {
     loot_.clear();
-    for (const auto& i : spec_.interactables) {
-        if (i.kind != "pickup") continue;
-        const int item = item_by_key(i.item.c_str());
-        const std::string k = status::WorldState::key(spec_.id, i.id);
-        const int n = world_.remaining(k, i.count);
-        if (item != I_NONE && n > 0) loot_.push_back({k, item, n, {i.pos.x, i.pos.y, i.pos.z}, -1});
-    }
-    for (size_t d = 0; d < world_.dropped.size(); ++d) {
-        const auto& dr = world_.dropped[d];
-        if (dr.room == spec_.id && dr.count > 0) loot_.push_back({"", dr.item, dr.count, {dr.x, 0.0f, dr.z}, int(d)});
+    for (const auto& r : rooms_) {   // every room on his storey: through an open door, the next room's things show
+        if (r.floor != storey_) continue;
+        for (const auto& i : r.interactables) {
+            if (i.kind != "pickup") continue;
+            const int item = item_by_key(i.item.c_str());
+            const std::string k = status::WorldState::key(r.id, i.id);
+            const int n = world_.remaining(k, i.count);
+            if (item != I_NONE && n > 0) loot_.push_back({k, item, n, {i.pos.x, i.pos.y, i.pos.z}, -1});
+        }
+        for (size_t d = 0; d < world_.dropped.size(); ++d) {
+            const auto& dr = world_.dropped[d];
+            if (dr.room == r.id && dr.count > 0) loot_.push_back({"", dr.item, dr.count, {dr.x, 0.0f, dr.z}, int(d)});
+        }
     }
 }
 
@@ -59,16 +63,20 @@ int Game::loot_in_reach() const {
     return best;
 }
 
-int Game::spot_in_reach() const {
+std::pair<int, int> Game::spot_in_reach() const {
     const V2 f = forward_from_yaw(player_.yaw);
-    int best = -1;
+    std::pair<int, int> best{-1, -1};
     float best_d = 1e9f;
-    for (size_t i = 0; i < spec_.interactables.size(); ++i) {
-        const auto& s = spec_.interactables[i];
-        if (s.kind == "pickup") continue;
-        const float dx = s.pos.x - player_.x, dz = s.pos.z - player_.z, d = std::hypot(dx, dz);
-        if (d > s.radius || (d > 0.45f && (dx * f.x + dz * f.z) / d < FACING)) continue;
-        if (d < best_d) { best_d = d; best = int(i); }
+    for (size_t r = 0; r < rooms_.size(); ++r) {
+        if (rooms_[r].floor != storey_) continue;
+        for (size_t i = 0; i < rooms_[r].interactables.size(); ++i) {
+            const auto& s = rooms_[r].interactables[i];
+            if (s.kind == "pickup") continue;
+            const float dx = s.pos.x - player_.x, dz = s.pos.z - player_.z, d = std::hypot(dx, dz);
+            if (d > s.radius || (d > 0.45f && (dx * f.x + dz * f.z) / d < FACING)) continue;
+            if (!sight_clear(player_.x, player_.z, s.pos.x, s.pos.z)) continue;   // not through a wall or a shut door
+            if (d < best_d) { best_d = d; best = {int(r), int(i)}; }
+        }
     }
     return best;
 }
@@ -87,11 +95,11 @@ bool Game::interact() {
         sfx_.play("ui_confirm", 0.6f);
         return true;
     }
-    const int s = spot_in_reach();
-    if (s < 0) return false;
-    const Interactable& it = spec_.interactables[size_t(s)];
+    const auto [room, s] = spot_in_reach();
+    if (room < 0) return false;
+    const Interactable& it = rooms_[size_t(room)].interactables[size_t(s)];
     if (it.kind == "note") {
-        const std::string k = status::WorldState::key(spec_.id, it.id);
+        const std::string k = status::WorldState::key(rooms_[size_t(room)].id, it.id);
         if (!world_.has_note(k)) {
             world_.notes.push_back(k);
             notes_.push_back({k, it.title.empty() ? "A note" : it.title, it.text});
@@ -103,27 +111,7 @@ bool Game::interact() {
         sfx_.play("paper", 0.8f);
         return true;
     }
-    if (it.kind == "door") {
-        const std::string k = status::WorldState::key(spec_.id, it.id);
-        if (!it.lock.empty() && !world_.unlocked.count(k)) {
-            const int key = item_by_key(it.lock.c_str());
-            if (key != I_NONE && inv_.has(key)) {
-                world_.unlocked.insert(k);
-                inv_.remove(key, 1);   // (one door, one key: it has no more use)
-                show_text(it.unlock_text.empty() ? "The lock gives." : it.unlock_text);
-                sfx_.play("door_open", 0.8f);
-            } else {
-                show_text(it.locked_text.empty() ? "It's locked." : it.locked_text);
-                sfx_.play("door_locked", 0.8f);
-            }
-            return true;
-        }
-        std::string name = it.target_room;
-        for (const auto& r : map_)
-            if (r.id == it.target_room) name = r.name;
-        show_text("The way to the " + name + ". (Only this hall is built so far.)");
-        return true;
-    }
+    if (it.kind == "door") return use_door(room, it);   // unlock, open, shut, or the stairs (game_house.cpp)
     show_text(it.text);   // examine, the typewriter, the water gate
     return !it.text.empty();
 }
@@ -202,8 +190,12 @@ void Game::apply(const status::Command& c) {
             status_.close();
             pickup_loot_ = -1;
             refresh_loot();
-            for (const auto& i : spec_.interactables)   // what happens as he takes it (the key on the mantel)
-                if (status::WorldState::key(spec_.id, i.id) == o.key && !i.then_text.empty()) show_text(i.then_text);
+            for (const auto& r : rooms_)   // what happens as he takes it (the key on the mantel: a bang at the front door)
+                for (const auto& i : r.interactables)
+                    if (status::WorldState::key(r.id, i.id) == o.key) {
+                        if (!i.then_text.empty()) show_text(i.then_text);
+                        set_flag(i.sets_flag);
+                    }
             break;
         }
         case Command::Leave:

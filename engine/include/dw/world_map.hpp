@@ -36,7 +36,8 @@ struct Room {
 Room from_spec(const RoomSpec& s);
 // Every room file in `dir` (game/data/rooms).
 std::vector<Room> load_all(const std::string& dir);
-// Place every room that can be reached from `start` (which sits at the origin) through doors.
+// Place every room that can be reached from `start` (which sits at the origin, unless the room
+// files give origins: then those stand) through doors.
 void place(std::vector<Room>& rooms, const std::string& start);
 // The storeys there are, top first (0 before -1).
 std::vector<int> storeys(const std::vector<Room>& rooms);

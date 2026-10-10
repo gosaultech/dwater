@@ -30,19 +30,10 @@ const Vector3 LAMP_COLOR{2.5f, 2.35f, 2.1f};
 
 bool Game::init(const std::string& room_id) {
     const std::string root = repo_root();
-    spec_ = RoomSpec::load(root + "/game/data/rooms/" + room_id + ".json");
-    if (!spec_.ok()) {
-        for (auto& e : spec_.errors) TraceLog(LOG_ERROR, "RoomSpec: %s", e.c_str());
-        return false;
-    }
-    for (const auto& s : spec_.shots) {
-        std::string base = root + "/game/assets/rooms/" + spec_.id + "/" + s.id;
-        Texture2D c = LoadTexture((base + "_color.png").c_str()), d = LoadTexture((base + "_depth.png").c_str());
-        if (c.id == 0 || d.id == 0) { TraceLog(LOG_ERROR, "missing plate %s", base.c_str()); return false; }
-        SetTextureFilter(c, TEXTURE_FILTER_BILINEAR);
-        SetTextureFilter(d, TEXTURE_FILTER_POINT);   // depth bytes must never be blended
-        plates_[s.id] = {c, d};
-    }
+    if (!load_house(room_id)) return false;
+    spec_ = rooms_[size_t(room_)];
+    plates_.start(root + "/game/assets/rooms");
+    if (!plates_.need(spec_.id, shot_ids(spec_))) { TraceLog(LOG_ERROR, "missing plates for %s", spec_.id.c_str()); return false; }
     plate_ = LoadShaderFromMemory(nullptr, shaders::PLATE_FS);
     l_depth_ = GetShaderLocation(plate_, "u_depth");
     l_near_ = GetShaderLocation(plate_, "u_near");
@@ -82,9 +73,7 @@ bool Game::init(const std::string& room_id) {
     near_ = float(rlGetCullDistanceNear());
     far_ = float(rlGetCullDistanceFar());
     sfx_.init(root + "/game/assets/audio");   // quietly does nothing without an audio device
-    sfx_.ambience(spec_.ambience, 0.45f);
     fx_.init();
-    fx_.set_bounds(spec_.bounds.x0, spec_.bounds.z0, spec_.bounds.x1, spec_.bounds.z1);
     {   // the pistol's magazine as he holds the gun, to drop when he reloads
         Matrix turn = Character::pistol_hold();
         turn.m12 = turn.m13 = turn.m14 = 0;
@@ -94,16 +83,17 @@ bool Game::init(const std::string& room_id) {
     input_.scheme = settings_.scheme;
     hero_ = Character::make(Kind::Survivor);
     init_status();
-    reset_fight();
-    cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
-    upload_lights();
+    reset_fight();   // builds the storey and walks him into the first room
     animate(0.0f);
     return true;
 }
 
 void Game::shutdown() {
     unload_status();
-    for (auto& [id, p] : plates_) { UnloadTexture(p.first); UnloadTexture(p.second); }
+    plates_.stop();
+    for (Mesh& m : leaf_meshes_)
+        if (m.vertexCount) UnloadMesh(m);
+    leaf_meshes_.clear();
     hero_.unload();
     for (auto& e : enemies_) e.body.unload();
     enemies_.clear();
@@ -365,7 +355,7 @@ void Game::upload_lights() {
 
 void Game::collide(float& x, float& z, float r) const {
     for (int it = 0; it < 3; ++it)
-        for (const auto& b : spec_.colliders) resolve_circle_obb(x, z, r, b);
+        for (const auto& b : solid_) resolve_circle_obb(x, z, r, b);
 }
 
 void Game::animate(float dt) {
@@ -374,12 +364,15 @@ void Game::animate(float dt) {
     fx_.follow_flash(hero_.muzzle(), hero_.barrel_dir());   // the flame stays on the barrel as it kicks
     for (auto& e : enemies_) {
         if (!e.active) continue;
-        e.body.place({e.a.x, 0, e.a.z}, e.a.yaw);
+        // Rising out of the water: it comes up from under the floor (the painted water hides it).
+        const float k = e.rise >= 0 ? 1.0f - (1.0f - e.rise) * (1.0f - e.rise) : 1.0f;
+        e.body.place({e.a.x, -1.75f * (1.0f - k), e.a.z}, e.a.yaw);
         e.body.animate(e.a.pose, e.a.speed, dt);
     }
 }
 
 void Game::update(float dt) {
+    plates_.pump(2);   // the rooms next door, a couple of plates a frame
     input_.scheme = settings_.scheme;
     in_ = input_.poll();
     in_.move = {in_.move.x + staged_in_.x, in_.move.y + staged_in_.y};   // (capture setups hold the stick from code)
@@ -417,6 +410,15 @@ void Game::update(float dt) {
         update_menu();
     }
     if (paused_) { sfx_.update(); return; }   // time stands still
+    if (beat_.busy()) {   // between storeys: the dark, his steps on the stairs, the other floor
+        const float before = beat_.t;
+        const Beat::Phase ph = beat_.phase;
+        if (beat_.update(dt) == Beat::Event::Swap) finish_beat();
+        if (ph == Beat::Phase::Hold && std::floor(before / 0.26f) != std::floor(beat_.t / 0.26f))
+            sfx_.play("step_wood", 0.45f, 0.1f);
+        sfx_.update();
+        return;
+    }
     if (in_.hit(ACT_STATUS) && pmode_ != PMode::Dead) {   // the case
         status_.open(status::Tab::Items);
         for (size_t i = 0; i < storeys_.size(); ++i)   // the map opens on the floor he's on
@@ -429,13 +431,41 @@ void Game::update(float dt) {
     slowmo_t_ = std::max(0.0f, slowmo_t_ - dt);
     time_scale_ = slowmo_t_ > 0.2f ? 0.3f : slowmo_t_ > 0 ? 1.0f - 0.7f * slowmo_t_ / 0.2f : 1.0f;
     const float g = dt * time_scale_;
+    // This storey's solids: walls, props and the door leaves where they hang now.
+    solid_.assign(statics_.begin(), statics_.end());
+    shut_.clear();
+    for (size_t i = 0; i < leaves_.size(); ++i) {
+        if (rooms_[size_t(doorways_[i].a)].floor != storey_) continue;
+        solid_.push_back(leaves_[i].collider());
+        if (!leaves_[i].passable()) shut_.push_back(leaves_[i].collider());
+    }
     update_player(g);
+    {   // the stick, as a way across the floor (for leaning on doors)
+        Vector2 want{};
+        const float tilt = std::min(1.0f, Vector2Length(in_.move));
+        if (settings_.tank) {
+            const V2 f = forward_from_yaw(player_.yaw);
+            want = {f.x * std::max(0.0f, in_.move.y), f.z * std::max(0.0f, in_.move.y)};
+        } else if (tilt > 0) {
+            Vector3 fwd = holding_ ? held_fwd_ : Vector3Subtract(cam_.target, cam_.position);
+            fwd.y = 0;
+            fwd = Vector3Normalize(fwd);
+            const Vector3 right = holding_ ? held_right_ : Vector3{-fwd.z, 0, fwd.x};
+            want = {right.x * in_.move.x + fwd.x * in_.move.y, right.z * in_.move.x + fwd.z * in_.move.y};
+        }
+        update_doors(g, want, tilt);
+    }
+    if (wake_t_ >= 0 && (wake_t_ -= g) < 0) wake(wake_flag_);
     update_enemies(g);
     fx_.update(g);
     for (Vector3 at; fx_.landed(at);) sfx_.play_at("mag_drop", at, ear(), ear_right(), 0.9f, 0.08f);   // an empty magazine on the floor
     sfx_.update();
-    std::string next = select_shot(spec_.zones(), shot_, player_.x, player_.z);
-    if (next != shot_) cut_to(next);
+    // Through a doorway into the next room: no loading, just a cut to its camera.
+    if (const int r = house::room_at(rooms_, storey_, player_.x, player_.z, room_); r >= 0 && r != room_) enter_room(r);
+    if (peek_ < 0) {
+        std::string next = select_shot(spec_.zones(), shot_, player_.x, player_.z);
+        if (next != shot_) cut_to(next);
+    }
     animate(g);
     upload_lights();   // after the pose: the flash light sits where the muzzle is now
 }
@@ -506,6 +536,8 @@ std::string Game::stage(int i) {
         return e;
     };
     reset_fight();
+    inv_.add(I_SHOTGUN, 1);   // (the setups were made with both guns in the case)
+    inv_.add(I_SHELLS, 4);
     paused_ = false;
     banner_t_ = 0;   // no room title over the stills
     staged_aim_ = false;
@@ -582,15 +614,15 @@ std::string Game::stage(int i) {
             name = "head_burst";
             break;
         }
-        case 8: {   // the first one headless by the door, a bang, and two more come in
+        case 8: {   // the first one headless by the door; the key's bang, and two more come in
             Enemy& z = join(0, 0.45f, 8.0f, 0.4f, EState::Pursuit);
             z.damage.hit(R_HEAD, 0, true);
             cut_off(z, R_HEAD, {0, 0, 1});
             kill_enemy(z);
             player_ = {1.1f, 6.95f, kPi};
             run(1.2f);
-            script_.phase = HallEncounter::Phase::Bang;   // skip the quiet: straight to the door
-            script_.t = HallEncounter::BANG_TO_ENTRY - DT;
+            set_flag("heard_thud");   // the cellar key taken in the parlour: the bang at the front door
+            wake_t_ = DT;             // (skip the wait: straight in)
             run(0.6f);
             staged_aim_ = true;
             run(0.4f);
@@ -739,6 +771,74 @@ std::string Game::stage(int i) {
                 name = "examine_text";
             }
             animate(DT);
+            break;
+        }
+        case 27: case 28: case 29: case 30: case 31: case 32: {
+            // The house: the parlour door (leaning on it and the view through the crack; pushed
+            // open; through it into the parlour), a Drowned beating the shut door open behind him,
+            // the cellar door open on the stairs down, and the cellar's Drowned rising out of the water.
+            auto stick_toward = [&](float wx, float wz, float tilt) {   // the stick that walks him that way on this camera
+                Vector3 f = Vector3Subtract(cam_.target, cam_.position);
+                f.y = 0;
+                f = Vector3Normalize(f);
+                const float l = std::hypot(wx, wz);
+                return Vector2{(wx * -f.z + wz * f.x) / l * tilt, (wx * f.x + wz * f.z) / l * tilt};
+            };
+            const int door = doorway_of(room_index("gang"), "door_voorkamer");
+            const float dz = door >= 0 ? doorways_[size_t(door)].mid_z() : 8.17f;
+            if (i == 27 || i == 28 || i == 29) {
+                player_ = {0.62f, dz, kPi / 2};   // at the parlour door, facing it (west)
+                cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+                if (i == 27) {
+                    staged_in_ = stick_toward(-1, 0, 0.5f);   // leaning on it, gently
+                    run(1.6f);
+                    name = "door_lean_peek";
+                } else {
+                    interact();   // Cross: it swings away from him
+                    run(0.7f);
+                    if (i == 29) {
+                        staged_in_ = stick_toward(-1, 0, 0.5f);
+                        run(1.6f);
+                        staged_in_ = stick_toward(-0.5f, 0.6f, 0.5f);
+                        run(0.8f);
+                    }
+                    name = i == 28 ? "door_pushed_open" : "through_to_the_parlour";
+                }
+            } else if (i == 30) {   // in the parlour, the door shut; one comes after him from the hall
+                player_ = {-1.0f, dz - 0.75f, -kPi / 2};   // in the nook by the door (the parlour's door shot)
+                build_storey(storey_);
+                enter_room(room_index("voorkamer"));
+                Enemy& e = join(0, 1.0f, dz - 0.5f, kPi / 2, EState::Pursuit);
+                e.room = room_index("gang");
+                e.heard_t = 6.0f;
+                run(2.4f);
+                name = "drowned_shoves_the_door";
+            } else if (i == 31) {   // the cellar door, unlocked and pushed open: the stairs down
+                inv_.add(I_CELLAR_KEY, 1);
+                player_ = {0.6f, 0.75f, 0.0f};
+                cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+                interact();
+                text_queue_.clear();
+                interact();
+                run(0.9f);
+                player_ = {0.95f, 1.6f, kPi * 0.9f};
+                run(0.1f);
+                name = "cellar_door_stairs";
+            } else {                // down in the cellar: two of them come up out of the water
+                beat_room_ = "kelder";
+                beat_spawn_ = "from_gang";
+                finish_beat();
+                const RoomSpec& k = rooms_[size_t(room_)];
+                player_ = {k.bounds.x0 + 2.6f, k.bounds.z0 + 4.4f, 0.0f};
+                run(1.1f);
+                name = "kelder_rising";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s peek %d door %.2f", name.c_str(), player_.x, player_.z,
+                     spec_.id.c_str(), shot_.c_str(), peek_, door >= 0 ? leaves_[size_t(door)].angle : -9.0f);
+            for (const auto& e : enemies_)
+                TraceLog(LOG_INFO, "STAGE   %s at %.2f %.2f room %d active %d rise %.2f under %d state %d bang %.2f", e.id.c_str(), e.a.x,
+                         e.a.z, e.room, int(e.active), e.rise, int(e.submerged), int(e.brain.state), e.bang_t);
+            staged_in_ = {};
             break;
         }
         default: {   // bitten once too often: the words coming up (26), and all of it, the choice there (14)
@@ -1081,7 +1181,14 @@ bool Game::gun_view(const std::string& who, const std::string& opts, float orbit
 }
 
 void Game::render() {
-    const auto& plate = plates_.at(shot_);
+    const PlateStore::Pair* cur = current_plate();
+    if (!cur) {   // (never expected: the room he's in is always loaded)
+        BeginTextureMode(rt_);
+        ClearBackground(BLACK);
+        EndTextureMode();
+        return;
+    }
+    const auto& plate = *cur;
     casters_.clear();   // (reused: no allocation per frame)
     gun_lit_.clear();
     casters_.push_back(&hero_);
@@ -1109,11 +1216,12 @@ void Game::render() {
     BeginMode3D(cam_);
     SetShaderValue(char_, l_cam_, &cam_.position, SHADER_UNIFORM_VEC3);
     rlDisableBackfaceCulling();
-    hero_.draw(char_mat_);
+    if (peek_ < 0) hero_.draw(char_mat_);   // (peeking, the camera is his eye at the crack)
     for (const auto& e : enemies_)
         if (e.active) e.body.draw(char_mat_);
     fx_.draw(char_mat_);   // blood, brass, what came off
     draw_loot();           // what's lying about to be picked up
+    draw_leaves();         // the doors, where they hang now
     rlEnableBackfaceCulling();
     rlDisableDepthMask();
     BeginBlendMode(BLEND_ADDITIVE);   // the flash glows over whatever is behind it
@@ -1129,7 +1237,7 @@ void Game::render() {
         const float sz = down ? 1.25f : 0.85f;
         DrawMesh(blob_mesh_, blob_mat_, MatrixMultiply(MatrixScale(sz, 1, sz), MatrixTranslate(at.x, 0.012f, at.z)));
     };
-    blob(hero_, player_);
+    if (peek_ < 0) blob(hero_, player_);
     for (const auto& e : enemies_)
         if (e.active) blob(e.body, e.a);
     EndBlendMode();
@@ -1152,6 +1260,11 @@ void Game::present() const {
         DrawTexturePro(ui_rt_.texture, {0, 0, float(W), -float(H)}, {0, 0, float(GetScreenWidth()), float(GetScreenHeight())}, {0, 0}, 0, WHITE);
         return;
     }
+    if (peek_ >= 0) {   // through the crack: the rest of the frame is the dark of the door
+        const float sw = float(GetScreenWidth()), sh = float(GetScreenHeight());
+        DrawRectangleGradientH(0, 0, int(sw * 0.3f), int(sh), Color{0, 0, 0, 235}, Color{0, 0, 0, 0});
+        DrawRectangleGradientH(int(sw * 0.7f), 0, int(sw * 0.3f) + 1, int(sh), Color{0, 0, 0, 0}, Color{0, 0, 0, 235});
+    }
     draw_glints();
     draw_text_box();
     if (banner_t_ > 0) {
@@ -1160,6 +1273,7 @@ void Game::present() const {
     }
     // No HUD: how hurt he is shows in his limp; ammo and health live on the status screen.
     // Only death gets words on the screen, as in the classic games.
+    if (beat_.busy()) DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color{0, 0, 0, static_cast<unsigned char>(255 * beat_.black())});
     if (pmode_ == PMode::Dead) draw_death();
     if (paused_) draw_menu();
     if (debug) {

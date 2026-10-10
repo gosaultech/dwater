@@ -15,6 +15,11 @@ Room from_spec(const RoomSpec& s) {
     r.name = s.display_name;
     r.storey = s.floor;
     r.bounds = s.bounds;
+    if (s.has_origin) {   // the room says where it lies in the house: the map draws it there
+        r.ox = s.origin_x;
+        r.oz = s.origin_z;
+        r.placed = true;
+    }
     for (const auto& [k, sp] : s.spawns) r.spawns[k] = {sp.pos.x, sp.pos.z};
     for (const auto& i : s.interactables)
         if (i.kind == "door" && !i.target_room.empty()) r.doors.push_back({i.pos.x, i.pos.z, i.target_room, i.target_spawn, i.lock, i.id, false});
@@ -56,7 +61,7 @@ void place(std::vector<Room>& rooms, const std::string& start) {
     };
     Room* s = find(start);
     if (!s) return;
-    s->ox = s->oz = 0;
+    if (!s->placed) s->ox = s->oz = 0;   // (a room with an origin keeps it; the rest are placed from it by their doors)
     s->placed = true;
     std::deque<Room*> todo{s};
     while (!todo.empty()) {

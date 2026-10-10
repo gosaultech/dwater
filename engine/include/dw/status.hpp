@@ -55,7 +55,10 @@ struct WorldState {
     std::vector<std::string> notes;   // the notes read, in order found ("room/id")
     std::set<std::string> visited;    // rooms he's been in
     std::set<std::string> unlocked;   // "room/id" doors opened with their key
+    std::set<std::string> flags;      // what has happened ("heard_thud": the key taken, the bang at the door)
+    std::set<std::string> dead;       // "room/id": the Drowned put down for good
     static std::string key(const std::string& room, const std::string& id) { return room + "/" + id; }
+    bool has_flag(const std::string& f) const { return flags.count(f) > 0; }
     bool has_note(const std::string& k) const;
     // How many of a room's pickup are still there (it started with `count`).
     int remaining(const std::string& k, int count) const;

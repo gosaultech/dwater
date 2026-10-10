@@ -6,7 +6,8 @@ remains in `../game/`; its room data and pre-rendered backgrounds feed this engi
 
 ## Milestone 1: what it is
 
-One room (`gang`, the entrance hall) with:
+The canal house's ground floor (`gang`, the entrance hall, and `voorkamer`, the front parlour)
+and its flooded cellar (`kelder`), walked through room to room with no loading screens, and:
 
 - **Backgrounds and depth.** Pre-rendered Cycles backgrounds, each with a painted depth map.
   Characters are hidden correctly behind painted furniture, like RE (1998).
@@ -21,7 +22,8 @@ One room (`gang`, the entrance hall) with:
 - **A horror lighting model.** Procedural surface detail, bump detail, wet-versus-dry
   specular, room lights, a cold rim, and fog. Grain and vignette are added in post.
 
-**Not ported yet:** the other rooms (and walking between them through doors), and saves.
+**Not ported yet:** saves (the typewriter only talks so far), the cellar's boss and the crawling
+Kelderkind.
 
 ## Build and run (macOS and Windows)
 
@@ -69,6 +71,8 @@ the shaders are GLSL 3.30 core, which both platforms support.
 ../build/macos/damned_waters --view drowned1@head,0,5,0.5,0,-0.05,30 face.png     # one close-up
 ../build/macos/damned_waters --view m92fs,0,0,2.0,0,0,8.3 pistol.png              # a gun, catalogue-lit
 ../build/macos/damned_waters --view r870,30,14,1.6,0.05,0,14 shotgun.png           # the 870
+../build/macos/damned_waters --room voorkamer --still 3.2,4.5,163 still.png --shot a   # him standing in a room (x, z, yaw degrees), one frame
+DW_ROOT=/path/to/tree ../build/macos/damned_waters ...   # read rooms, plates and audio from another tree (a test room)
 ../build/macos/damned_waters --fitgrips  # fit his hands to both guns as people hold them, write src/grips_fitted.inc, exit
 ../build/macos/damned_waters --fitpistol # fit the two-handed pistol aim (right arm, wrist, head), print it, exit
 ../build/macos/damned_waters --fit870    # fit the hold on the 870 (arms, wrists, back; aiming, the cheek on the stock), print it, exit
@@ -251,6 +255,70 @@ table: everything laid out, nothing moving until you close it.
 The buttons drawn are the pad in your hand: PlayStation shapes, Xbox letters, or key caps.
 Fonts are Cinzel and EB Garamond, under the SIL Open Font License (`engine/assets/fonts`).
 
+## The house and its doors
+
+The rooms of a storey share one floor plan, the way a building plan does: each room file is
+written in its own coordinates and says where its corner lies in the house (`"origin"`), and the
+game moves it there (`RoomSpec::translate`). A doorway in one room's wall and the doorway in the
+next room's wall at the same spot are one hole (`house.hpp` pairs them), so he walks from one room
+into the next and the camera simply cuts to the new room's shot. Like a film set built as a real
+flat: the camera crew moves room to room, nobody has to change the scenery.
+
+- **Doors you push, RE9-style** (`include/dw/doors.hpp`, `src/game_house.cpp`). A door that leads
+  somewhere is a real leaf in the room, drawn by the game over a picture painted with the doorway
+  open (Blender builds the room beyond, so an open door shows it). Walk gently into a shut door and
+  it eases ajar; keep leaning on it and the camera looks through the crack (each side of a door
+  can have a `"peek"` shot in the room file, rendered like any other shot), with whatever is in
+  the next room moving there. Press Cross at it, or run into it, and it swings wide away from you;
+  Cross at an open door slams it shut, and the Drowned hear that. A locked door waits for its key.
+  The leaf is double-acting: it swings away from whoever pushes it, like a saloon door with a temper.
+- **The Drowned follow him through the house.** They see him only with nothing in between (a wall
+  or a shut door blocks the line), hear through walls at half the distance, and keep after a noise
+  for a moment, so a closed door doesn't make him vanish. One that wants him in another room heads
+  for the doorway that leads there (`house::next_doorway`, breadth first through the rooms); at a
+  shut door it beats on it for about a second, then shoves it open. Shots fly through an open
+  doorway into the next room and stop at walls and shut doors.
+- **Stairs between storeys** are a short beat in the dark (`include/dw/transition.hpp`): the
+  picture fades, his steps on the stairs, the other floor is put in place, it fades up. A stage
+  blackout between scenes. The cellar door under the hall's stairs opens onto painted steps going
+  down; walking through it takes him to the cellar, and the steps at the cellar's far end bring him
+  back up.
+- **No waiting at a door.** The plates of the rooms next door are decoded on a worker thread
+  while he's still in this one and uploaded a couple per frame (`src/plates.cpp`), so the cut is
+  instant; rooms out of reach are let go. A stage crew setting up the next backdrops in the wings.
+- **What the house remembers** (`status::WorldState`, keyed `"room/id"`): what he took, read and
+  unlocked, which rooms he's been in, which Drowned are dead (they stay dead), and what has happened
+  (flags). Taking the cellar key sets `heard_thud`: a bang at the front door, and the two Drowned
+  that were waiting for it come into the hall after him. In the cellar the Drowned wait under the
+  water (`"emerge"`) and rise when he comes near or a shot goes off.
+- **Try again** after dying puts him back on the threshold of the room he last walked into, as he
+  was then (his case, his health, what the house remembered).
+- **He starts with the M92FS and 30 rounds.** The Remington 870 lies in the parlour.
+
+## How the rooms are built (Blender, from the RoomSpecs)
+
+Each room file is the single blueprint: Blender paints the plates from it, the game walks on it.
+`python3 tools/pipeline/build_backgrounds.py --quality final --gpu` fetches the assets, renders
+every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
+
+- **Modelled to match photos.** The director's reference photos set the look: a room is built to
+  match a photo's architecture and furniture, and its main shot copies the photo's framing.
+  `tools/photo/camera_match.py photo.jpg --overlay lines.png` finds the camera that took a photo
+  from its straight edges (vanishing points give the lens and the angle), like reading where a
+  photographer stood from where the kerbs meet on the horizon.
+- **CC0 materials and models.** A room file names Poly Haven textures and models as `"ph:<id>"`
+  (or `{"ph": id, "tint": [...]}`); `tools/assets/polyhaven.py fetch` downloads them once into
+  `pipeline_out/` (outside git) and records who made them in `tools/assets/manifest.json`. Wallpaper
+  sold by the metre: each texture is hung at its true size. The furniture kit
+  (`tools/blender/kit.py`) builds bevelled sofas, panelled kasten, a carved marble mantel, arched
+  steel windows and the like from the props' sizes.
+- **The whole floor at once.** To render a room, Blender builds every room on its storey at its
+  origin (`tools/pipeline/house.py` agrees with the engine on the floor plan), so an open doorway
+  shows the real room beyond. A shared wall is built half by each room; a door the game swings is
+  left out of the picture (the game draws it); each room's lamps light only that room, so a fire
+  next door never spills through a doorway the game may show shut. Beyond the cellar door, steps
+  go down into the dark.
+
 ## The death screen
 
 When he goes down, the picture drains into a deep red-black and blood seeps in from the edges;
@@ -309,7 +377,12 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 | `src/character_clearance.cpp` | The clearance check on the posed body (`--clearance`) and the pistol's reload-position fitter (`--fitreload`). |
 | `include/dw/reload.hpp`, `src/reload.cpp` | The reloads' steps: where the left hand goes and what it holds, and when the magazine drops, goes home and the slide runs forward. Pure, unit-tested. |
 | `include/dw/status.hpp`, `src/status.cpp` | The status screen as rules: condition, what each item can do, loading from the case, what the world remembers, and the screen's state machine (browse, act, combine, discard, read, pick up, make room). Pure, unit-tested. |
-| `include/dw/world_map.hpp`, `src/world_map.cpp` | The map, laid out from the room files' doors and storeys. Pure, unit-tested. |
+| `include/dw/world_map.hpp`, `src/world_map.cpp` | The map, laid out from the rooms' origins (or, without them, from their doors) and storeys. Pure, unit-tested. |
+| `include/dw/house.hpp`, `src/house.cpp` | The house's floor plan per storey: doorways paired across rooms, which room a point is in, sight lines across walls and shut doors, the way through the doors. Pure, unit-tested. |
+| `include/dw/doors.hpp` | A door leaf: pushed, leant on, slammed, shoved; its collider follows its swing. Pure, unit-tested. |
+| `include/dw/transition.hpp` | The beat between storeys: fade, dark, swap, fade up. Pure, unit-tested. |
+| `src/game_house.cpp` | The house in the game: loading every room, each storey's walls and Drowned, walking into the next room, the doors and their peeks, the Drowned following through doorways, the cellar's risers, the stairs, the retry checkpoint. |
+| `src/plates.hpp`, `src/plates.cpp` | The plates of the rooms around him, decoded in the background and uploaded a few a frame. |
 | `src/status_view.cpp` | The status screen on screen: fonts, the 3D previews and icons, his figure, the tabs, the button glyphs. |
 | `include/dw/death.hpp` | The death screen's timing: the fade, the words, the drips, the choice. Pure, unit-tested. |
 | `src/game_world.cpp` | Pickups, notes, things to look at and doors in a room; carrying out what the screen asks for. |
@@ -356,4 +429,13 @@ status screen (items, files, map, pickups), the death screen. Still to come, in 
    degrees toward the little finger now). A rig change: rebuild `survivor.dwc`, then refit the
    grips (`--fitgrips`) and the poses (`--fitpistol`, `--fit870`).
 4. Reload tuning from play-testing (timing, the 870's hip load).
-5. Rumble and the SDL3 backend; the cyclist and the other creatures.
+5. **(Director's note, deferred) The ready stance.** Standing with a gun he should look ready for
+   action: both hands on it, a tactical low ready with the muzzle angled toward the floor ahead,
+   the trigger finger straight along the frame (trigger discipline), raising to the aim from there.
+   For the M92FS and the 870.
+6. **(Director's note, deferred) Movement by pressure, and the options for it.** A light touch on
+   the stick (or d-pad) creeps him along quietly, as if he doesn't want to be heard (the Drowned
+   barely hear it); more walks; all the way runs. Options: analog (that), walk by default with L3
+   to run (held or toggled), or walk by default with the stick plus a button to run. A quick-turn
+   option: back on the stick plus the right face button (Circle / B), as in the classics.
+7. Rumble and the SDL3 backend; the cyclist and the other creatures.

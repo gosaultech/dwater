@@ -1,57 +1,122 @@
 {
-  "_file": "damned_waters/game/data/rooms/voorkamer.json \u2014 RoomSpec for the front parlor. Save point, cellar key, first story note.",
+  "_file": "damned_waters/game/data/rooms/voorkamer.json \u2014 RoomSpec for the front parlour, modelled on reference photo 4 (the beamed parlour, turned to face the canal). Single source of truth for Blender (render) and the engine (collision, cameras, things). Units: metres, Y up, north = -Z; local coordinates, placed in the house at \"origin\".",
   "id": "voorkamer",
-  "display_name": "Front Parlor",
+  "display_name": "Front Parlour",
+  "storey": 0,
+  "origin": [
+    -6.98,
+    2.57
+  ],
   "bounds": {
     "min": [
       0.0,
       0.0
     ],
     "max": [
-      5.4,
-      6.2
+      6.68,
+      7.43
     ]
   },
-  "height": 3.6,
+  "height": 3.85,
   "materials": {
-    "floor": "oak_planks",
-    "wall": "damask_green",
-    "wainscot": "dark_wood",
-    "wainscot_height": 1.0,
-    "ceiling": "plaster"
-  },
-  "ceiling_beams": {
-    "axis": "z",
-    "spacing": 1.1
+    "floor": {
+      "ph": "herringbone_parquet",
+      "tint": [
+        0.95,
+        0.9,
+        0.85
+      ]
+    },
+    "wall": {
+      "ph": "plastered_wall",
+      "tint": [
+        0.86,
+        0.84,
+        0.82
+      ],
+      "bump": 0.6
+    },
+    "ceiling": {
+      "ph": "plastered_wall",
+      "tint": [
+        0.92,
+        0.9,
+        0.88
+      ],
+      "bump": 0.4
+    },
+    "skirting": {
+      "color": [
+        0.78,
+        0.77,
+        0.74
+      ],
+      "rough": 0.45,
+      "noise": 0.02
+    },
+    "skirting_height": 0.13
   },
   "footsteps": "wood",
   "ambience": "amb_house",
   "move_scale": 1.0,
   "world": {
     "color": [
-      0.015,
-      0.02,
+      0.012,
+      0.016,
       0.03
     ],
-    "strength": 0.9
+    "strength": 1.2
   },
-  "exterior": "south",
+  "exterior": {
+    "side": "south",
+    "canal": 13.0,
+    "pavement": 2.6,
+    "bricks": [
+      "ph:brick_wall_003",
+      "ph:red_brick_03"
+    ],
+    "lit": 0.05
+  },
   "walls": {
     "south": {
       "openings": [
         {
           "kind": "window",
-          "center": 1.35,
-          "width": 1.15,
-          "sill": 0.7,
-          "height": 2.4
+          "arch": true,
+          "center": 1.0,
+          "width": 0.86,
+          "sill": 1.41,
+          "height": 1.81,
+          "mullions": 0,
+          "transoms": 1
         },
         {
           "kind": "window",
-          "center": 4.05,
-          "width": 1.15,
-          "sill": 0.7,
-          "height": 2.4
+          "arch": true,
+          "center": 3.28,
+          "width": 2.26,
+          "sill": 0.0,
+          "height": 3.37,
+          "mullions": 1,
+          "transoms": 0,
+          "brick_arch": {
+            "ph": "brick_wall_003",
+            "tint": [
+              0.35,
+              0.3,
+              0.28
+            ]
+          }
+        },
+        {
+          "kind": "window",
+          "arch": true,
+          "center": 5.465,
+          "width": 0.79,
+          "sill": 1.38,
+          "height": 1.82,
+          "mullions": 0,
+          "transoms": 1
         }
       ]
     },
@@ -59,392 +124,727 @@
       "openings": [
         {
           "kind": "door",
-          "center": 3.0,
+          "center": 5.6,
           "width": 0.95,
-          "height": 2.45
+          "height": 2.45,
+          "hinge": "left"
         }
       ]
     }
   },
   "props": [
     {
-      "type": "fireplace",
+      "type": "block",
       "pos": [
-        0.225,
-        0.0,
-        3.0
+        6.27,
+        0,
+        2.6
       ],
-      "yaw": 90,
       "size": [
-        1.7,
-        1.35,
-        0.45
-      ]
+        0.82,
+        3.85,
+        3.2
+      ],
+      "material": {
+        "ph": "plastered_wall",
+        "tint": [
+          0.86,
+          0.84,
+          0.82
+        ],
+        "bump": 0.6
+      }
     },
     {
-      "type": "painting",
+      "type": "fireplace_classic",
       "pos": [
-        0.02,
-        2.35,
-        3.0
+        5.695,
+        0,
+        1.93
       ],
-      "yaw": 90,
+      "yaw": -90,
       "size": [
-        1.0,
-        1.1,
-        0.06
+        1.85,
+        1.32,
+        0.33
+      ],
+      "collide": true
+    },
+    {
+      "type": "candlestick",
+      "pos": [
+        5.7,
+        1.36,
+        1.88
+      ],
+      "size": [
+        0.12,
+        0.62,
+        0.12
       ],
       "collide": false
     },
     {
-      "type": "cabinet",
+      "type": "candlestick",
       "pos": [
-        1.5,
-        0.0,
-        0.35
+        5.73,
+        1.36,
+        2.23
       ],
-      "yaw": 0,
       "size": [
-        1.9,
-        2.5,
-        0.65
+        0.12,
+        0.56,
+        0.12
+      ],
+      "collide": false
+    },
+    {
+      "type": "sofa",
+      "pos": [
+        1.85,
+        0,
+        4.2
+      ],
+      "yaw": 90,
+      "size": [
+        3.07,
+        0.85,
+        0.95
+      ],
+      "material": {
+        "ph": "hessian_230",
+        "tint": [
+          0.78,
+          0.74,
+          0.68
+        ],
+        "scale": 1.0,
+        "bump": 0.8
+      }
+    },
+    {
+      "type": "coffee_table",
+      "pos": [
+        3.64,
+        0,
+        3.75
+      ],
+      "size": [
+        0.98,
+        0.42,
+        1.6
       ]
+    },
+    {
+      "type": "jar_candle",
+      "pos": [
+        3.68,
+        0.44,
+        4.13
+      ],
+      "size": [
+        0.09,
+        0.12,
+        0.09
+      ],
+      "collide": false
+    },
+    {
+      "type": "jar_candle",
+      "pos": [
+        3.56,
+        0.44,
+        3.98
+      ],
+      "size": [
+        0.08,
+        0.09,
+        0.08
+      ],
+      "collide": false
+    },
+    {
+      "type": "jar_candle",
+      "pos": [
+        3.76,
+        0.44,
+        3.88
+      ],
+      "size": [
+        0.08,
+        0.15,
+        0.08
+      ],
+      "collide": false
+    },
+    {
+      "type": "armchair",
+      "pos": [
+        5.18,
+        0,
+        3.5
+      ],
+      "yaw": -105,
+      "size": [
+        0.85,
+        0.82,
+        0.85
+      ],
+      "material": {
+        "ph": "hessian_230",
+        "tint": [
+          0.62,
+          0.6,
+          0.57
+        ],
+        "bump": 0.8
+      }
+    },
+    {
+      "type": "armchair",
+      "pos": [
+        5.26,
+        0,
+        4.7
+      ],
+      "yaw": -105,
+      "size": [
+        0.85,
+        0.82,
+        0.85
+      ],
+      "material": {
+        "ph": "hessian_230",
+        "tint": [
+          0.62,
+          0.6,
+          0.57
+        ],
+        "bump": 0.8
+      }
+    },
+    {
+      "type": "kast",
+      "pos": [
+        0.3,
+        0,
+        3.02
+      ],
+      "yaw": 90,
+      "size": [
+        1.12,
+        2.95,
+        0.6
+      ],
+      "material": {
+        "color": [
+          0.075,
+          0.076,
+          0.08
+        ],
+        "rough": 0.42,
+        "noise": 0.12
+      }
+    },
+    {
+      "type": "kast",
+      "pos": [
+        0.3,
+        0,
+        4.75
+      ],
+      "yaw": 90,
+      "size": [
+        1.1,
+        2.95,
+        0.6
+      ],
+      "material": {
+        "color": [
+          0.075,
+          0.076,
+          0.08
+        ],
+        "rough": 0.42,
+        "noise": 0.12
+      }
+    },
+    {
+      "type": "chest",
+      "pos": [
+        1.91,
+        0,
+        2.15
+      ],
+      "yaw": 142,
+      "size": [
+        0.8,
+        0.55,
+        0.55
+      ]
+    },
+    {
+      "type": "rug",
+      "pos": [
+        2.86,
+        0,
+        3.1
+      ],
+      "size": [
+        3.7,
+        0.01,
+        3.8
+      ],
+      "collide": false,
+      "material": {
+        "ph": "dirty_carpet",
+        "tint": [
+          0.55,
+          0.6,
+          0.7
+        ]
+      }
+    },
+    {
+      "type": "curtain",
+      "pos": [
+        6.06,
+        0,
+        7.3
+      ],
+      "size": [
+        0.75,
+        3.5,
+        0.12
+      ],
+      "side": "left",
+      "tieback": 1.05,
+      "collide": false,
+      "material": {
+        "ph": "hessian_230",
+        "tint": [
+          0.5,
+          0.48,
+          0.45
+        ]
+      },
+      "yaw": -180
+    },
+    {
+      "type": "curtain",
+      "pos": [
+        0.33,
+        0,
+        7.3
+      ],
+      "size": [
+        0.6,
+        3.5,
+        0.12
+      ],
+      "side": "right",
+      "tieback": 1.05,
+      "collide": false,
+      "material": {
+        "ph": "hessian_230",
+        "tint": [
+          0.5,
+          0.48,
+          0.45
+        ]
+      },
+      "yaw": -180
+    },
+    {
+      "type": "block",
+      "pos": [
+        5.01,
+        3.3,
+        2.88
+      ],
+      "size": [
+        0.16,
+        0.3,
+        1.12
+      ],
+      "collide": false,
+      "material": {
+        "color": [
+          0.3,
+          0.31,
+          0.32
+        ],
+        "rough": 0.5,
+        "metal": 0.4,
+        "noise": 0.2
+      }
+    },
+    {
+      "type": "beam",
+      "pos": [
+        3.34,
+        3.43,
+        2.33
+      ],
+      "size": [
+        6.68,
+        0.42,
+        0.26
+      ],
+      "collide": false,
+      "material": {
+        "ph": "dark_wood",
+        "tint": [
+          0.32,
+          0.25,
+          0.2
+        ],
+        "scale": 0.6
+      }
+    },
+    {
+      "type": "beam",
+      "pos": [
+        3.34,
+        3.43,
+        3.45
+      ],
+      "size": [
+        6.68,
+        0.42,
+        0.26
+      ],
+      "collide": false,
+      "material": {
+        "ph": "dark_wood",
+        "tint": [
+          0.32,
+          0.25,
+          0.2
+        ],
+        "scale": 0.6
+      }
+    },
+    {
+      "type": "beam",
+      "pos": [
+        3.34,
+        3.43,
+        4.57
+      ],
+      "size": [
+        6.68,
+        0.42,
+        0.26
+      ],
+      "collide": false,
+      "material": {
+        "ph": "dark_wood",
+        "tint": [
+          0.32,
+          0.25,
+          0.2
+        ],
+        "scale": 0.6
+      }
+    },
+    {
+      "type": "beam",
+      "pos": [
+        3.34,
+        3.43,
+        5.69
+      ],
+      "size": [
+        6.68,
+        0.42,
+        0.26
+      ],
+      "collide": false,
+      "material": {
+        "ph": "dark_wood",
+        "tint": [
+          0.32,
+          0.25,
+          0.2
+        ],
+        "scale": 0.6
+      }
+    },
+    {
+      "type": "beam",
+      "pos": [
+        3.34,
+        3.43,
+        6.8
+      ],
+      "size": [
+        6.68,
+        0.42,
+        0.26
+      ],
+      "collide": false,
+      "material": {
+        "ph": "dark_wood",
+        "tint": [
+          0.32,
+          0.25,
+          0.2
+        ],
+        "scale": 0.6
+      }
     },
     {
       "type": "desk",
       "pos": [
-        4.1,
+        2.6,
         0.0,
-        0.35
+        0.42
       ],
       "yaw": 0,
       "size": [
-        1.3,
+        1.4,
         0.78,
-        0.6
+        0.62
       ],
       "typewriter": true
     },
     {
       "type": "chair",
       "pos": [
-        4.1,
+        2.75,
         0.0,
-        1.0
+        1.15
       ],
-      "yaw": 180
-    },
-    {
-      "type": "rug",
-      "pos": [
-        2.6,
-        0.0,
-        3.3
-      ],
+      "yaw": 160,
       "size": [
-        3.2,
-        0.01,
-        2.2
-      ],
-      "collide": false
-    },
-    {
-      "type": "table",
-      "pos": [
-        2.6,
-        0.0,
-        3.3
-      ],
-      "yaw": 0,
-      "size": [
-        1.9,
-        0.78,
-        1.0
-      ]
-    },
-    {
-      "type": "chair",
-      "pos": [
-        2.1,
-        0.0,
-        4.15
-      ],
-      "yaw": 180
-    },
-    {
-      "type": "chair",
-      "pos": [
-        2.1,
-        0.0,
-        2.45
-      ],
-      "yaw": 0
-    },
-    {
-      "type": "chair",
-      "pos": [
-        3.45,
-        0.0,
-        2.1
-      ],
-      "yaw": 35,
-      "tipped": true,
-      "size": [
-        0.95,
         0.45,
-        0.5
-      ]
-    },
-    {
-      "type": "paper",
-      "pos": [
-        2.95,
-        0.785,
-        3.35
-      ],
-      "yaw": 20,
-      "collide": false
-    },
-    {
-      "type": "candle",
-      "pos": [
-        2.3,
-        0.78,
-        3.1
-      ],
-      "collide": false
-    },
-    {
-      "type": "side_table",
-      "pos": [
-        2.7,
-        0.0,
-        5.95
-      ],
-      "yaw": 180,
-      "size": [
-        0.7,
-        0.75,
-        0.4
+        0.95,
+        0.45
       ]
     },
     {
       "type": "painting",
       "pos": [
-        5.38,
-        1.8,
-        4.7
+        4.6,
+        1.75,
+        0.03
       ],
-      "yaw": -90,
-      "size": [
-        0.8,
-        1.0,
-        0.06
-      ],
-      "collide": false
-    },
-    {
-      "type": "painting",
-      "pos": [
-        4.1,
-        1.9,
-        0.02
-      ],
-      "yaw": 0,
       "size": [
         0.9,
-        0.6,
-        0.06
-      ],
-      "collide": false
-    },
-    {
-      "type": "curtain",
-      "pos": [
-        0.62,
-        0.0,
-        6.08
-      ],
-      "yaw": 180,
-      "size": [
-        0.3,
-        3.1,
-        0.1
-      ],
-      "collide": false
-    },
-    {
-      "type": "curtain",
-      "pos": [
-        2.08,
-        0.0,
-        6.08
-      ],
-      "yaw": 180,
-      "size": [
-        0.3,
-        3.1,
-        0.1
-      ],
-      "collide": false
-    },
-    {
-      "type": "curtain",
-      "pos": [
-        3.32,
-        0.0,
-        6.08
-      ],
-      "yaw": 180,
-      "size": [
-        0.3,
-        3.1,
-        0.1
-      ],
-      "collide": false
-    },
-    {
-      "type": "curtain",
-      "pos": [
-        4.78,
-        0.0,
-        6.08
-      ],
-      "yaw": 180,
-      "size": [
-        0.3,
-        3.1,
-        0.1
+        0.7,
+        0.05
       ],
       "collide": false
     }
   ],
   "lights": [
     {
-      "kind": "sun",
-      "dir_from": [
-        0.45,
-        0.9,
-        1.0
-      ],
-      "color": [
-        0.55,
-        0.68,
-        1.0
-      ],
-      "blender_power": 3.5,
-      "angle": 1.5,
-      "godot_energy": 0.5
-    },
-    {
       "kind": "point",
       "pos": [
-        2.3,
-        0.97,
-        3.1
+        5.68,
+        0.3,
+        1.93
       ],
       "color": [
         1.0,
-        0.55,
-        0.22
+        0.42,
+        0.14
       ],
-      "blender_power": 14,
-      "radius": 0.02,
-      "godot_energy": 0.9,
-      "range": 4.0,
+      "blender_power": 45,
+      "godot_energy": 1.1,
+      "range": 6,
+      "radius": 0.2,
       "flicker": true
     },
     {
       "kind": "point",
       "pos": [
-        4.45,
-        1.15,
-        0.45
+        5.7,
+        2.0,
+        1.88
       ],
       "color": [
         1.0,
-        0.7,
-        0.4
+        0.62,
+        0.32
       ],
-      "blender_power": 22,
-      "radius": 0.05,
-      "godot_energy": 0.8,
-      "range": 4.0
+      "blender_power": 3,
+      "godot_energy": 0.35,
+      "range": 5,
+      "radius": 0.01,
+      "flicker": true
     },
     {
       "kind": "point",
       "pos": [
-        0.35,
-        0.3,
-        3.0
+        5.73,
+        1.94,
+        2.23
       ],
       "color": [
         1.0,
-        0.35,
-        0.1
+        0.62,
+        0.32
       ],
-      "blender_power": 10,
-      "radius": 0.2,
-      "godot_energy": 0.3,
-      "range": 2.5
+      "blender_power": 3,
+      "godot_energy": 0.35,
+      "range": 5,
+      "radius": 0.01,
+      "flicker": true
+    },
+    {
+      "kind": "point",
+      "pos": [
+        3.66,
+        0.62,
+        3.98
+      ],
+      "color": [
+        1.0,
+        0.6,
+        0.3
+      ],
+      "blender_power": 6,
+      "godot_energy": 0.5,
+      "range": 5,
+      "radius": 0.03,
+      "flicker": true
+    },
+    {
+      "kind": "sun",
+      "dir_from": [
+        -0.35,
+        0.55,
+        1.0
+      ],
+      "color": [
+        0.55,
+        0.66,
+        1.0
+      ],
+      "blender_power": 1.6,
+      "godot_energy": 0.25,
+      "angle": 2.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        9.68,
+        4.2,
+        24.43
+      ],
+      "color": [
+        1.0,
+        0.62,
+        0.3
+      ],
+      "blender_power": 350,
+      "godot_energy": 0.0,
+      "range": 30,
+      "radius": 0.15
+    },
+    {
+      "kind": "point",
+      "pos": [
+        -2.82,
+        4.2,
+        24.43
+      ],
+      "color": [
+        1.0,
+        0.62,
+        0.3
+      ],
+      "blender_power": 350,
+      "godot_energy": 0.0,
+      "range": 30,
+      "radius": 0.15
     }
   ],
   "shots": [
     {
       "id": "a",
       "pos": [
-        5.1,
-        3.25,
-        0.35
+        4.91,
+        1.25,
+        0.6
       ],
       "look_at": [
-        1.8,
-        0.4,
-        4.6
+        2.921,
+        1.178,
+        5.187
       ],
-      "fov": 62,
+      "fov": 70.467,
+      "zone": {
+        "min": [
+          0.0,
+          1.55
+        ],
+        "max": [
+          5.6,
+          7.43
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        5.25,
+        2.55,
+        6.85
+      ],
+      "look_at": [
+        1.9,
+        0.75,
+        0.5
+      ],
+      "fov": 58,
       "zone": {
         "min": [
           0.0,
           0.0
         ],
         "max": [
-          3.3,
-          6.2
+          6.68,
+          1.95
         ]
-      }
+      },
+      "priority": 2
     },
     {
-      "id": "b",
+      "id": "c",
       "pos": [
-        0.45,
-        1.45,
-        5.75
+        1.25,
+        2.45,
+        6.95
       ],
       "look_at": [
-        4.8,
+        6.2,
         0.9,
-        1.2
+        4.4
       ],
       "fov": 56,
       "zone": {
         "min": [
-          3.1,
-          0.0
+          5.45,
+          4.2
         ],
         "max": [
-          5.4,
-          6.2
+          6.68,
+          7.43
         ]
-      }
+      },
+      "priority": 2
     }
   ],
   "spawns": {
     "from_gang": {
       "pos": [
-        4.75,
+        6.0,
         0.0,
-        3.0
+        5.6
       ],
       "yaw": 90
     }
@@ -454,21 +854,34 @@
       "id": "door_gang",
       "kind": "door",
       "pos": [
-        5.25,
+        6.53,
         1.0,
-        3.0
+        5.6
       ],
       "radius": 0.9,
       "target_room": "gang",
-      "target_spawn": "from_voorkamer"
+      "target_spawn": "from_voorkamer",
+      "peek": {
+        "pos": [
+          6.23,
+          1.62,
+          5.63
+        ],
+        "look_at": [
+          9.08,
+          1.35,
+          7.03
+        ],
+        "fov": 42
+      }
     },
     {
       "id": "note_marit",
       "kind": "note",
       "pos": [
-        2.95,
-        0.8,
-        3.35
+        3.64,
+        0.44,
+        3.75
       ],
       "radius": 1.2,
       "title": "Note on the table",
@@ -480,9 +893,9 @@
       "item": "cellar_key",
       "count": 1,
       "pos": [
-        0.32,
+        5.66,
         1.37,
-        2.7
+        1.3
       ],
       "radius": 1.0,
       "sets_flag": "heard_thud",
@@ -492,9 +905,9 @@
       "id": "save_desk",
       "kind": "save",
       "pos": [
-        4.1,
-        0.9,
-        0.7
+        2.45,
+        0.82,
+        0.45
       ],
       "radius": 1.0,
       "text": "An old typewriter. The ribbon still has ink. Record your progress?"
@@ -505,9 +918,9 @@
       "item": "handgun_ammo",
       "count": 15,
       "pos": [
-        2.7,
-        0.77,
-        5.95
+        1.9,
+        0.57,
+        2.15
       ],
       "radius": 0.9
     },
@@ -515,9 +928,9 @@
       "id": "window_w",
       "kind": "examine",
       "pos": [
-        1.35,
-        1.2,
-        5.95
+        1.0,
+        1.4,
+        7.25
       ],
       "radius": 0.9,
       "text": "The canal has swallowed the street. Something is drifting just under the surface."
@@ -526,22 +939,33 @@
       "id": "window_e",
       "kind": "examine",
       "pos": [
-        4.05,
-        1.2,
-        5.95
+        5.465,
+        1.4,
+        7.25
       ],
       "radius": 0.9,
       "text": "Every window across the canal is dark. Except one."
     },
     {
+      "id": "glass_doors",
+      "kind": "examine",
+      "pos": [
+        3.28,
+        1.2,
+        7.25
+      ],
+      "radius": 1.0,
+      "text": "Glass doors onto the canal. The water stands level with the step outside, black and still."
+    },
+    {
       "id": "kast",
       "kind": "examine",
       "pos": [
-        1.5,
+        0.75,
         1.2,
-        0.75
+        3.85
       ],
-      "radius": 1.0,
+      "radius": 1.1,
       "text": "A Hollandse kast, locked. Heirloom linen behind oak. Nothing that will help you."
     },
     {
@@ -550,9 +974,9 @@
       "item": "shotgun",
       "count": 1,
       "pos": [
-        2.95,
+        1.75,
         0.02,
-        0.3
+        0.62
       ],
       "radius": 1.0
     },
@@ -562,9 +986,9 @@
       "item": "first_aid",
       "count": 1,
       "pos": [
-        3.75,
-        0.79,
-        0.3
+        3.05,
+        0.8,
+        0.42
       ],
       "radius": 0.9
     }
@@ -574,15 +998,15 @@
       "id": "haardkind",
       "kind": "kelderkind",
       "pos": [
-        0.8,
+        5.4,
         0.0,
-        3.0
+        1.95
       ],
       "yaw": 90,
       "requires_flag": "heard_thud"
     }
   ],
   "render": {
-    "exposure": 1.1
+    "exposure": 1.4
   }
 }

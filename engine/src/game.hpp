@@ -1,10 +1,13 @@
 // damned_waters/engine/src/game.hpp
-// Purpose: one playable room: pre-rendered plates with depth, fixed camera cuts, the survivor and
-// the Drowned. Controller-first (input.hpp: Type A/B/C layouts, keyboard and mouse alongside).
+// Purpose: the house, room by room: pre-rendered plates with depth, fixed camera cuts, the survivor
+// and the Drowned. Rooms on a storey share one floor plan (house.hpp): he walks from one into the
+// next through doors he pushes open (doors.hpp), no loading screen; a change of storey is a short
+// beat in the dark (transition.hpp). Controller-first (input.hpp: Type A/B/C layouts, keyboard and mouse alongside).
 // Survival-horror combat with skill in it (game_combat.cpp): lock-on aim with the right stick as a
 // cursor over the body, the M92FS and the Remington 870, a counter kick and a perfect dodge;
 // RE2-Remake-style gore; no HUD (the survivor's limp tells you how hurt he is); a pause menu with
-// the options. The hall's script: one Drowned, then a bang at the front door and two more.
+// the options. The story moves on flags: taking the cellar key brings a bang at the front door
+// and two more Drowned into the hall.
 #ifndef DW_GAME_HPP
 #define DW_GAME_HPP
 #include <raylib.h>
@@ -17,12 +20,16 @@
 #include "dw/combat.hpp"
 #include "dw/controls.hpp"
 #include "dw/core.hpp"
+#include "dw/doors.hpp"
+#include "dw/house.hpp"
 #include "dw/room_spec.hpp"
 #include "dw/settings.hpp"
 #include "dw/status.hpp"
+#include "dw/transition.hpp"
 #include "dw/world_map.hpp"
 #include "effects.hpp"
 #include "input.hpp"
+#include "plates.hpp"
 
 namespace dw {
 
@@ -31,6 +38,8 @@ struct Actor { float x = 0, z = 0, yaw = 0, speed = 0; Pose pose = Pose::Idle; }
 // One Drowned: its body, where it is, its mind and what's been shot off it.
 struct Enemy {
     std::string id;
+    std::string key;              // "room/id": what the world remembers it by
+    int room = -1;                // the room it's in now (index into Game::rooms_)
     int variant = 0;
     Character body;
     Actor a;
@@ -43,6 +52,11 @@ struct Enemy {
     bool pooled = false;          // blood has started spreading under it
     bool heard = false;           // a noise reached it this frame (a shot, a footstep)
     bool crawling = false;        // lost a leg: down on the floor for good
+    bool submerged = false;       // under the water, waiting ("emerge" in the room file)
+    float rise = -1;              // rising out of it: 0..1 (-1: not rising)
+    float heard_t = 0;            // remembers a noise for a moment (keeps it on his trail through the house)
+    float bang_t = 0;             // at a shut door: how long it has been beating on it
+    std::string wake_flag;        // waits for this flag (requires_flag)
 };
 
 // The survivor's fighting state.
@@ -52,11 +66,13 @@ class Game {
 public:
     static constexpr int W = 1280, H = 720;   // plates are 16:9 at this aspect
     bool init(const std::string& room_id);
+    // DW_STREAM_REPORT: how many plates are resident (for the tests of streaming by hand).
+    int resident_rooms() const;
     void shutdown();
     void update(float dt);          // input, AI, animation
     void render();                  // scene -> offscreen target
     void present() const;           // post-process to the window + HUD
-    int capture_count() const { return 27; }
+    int capture_count() const { return 33; }
     std::string stage(int i);       // pose a capture setup; returns its name
     // A still of the room (--still): the survivor standing at (x, z) facing yaw (degrees), no
     // Drowned, seen from `shot` (empty: whichever shot covers him). Render and present after.
@@ -150,10 +166,10 @@ private:
     void init_status();
     void unload_status();
     void reset_world();                          // a fresh start (and after dying): nothing taken, nothing read
-    void refresh_loot();                         // this room's pickups, as the world remembers them
+    void refresh_loot();                         // this storey's pickups, as the world remembers them
     bool interact();                             // Cross with nothing to kick: whatever he's facing, close enough
     int loot_in_reach() const;                   // the pickup he's facing (-1: none)
-    int spot_in_reach() const;                   // the interactable he's facing (-1: none)
+    std::pair<int, int> spot_in_reach() const;   // the interactable he's facing: (room, index), room -1: none
     void update_status(float dt);
     void apply(const status::Command& c);
     status::Pad status_pad() const;
@@ -173,13 +189,65 @@ private:
     void draw_menu() const;
     void save_settings() const { if (!settings_path.empty()) settings_.save(settings_path); }
 
-    RoomSpec spec_;
+    // The house (game_house.cpp): every room, moved to where it lies; the one he's in; its storey's
+    // walls, doorways and door leaves; the plates around him; the beat between storeys.
+    bool load_house(const std::string& start_room);
+    void build_storey(int storey);                  // colliders, sight walls, enemies and loot for that floor
+    void enter_room(int r);                         // he's stepped into room r (seamless): its shots, lights, sound
+    void stream_plates();                           // the plates of the rooms next door, decoded in the background
+    std::vector<std::string> shot_ids(const RoomSpec& r) const;   // its camera shots and its doors' peeks
+    int room_index(const std::string& id) const;
+    void update_doors(float dt, Vector2 want, float tilt);   // pushing, leaning, peeking, the stairs
+    bool use_door(int room, const Interactable& it);  // Cross at a door: unlock, open, shut, or the stairs
+    int doorway_of(int room, const std::string& door_id) const;
+    void start_beat(const std::string& room, const std::string& spawn);
+    void finish_beat();
+    void set_flag(const std::string& flag);
+    void wake(const std::string& flag);             // the Drowned that were waiting for it come in
+    bool sight_clear(float ax, float az, float bx, float bz) const;   // no wall or shut door between
+    void steer_target(const Enemy& e, float& tx, float& tz) const;    // where it heads for to reach him (a doorway first)
+    void push_on_doors(Enemy& e, float dt);          // a Drowned at a shut door beats on it, then shoves it open
+    void update_emerging(Enemy& e, float dt);        // under the water until he comes near; then it rises
+    void draw_leaves();
+    void checkpoint();                              // remember him as he came into this room (Try again)
+    void retry();                                   // dead: back to the last room's threshold, as he was
+    const PlateStore::Pair* current_plate() const;
+    Camera3D shot_camera(const Shot& s) const;
+
+    std::vector<RoomSpec> rooms_;                   // every room of the house, in house coordinates
+    std::string start_room_;                        // where a new game begins
+    int room_ = -1, storey_ = 0;
+    std::vector<house::Doorway> doorways_;
+    std::vector<doors::Leaf> leaves_;               // one per doorway (painted-shut ones never move and aren't drawn)
+    std::vector<Obb2> statics_, sight_, solid_;     // this storey's walls and props; walls only; + the leaves (per frame)
+    std::vector<Obb2> shut_;                        // the leaves that block sight now (per frame; kept: no allocation)
+    std::vector<Mesh> leaf_meshes_;                 // each live doorway's leaf: the hinge at the origin, along +x
+    std::string ambience_;                          // the loop playing now (changes only when a room's differs)
+    int peek_ = -1, peek_room_ = -1;                // peeking through doorway peek_ (from room peek_room_'s side)
+    Shot peek_shot_;
+    Beat beat_;
+    std::string beat_room_, beat_spawn_;
+    float wake_t_ = -1;                             // a wave on its way in (after the bang)
+    std::string wake_flag_;
+    struct Checkpoint {
+        Inventory inv;
+        Firearm guns[2];
+        int gun = 0;
+        float health = 100;
+        status::WorldState world;
+        std::vector<NoteRead> notes;
+        Actor at;
+        int room = -1;
+        bool set = false;
+    } checkpoint_;
+
+    RoomSpec spec_;                                 // the room he's in (a copy of rooms_[room_])
     Input input_;
     InputFrame in_;                              // this frame's actions (polled once in update)
     Settings settings_;
     bool paused_ = false, quit_ = false;
     int menu_sel_ = 0;
-    std::map<std::string, std::pair<Texture2D, Texture2D>> plates_;
+    PlateStore plates_;
     std::string shot_;
     Camera3D cam_{};
     Shader plate_{}, char_{}, blob_{}, post_{};
@@ -189,7 +257,6 @@ private:
     Character hero_;
     Actor player_;
     std::vector<Enemy> enemies_;
-    HallEncounter script_;
     SoundBank sfx_;
     Effects fx_;
     // The survivor in a fight.
