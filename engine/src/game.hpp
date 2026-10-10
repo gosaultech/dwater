@@ -244,6 +244,9 @@ private:
     RoomSpec spec_;                                 // the room he's in (a copy of rooms_[room_])
     Input input_;
     InputFrame in_;                              // this frame's actions (polled once in update)
+    GaitPicker gaits_;                           // how hard he's being pushed: sneak, walk or run (controls.hpp)
+    Gait gait_ = Gait::Still;                    // ... this frame
+    BackTurnChord back_turn_;                    // stick back + the right face button: a quick turn (an option)
     Settings settings_;
     bool paused_ = false, quit_ = false;
     int menu_sel_ = 0;

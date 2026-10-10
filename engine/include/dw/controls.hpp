@@ -3,7 +3,8 @@
 // never for keys, so a controller layout (Type A, B, C), the keyboard and mouse, or a console's
 // own pad API only decide which button that is. Here: the actions, the three controller
 // layouts, the keyboard/mouse layout, and the stick maths that make an analog stick feel right
-// (dead zones, walk-to-run, a flick to switch targets, the stick as a cursor over a body).
+// (dead zones, sneak / walk / run by how hard it's pushed and the run options, a flick to switch
+// targets, the stick as a cursor over a body, stick back + the right face button to turn round).
 // No window, no polling: input.cpp reads the hardware and feeds these. Unit-tested in
 // tests/test_controls.cpp.
 // Think of a layout as a keyboard layout for your thumbs: the letters (actions) don't change,
@@ -19,13 +20,17 @@ namespace dw {
 enum Act : int {
     ACT_AIM, ACT_FIRE, ACT_DODGE, ACT_INTERACT, ACT_KICK, ACT_QUICK_TURN, ACT_RELOAD, ACT_STATUS,
     ACT_FLASHLIGHT, ACT_WEAPON_NEXT, ACT_WEAPON_1, ACT_WEAPON_2, ACT_RUN, ACT_PAUSE, ACT_CONFIRM, ACT_BACK,
+    ACT_SNEAK,        // the keys' sneak (a pad sneaks with a light touch of the stick)
+    ACT_RUN_HOLD,     // run while held (the "hold a button" run option); ACT_RUN is the stick click
+    ACT_BACK_TURN,    // with the stick pulled back: a quick turn (an option; the button may also dodge)
     ACT_COUNT
 };
 enum class Scheme : int { TypeA, TypeB, TypeC, Count };
 
 inline const char* act_name(int a) {
     static const char* N[ACT_COUNT] = {"Aim", "Fire", "Dodge", "Interact", "Kick", "Quick turn", "Reload", "Status",
-                                       "Flashlight", "Next weapon", "M92FS", "Remington 870", "Run", "Pause", "Confirm", "Back"};
+                                       "Flashlight", "Next weapon", "M92FS", "Remington 870", "Run", "Pause", "Confirm", "Back",
+                                       "Sneak", "Run (hold)", "Back + turn"};
     return a >= 0 && a < ACT_COUNT ? N[a] : "";
 }
 inline const char* scheme_name(Scheme s) {
@@ -45,14 +50,18 @@ inline int pad_button(Scheme s, int act) {
                   SQUARE = GAMEPAD_BUTTON_RIGHT_FACE_LEFT, TRIANGLE = GAMEPAD_BUTTON_RIGHT_FACE_UP, UP = GAMEPAD_BUTTON_LEFT_FACE_UP,
                   DOWN = GAMEPAD_BUTTON_LEFT_FACE_DOWN, LEFT = GAMEPAD_BUTTON_LEFT_FACE_LEFT, RIGHT = GAMEPAD_BUTTON_LEFT_FACE_RIGHT,
                   SELECT = GAMEPAD_BUTTON_MIDDLE_LEFT, START = GAMEPAD_BUTTON_MIDDLE_RIGHT, L3 = GAMEPAD_BUTTON_LEFT_THUMB;
-    // Aim Fire Dodge Interact Kick QuickTurn Reload Status Flashlight WeaponNext Weapon1 Weapon2 Run Pause Confirm Back
+    // Aim Fire Dodge Interact Kick QuickTurn Reload Status Flashlight WeaponNext Weapon1 Weapon2 Run Pause Confirm Back,
+    // then Sneak RunHold BackTurn. Every comfortable button is already taken in every layout, so the
+    // hold-to-run button is the one that fires: it fires only while aiming, and aiming stops him, so
+    // running and firing never want it at the same time. Back + turn is the right face button
+    // (Circle / B) on every pad.
     static const int T[int(Scheme::Count)][ACT_COUNT] = {
         // Type A, RE Remake: triggers aim and fire, R1 dodges, Cross does what's in front of you.
-        {L2, R2, R1, CROSS, CROSS, CIRCLE, SQUARE, TRIANGLE, L1, UP, LEFT, RIGHT, L3, START, CROSS, CIRCLE},
+        {L2, R2, R1, CROSS, CROSS, CIRCLE, SQUARE, TRIANGLE, L1, UP, LEFT, RIGHT, L3, START, CROSS, CIRCLE, 0, R2, CIRCLE},
         // Type B, Souls: a roll on Circle, shoulders aim and fire, Square kicks.
-        {L1, R1, CIRCLE, CROSS, SQUARE, R2, TRIANGLE, SELECT, L2, UP, LEFT, RIGHT, L3, START, CROSS, CIRCLE},
+        {L1, R1, CIRCLE, CROSS, SQUARE, R2, TRIANGLE, SELECT, L2, UP, LEFT, RIGHT, L3, START, CROSS, CIRCLE, 0, R1, CIRCLE},
         // Type C, shooter (The Last of Us): triggers aim and fire, R1 reloads, Circle dodges, Square kicks.
-        {L2, R2, CIRCLE, CROSS, SQUARE, L1, R1, SELECT, DOWN, TRIANGLE, LEFT, RIGHT, L3, START, CROSS, CIRCLE},
+        {L2, R2, CIRCLE, CROSS, SQUARE, L1, R1, SELECT, DOWN, TRIANGLE, LEFT, RIGHT, L3, START, CROSS, CIRCLE, 0, R2, CIRCLE},
     };
     return (int(s) >= 0 && s < Scheme::Count && act >= 0 && act < ACT_COUNT) ? T[int(s)][act] : 0;
 }
@@ -101,9 +110,16 @@ inline KeyPair key_binding(int act) {
         {KEY_ESCAPE, KEY_P},             // pause
         {KEY_ENTER, KEY_E},              // confirm (menus)
         {KEY_ESCAPE, KEY_BACKSPACE},     // back (menus)
+        {KEY_LEFT_CONTROL, KEY_RIGHT_CONTROL},   // sneak (hold)
+        {KEY_LEFT_SHIFT, KEY_RIGHT_SHIFT},   // run (hold): the keys walk unless told, whatever the run option
+        {0, 0},                          // back + turn: a pad's (the keys have Q)
     };
     return act >= 0 && act < ACT_COUNT ? T[act] : KeyPair{0, 0};
 }
+
+// The keys have no pressure, so they hand the game the tilt of the gait they ask for: Ctrl sneaks,
+// Shift runs (Shift wins if both are down: fleeing comes first), neither walks.
+constexpr float KEY_TILT_SNEAK = 0.25f, KEY_TILT_WALK = 0.6f, KEY_TILT_RUN = 1.0f;
 
 // ── Sticks ───────────────────────────────────────────────────────────────────────
 // A radial dead zone: nothing inside `inner` (a resting stick drifts), then rescaled so the
@@ -115,12 +131,73 @@ inline Vector2 radial_deadzone(Vector2 v, float inner = 0.18f, float outer = 0.9
     return {v.x * k, v.y * k};
 }
 
-// How fast a stick tilt moves him: a creep to a walk over the first 60% of the throw, walk to
-// run over the rest (so you can walk without a button, and run by pushing all the way).
-inline float stick_speed(float tilt, float walk, float run) {
-    tilt = std::clamp(tilt, 0.0f, 1.0f);
-    return tilt <= 0.6f ? walk * tilt / 0.6f : walk + (run - walk) * (tilt - 0.6f) / 0.4f;
+// ── Gaits: sneak, walk, run ──────────────────────────────────────────────────────
+// Think of a dimmer with three clicks instead of a slide: a light touch of the stick sneaks (slow,
+// and so quiet a Drowned has to be at arm's length to hear him), half way walks, all the way runs.
+enum class Gait : int { Still, Sneak, Walk, Run };
+constexpr float SNEAK_SPEED = 0.8f, WALK_SPEED = 1.9f, RUN_SPEED = 3.8f;   // m/s
+inline float gait_speed(Gait g) {
+    return g == Gait::Sneak ? SNEAK_SPEED : g == Gait::Walk ? WALK_SPEED : g == Gait::Run ? RUN_SPEED : 0.0f;
 }
+
+// A footstep at each gait: one every `stride` metres, this loud (0..1), heard by every Drowned
+// within `radius` metres. Standing still gets the walk's (the last step of a stop).
+struct Footfall { float stride, volume, radius; };
+inline Footfall footfall(Gait g) {
+    switch (g) {
+        case Gait::Sneak: return {0.45f, 0.15f, 1.0f};   // short steps, placed: all but silent
+        case Gait::Run: return {0.85f, 0.8f, 6.0f};      // carries across the hall
+        default: return {0.62f, 0.5f, 2.5f};
+    }
+}
+
+// The gait a tilt asks for (the tilt after the dead zone, 0..1). A boundary is crossed going up at
+// its threshold and going down only BAND below it (hysteresis), so a thumb resting on a boundary
+// doesn't flicker between two gaits. Over the stick's raw throw that's a sneak from about a quarter
+// of the way, a walk from about half, and a run from about seven-eighths (which a thumb pushing
+// "all the way" always reaches).
+struct TiltTiers {
+    static constexpr float SNEAK = 0.08f, WALK = 0.40f, RUN = 0.88f, BAND = 0.06f;
+    Gait g = Gait::Still;
+    Gait update(float tilt) {
+        const float up[3] = {SNEAK, WALK, RUN};   // into Sneak, Walk, Run
+        int t = int(g);
+        while (t < 3 && tilt >= up[t]) ++t;
+        while (t > 0 && tilt < up[t - 1] - BAND) --t;
+        return g = Gait(t);
+    }
+};
+
+// How running is asked for (an option). Analog: by the tilt alone. The others walk at full tilt and
+// run on a button: the stick clicked in (L3) and held; clicked once, running until the stick comes
+// back to centre (or it's clicked again); or the layout's hold-to-run button (ACT_RUN_HOLD) held.
+// In every one a light touch still sneaks. The keys ignore the option: they walk, Shift runs.
+enum class RunMode : int { Analog, StickHold, StickToggle, HoldButton, Count };
+inline const char* run_mode_name(RunMode m) {   // (the menu adds the hold-to-run button's name)
+    switch (m) {
+        case RunMode::Analog: return "Push the stick all the way";
+        case RunMode::StickHold: return "Walk; hold the stick in (L3)";
+        case RunMode::StickToggle: return "Walk; click the stick (L3) on and off";
+        case RunMode::HoldButton: return "Walk; hold";
+        default: return "";
+    }
+}
+
+struct GaitPicker {
+    TiltTiers tiers;
+    bool latched = false;   // StickToggle: clicked into a run
+    // tilt: how far the stick is pushed (0..1, after the dead zone; the keys give KEY_TILT_*).
+    // keys: it's the keys moving him. click: the stick clicked in this frame; click_held: held in;
+    // button: the hold-to-run button held. Called every frame, whatever he's doing.
+    Gait update(float tilt, bool keys, RunMode mode, bool click, bool click_held, bool button) {
+        const Gait was = tiers.g, felt = tiers.update(tilt);
+        if (mode == RunMode::StickToggle && click) latched = !latched;
+        if (felt == Gait::Still && was != Gait::Still) latched = false;   // the stick back at centre: the run ends
+        if (keys || mode == RunMode::Analog || felt <= Gait::Sneak) return felt;
+        const bool run = mode == RunMode::StickHold ? click_held : mode == RunMode::StickToggle ? latched : button;
+        return run ? Gait::Run : Gait::Walk;
+    }
+};
 
 // Moving a velocity toward a target by at most `step` (m/s): speeding up and slowing down take a
 // few frames, not zero, so he has weight without feeling sluggish.
@@ -164,6 +241,60 @@ inline BodyAim body_aim(Vector2 look) {
     if (up < -0.7071f) return {look.x < 0 ? AimAt::LegLeft : AimAt::LegRight, k};
     return {look.x < 0 ? AimAt::ArmLeft : AimAt::ArmRight, k};
 }
+
+// ── Stick back + the right face button: a quick turn ─────────────────────────────
+// RE3's quick turn (an option): the stick pulled back, behind him, and the right face button
+// (Circle / B). In Type B and C that button also dodges: alone, or with the stick pushed any other
+// way, it still dodges; with the stick back it turns him round instead. Two thumbs never land on
+// the same frame, so there's a grace window either way: the stick back a moment before the press
+// (BEFORE), or getting there a moment after it (AFTER). In that second case the press waits, at
+// most AFTER, and only while the stick is centred or on its way back; pushed any other way, it
+// dodges at once. Like a doorbell that waits a beat to hear whether you're also knocking.
+struct BackTurnChord {
+    static constexpr float BEFORE = 0.10f, AFTER = 0.05f;   // seconds
+    static constexpr float BACK = 0.35f;                     // how far back counts (tilt, after the dead zone)
+    enum Out : int { NONE, DODGE, TURN };
+    float since_back = 1e3f;   // seconds since the stick was last back
+    float waiting = -1;        // a press waiting to see if the stick comes back: for how long (-1: none)
+    // In his frame (x his right, y ahead of him): within 45 degrees of straight behind him.
+    static bool back(Vector2 s) { return s.y <= -BACK && std::fabs(s.x) <= -s.y; }
+    static bool might_go_back(Vector2 s) { return s.x * s.x + s.y * s.y < BACK * BACK || (s.y < 0 && std::fabs(s.x) <= -s.y); }
+    // stick: in his frame (stick_in_his_frame). pressed: the button went down this frame. active:
+    // the chord applies right now (the option on, the button shared with the dodge, him free to
+    // act); while it doesn't, a waiting press is dropped. Called every frame.
+    int update(float dt, Vector2 stick, bool pressed, bool active) {
+        const bool is_back = back(stick);
+        since_back = is_back ? 0.0f : since_back + dt;
+        if (!active) { waiting = -1; return NONE; }
+        if (waiting >= 0) {
+            waiting += dt;
+            if (is_back) { waiting = -1; return TURN; }
+            if (!might_go_back(stick) || waiting >= AFTER - 1e-4f) { waiting = -1; return DODGE; }
+            return NONE;
+        }
+        if (!pressed) return NONE;
+        if (since_back <= BEFORE) return TURN;
+        if (might_go_back(stick)) { waiting = 0; return NONE; }
+        return DODGE;
+    }
+};
+
+// The stick as he feels it: x to his right, y ahead of him. Modern controls point the stick on the
+// screen, so it's turned through the camera's forward on the floor (cam: x, z) into his facing
+// (ahead: x, z); tank controls are his already. "Back" is then behind him whichever way he faces
+// the camera, so after a quick turn the stick points where he now faces and he walks on.
+inline Vector2 stick_in_his_frame(Vector2 stick, Vector2 cam, Vector2 ahead) {
+    const float cl = std::sqrt(cam.x * cam.x + cam.y * cam.y), al = std::sqrt(ahead.x * ahead.x + ahead.y * ahead.y);
+    if (cl < 1e-6f || al < 1e-6f) return stick;
+    cam = {cam.x / cl, cam.y / cl};
+    ahead = {ahead.x / al, ahead.y / al};
+    const Vector2 d{-cam.y * stick.x + cam.x * stick.y, cam.x * stick.x + cam.y * stick.y};   // screen right * x + forward * y
+    return {-ahead.y * d.x + ahead.x * d.y, ahead.x * d.x + ahead.y * d.y};
+}
+
+// The layout's dodge is the back-turn button (Type B, C), so the chord has to tell them apart. In
+// Type A that button quick-turns on its own already.
+inline bool back_turn_shares_dodge(Scheme s) { return pad_button(s, ACT_DODGE) == pad_button(s, ACT_BACK_TURN); }
 
 }  // namespace dw
 #endif

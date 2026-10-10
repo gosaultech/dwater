@@ -378,14 +378,15 @@ are named by position (PlayStation / Xbox):
 
 | Action | Type A (RE Remake) | Type B (Souls) | Type C (Shooter) | Keyboard / mouse |
 |---|---|---|---|---|
-| Move (tilt: walk, all the way: run) | Left stick | Left stick | Left stick | WASD, Shift runs |
+| Move (a light touch: sneak, half: walk, all the way: run) | Left stick | Left stick | Left stick | WASD walks, Ctrl sneaks, Shift runs |
+| Run, with a Run option that walks by default | L3 (held, or clicked), or hold R2 | L3, or hold R1 | L3, or hold R2 | Shift |
 | Aim (locks on) | L2 | L1 | L2 | Right mouse / K |
 | Aim over the body (head, arms, legs) | Right stick | Right stick | Right stick | Mouse, or W/S |
 | Switch target | Flick the right stick | Flick | Flick | Mouse wheel |
 | Fire | R2 | R1 | R2 | Left mouse / J |
 | Dodge | R1 | Circle/B | Circle/B | Space / C |
 | Kick (counter, or a staggered one) and interact | Cross/A | Square/X kicks, Cross/A interacts | Square/X kicks, Cross/A interacts | E |
-| Quick turn | Circle/B | R2 | L1 | Q |
+| Quick turn | Circle/B | R2, or stick back + Circle/B | L1, or stick back + Circle/B | Q |
 | Reload | Square/X | Triangle/Y | R1 | R |
 | Status screen | Triangle/Y | Share/View | Share/View | Tab |
 | Flashlight | L1 | L2 | D-pad down | L |
@@ -394,6 +395,32 @@ are named by position (PlayStation / Xbox):
 | In the case: select / back | Cross/A / Circle/B | Cross/A / Circle/B | Cross/A / Circle/B | Enter / Esc |
 | In the case: combine / examine | Square/X / Triangle/Y | Square/X / Triangle/Y | Square/X / Triangle/Y | C / X |
 | In the case: change tab / turn the item | L1, R1 / right stick | L1, R1 / right stick | L1, R1 / right stick | Q, R / mouse drag |
+
+**Sneak, walk, run** (`include/dw/controls.hpp`). The stick reads how hard you push, like a car's
+accelerator rather than a light switch. Ease it about a quarter of the way and he sneaks: 0.8 m/s,
+shorter placed steps, knees bent and the gun drawn in, and so quiet that only a Drowned at arm's
+length hears him. Half way he walks (1.9 m/s, heard 2.5 m off); all the way he runs (3.8 m/s, heard
+across the hall). Each change of gait has a little slack (hysteresis: up at its mark, back down
+only a bit below it), so a thumb resting on the edge never makes him stutter between two. The
+d-pad has no pressure on any pad and holds the weapon shortcuts, so it doesn't move him. The keys
+have no pressure either, so Ctrl and Shift say it for them.
+
+**Run** (pause menu): how running is asked for. *Push the stick all the way* (the default); *Hold
+L3 in*; *Click L3*, running until the stick comes back to the centre (or a second click); or *Hold
+the fire trigger*, R2 (R1 in Type B). Every comfortable button already has a job, and that trigger
+fires only while aiming, which stops him, so running and firing never want it at once. In all
+but the first, full tilt walks, and a light touch still sneaks. The keys always walk, with Shift
+to run.
+
+**Quick turn on stick back + Circle/B** (pause menu, on): RE3's turn. Back means behind him: down
+on tank controls, and on modern ones whichever way is behind him on screen (down when he faces into
+the picture, up when he faces you), so after the turn the stick already points where he faces and
+he walks on. In Type B and C, where Circle/B dodges, it still dodges alone or with the stick pushed
+any other way. Two thumbs never land on the same frame, so the stick counts if it was back up to
+0.1 s before the press, or gets there up to 0.05 s after; a dodge with the stick centred waits
+those three frames to see which it is, like a doorbell that waits a beat to hear whether you're
+also knocking. While aiming, Circle/B always dodges (back + Circle is the dodge out backwards). In
+Type A, Circle/B turns him on its own anyway.
 
 **Skill.** Dodge in the last moment of a lunge (a perfect dodge) and the Drowned bites air and
 stumbles past, open to a kick, and your next shot does double damage; slow motion on a perfect
