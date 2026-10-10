@@ -266,6 +266,9 @@ void Game::draw_glints() const {
         const float phase = std::fmod(time_ * 0.45f + float(h % 100) / 100.0f, 1.0f);
         const float a = phase < 0.12f ? std::sin(phase / 0.12f * PI) : 0.0f;
         if (a <= 0.01f) continue;
+        // (a glint is drawn over the picture: only where the camera could see the thing, not
+        // through a wall from the next room)
+        if (!sight_clear(cam_.position.x, cam_.position.z, o.pos.x, o.pos.z)) continue;
         const Vector3 at{o.pos.x, o.pos.y + 0.05f, o.pos.z};
         const Vector3 to_cam = Vector3Subtract(cam_.position, at);
         if (Vector3DotProduct(to_cam, Vector3Subtract(cam_.target, cam_.position)) > 0) continue;   // behind the camera

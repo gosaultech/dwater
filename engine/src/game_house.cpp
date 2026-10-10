@@ -208,7 +208,7 @@ void Game::update_doors(float dt, Vector2 want, float tilt) {
     }
     const int was_peek = peek_;
     peek_ = -1;
-    if (pmode_ == PMode::Normal && tilt > 0.2f) {
+    if (pmode_ == PMode::Normal && tilt > 0.05f && gait_ != Gait::Still) {
         const float wl = std::max(Vector2Length(want), 1e-4f);
         for (size_t i = 0; i < leaves_.size(); ++i) {
             const auto& d = doorways_[i];
@@ -222,7 +222,7 @@ void Game::update_doors(float dt, Vector2 want, float tilt) {
             const float into = (want.x * d.nx + want.y * d.nz) / wl * float(side);
             if (into < 0.6f || L.passable()) continue;
             if (L.locked) break;   // (Cross says why)
-            if (tilt > 0.85f) {    // running into it: it flies open
+            if (gait_ == Gait::Run) {   // running into it: it flies open (a sneak or a walk leans on it)
                 L.push(side);
                 break;
             }
