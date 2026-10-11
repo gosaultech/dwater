@@ -975,21 +975,23 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         }
         case Pose::Aim: {   // both hands on the gun, elbows down: the pistol in the modern isosceles, or the shotgun shouldered
             if (weapon_ == 1) {   // the shotgun at the shoulder: bladed, the head down, the cheek on the comb
-                // (fitted with --fit870: the butt in the shoulder, the bore level, the right eye over
-                // it just above the receiver). The elbows down, the modern way: the right one dropped
+                // (fitted with --fit870: the butt in the shoulder pocket against his coat, not
+                // through it, the bore level, the right eye over it just above the receiver; run
+                // with DW_FIT_QUICK=1 DW_FIT_ONLY=aim, whose search found a better hold than the
+                // full one's restarts did). The elbows down, the modern way: the right one dropped
                 // under the stock, the hand wrapped round the stock's wrist and the wrist cocked; the
                 // left hand stays on the fore-end by hands(). He aims up or down from the
                 // waist, all of a piece.
-                T[J_SHO_R] = {0.629f, 1.116f, 1.064f};
-                T[J_ELB_R] = {1.809f, 0, 0};
-                T[J_WRI_R] = {-0.850f, -0.941f, 0.217f};
-                T[J_SHO_L] = {3.065f, -1.296f, -1.078f};
+                T[J_SHO_R] = {0.723f, 1.071f, 0.763f};
+                T[J_ELB_R] = {1.680f, 0, 0};
+                T[J_WRI_R] = {-0.850f, -0.843f, 0.090f};
+                T[J_SHO_L] = {2.913f, -1.175f, -1.129f};
                 T[J_ELB_L] = {0.000f, 0, 0};
-                T[J_WRI_L] = {-0.237f, 0.029f, 0.022f};
-                T[J_NECK] = {-0.611f, 0.221f, -0.450f};
-                T[J_HEAD] = {0.350f, 0.500f, 0.314f};
-                T[J_SPINE] = pitched({-0.08f, -0.500f, 0}, ap);
-                T[J_CHEST] = {-0.300f, -0.228f, 0};
+                T[J_WRI_L] = {-0.267f, 0.039f, -0.084f};
+                T[J_NECK] = {-0.685f, 0.182f, -0.450f};
+                T[J_HEAD] = {0.350f, 0.500f, 0.261f};
+                T[J_SPINE] = pitched({-0.08f, -0.485f, 0}, ap);
+                T[J_CHEST] = {-0.196f, -0.289f, 0};
                 T[J_HIP_L] = {0.25f, 0, -0.05f};
                 T[J_KNE_L] = {-0.22f, 0, 0};
                 T[J_HIP_R] = {-0.2f, 0, 0.06f};

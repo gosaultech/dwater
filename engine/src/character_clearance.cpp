@@ -166,7 +166,7 @@ namespace dw {
 
 // Each gun carried as the game carries it, at 60 frames a second: standing at the ready (settled),
 // a walking stride and a running one (at the game's speeds, 1.9 and 3.8 m/s), the raise to the
-// aim and the lowering back to the ready, the worst of every 0.05 s. Beside the clearance: both
+// aim, the aim settled, and the lowering back to the ready, the worst of every 0.05 s. Beside the clearance: both
 // wrists (swing, twist; comfortable to about 40 and 75 degrees), and where the trigger finger is:
 // how near the skin of its last segment comes to the trigger's face (mm), and whether any of it is
 // inside the trigger guard.
@@ -181,9 +181,15 @@ std::string Character::stance_clearance() {
         swing_twist(QuaternionFromMatrix(m), off_[k ? J_WRI_R : J_WRI_L], st.x, st.y);
         return st;
     };
-    struct Row { Clearance c; Vector2 wl, wr; float trig; bool in_guard; };
+    // (gun_u: where along the gun its deepest point is, mm from the back of the receiver or the
+    // pistol's frame: the 870's butt pad is at -327, its receiver 0 to 212)
+    struct Row { Clearance c; Vector2 wl, wr; float trig; bool in_guard; float gun_u; };
     auto sample = [&]() {
-        Row r{clearance(), wrist(0), wrist(1), 1e9f, false};
+        Row r{clearance(), wrist(0), wrist(1), 1e9f, false, 0};
+        if (r.c.gun.depth > 0) {
+            const Vector3 g = Vector3Transform(r.c.gun_at, MatrixInvert(gun_frame()));
+            r.gun_u = ((weapon_ == 1 ? cast::r870_at(0, 0, 0) : cast::m92fs_at(0, 0, 0)).y - g.y) * 1000;
+        }
         // The skin of the forefinger's last segment, in the gun's own measure (mm: u forward, v up,
         // w to its right), against the trigger's face and the guard's opening (cast_guns.cpp).
         const Matrix to_gun = MatrixInvert(gun_frame());
@@ -207,6 +213,7 @@ std::string Character::stance_clearance() {
     };
     auto fold = [](Row& a, const Row& b) {
         auto keep = [](clearance::Worst& x, const clearance::Worst& y) { if (y.depth > x.depth) x = y; };
+        if (b.c.gun.depth > a.c.gun.depth) a.gun_u = b.gun_u;
         keep(a.c.larm, b.c.larm); keep(a.c.rarm, b.c.rarm); keep(a.c.gun, b.c.gun); keep(a.c.hands, b.c.hands);
         keep(a.c.lhand_gun, b.c.lhand_gun); keep(a.c.rindex_gun, b.c.rindex_gun);
         a.wl = {std::max(a.wl.x, b.wl.x), std::fabs(b.wl.y) > std::fabs(a.wl.y) ? b.wl.y : a.wl.y};
@@ -215,10 +222,12 @@ std::string Character::stance_clearance() {
         a.in_guard = a.in_guard || b.in_guard;
     };
     auto print = [&](const char* label, const Row& r) {
-        std::snprintf(line, sizeof line, "  %-6s %5.0f %5.0f %5.0f %5.0f %6.0f %6.0f   %4.0f %4.0f / %4.0f %4.0f   %5.0f %s\n", label,
+        char where[48] = "";
+        if (r.c.gun.depth > 0.006f) std::snprintf(where, sizeof where, "   gun@u%.0f (%d points in)", r.gun_u, r.c.gun.count);
+        std::snprintf(line, sizeof line, "  %-6s %5.0f %5.0f %5.0f %5.0f %6.0f %6.0f   %4.0f %4.0f / %4.0f %4.0f   %5.0f %s%s\n", label,
                       r.c.larm.depth * 1000, r.c.rarm.depth * 1000, r.c.gun.depth * 1000, r.c.hands.depth * 1000, r.c.lhand_gun.depth * 1000,
                       r.c.rindex_gun.depth * 1000, r.wl.x * RAD2DEG, r.wl.y * RAD2DEG, r.wr.x * RAD2DEG, r.wr.y * RAD2DEG, r.trig,
-                      r.in_guard ? "in the guard" : "out");
+                      r.in_guard ? "in the guard" : "out", where);
         out += line;
     };
     const char* header = "         larm  rarm   gun hands lh-gun finger   wrists L / R (deg: swing, twist)   trigger (mm: the fingertip from its face)\n";
@@ -261,6 +270,8 @@ std::string Character::stance_clearance() {
         play("running (3.8 m/s)", Pose::Run, 3.8f, 1.0f, false);
         settle(Pose::Idle, 0);
         play("raised to the aim", Pose::Aim, 0, 0.6f, true);
+        settle(Pose::Aim, 0);
+        play("aimed (settled)", Pose::Aim, 0, 0.5f, false);
         settle(Pose::Aim, 0);
         play("lowered to the ready", Pose::Idle, 0, 0.6f, true);
         settle(Pose::Walk, 1.9f);
