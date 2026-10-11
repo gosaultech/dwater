@@ -312,10 +312,16 @@ def build_shell(spec):
     shared = spec.get("_shared", set())
     ts = {side: t / 2 if side in shared else t for side in ("north", "south", "west", "east")}
     box_aabb("floor", (x0 - ts["west"], -0.2, z0 - ts["north"]), (x1 + ts["east"], 0.0, z1 + ts["south"]), material(mats["floor"]))
-    box_aabb("ceiling", (x0 - ts["west"], h, z0 - ts["north"]), (x1 + ts["east"], h + 0.2, z1 + ts["south"]), material(mats["ceiling"]))
+    roof = spec.get("roof")
+    eaves = (("west", "east") if roof.get("axis", "z") == "z" else ("north", "south")) if roof else ()
+    if roof:   # an attic: knee walls under the eaves, gables up to the ridge, the roof's timber (kit.py)
+        import kit
+        kit.roof(spec)
+    else:
+        box_aabb("ceiling", (x0 - ts["west"], h, z0 - ts["north"]), (x1 + ts["east"], h + 0.2, z1 + ts["south"]), material(mats["ceiling"]))
     beams = spec.get("ceiling_beams")
     if beams:
-        wood = material("dark_wood")
+        wood = material(beams.get("material", "dark_wood"))
         if beams["axis"] == "x":
             z = z0 + beams["spacing"] / 2
             while z < z1:
@@ -330,6 +336,7 @@ def build_shell(spec):
     wall_mat = material(mats["wall"])
     wain_key, wain_h = mats.get("wainscot", ""), mats.get("wainscot_height", 0.0)
     for side, wall in wall_segments(spec).items():
+        hs = roof["eave"] if side in eaves else h
         (ax, az), (bx, bz) = wall["line"]
         length = abs(bx - ax) + abs(bz - az)
         indexed = sorted(enumerate(wall["openings"]), key=lambda kv: kv[1]["center"])
@@ -340,8 +347,8 @@ def build_shell(spec):
         for k, op in indexed:
             ou0, ou1, ov0, ov1 = _opening_span(op)
             if ou0 > cursor:
-                _wall_box(spec, side, cursor, ou0, 0, h, 0, tw, wall_mat, f"wall_{side}")
-            _wall_box(spec, side, ou0, ou1, ov1, h, 0, tw, wall_mat, f"lintel_{side}")
+                _wall_box(spec, side, cursor, ou0, 0, hs, 0, tw, wall_mat, f"wall_{side}")
+            _wall_box(spec, side, ou0, ou1, ov1, hs, 0, tw, wall_mat, f"lintel_{side}")
             if ov0 > 0:
                 _wall_box(spec, side, ou0, ou1, 0, ov0, 0, tw, wall_mat, f"sill_{side}")
             cursor = max(cursor, ou1)
@@ -350,7 +357,7 @@ def build_shell(spec):
                 import kit
                 kit.stair_stub(spec, side, op)
         if cursor < length + t:
-            _wall_box(spec, side, cursor, length + t, 0, h, 0, tw, wall_mat, f"wall_{side}")
+            _wall_box(spec, side, cursor, length + t, 0, hs, 0, tw, wall_mat, f"wall_{side}")
         # Wainscot / skirting: thin layer on the interior face, skipping doorways.
         doors = [_opening_span(o) for o in ops if o["kind"] in ("door", "gate") or o.get("sill", 1.0) < 0.05]
         spans, c = [], 0.0
@@ -389,6 +396,16 @@ def _build_opening(spec, side, op, live=False):
             _wall_box(spec, side, cu - w * pw / 2, cu + w * pw / 2, cv - hh * ph / 2, cv + hh * ph / 2,
                       0.04, 0.06, wood, "door_panel")
         _wall_box(spec, side, u1 - 0.13, u1 - 0.08, v0 + 1.0, v0 + 1.06, 0.0, 0.06, material("brass"), "knob")
+    elif op["kind"] == "window" and op.get("steel_grid"):   # a black steel-framed glazed wall, panes in a grid
+        steel = material({"color": [0.015, 0.015, 0.017], "rough": 0.35, "metal": 0.7, "noise": 0.05})
+        _wall_box(spec, side, u0, u1, v0, v1, 0.12, 0.13, material("glass"), "glass")
+        cols, rows = op.get("grid", [4, 3])
+        for k in range(cols + 1):
+            uu = u0 + (u1 - u0) * k / cols
+            _wall_box(spec, side, uu - 0.025, uu + 0.025, v0, v1, 0.09, 0.16, steel, "steel")
+        for k in range(rows + 1):
+            vv = v0 + (v1 - v0) * k / rows
+            _wall_box(spec, side, u0, u1, vv - 0.025, vv + 0.025, 0.09, 0.16, steel, "steel")
     elif op["kind"] == "window":
         _wall_box(spec, side, u0, u1, v0, v1, 0.14, 0.15, material("glass"), "glass")
         paint = material("cream")
@@ -413,7 +430,8 @@ def build_water(spec):
         return
     (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
     z_far = z0 - 9.0 if spec.get("exterior") == "north_canal" else z0
-    box_aabb("water", (x0, w["y"] - 0.02, z_far), (x1, w["y"], z1), material("water"))
+    z_near = z1 + 9.0 if spec.get("exterior") == "south_canal" else z1
+    box_aabb("water", (x0, w["y"] - 0.02, z_far), (x1, w["y"], z_near), material("water"))
 
 
 def build_exterior(spec, rng):
@@ -443,6 +461,12 @@ def build_exterior(spec, rng):
                                        emissive("window", (1.0, 0.55, 0.25), 3.0))
                         win.visible_shadow = False
             x += w
+    elif ext == "south_canal":   # the water gate's tunnel out to the canal, to the south
+        box_aabb("tunnel_l", (x0 - 0.5, 0, z1), (x0 + 1.2, 2.2, z1 + 9), material("brick"))
+        box_aabb("tunnel_r", (x1 - 1.2, 0, z1), (x1 + 0.5, 2.2, z1 + 9), material("brick"))
+        box_aabb("tunnel_top", (x0 - 0.5, 1.9, z1), (x1 + 0.5, 2.3, z1 + 9), material("brick"))
+        glow = box_aabb("canal_glow", (x0, 0, z1 + 9.0), (x1, 2.2, z1 + 9.2), emissive("canal", (0.2, 0.7, 0.55), 0.6))
+        glow.visible_shadow = False
     elif ext == "north_canal":
         box_aabb("tunnel_l", (x0 - 0.5, 0, z0 - 9), (x0 + 1.2, 2.2, z0), material("brick"))
         box_aabb("tunnel_r", (x1 - 1.2, 0, z0 - 9), (x1 + 0.5, 2.2, z0), material("brick"))

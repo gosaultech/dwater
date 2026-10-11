@@ -6,8 +6,10 @@ remains in `../game/`; its room data and pre-rendered backgrounds feed this engi
 
 ## Milestone 1: what it is
 
-The canal house's ground floor (`gang`, the entrance hall, and `voorkamer`, the front parlour)
-and its flooded cellar (`kelder`), walked through room to room with no loading screens, and:
+The canal house: its ground floor (`gang`, the entrance hall; `voorkamer`, the front parlour;
+`bibliotheek`, the library at the back), and below it the `souterrain` (the renovated half-basement)
+and the flooded cellar (`kelder`), walked through room to room with no loading screens. The attic
+bathroom (`badkamer`) is built and rendered, waiting for its stairs. And:
 
 - **Backgrounds and depth.** Pre-rendered Cycles backgrounds, each with a painted depth map.
   Characters are hidden correctly behind painted furniture, like RE (1998).
@@ -322,8 +324,8 @@ flat: the camera crew moves room to room, nobody has to change the scenery.
 - **Stairs between storeys** are a short beat in the dark (`include/dw/transition.hpp`): the
   picture fades, his steps on the stairs, the other floor is put in place, it fades up. A stage
   blackout between scenes. The cellar door under the hall's stairs opens onto painted steps going
-  down; walking through it takes him to the cellar, and the steps at the cellar's far end bring him
-  back up.
+  down; walking through it takes him to the souterrain, whose door at the far end leads on into the
+  flooded kelder; the souterrain's stairs bring him back up.
 - **No waiting at a door.** The plates of the rooms next door are decoded on a worker thread
   while he's still in this one and uploaded a couple per frame (`src/plates.cpp`), so the cut is
   instant; rooms out of reach are let go. A stage crew setting up the next backdrops in the wings.
@@ -359,6 +361,14 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   left out of the picture (the game draws it); each room's lamps light only that room, so a fire
   next door never spills through a doorway the game may show shut. Beyond the cellar door, steps
   go down into the dark.
+- **What the kit builds now.** The hall's carved open-tread stair (or a solid one with a plastered
+  half wall, the souterrain's), floor-to-ceiling bookcases with a library ladder, a brass bird cage
+  full of stuffed parrots, a round pedestal table; a black steel-glazed wall (`"steel_grid"`) onto a
+  planted lightwell, tall windows onto a night garden; and for the attic a gabled roof
+  (`"roof"`: knee walls under the eaves, the gables up to the ridge, rafters, collar ties, king
+  posts, purlins and a glazed roof light), a roll-top bath on claw feet (full of still, black
+  water), a pedestal basin and a towel horse. Seen from upstairs, the canal and the houses across it
+  drop away below (`"exterior": {"drop": 10.5}`), like looking down from a theatre's balcony.
 
 ## The death screen
 
@@ -489,22 +499,13 @@ sqlite3 build/damned_waters.db "SELECT mode, status, runtime_s, frames, worst_fr
 Done in the C++ engine: combat (both guns, kick, dodge, counters, gore), the reloads, the
 status screen (items, files, map, pickups), the death screen. Still to come, in order:
 
-1. **More of the house, and the city.** The canal house's other rooms (`voorkamer`, `kelder`
-   and new ones), with doors and room-to-room transitions; then the streets along the canals,
-   Amsterdam Centraal, and the metro north under the IJ to Station Noord. All pre-rendered
-   backgrounds from RoomSpecs (`docs/handoff/areas_session_prompt.md` is the brief).
+1. **The city.** The house is in (hall, parlour, library, souterrain, kelder; the attic bathroom
+   waits for its stairs). Next: the streets along the canals, Amsterdam Centraal, and the metro
+   north under the IJ to Station Noord. All pre-rendered backgrounds from RoomSpecs
+   (`docs/handoff/areas_session_prompt.md` is the brief).
 2. Saves (the typewriter), a title screen.
 3. **#27 (polish, deferred): a palm arch joint**, so the 870's right wrist cocks less (about 49
    degrees toward the little finger now). A rig change: rebuild `survivor.dwc`, then refit the
    grips (`--fitgrips`) and the poses (`--fitpistol`, `--fit870`).
 4. Reload tuning from play-testing (timing, the 870's hip load).
-5. **(Director's note, deferred) The ready stance.** Standing with a gun he should look ready for
-   action: both hands on it, a tactical low ready with the muzzle angled toward the floor ahead,
-   the trigger finger straight along the frame (trigger discipline), raising to the aim from there.
-   For the M92FS and the 870.
-6. **(Director's note, deferred) Movement by pressure, and the options for it.** A light touch on
-   the stick (or d-pad) creeps him along quietly, as if he doesn't want to be heard (the Drowned
-   barely hear it); more walks; all the way runs. Options: analog (that), walk by default with L3
-   to run (held or toggled), or walk by default with the stick plus a button to run. A quick-turn
-   option: back on the stick plus the right face button (Circle / B), as in the classics.
-7. Rumble and the SDL3 backend; the cyclist and the other creatures.
+5. Rumble and the SDL3 backend; the cyclist and the other creatures.

@@ -1,6 +1,24 @@
 {
  "_file": "damned_waters/tools/assets/manifest.json: the CC0 assets the room sets use (written by tools/assets/polyhaven.py fetch).",
  "assets": {
+  "ClassicConsole_01": {
+   "kind": "model",
+   "name": "Classic Console 01",
+   "authors": [
+    "Kirill Sannikov"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/ClassicConsole_01"
+  },
+  "antique_ceramic_vase_01": {
+   "kind": "model",
+   "name": "Antique Ceramic Vase 01",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/antique_ceramic_vase_01"
+  },
   "brick_wall_003": {
    "kind": "texture",
    "name": "Brick Wall 003",
@@ -10,6 +28,15 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/brick_wall_003"
+  },
+  "concrete_floor_painted": {
+   "kind": "texture",
+   "name": "Concrete Floor Painted",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/concrete_floor_painted"
   },
   "dark_wood": {
    "kind": "texture",
@@ -22,6 +49,15 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/dark_wood"
   },
+  "dining_chair_02": {
+   "kind": "model",
+   "name": "Dining Chair 02",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/dining_chair_02"
+  },
   "dirty_carpet": {
    "kind": "texture",
    "name": "Dirty Carpet",
@@ -30,6 +66,44 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/dirty_carpet"
+  },
+  "fancy_picture_frame_01": {
+   "kind": "model",
+   "name": "Fancy Picture Frame 01",
+   "authors": [
+    "Rico Cilliers",
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/fancy_picture_frame_01"
+  },
+  "fancy_picture_frame_02": {
+   "kind": "model",
+   "name": "Fancy Picture Frame 02",
+   "authors": [
+    "Rico Cilliers",
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/fancy_picture_frame_02"
+  },
+  "floor_pebbles_01": {
+   "kind": "texture",
+   "name": "Floor Pebbles 01",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/floor_pebbles_01"
+  },
+  "hanging_picture_frame_02": {
+   "kind": "model",
+   "name": "Hanging Picture Frame 02",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/hanging_picture_frame_02"
   },
   "herringbone_parquet": {
    "kind": "texture",
@@ -51,6 +125,33 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/hessian_230"
   },
+  "industrial_wall_sconce": {
+   "kind": "model",
+   "name": "Industrial Wall Sconce",
+   "authors": [
+    "Ulan Cabanilla"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/industrial_wall_sconce"
+  },
+  "jug_01": {
+   "kind": "model",
+   "name": "Jug 01",
+   "authors": [
+    "Kuutti Siitonen"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/jug_01"
+  },
+  "lantern_chandelier_01": {
+   "kind": "model",
+   "name": "Lantern Chandelier 01",
+   "authors": [
+    "Kirill Sannikov"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/lantern_chandelier_01"
+  },
   "marble_01": {
    "kind": "texture",
    "name": "Marble 01",
@@ -59,6 +160,24 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/marble_01"
+  },
+  "marble_bust_01": {
+   "kind": "model",
+   "name": "Marble Bust 01",
+   "authors": [
+    "Rico Cilliers"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/marble_bust_01"
+  },
+  "ornate_mirror_01": {
+   "kind": "model",
+   "name": "Ornate Mirror 01",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/ornate_mirror_01"
   },
   "plastered_wall": {
    "kind": "texture",
@@ -69,6 +188,24 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/plastered_wall"
   },
+  "potted_plant_01": {
+   "kind": "model",
+   "name": "Potted Plant 01",
+   "authors": [
+    "Rico Cilliers"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/potted_plant_01"
+  },
+  "potted_plant_02": {
+   "kind": "model",
+   "name": "Potted Plant 02",
+   "authors": [
+    "Rico Cilliers"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/potted_plant_02"
+  },
   "red_brick_03": {
    "kind": "texture",
    "name": "Red Brick 03",
@@ -77,6 +214,60 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/red_brick_03"
+  },
+  "roof_planks": {
+   "kind": "texture",
+   "name": "Roof Planks",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/roof_planks"
+  },
+  "vintage_oil_lamp": {
+   "kind": "model",
+   "name": "Vintage Oil Lamp",
+   "authors": [
+    "Monsta3D"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/vintage_oil_lamp"
+  },
+  "wine_barrel_01": {
+   "kind": "model",
+   "name": "Wine Barrel 01",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/wine_barrel_01"
+  },
+  "wooden_bucket_01": {
+   "kind": "model",
+   "name": "Wooden Bucket 01",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/wooden_bucket_01"
+  },
+  "wooden_crate_01": {
+   "kind": "model",
+   "name": "Wooden Crate 01",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/wooden_crate_01"
+  },
+  "wooden_stool_01": {
+   "kind": "model",
+   "name": "Wooden Stool 01",
+   "authors": [
+    "Kuutti Siitonen"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/wooden_stool_01"
   }
  }
 }

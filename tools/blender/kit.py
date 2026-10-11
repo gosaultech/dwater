@@ -168,6 +168,7 @@ def coffee_table(root, p, w, h, d):
 def kast(root, p, w, h, d):
     """An Amsterdam kast: plinth, a base with two drawers, two tall panelled doors, a stepped cornice."""
     paint = mat(p.get("material"), DEFAULT_PAINT)
+    panel_m = mat(p["panels"], None) if p.get("panels") else paint   # (painted panels: Hindeloopen work)
     brass = builders.material(BRASS)
     plinth_h, cornice_h, base_h = 0.12, 0.24, 0.42
     soft(root, "plinth", (0, plinth_h / 2, 0), (w + 0.05, plinth_h, d + 0.03), paint, 0.01)
@@ -191,7 +192,7 @@ def kast(root, p, w, h, d):
         for k, frac in enumerate((0.42, 0.33, 0.25)):
             ph = (dh - 0.24) * frac
             py = dy0 + 0.08 + sum((dh - 0.24) * f for f in (0.42, 0.33, 0.25)[:k]) + 0.04 * k + ph / 2
-            soft(root, "panel", (cx, py, fz + 0.032), (pw, ph, 0.025), paint, 0.018, 3, profile=0.35)
+            soft(root, "panel", (cx, py, fz + 0.032), (pw, ph, 0.025), panel_m, 0.018, 3, profile=0.35)
     builders.part(root, "stile", (0, dy0 + dh / 2, fz + 0.03), (0.035, dh, 0.02), paint)
     builders.part(root, "escutcheon", (0.03, dy0 + dh * 0.45, fz + 0.042), (0.02, 0.05, 0.006), brass)
 
@@ -352,6 +353,9 @@ def model(root, p, w, h, d):
         holder.rotation_euler[2] = math.radians(p["yaw_model"])
     for o in tops:
         o.parent = holder
+    if p.get("shadow", True) is False:   # a lamp's own glass and frame must not swallow its light
+        for o in new:
+            o.visible_shadow = False
     tint = p.get("tint")
     if tint:
         for o in new:
@@ -383,15 +387,373 @@ def _tint_input(nt, sock, tint):
         sock.default_value = (c[0] * tint[0], c[1] * tint[1], c[2] * tint[2], 1)
 
 
-PROPS = {"sofa": sofa, "armchair": armchair, "coffee_table": coffee_table, "kast": kast, "chest": chest,
+def stair_open(root, p, w, h, d):
+    """A carved open-tread stair (the staircase photo): thick oak treads with no risers between two
+    stringers, wrought-iron balusters on the open side (every other one with a scroll), an oak
+    handrail, and a turned newel at the foot. It rises toward local -z, as builders' stairs do;
+    "rail_side" -1 puts the open side at local -x."""
+    oak = mat(p.get("material"), {"ph": "dark_wood", "tint": [0.7, 0.5, 0.33], "scale": 0.5})
+    iron = builders.material({"color": [0.02, 0.02, 0.022], "rough": 0.5, "metal": 0.6, "noise": 0.2})
+    n = max(3, round(h / 0.2))
+    run, rise = d / n, h / n
+    side = p.get("rail_side", -1)
+    for i in range(n):
+        top = (i + 1) * rise
+        zc = d / 2 - (i + 0.5) * run
+        wide = 0.16 if i == 0 else 0.0   # the first step swells out under the newel
+        soft(root, "tread", (side * wide / 2, top - 0.03, zc), (w + wide, 0.06, run + 0.035), oak, 0.01, 2)
+    ang = math.degrees(math.atan2(h, d))
+    L = math.hypot(h, d)
+    for sx in (-1, 1):
+        soft(root, "stringer", (sx * (w / 2 + 0.03), h / 2 - 0.08, 0), (0.05, 0.3, L), oak, 0.012, 2, rot_x=ang)
+    xb = side * (w / 2 - 0.02)
+    if p.get("solid"):   # the modern way (the concrete-hall photo): oak risers, and a plastered half wall for a rail
+        for i in range(n):
+            top = (i + 1) * rise
+            zc = d / 2 - (i + 0.5) * run
+            soft(root, "riser", (0, top - rise / 2 - 0.03, zc + run / 2 - 0.01), (w, rise - 0.05, 0.025), oak, 0.004, 1)
+        wall_m = mat(p.get("wall"), {"color": [0.78, 0.77, 0.74], "rough": 0.9, "noise": 0.05})
+        ob = soft(root, "half_wall", (xb, h / 2 + 0.45, 0), (0.1, 1.05, L), wall_m, 0.01, 2, rot_x=ang)
+        soft(root, "capping", (xb, h / 2 + 0.98, 0), (0.14, 0.04, L), oak, 0.008, 2, rot_x=ang)
+        return
+    for i in range(1, n):
+        top = (i + 1) * rise
+        for k in (0.25, 0.75):
+            zc = d / 2 - (i + k) * run
+            hb = 0.9 - (k - 0.5) * run * h / d
+            builders.cyl(root, "baluster", (xb, top + hb / 2, zc), 0.008, hb, iron)
+            if (i * 2 + int(k > 0.5)) % 2 == 0:
+                builders.cyl(root, "scroll", (xb, top + hb * 0.55, zc), 0.024, 0.07, iron, r_top=0.012)
+    soft(root, "handrail", (xb, h / 2 + 0.92, 0), (0.065, 0.075, L), oak, 0.025, 3, rot_x=ang)
+    zb = d / 2 - run * 0.5
+    lathe(root, "newel", [(0.075, 0.0), (0.075, 0.12), (0.052, 0.18), (0.044, 0.55), (0.058, 0.62), (0.04, 0.72),
+                          (0.05, 0.86), (0.068, 0.98), (0.07, 1.05), (0.0, 1.08)], oak, at=(xb, 0.0, zb), segments=22)
+
+
+def runner(root, p, w, h, d):
+    """A long woven runner (the Persian one in the staircase photo) lying on the floor."""
+    m = mat(p.get("material"), {"pattern": "persian", "width": w})
+    soft(root, "runner", (0, 0.006, 0), (w, 0.012, d), m, 0.004, 1)
+
+
+def bookcase(root, p, w, h, d):
+    """Built-in shelves to the ceiling, packed with books: one mesh per run of shelves (a few
+    thousand spines cost nothing that way). Books lean, stand taller and shorter, and keep to a
+    worn palette of cloth and leather; here and there a gap, a stack lying flat."""
+    import random
+    rng = random.Random(p.get("seed", 7))
+    frame_m = mat(p.get("material"), {"color": [0.06, 0.065, 0.07], "rough": 0.5, "noise": 0.1})
+    pitch = p.get("shelf_pitch", 0.36)
+    n = max(2, int(h / pitch))
+    t = 0.035
+    soft(root, "back", (0, h / 2, -d / 2 + 0.01), (w, h, 0.02), frame_m, 0.003, 1)
+    for sx in (-1, 1):
+        soft(root, "side", (sx * (w / 2 - t / 2), h / 2, 0), (t, h, d), frame_m, 0.004, 1)
+    uprights = max(1, int(w / 0.9))
+    bay = w / uprights
+    for k in range(1, uprights):
+        soft(root, "upright", (-w / 2 + k * bay, h / 2, 0), (t, h, d), frame_m, 0.004, 1)
+    palette = [(0.18, 0.05, 0.04), (0.06, 0.09, 0.07), (0.05, 0.06, 0.12), (0.22, 0.15, 0.08), (0.12, 0.1, 0.08),
+               (0.3, 0.26, 0.2), (0.08, 0.04, 0.05), (0.03, 0.03, 0.03), (0.35, 0.3, 0.22), (0.14, 0.12, 0.05)]
+    mats = [builders.material({"color": list(c), "rough": 0.75, "noise": 0.25, "noise_scale": 30.0}) for c in palette]
+    for i in range(n + 1):
+        y = i * h / n
+        soft(root, "shelf", (0, y + t / 2, 0), (w, t, d), frame_m, 0.004, 1)
+        if i == n or rng.random() < p.get("empty", 0.04):
+            continue
+        # one mesh per colour for this shelf row
+        verts = {m: [] for m in range(len(mats))}
+        faces = {m: [] for m in range(len(mats))}
+        for b in range(uprights):
+            x = -w / 2 + b * bay + t + 0.01
+            end = -w / 2 + (b + 1) * bay - t / 2 - 0.01
+            while x < end - 0.02:
+                bw = rng.uniform(0.018, 0.055)
+                if x + bw > end:
+                    break
+                bh = min(pitch - t - 0.03, rng.uniform(0.18, 0.3))
+                bd = min(d - 0.04, rng.uniform(0.14, 0.24))
+                lean = rng.random() < 0.05
+                m = rng.randrange(len(mats))
+                if rng.random() < 0.04:   # a gap
+                    x += rng.uniform(0.05, 0.15)
+                    continue
+                y0 = y + t
+                corners = [(x, y0, d / 2 - 0.02 - bd), (x + bw, y0, d / 2 - 0.02 - bd), (x + bw, y0, d / 2 - 0.02), (x, y0, d / 2 - 0.02)]
+                tilt = bh * 0.25 if lean else 0.0
+                top = [(cx + tilt, y0 + bh, cz) for cx, _, cz in corners]
+                base = len(verts[m])
+                verts[m] += corners + top
+                faces[m] += [(base + 0, base + 1, base + 2, base + 3)[::-1], (base + 4, base + 5, base + 6, base + 7),
+                             (base + 0, base + 1, base + 5, base + 4), (base + 1, base + 2, base + 6, base + 5),
+                             (base + 2, base + 3, base + 7, base + 6), (base + 3, base + 0, base + 4, base + 7)]
+                x += bw + (bh * 0.25 if lean else 0.0) + rng.uniform(0.0, 0.004)
+        for m in verts:
+            if verts[m]:
+                mesh("books", verts[m], faces[m], mats[m], root)
+
+
+def ladder(root, p, w, h, d):
+    """A library ladder leaning on its rail: two oak stiles, round rungs, hooked over the top."""
+    oak = mat(p.get("material"), {"ph": "dark_wood", "tint": [0.75, 0.55, 0.36], "scale": 0.4})
+    lean = math.atan2(d, h)
+    L = math.hypot(h, d)
+    for sx in (-1, 1):
+        ob = soft(root, "stile", (sx * (w / 2 - 0.025), h / 2, 0), (0.045, L, 0.06), oak, 0.008, 2)
+        ob.rotation_euler[0] = lean
+    for i in range(1, int(L / 0.3)):
+        f = i * 0.3 / L
+        y, z = f * h, d / 2 - f * d
+        r = builders.cyl(root, "rung", (0, y, z), 0.016, w - 0.05, oak, horizontal=False)
+        r.rotation_euler = (0, math.radians(90), 0)
+
+
+def birdcage(root, p, w, h, d):
+    """A tall brass bird cage hanging on a chain, full of stuffed parrots on their perches."""
+    import random
+    rng = random.Random(3)
+    brass = builders.material(BRASS)
+    r = w / 2
+    lathe(root, "cage_base", [(0.0, 0.0), (r, 0.0), (r, 0.04), (r * 0.95, 0.06), (0.0, 0.06)], brass, segments=32)
+    lathe(root, "cage_dome", [(r, h * 0.82), (r * 0.9, h * 0.9), (r * 0.6, h * 0.97), (0.08, h), (0.0, h)], brass, segments=32)
+    for i in range(28):
+        a = 2 * math.pi * i / 28
+        builders.cyl(root, "bar", (r * math.cos(a), h * 0.42, r * math.sin(a)), 0.004, h * 0.82, brass)
+    for k in range(3):
+        y = 0.04 + k * (h * 0.78) / 3
+        builders.cyl(root, "hoop", (0, y, 0), r * 1.01, 0.012, brass)
+    builders.cyl(root, "chain", (0, h + p.get("chain", 1.5) / 2, 0), 0.008, p.get("chain", 1.5), brass)
+    feathers = [(0.1, 0.32, 0.06), (0.45, 0.05, 0.03), (0.05, 0.12, 0.35), (0.55, 0.45, 0.05), (0.12, 0.35, 0.3)]
+    for k in range(int(p.get("birds", 9))):
+        y = 0.25 + rng.uniform(0, h * 0.6)
+        a = rng.uniform(0, 2 * math.pi)
+        rr = rng.uniform(0.05, r * 0.7)
+        c = rng.choice(feathers)
+        m = builders.material({"color": list(c), "rough": 0.7, "noise": 0.4, "noise_scale": 60.0})
+        bx, bz = rr * math.cos(a), rr * math.sin(a)
+        body = lathe(root, "bird", [(0.0, 0.0), (0.03, 0.02), (0.045, 0.08), (0.04, 0.13), (0.025, 0.16), (0.032, 0.19),
+                                     (0.02, 0.22), (0.0, 0.225)], m, at=(bx, y, bz), segments=10)
+        tail = builders.cyl(root, "tail", (bx, y - 0.06, bz), 0.012, 0.14, m, r_top=0.003)
+        builders.cyl(root, "perch", (bx, y - 0.005, bz), 0.006, 0.01, brass)
+
+
+def round_table(root, p, w, h, d):
+    """A round pedestal dining table: a dark top on a turned column and a spreading foot."""
+    wood = mat(p.get("material"), {"ph": "dark_wood", "tint": [0.32, 0.24, 0.18], "scale": 0.5})
+    r = w / 2
+    lathe(root, "pedestal", [(0.3, 0.0), (0.3, 0.03), (0.12, 0.08), (0.07, 0.2), (0.06, h - 0.12), (0.12, h - 0.05),
+                             (0.12, h - 0.04), (0.0, h - 0.04)], wood, segments=28)
+    lathe(root, "top", [(0.0, h - 0.04), (r, h - 0.04), (r + 0.01, h - 0.02), (r, h), (0.0, h)], wood, segments=48)
+
+
+def _superellipse(a, b, n=48, e=2.6):
+    """A rounded-rectangle ring in the xz plane, half-lengths a (x) and b (z)."""
+    out = []
+    for i in range(n):
+        t = 2 * math.pi * i / n
+        c, s = math.cos(t), math.sin(t)
+        out.append((a * math.copysign(abs(c) ** (2 / e), c), b * math.copysign(abs(s) ** (2 / e), s)))
+    return out
+
+
+def _loft(parent, name, rings, m, cap_first=False, cap_last=False, smooth=True):
+    """Rings [(scale, y)] of one superellipse plan stacked into a skin (bottom to top or any order)."""
+    plan = rings[0][2]
+    n = len(plan)
+    verts, faces = [], []
+    for sc, y, _ in rings:
+        verts += [(px * sc, y, pz * sc) for px, pz in plan]
+    for k in range(len(rings) - 1):
+        for i in range(n):
+            j = (i + 1) % n
+            faces.append((k * n + i, k * n + j, (k + 1) * n + j, (k + 1) * n + i))
+    if cap_first:
+        faces.append(tuple(range(n))[::-1])
+    if cap_last:
+        last = (len(rings) - 1) * n
+        faces.append(tuple(last + i for i in range(n)))
+    return mesh(name, verts, faces, m, parent, smooth)
+
+
+def bathtub(root, p, w, h, d):
+    """A freestanding roll-top bath on four claw feet: cast iron painted outside, white enamel
+    inside, its length along local x. "water": true fills it (dark, still)."""
+    outside = mat(p.get("material"), {"color": [0.05, 0.07, 0.07], "rough": 0.35, "noise": 0.15})
+    enamel = builders.material({"color": [0.78, 0.77, 0.73], "rough": 0.12, "noise": 0.12})
+    iron = builders.material("iron")
+    plan = _superellipse(w / 2 - 0.02, d / 2 - 0.02)
+    foot = 0.11
+    _loft(root, "tub_out", [(0.86, foot, plan), (0.95, foot + 0.12, plan), (0.99, h * 0.7, plan), (1.0, h - 0.05, plan),
+                             (1.03, h - 0.03, plan), (1.02, h, plan), (0.95, h, plan)], outside, cap_first=True)
+    _loft(root, "tub_in", [(0.95, h, plan), (0.92, h - 0.03, plan), (0.9, h * 0.6, plan), (0.8, foot + 0.1, plan)],
+          enamel, cap_last=True)
+    if p.get("water"):
+        _loft(root, "tub_water", [(0.905, h - 0.13, plan)], builders.material("water"), cap_last=True, smooth=False)
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            at = (sx * (w / 2 - 0.2), 0, sz * (d / 2 - 0.15))
+            lathe(root, "claw", [(0.0, 0.0), (0.045, 0.0), (0.05, 0.02), (0.03, 0.05), (0.022, 0.08), (0.035, foot + 0.02),
+                                 (0.0, foot + 0.02)], iron, at=at, segments=12)
+    brass = builders.material(BRASS)
+    builders.cyl(root, "spout", (-(w / 2 - 0.12), h + 0.12, 0), 0.016, 0.24, brass)
+    builders.cyl(root, "spout_neck", (-(w / 2 - 0.2), h + 0.24, 0), 0.014, 0.16, brass, horizontal=True)
+
+
+def basin(root, p, w, h, d):
+    """A pedestal wash basin: a turned column and a deep round bowl, a brass tap at the back."""
+    china = mat(p.get("material"), {"color": [0.8, 0.79, 0.75], "rough": 0.15, "noise": 0.1})
+    r = w / 2
+    lathe(root, "basin", [(0.13, 0.0), (0.13, 0.02), (0.09, 0.06), (0.065, 0.14), (0.06, h - 0.3), (0.08, h - 0.22),
+                          (r * 0.7, h - 0.1), (r * 0.95, h - 0.03), (r, h), (r * 0.93, h + 0.005), (r * 0.82, h - 0.04),
+                          (r * 0.5, h - 0.14), (0.0, h - 0.16)], china, at=(0, 0, 0), segments=36)
+    brass = builders.material(BRASS)
+    builders.cyl(root, "tap", (0, h + 0.07, -r * 0.82), 0.012, 0.14, brass)
+    builders.cyl(root, "tap_spout", (0, h + 0.13, -r * 0.72), 0.01, 0.12, brass, horizontal=True)
+
+
+def towel_rail(root, p, w, h, d):
+    """A wooden towel horse: two splayed ends, two rails, a towel thrown over the top one."""
+    wood = mat(p.get("material"), {"ph": "dark_wood", "tint": [0.55, 0.42, 0.3], "scale": 0.4})
+    cloth = mat(p.get("cloth"), {"color": [0.55, 0.52, 0.47], "rough": 0.95, "noise": 0.25, "noise_scale": 40.0})
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            leg = soft(root, "leg", (sx * w / 2, h / 2, sz * d / 4), (0.035, h * 1.02, 0.035), wood, 0.006, 2)
+            leg.rotation_euler[0] = math.radians(-sz * 6)
+        builders.part(root, "foot", (sx * w / 2, 0.02, 0), (0.04, 0.04, d), wood)
+    for y in (h - 0.02, h * 0.45):
+        r = builders.cyl(root, "rail", (0, y, 0), 0.014, w, wood, horizontal=True)
+        r.rotation_euler = (0, 0, math.radians(90))
+    tw = w * 0.62
+    for sz in (-1, 1):   # the towel hangs down both sides of the top rail
+        soft(root, "towel", (0.04, h - 0.32, sz * 0.03), (tw, 0.6, 0.02), cloth, 0.008, 2)
+    soft(root, "towel_fold", (0.04, h, 0), (tw, 0.03, 0.07), cloth, 0.012, 2)
+
+
+# ── A pitched roof (the attic) ────────────────────────────────────────────────────
+def roof_frames(spec):
+    """The two slopes of a gabled roof: for each, (eave side, origin, U along the ridge, S up the
+    slope, N out of the room, length along U, length up the slope, slope's start at the knee wall).
+    roof.axis is the ridge's direction ("z": the gables are the north and south walls)."""
+    r = spec["roof"]
+    (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
+    h, eave, t = spec["height"], r["eave"], builders.WALL_T
+    out = []
+    if r.get("axis", "z") == "z":
+        half = (x1 - x0) / 2
+        k = (h - eave) / half
+        for side, xe, sx in (("west", x0, -1.0), ("east", x1, 1.0)):
+            o = (xe + sx * t, eave - k * t, z0 - t)
+            run, rise = half + t, h - (eave - k * t)
+            L = math.hypot(run, rise)
+            S = (-sx * run / L, rise / L, 0.0)
+            N = (sx * rise / L, run / L, 0.0)
+            out.append((side, o, (0.0, 0.0, 1.0), S, N, (z1 - z0) + 2 * t, L, t * L / run))
+    else:
+        half = (z1 - z0) / 2
+        k = (h - eave) / half
+        for side, ze, sz in (("north", z0, -1.0), ("south", z1, 1.0)):
+            o = (x0 - t, eave - k * t, ze + sz * t)
+            run, rise = half + t, h - (eave - k * t)
+            L = math.hypot(run, rise)
+            S = (0.0, rise / L, -sz * run / L)
+            N = (0.0, run / L, sz * rise / L)
+            out.append((side, o, (1.0, 0.0, 0.0), S, N, (x1 - x0) + 2 * t, L, t * L / run))
+    return out
+
+
+def _slab(name, frame, u0, u1, s0, s1, n0, n1, m):
+    """A box in a slope's frame (u along the ridge, s up the slope, n out of the room), UVs in metres
+    along u and s so planks run true on the slope."""
+    o, U, S, N = frame
+    def at(u, s, n):
+        return g2b(tuple(o[i] + U[i] * u + S[i] * s + N[i] * n for i in range(3)))
+    c = [(u, s, n) for u in (u0, u1) for s in (s0, s1) for n in (n0, n1)]
+    verts = [at(*q) for q in c]
+    faces = [(0, 2, 6, 4), (1, 5, 7, 3), (0, 4, 5, 1), (2, 3, 7, 6), (0, 1, 3, 2), (4, 6, 7, 5)]
+    uvs = []
+    for f in faces:
+        uvs.append([(c[i][0], c[i][1] + c[i][2]) for i in f])
+    return builders._mesh_object(name, verts, faces, uvs, m)
+
+
+def roof(spec):
+    """The attic's roof, seen from inside: two sloping slabs of boards from the knee walls up to the
+    ridge (with holes for roof lights, glazed), and the timber that carries them: a pair of rafters
+    and a collar tie at each truss, a king post up to the ridge beam, a purlin halfway up each
+    slope and a wall plate on each knee wall. Spec: "roof": {"axis": "z", "eave": 1.1,
+    "material": ..., "timber": ..., "trusses": [z, ...] or {"spacing": s}, "collar": 2.4,
+    "skylights": [{"side": "east", "center": 2.0, "width": 0.8, "from": 0.9, "to": 2.0}]}."""
+    r = spec["roof"]
+    boards = builders.material(r.get("material", "dark_wood"))
+    timber = builders.material(r.get("timber", "dark_wood"))
+    glass = builders.material("glass")
+    (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
+    h, eave, t = spec["height"], r["eave"], builders.WALL_T
+    axis_z = r.get("axis", "z") == "z"
+    lo, hi = (z0, z1) if axis_z else (x0, x1)
+    tr = r.get("trusses", {"spacing": 1.5})
+    if isinstance(tr, dict):
+        n = max(1, int((hi - lo) / tr["spacing"]))
+        trusses = [(hi - lo) * (i + 0.5) / n for i in range(n)]
+    else:
+        trusses = list(tr)
+    thick = 0.18
+    for side, o, U, S, N, Lu, Ls, s_knee in roof_frames(spec):
+        frame = (o, U, S, N)
+        holes = [(sk["center"] + t - sk["width"] / 2, sk["center"] + t + sk["width"] / 2,
+                  s_knee + sk["from"], s_knee + sk["to"]) for sk in r.get("skylights", []) if sk["side"] == side]
+        cuts = sorted({0.0, Lu} | {v for hh in holes for v in hh[:2]})
+        for ua, ub in zip(cuts, cuts[1:]):
+            mid = (ua + ub) / 2
+            gaps = sorted((hh[2], hh[3]) for hh in holes if hh[0] <= mid <= hh[1])
+            s = 0.0
+            for ga, gb in gaps + [(Ls + 0.02, Ls + 0.02)]:
+                if ga > s:
+                    _slab("roof_" + side, frame, ua, ub, s, min(ga, Ls + 0.02), 0.0, thick, boards)
+                s = gb
+        for ua, ub, sa, sb in holes:   # the roof light: a glazed pane in a timber lining
+            _slab("skylight_glass", frame, ua, ub, sa, sb, thick * 0.6, thick * 0.6 + 0.01, glass)
+            for (a, b, c, e) in ((ua - 0.06, ua, sa - 0.06, sb + 0.06), (ub, ub + 0.06, sa - 0.06, sb + 0.06),
+                                 (ua, ub, sa - 0.06, sa), (ua, ub, sb, sb + 0.06)):
+                _slab("skylight_lining", frame, a, b, c, e, -0.1, thick, timber)
+        sm = (s_knee + Ls) / 2
+        _slab("purlin", frame, 0.0, Lu, sm - 0.08, sm + 0.08, -0.4, -0.2, timber)
+        for u in trusses:
+            _slab("rafter", frame, u + t - 0.07, u + t + 0.07, s_knee - 0.1, Ls, -0.2, 0.0, timber)
+    # wall plates, the ridge beam, the collar ties and king posts, in room coordinates
+    half = (x1 - x0) / 2 if axis_z else (z1 - z0) / 2
+    k = (h - eave) / half
+    collar = r.get("collar", h - 1.5)
+    reach = half - (collar - eave) / k + 0.1    # where the collar meets the rafters, from the mid line
+    def box(name, a0, a1, y0, y1, b0, b1):
+        """a: across the ridge, b: along it (room coordinates, mid line at a = 0)."""
+        if axis_z:
+            mx = (x0 + x1) / 2
+            return builders.box_aabb(name, (mx + a0, y0, b0), (mx + a1, y1, b1), timber)
+        mz = (z0 + z1) / 2
+        return builders.box_aabb(name, (b0, y0, mz + a0), (b1, y1, mz + a1), timber)
+    box("ridge", -0.08, 0.08, h - 0.32, h + 0.02, lo - t, hi + t)
+    box("wall_plate", -half, -half + 0.16, eave - 0.16, eave + 0.02, lo, hi)
+    box("wall_plate", half - 0.16, half, eave - 0.16, eave + 0.02, lo, hi)
+    for u in trusses:
+        b = lo + u
+        box("collar", -reach, reach, collar, collar + 0.2, b - 0.07, b + 0.07)
+        box("king_post", -0.07, 0.07, collar + 0.2, h - 0.3, b - 0.07, b + 0.07)
+
+
+PROPS = {"bookcase": bookcase, "ladder": ladder, "birdcage": birdcage, "round_table": round_table,
+         "stair_open": stair_open, "runner": runner, "sofa": sofa, "armchair": armchair, "coffee_table": coffee_table, "kast": kast, "chest": chest,
          "beam": beam, "block": block, "candlestick": candlestick, "jar_candle": jar_candle, "curtain": curtain,
-         "fireplace_classic": fireplace_classic, "model": model}
+         "fireplace_classic": fireplace_classic, "model": model,
+         "bathtub": bathtub, "basin": basin, "towel_rail": towel_rail}
 
 
 def build_prop(p, room_h):
     """A kit prop at its spot (pos = bottom-centre of its footprint, yaw about up)."""
     size = p.get("size", [0.5, 0.5, 0.5])
     root = builders.empty_at(f"prop_{p['type']}", p["pos"], p.get("yaw", 0.0))
+    if p.get("pitch") or p.get("roll"):   # knocked over: tipped about its own x (pitch) and front-to-back axis (roll)
+        root.rotation_euler = (math.radians(p.get("pitch", 0.0)), math.radians(-p.get("roll", 0.0)), math.radians(p.get("yaw", 0.0)))
     PROPS[p["type"]](root, p, *size)
     return root
 
@@ -479,13 +841,18 @@ def arch_opening(spec, side, op):
 
 # ── Outside: the canal and the houses across it ──────────────────────────────────
 def build_exterior(spec, rng):
-    """{"side": "south", "canal": 12, "bricks": [...], "lit": 0.06}: outside that wall, a pavement,
-    the canal, the far quay, and a row of gabled canal houses facing us, a few windows lit."""
+    """{"side": "south", "canal": 12, "bricks": [...], "lit": 0.06, "drop": 0}: outside that wall, a
+    pavement, the canal, the far quay, and a row of gabled canal houses facing us, a few windows lit
+    ("drop": the street that far below the room's floor, for a room upstairs)."""
     ext = spec["exterior"]
     (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
     side = ext.get("side", "north")
+    if ext.get("lightwell"):
+        return _lightwell(spec, rng, ext, side)
     if side not in ("north", "south"):
         raise NotImplementedError("exterior side " + side)
+    if ext.get("garden"):
+        return _garden(spec, rng, ext, side)
     sgn = -1.0 if side == "north" else 1.0   # away from the house
     wall = z0 if side == "north" else z1
     t = builders.WALL_T
@@ -496,8 +863,10 @@ def build_exterior(spec, rng):
     lit = builders.emissive("window", (1.0, 0.55, 0.25), 3.0)
     dark_glass = builders.material({"color": [0.01, 0.012, 0.016], "rough": 0.08, "noise": 0.0})
 
+    drop = ext.get("drop", 0.0)   # the street this far below the room's floor (an attic looks down on it)
+
     def slab(name, za, zb, y0, y1, m, xa=x0 - 40, xb=x1 + 40):
-        o = builders.box_aabb(name, (xa, y0, min(za, zb)), (xb, y1, max(za, zb)), m)
+        o = builders.box_aabb(name, (xa, y0 - drop, min(za, zb)), (xb, y1 - drop, max(za, zb)), m)
         return o
 
     zw = wall + sgn * t                          # the house's outer face
@@ -526,6 +895,86 @@ def build_exterior(spec, rng):
                            lit if rng.random() < ext.get("lit", 0.06) else dark_glass, wx - 0.42, wx + 0.42)
                 win.visible_shadow = False
         x += w
+
+
+def _garden(spec, rng, ext, side):
+    """Behind the house: a walled back garden under the moon, a few bare trees, and the backs of
+    the next street's houses beyond, a window or two lit."""
+    (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
+    sgn = -1.0 if side == "north" else 1.0
+    zw = (z0 if side == "north" else z1) + sgn * builders.WALL_T
+    depth = ext.get("depth", 9.0)
+    ground = builders.material({"color": [0.02, 0.025, 0.018], "rough": 0.95, "noise": 0.5, "noise_scale": 3.0})
+    brick = builders.material({"ph": ext.get("brick", "red_brick_03"), "tint": [0.35, 0.3, 0.28]})
+    bark = builders.material({"color": [0.03, 0.025, 0.02], "rough": 0.9, "noise": 0.4, "noise_scale": 12.0})
+
+    def box(name, za, zb, y0, y1, m, xa=x0 - 12, xb=x1 + 12):
+        return builders.box_aabb(name, (xa, y0, min(za, zb)), (xb, y1, max(za, zb)), m)
+
+    box("lawn", zw, zw + sgn * depth, -0.2, 0.0, ground)
+    box("garden_wall", zw + sgn * depth, zw + sgn * (depth + 0.3), 0.0, 3.2, brick)
+    for k in range(int(ext.get("trees", 4))):
+        tx = rng.uniform(x0 - 4, x1 + 4)
+        tz = zw + sgn * rng.uniform(2.5, depth - 1.0)
+        th = rng.uniform(5.0, 8.0)
+        trunk = builders.box_aabb("trunk", (tx - 0.14, 0.0, tz - 0.14), (tx + 0.14, th, tz + 0.14), bark)
+        trunk.visible_shadow = True
+        for b in range(5):   # bare limbs
+            a = rng.uniform(0, 2 * math.pi)
+            y = rng.uniform(th * 0.45, th * 0.9)
+            L = rng.uniform(1.0, 2.2)
+            lb = builders.box_aabb("limb", (tx - 0.05, y, tz - 0.05), (tx + 0.05, y + L, tz + 0.05), bark)
+            lb.rotation_euler = (rng.uniform(-0.7, 0.7), rng.uniform(-0.7, 0.7), a)
+    zb = zw + sgn * (depth + 6.0)
+    lit = builders.emissive("window", (1.0, 0.55, 0.25), 2.5)
+    dark = builders.material({"color": [0.01, 0.012, 0.016], "rough": 0.1, "noise": 0.0})
+    x = x0 - 14
+    while x < x1 + 14:
+        w = rng.uniform(5.0, 7.0)
+        hh = rng.uniform(11.0, 14.0)
+        m = builders.material({"ph": ext.get("brick", "red_brick_03"), "tint": [rng.uniform(0.12, 0.2)] * 3})
+        h_ = box("back_house", zb, zb + sgn * 8, 0, hh, m, x, x + w - 0.1)
+        h_.visible_shadow = False
+        for fl in range(3):
+            for kk in range(2):
+                wx = x + 1.2 + kk * (w - 2.4)
+                win = box("win", zb - sgn * 0.01, zb - sgn * 0.03, 1.2 + fl * 3.2, 3.0 + fl * 3.2,
+                          lit if rng.random() < ext.get("lit", 0.08) else dark, wx - 0.45, wx + 0.45)
+                win.visible_shadow = False
+        x += w
+
+
+def _lightwell(spec, rng, ext, side):
+    """Outside a basement window: a narrow shaft open to the sky, wet tiles at the bottom, brick
+    climbing to street level, a few plants in pots, rain running down the far wall."""
+    (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
+    t = builders.WALL_T
+    depth = ext.get("depth", 1.6)
+    top = ext.get("top", 6.0)
+    brick = builders.material({"ph": ext.get("brick", "red_brick_03"), "tint": [0.4, 0.34, 0.3]})
+    tiles = builders.material({"color": [0.08, 0.085, 0.09], "rough": 0.15, "noise": 0.3, "noise_scale": 5.0})
+    if side == "west":
+        xa, xb = x0 - t - depth, x0 - t
+        builders.box_aabb("well_floor", (xa, -0.3, z0), (xb, -0.05, z1), tiles)
+        builders.box_aabb("well_wall", (xa - 0.3, -0.3, z0 - 0.3), (xa, top, z1 + 0.3), brick)
+        builders.box_aabb("well_end_n", (xa, -0.3, z0 - 0.3), (xb, top, z0), brick)
+        builders.box_aabb("well_end_s", (xa, -0.3, z1), (xb, top, z1 + 0.3), brick)
+        spots = [(xa + depth * 0.4, z0 + (z1 - z0) * f) for f in (0.2, 0.55, 0.85)]
+    elif side == "east":
+        xa, xb = x1 + t, x1 + t + depth
+        builders.box_aabb("well_floor", (xa, -0.3, z0), (xb, -0.05, z1), tiles)
+        builders.box_aabb("well_wall", (xb, -0.3, z0 - 0.3), (xb + 0.3, top, z1 + 0.3), brick)
+        builders.box_aabb("well_end_n", (xa, -0.3, z0 - 0.3), (xb, top, z0), brick)
+        builders.box_aabb("well_end_s", (xa, -0.3, z1), (xb, top, z1 + 0.3), brick)
+        spots = [(xb - depth * 0.4, z0 + (z1 - z0) * f) for f in (0.2, 0.55, 0.85)]
+    else:
+        raise NotImplementedError("light well on " + side)
+    for (px, pz), kind in zip(spots, ext.get("plants", ["potted_plant_02", "potted_plant_01", "potted_plant_02"])):
+        try:
+            ref = kind if kind.startswith("ph:") else "ph:" + kind
+            model(builders.empty_at("plant", (px, -0.05, pz), rng.uniform(0, 360)), {"model": ref, "scale": 0.8}, 0, 0, 0)
+        except FileNotFoundError:
+            pass
 
 
 def stair_stub(spec, side, op):

@@ -868,10 +868,10 @@ std::string Game::stage(int i) {
                 name = "cellar_door_stairs";
             } else {                // down in the cellar: two of them come up out of the water
                 beat_room_ = "kelder";
-                beat_spawn_ = "from_gang";
+                beat_spawn_ = "from_souterrain";
                 finish_beat();
                 const RoomSpec& k = rooms_[size_t(room_)];
-                player_ = {k.bounds.x0 + 2.6f, k.bounds.z0 + 4.4f, 0.0f};
+                player_ = {k.bounds.x0 + 2.2f, k.bounds.z0 + 3.4f, kPi};   // facing the water gate
                 run(1.1f);
                 name = "kelder_rising";
             }
@@ -880,6 +880,58 @@ std::string Game::stage(int i) {
             for (const auto& e : enemies_)
                 TraceLog(LOG_INFO, "STAGE   %s at %.2f %.2f room %d active %d rise %.2f under %d state %d bang %.2f", e.id.c_str(), e.a.x,
                          e.a.z, e.room, int(e.active), e.rise, int(e.submerged), int(e.brain.state), e.bang_t);
+            staged_in_ = {};
+            break;
+        }
+        case 33: case 34: case 35: case 36: {
+            // The new rooms: the library door (the view through the crack; through it into the
+            // library), the stairs down into the souterrain, and the souterrain's door to the
+            // flooded kelder leant ajar.
+            auto stick_toward = [&](float wx, float wz, float tilt) {
+                Vector3 f = Vector3Subtract(cam_.target, cam_.position);
+                f.y = 0;
+                f = Vector3Normalize(f);
+                const float l = std::hypot(wx, wz);
+                return Vector2{(wx * -f.z + wz * f.x) / l * tilt, (wx * f.x + wz * f.z) / l * tilt};
+            };
+            int door = -1;
+            if (i == 33 || i == 34) {
+                door = doorway_of(room_index("gang"), "door_library");
+                const float dz = door >= 0 ? doorways_[size_t(door)].mid_z() : 1.2f;
+                player_ = {0.62f, dz, kPi / 2};   // at the library door, facing it (west)
+                cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+                if (i == 33) {
+                    staged_in_ = stick_toward(-1, 0, 0.5f);
+                    run(1.6f);
+                    name = "library_door_peek";
+                } else {
+                    interact();
+                    run(0.7f);
+                    staged_in_ = stick_toward(-1, 0, 0.5f);
+                    run(2.2f);
+                    name = "into_the_library";
+                }
+            } else {
+                beat_room_ = "souterrain";
+                beat_spawn_ = "from_gang";
+                finish_beat();
+                if (i == 35) {
+                    run(0.6f);
+                    name = "down_to_the_souterrain";
+                } else {
+                    door = doorway_of(room_, "door_kelder");
+                    const float dx = door >= 0 ? doorways_[size_t(door)].mid_x() : -2.1f;
+                    const float dz = door >= 0 ? doorways_[size_t(door)].mid_z() : 2.0f;
+                    player_ = {dx, dz - 0.62f, kPi};   // at the kelder door, facing it (south)
+                    enter_room(room_);
+                    cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+                    staged_in_ = stick_toward(0, 1, 0.5f);
+                    run(1.6f);
+                    name = "kelder_door_peek";
+                }
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s peek %d door %.2f", name.c_str(), player_.x, player_.z,
+                     spec_.id.c_str(), shot_.c_str(), peek_, door >= 0 ? leaves_[size_t(door)].angle : -9.0f);
             staged_in_ = {};
             break;
         }

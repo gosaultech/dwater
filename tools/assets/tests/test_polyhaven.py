@@ -36,6 +36,16 @@ class ReferenceTests(unittest.TestCase):
         spec = {"exterior": {"side": "north", "bricks": ["ph:red_brick_03"], "quay": {"ph": "cobblestone_01"}}}
         self.assertEqual(polyhaven.references(spec), {"red_brick_03": "texture", "cobblestone_01": "texture"})
 
+    def test_roof_and_beam_timber_are_found(self):
+        spec = {"roof": {"axis": "z", "eave": 1.1, "material": {"ph": "roof_planks"}, "timber": "ph:medieval_wood"},
+                "ceiling_beams": {"axis": "x", "spacing": 1.1, "material": {"ph": "dark_wood"}}}
+        self.assertEqual(polyhaven.references(spec), {"roof_planks": "texture", "medieval_wood": "texture",
+                                                      "dark_wood": "texture"})
+
+    def test_plants_are_models(self):
+        spec = {"exterior": {"side": "west", "lightwell": True, "plants": ["ph:potted_plant_01"]}}
+        self.assertEqual(polyhaven.references(spec), {"potted_plant_01": "model"})
+
     def test_plain_keys_are_not_assets(self):
         self.assertIsNone(polyhaven.ref_id("plaster"))
         self.assertIsNone(polyhaven.ref_id({"tint": [1, 1, 1]}))

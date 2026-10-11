@@ -1,5 +1,5 @@
 {
-  "_file": "damned_waters/game/data/rooms/gang.json \u2014 RoomSpec for the entrance hall. Single source of truth for Blender (render) and Godot (collision, cameras, triggers). Units: metres, Godot axes (Y up, north = -Z).",
+  "_file": "damned_waters/game/data/rooms/gang.json \u2014 RoomSpec for the entrance hall, modelled on reference photo 2 (the carved staircase hall) with the classic marble checker floor. Single source of truth for Blender (render) and the engine (collision, cameras, things). Units: metres, Y up, north = -Z; placed in the house at \"origin\".",
   "id": "gang",
   "display_name": "Entrance Hall",
   "storey": 0,
@@ -19,15 +19,54 @@
   },
   "height": 3.6,
   "materials": {
-    "floor": "marble_checker",
-    "wall": "plaster",
+    "floor": {
+      "ph": "marble_01",
+      "checker": 2.5,
+      "tint_a": [
+        0.92,
+        0.9,
+        0.86
+      ],
+      "tint_b": [
+        0.03,
+        0.03,
+        0.034
+      ],
+      "rough": 0.45
+    },
+    "wall": {
+      "ph": "plastered_wall",
+      "tint": [
+        0.8,
+        0.64,
+        0.45
+      ],
+      "bump": 0.9
+    },
     "wainscot": "delft_tiles",
     "wainscot_height": 1.15,
-    "ceiling": "plaster"
+    "ceiling": {
+      "ph": "plastered_wall",
+      "tint": [
+        0.72,
+        0.64,
+        0.52
+      ],
+      "bump": 0.5
+    }
   },
   "ceiling_beams": {
     "axis": "x",
-    "spacing": 1.25
+    "spacing": 1.25,
+    "material": {
+      "ph": "dark_wood",
+      "tint": [
+        0.3,
+        0.22,
+        0.17
+      ],
+      "scale": 0.6
+    }
   },
   "footsteps": "marble",
   "ambience": "amb_house",
@@ -67,6 +106,13 @@
           "width": 0.95,
           "height": 2.45,
           "hinge": "right"
+        },
+        {
+          "kind": "door",
+          "center": 1.2,
+          "width": 0.9,
+          "height": 2.3,
+          "hinge": "left"
         }
       ]
     },
@@ -83,7 +129,7 @@
   },
   "props": [
     {
-      "type": "stairs",
+      "type": "stair_open",
       "pos": [
         1.6,
         0.0,
@@ -94,7 +140,79 @@
         0.85,
         3.6,
         3.3
-      ]
+      ],
+      "rail_side": -1
+    },
+    {
+      "type": "kast",
+      "pos": [
+        1.62,
+        2.68,
+        3.08
+      ],
+      "yaw": 180,
+      "pitch": -137,
+      "roll": 0,
+      "size": [
+        0.8,
+        2.15,
+        0.5
+      ],
+      "collide": false,
+      "material": {
+        "ph": "dark_wood",
+        "tint": [
+          0.36,
+          0.29,
+          0.23
+        ],
+        "scale": 0.7
+      }
+    },
+    {
+      "type": "kast",
+      "pos": [
+        0.26,
+        0.0,
+        6.55
+      ],
+      "yaw": 90,
+      "size": [
+        1.0,
+        2.2,
+        0.5
+      ],
+      "material": {
+        "color": [
+          0.045,
+          0.13,
+          0.14
+        ],
+        "rough": 0.42,
+        "noise": 0.12
+      },
+      "panels": {
+        "pattern": "folk",
+        "color": [
+          0.05,
+          0.16,
+          0.17
+        ]
+      }
+    },
+    {
+      "type": "runner",
+      "pos": [
+        1.0,
+        0.0,
+        7.65
+      ],
+      "size": [
+        0.75,
+        0.012,
+        3.7
+      ],
+      "collide": false
     },
     {
       "type": "clock",
@@ -111,26 +229,31 @@
       ]
     },
     {
-      "type": "side_table",
+      "type": "model",
+      "model": "ph:ClassicConsole_01",
       "pos": [
-        0.25,
+        0.24,
         0.0,
         3.6
       ],
       "yaw": 90,
+      "scale": 0.8,
       "size": [
-        0.9,
-        0.8,
-        0.4
+        1.23,
+        0.76,
+        0.47
       ]
     },
     {
-      "type": "vase",
+      "type": "model",
+      "model": "ph:antique_ceramic_vase_01",
       "pos": [
-        0.25,
-        0.8,
-        3.3
+        0.24,
+        0.76,
+        3.2
       ],
+      "yaw": 90,
+      "scale": 0.75,
       "collide": false
     },
     {
@@ -147,58 +270,52 @@
       ]
     },
     {
-      "type": "painting",
+      "type": "model",
+      "model": "ph:fancy_picture_frame_02",
       "pos": [
-        2.08,
-        1.8,
+        2.055,
+        1.45,
         8.0
       ],
       "yaw": -90,
-      "size": [
-        0.7,
-        0.9,
-        0.05
-      ],
+      "scale": 1.0,
       "collide": false
     },
     {
-      "type": "painting",
+      "type": "model",
+      "model": "ph:fancy_picture_frame_01",
       "pos": [
-        0.02,
-        1.8,
+        0.012,
+        1.6,
         2.2
       ],
       "yaw": 90,
-      "size": [
-        0.6,
-        0.8,
-        0.05
-      ],
+      "scale": 1.0,
       "collide": false
     },
     {
-      "type": "painting",
+      "type": "model",
+      "model": "ph:hanging_picture_frame_02",
       "pos": [
-        0.02,
-        1.9,
-        5.0
+        0.018,
+        1.62,
+        5.05
       ],
       "yaw": 90,
-      "size": [
-        0.5,
-        0.6,
-        0.05
-      ],
+      "scale": 0.9,
       "collide": false
     },
     {
-      "type": "pendant_lamp",
+      "type": "model",
+      "model": "ph:lantern_chandelier_01",
       "pos": [
         1.0,
-        2.75,
+        2.78,
         7.4
       ],
-      "collide": false
+      "scale": 0.75,
+      "collide": false,
+      "shadow": false
     }
   ],
   "lights": [
@@ -206,7 +323,7 @@
       "kind": "point",
       "pos": [
         1.0,
-        2.68,
+        3.02,
         7.4
       ],
       "color": [
@@ -269,16 +386,16 @@
     {
       "id": "a",
       "pos": [
-        1.85,
-        3.25,
-        9.75
+        0.6,
+        3.2,
+        6.65
       ],
       "look_at": [
-        0.6,
-        0.8,
-        3.2
+        1.05,
+        0.5,
+        2.2
       ],
-      "fov": 58,
+      "fov": 62,
       "zone": {
         "min": [
           0.0,
@@ -286,27 +403,27 @@
         ],
         "max": [
           2.1,
-          5.7
+          5.9
         ]
       }
     },
     {
       "id": "b",
       "pos": [
-        1.2,
-        3.3,
-        5.3
+        1.75,
+        2.75,
+        5.45
       ],
       "look_at": [
-        0.2,
-        0.5,
-        9.4
+        0.6,
+        0.6,
+        9.6
       ],
-      "fov": 60,
+      "fov": 62,
       "zone": {
         "min": [
           0.0,
-          5.3
+          5.8
         ],
         "max": [
           2.1,
@@ -363,6 +480,14 @@
         0.9
       ],
       "yaw": 180
+    },
+    "from_library": {
+      "pos": [
+        0.7,
+        0.0,
+        1.2
+      ],
+      "yaw": -90
     }
   },
   "interactables": [
@@ -411,7 +536,7 @@
         0.15
       ],
       "radius": 0.9,
-      "target_room": "kelder",
+      "target_room": "souterrain",
       "target_spawn": "from_gang",
       "lock": "cellar_key",
       "locked_text": "The cellar door is locked. The keyhole is crusted green.",
@@ -446,7 +571,7 @@
       "count": 1,
       "pos": [
         0.25,
-        0.86,
+        0.77,
         3.85
       ],
       "radius": 0.9
@@ -462,6 +587,31 @@
         7.0
       ],
       "radius": 0.9
+    },
+    {
+      "id": "door_library",
+      "kind": "door",
+      "pos": [
+        0.15,
+        1.0,
+        1.2
+      ],
+      "radius": 0.9,
+      "target_room": "bibliotheek",
+      "target_spawn": "from_gang",
+      "peek": {
+        "pos": [
+          0.45,
+          1.62,
+          1.6
+        ],
+        "look_at": [
+          -4.8,
+          1.8,
+          -4.43
+        ],
+        "fov": 42
+      }
     }
   ],
   "enemies": [

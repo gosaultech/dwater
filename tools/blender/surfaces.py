@@ -6,6 +6,9 @@
 #                                      "rough": 1.0, "bump": 1.0, "rot": 90, "value": 1.0}
 #   * a plain painted or stained surface with a little life in it:
 #       {"color": [0.08, 0.08, 0.09], "rough": 0.5, "metal": 0.0, "noise": 0.15}
+#   * two hand-made patterns: {"pattern": "persian", "width": 0.8} (a woven runner) and
+#     {"pattern": "folk", "color": [...]} (Hindeloopen painting on a cupboard's panels)
+#   * a scan laid as a two-colour checkerboard: {"ph": "marble_01", "checker": 2.5, "tint_a": .., "tint_b": ..}
 # Box UVs in builders.py are in metres, so a texture's real size (from Poly Haven's metadata) maps
 # straight on: a 3.4 m parquet scan covers 3.4 m of floor.
 #
@@ -77,6 +80,19 @@ def pbr(nt, out, ref):
         mix.inputs["B"].default_value = (t[0] * value, t[1] * value, t[2] * value, 1.0)
         nt.links.new(col, mix.inputs["A"])
         col = mix.outputs["Result"]
+    if "checker" in ref:   # tiles laid in two colours (a marble checkerboard): the scan's veins in both
+        ck = nt.nodes.new("ShaderNodeTexChecker")
+        ck.inputs["Scale"].default_value = ref["checker"]
+        ck.inputs["Color1"].default_value = (*ref.get("tint_a", (0.9, 0.88, 0.84)), 1)
+        ck.inputs["Color2"].default_value = (*ref.get("tint_b", (0.02, 0.02, 0.024)), 1)
+        nt.links.new(tc.outputs["UV"], ck.inputs["Vector"])
+        mix = nt.nodes.new("ShaderNodeMix")
+        mix.data_type = "RGBA"
+        mix.blend_type = "MULTIPLY"
+        mix.inputs["Factor"].default_value = 1.0
+        nt.links.new(col, mix.inputs["A"])
+        nt.links.new(ck.outputs["Color"], mix.inputs["B"])
+        col = mix.outputs["Result"]
     nt.links.new(col, b.inputs["Base Color"])
     rough_src = None
     if "rough" in maps:
@@ -135,6 +151,117 @@ def painted(nt, out, ref):
     return b
 
 
+def _mix(nt, a, b, fac):
+    m = nt.nodes.new("ShaderNodeMix")
+    m.data_type = "RGBA"
+    nt.links.new(fac, m.inputs["Factor"])
+    for sock, v in (("A", a), ("B", b)):
+        if isinstance(v, tuple):
+            m.inputs[sock].default_value = (*v, 1)
+        else:
+            nt.links.new(v, m.inputs[sock])
+    return m.outputs["Result"]
+
+
+def _math(nt, op, a, b=None, clamp=False):
+    n = nt.nodes.new("ShaderNodeMath")
+    n.operation = op
+    n.use_clamp = clamp
+    for i, v in enumerate((a, b)):
+        if v is None:
+            continue
+        if isinstance(v, (int, float)):
+            n.inputs[i].default_value = v
+        else:
+            nt.links.new(v, n.inputs[i])
+    return n.outputs[0]
+
+
+def persian(nt, out, ref):
+    """A Persian runner, woven: a madder-red field of small repeating lozenges, a dark navy border
+    band between thin cream guard stripes, worn paler down the middle where feet go. UVs in metres,
+    centred across (u) the rug and along it (v); ref "width" is the rug's width (m)."""
+    w = ref.get("width", 0.8)
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    sep = nt.nodes.new("ShaderNodeSeparateXYZ")
+    nt.links.new(tc.outputs["UV"], sep.inputs["Vector"])
+    u, v = sep.outputs["X"], sep.outputs["Y"]
+    # distance in from the nearest long edge (0 at the edge; the rug's UVs are centred across it)
+    edge = _math(nt, "SUBTRACT", w / 2, _math(nt, "ABSOLUTE", u))
+    border = _math(nt, "LESS_THAN", edge, 0.11)
+    guard = _math(nt, "MULTIPLY", _math(nt, "GREATER_THAN", edge, 0.085), border)
+    rot = nt.nodes.new("ShaderNodeMapping")   # the field's lozenges: a checker turned 45 degrees
+    rot.inputs["Rotation"].default_value = (0, 0, math.radians(45))
+    nt.links.new(tc.outputs["UV"], rot.inputs["Vector"])
+    ck = nt.nodes.new("ShaderNodeTexChecker")
+    ck.inputs["Scale"].default_value = 9.0
+    ck.inputs["Color1"].default_value = (0.24, 0.035, 0.03, 1)
+    ck.inputs["Color2"].default_value = (0.16, 0.02, 0.025, 1)
+    nt.links.new(rot.outputs["Vector"], ck.inputs["Vector"])
+    vor = nt.nodes.new("ShaderNodeTexVoronoi")   # small cream knots at the lozenges' corners
+    vor.inputs["Scale"].default_value = 26.0
+    nt.links.new(tc.outputs["UV"], vor.inputs["Vector"])
+    knot = _math(nt, "LESS_THAN", vor.outputs["Distance"], 0.12)
+    field = _mix(nt, ck.outputs["Color"], (0.55, 0.45, 0.3), knot)
+    band = _mix(nt, (0.035, 0.045, 0.1), (0.62, 0.55, 0.42), guard)
+    col = _mix(nt, field, band, border)
+    wear = nt.nodes.new("ShaderNodeTexNoise")
+    wear.inputs["Scale"].default_value = 3.0
+    nt.links.new(tc.outputs["UV"], wear.inputs["Vector"])
+    mid = _math(nt, "MULTIPLY", _math(nt, "SUBTRACT", 1.0, _math(nt, "MINIMUM", _math(nt, "MULTIPLY", edge, 4.0), 1.0)), -1.0)
+    worn = _math(nt, "MULTIPLY", _math(nt, "ADD", mid, 1.0), wear.outputs["Fac"], clamp=True)
+    col = _mix(nt, col, (0.32, 0.22, 0.17), _math(nt, "MULTIPLY", worn, 0.45))
+    b = nt.nodes.new("ShaderNodeBsdfPrincipled")
+    nt.links.new(col, b.inputs["Base Color"])
+    b.inputs["Roughness"].default_value = 0.97
+    b.inputs["Sheen Weight"].default_value = 0.4
+    fibre = nt.nodes.new("ShaderNodeTexNoise")
+    fibre.inputs["Scale"].default_value = 180.0
+    nt.links.new(tc.outputs["UV"], fibre.inputs["Vector"])
+    bump = nt.nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.25
+    nt.links.new(fibre.outputs["Fac"], bump.inputs["Height"])
+    nt.links.new(bump.outputs["Normal"], b.inputs["Normal"])
+    nt.links.new(b.outputs[0], out.inputs["Surface"])
+    return b
+
+
+def folk(nt, out, ref):
+    """Hindeloopen folk painting on a cupboard's panels: a deep blue-green ground with red-and-cream
+    flowers and leafy scrolls, the varnish gone amber and crazed. Object coordinates (the panel's
+    own), so each panel carries its own posy."""
+    ground = tuple(ref.get("color", (0.05, 0.16, 0.17)))
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    mp = nt.nodes.new("ShaderNodeMapping")
+    mp.inputs["Scale"].default_value = (6.0, 6.0, 6.0)
+    nt.links.new(tc.outputs["Object"], mp.inputs["Vector"])
+    vor = nt.nodes.new("ShaderNodeTexVoronoi")   # flower heads
+    vor.inputs["Scale"].default_value = 1.6
+    nt.links.new(mp.outputs["Vector"], vor.inputs["Vector"])
+    d = vor.outputs["Distance"]
+    petal = _math(nt, "LESS_THAN", d, 0.22)
+    heart = _math(nt, "LESS_THAN", d, 0.08)
+    wave = nt.nodes.new("ShaderNodeTexWave")     # the leafy scrolls between them
+    wave.wave_type = "RINGS"
+    wave.inputs["Scale"].default_value = 3.2
+    wave.inputs["Distortion"].default_value = 6.0
+    nt.links.new(mp.outputs["Vector"], wave.inputs["Vector"])
+    leaf = _math(nt, "GREATER_THAN", wave.outputs["Fac"], 0.86)
+    col = _mix(nt, ground, (0.16, 0.22, 0.09), leaf)
+    col = _mix(nt, col, (0.42, 0.05, 0.04), petal)
+    col = _mix(nt, col, (0.7, 0.62, 0.45), heart)
+    varnish = nt.nodes.new("ShaderNodeTexNoise")
+    varnish.inputs["Scale"].default_value = 40.0
+    nt.links.new(tc.outputs["Object"], varnish.inputs["Vector"])
+    col = _mix(nt, col, (0.3, 0.2, 0.08), _math(nt, "MULTIPLY", varnish.outputs["Fac"], 0.35))
+    b = nt.nodes.new("ShaderNodeBsdfPrincipled")
+    nt.links.new(col, b.inputs["Base Color"])
+    b.inputs["Roughness"].default_value = 0.38
+    b.inputs["Coat Weight"].default_value = 0.4
+    nt.links.new(b.outputs[0], out.inputs["Surface"])
+    return b
+
+
 def is_ref(key):
     return isinstance(key, dict) or (isinstance(key, str) and key.startswith("ph:"))
 
@@ -142,6 +269,16 @@ def is_ref(key):
 def build(nt, out, key):
     if isinstance(key, str) or "ph" in key:
         return pbr(nt, out, key)
+    if "emit" in key:   # a lit sign, a pilot light: light of its own
+        e = nt.nodes.new("ShaderNodeEmission")
+        e.inputs["Color"].default_value = (*key["emit"], 1)
+        e.inputs["Strength"].default_value = key.get("strength", 5.0)
+        nt.links.new(e.outputs[0], out.inputs["Surface"])
+        return e
+    if key.get("pattern") == "persian":
+        return persian(nt, out, key)
+    if key.get("pattern") == "folk":
+        return folk(nt, out, key)
     return painted(nt, out, key)
 
 

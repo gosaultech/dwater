@@ -563,7 +563,8 @@ void Game::draw_status_ui() {
         if (known) shown.push_back(&r);
     }
     if (shown.empty()) {
-        text(f_italic_, "You haven't found the way down here.", 640, 360, 24, C_FAINT, 1);
+        text(f_italic_, storey > 0 ? "You haven't found the way up here." : "You haven't found the way down here.", 640, 360, 24,
+             C_FAINT, 1);
     } else {
         float x0 = 1e9f, z0 = 1e9f, x1 = -1e9f, z1 = -1e9f;
         for (const auto* r : shown) {

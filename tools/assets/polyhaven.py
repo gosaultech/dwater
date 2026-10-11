@@ -54,7 +54,7 @@ def references(spec: dict) -> dict[str, str]:
             out.setdefault(i, kind)
         elif isinstance(v, dict):
             for k, x in v.items():
-                walk(x, "model" if k == "model" else kind)
+                walk(x, "model" if k in ("model", "plants") else kind)
         elif isinstance(v, list):
             for x in v:
                 walk(x, kind)
@@ -64,8 +64,9 @@ def references(spec: dict) -> dict[str, str]:
         walk(p, "texture")
     for w in spec.get("walls", {}).values():
         walk(w, "texture")
-    if isinstance(spec.get("exterior"), dict):
-        walk(spec["exterior"], "texture")
+    for key in ("exterior", "roof", "ceiling_beams"):   # the outside world, an attic's roof, beams
+        if isinstance(spec.get(key), dict):
+            walk(spec[key], "texture")
     return out
 
 

@@ -1,0 +1,596 @@
+{
+  "_file": "damned_waters/game/data/rooms/bibliotheek.json \u2014 RoomSpec for the library at the back of the house, modelled on reference photo 1 (the double-height library). Single source of truth for Blender (render) and the engine (collision, cameras, things). Units: metres, Y up, north = -Z; placed in the house at \"origin\".",
+  "id": "bibliotheek",
+  "display_name": "Library",
+  "storey": 0,
+  "origin": [
+    -6.98,
+    -4.43
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      6.68,
+      6.7
+    ]
+  },
+  "height": 5.4,
+  "materials": {
+    "floor": {
+      "ph": "herringbone_parquet",
+      "tint": [
+        0.62,
+        0.52,
+        0.44
+      ]
+    },
+    "wall": {
+      "ph": "plastered_wall",
+      "tint": [
+        0.8,
+        0.79,
+        0.76
+      ],
+      "bump": 0.6
+    },
+    "ceiling": {
+      "ph": "plastered_wall",
+      "tint": [
+        0.78,
+        0.77,
+        0.74
+      ],
+      "bump": 0.4
+    },
+    "skirting": {
+      "color": [
+        0.75,
+        0.74,
+        0.71
+      ],
+      "rough": 0.45,
+      "noise": 0.02
+    },
+    "skirting_height": 0.14
+  },
+  "ceiling_beams": {
+    "axis": "x",
+    "spacing": 1.1,
+    "material": {
+      "ph": "dark_wood",
+      "tint": [
+        0.38,
+        0.3,
+        0.24
+      ],
+      "scale": 0.6
+    }
+  },
+  "footsteps": "wood",
+  "ambience": "amb_house",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.012,
+      0.016,
+      0.03
+    ],
+    "strength": 1.0
+  },
+  "exterior": {
+    "side": "north",
+    "garden": true,
+    "depth": 9.0,
+    "trees": 4,
+    "lit": 0.1
+  },
+  "walls": {
+    "north": {
+      "openings": [
+        {
+          "kind": "window",
+          "center": 1.55,
+          "width": 1.15,
+          "sill": 0.55,
+          "height": 3.9
+        },
+        {
+          "kind": "window",
+          "center": 3.34,
+          "width": 1.15,
+          "sill": 0.55,
+          "height": 3.9
+        },
+        {
+          "kind": "window",
+          "center": 5.13,
+          "width": 1.15,
+          "sill": 0.55,
+          "height": 3.9
+        }
+      ]
+    },
+    "east": {
+      "openings": [
+        {
+          "kind": "door",
+          "center": 5.63,
+          "width": 0.9,
+          "height": 2.3,
+          "hinge": "right"
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "bookcase",
+      "pos": [
+        0.22,
+        0.0,
+        3.0
+      ],
+      "yaw": 90,
+      "size": [
+        4.6,
+        5.3500000000000005,
+        0.42
+      ],
+      "seed": 11
+    },
+    {
+      "type": "ladder",
+      "pos": [
+        0.62,
+        0.0,
+        2.2
+      ],
+      "yaw": 90,
+      "size": [
+        0.5,
+        4.4,
+        0.75
+      ],
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        0.12,
+        0.0,
+        6.0
+      ],
+      "size": [
+        0.24,
+        5.4,
+        1.3
+      ],
+      "material": {
+        "ph": "dark_wood",
+        "tint": [
+          0.55,
+          0.38,
+          0.26
+        ],
+        "scale": 0.35,
+        "rot": 90
+      }
+    },
+    {
+      "type": "birdcage",
+      "pos": [
+        1.1,
+        1.55,
+        5.75
+      ],
+      "size": [
+        0.62,
+        1.15,
+        0.62
+      ],
+      "chain": 2.7,
+      "birds": 9,
+      "collide": false
+    },
+    {
+      "type": "fireplace_classic",
+      "pos": [
+        6.5,
+        0.0,
+        3.1
+      ],
+      "yaw": -90,
+      "size": [
+        1.6,
+        1.15,
+        0.3
+      ]
+    },
+    {
+      "type": "sofa",
+      "pos": [
+        3.7,
+        0.0,
+        3.4
+      ],
+      "yaw": 90,
+      "size": [
+        2.6,
+        0.82,
+        0.98
+      ],
+      "material": {
+        "ph": "hessian_230",
+        "tint": [
+          0.55,
+          0.56,
+          0.58
+        ]
+      }
+    },
+    {
+      "type": "rug",
+      "pos": [
+        4.6,
+        0.0,
+        3.3
+      ],
+      "size": [
+        2.6,
+        0.01,
+        3.2
+      ],
+      "collide": false,
+      "material": {
+        "ph": "dirty_carpet",
+        "tint": [
+          0.85,
+          0.8,
+          0.72
+        ]
+      }
+    },
+    {
+      "type": "round_table",
+      "pos": [
+        3.3,
+        0.0,
+        1.35
+      ],
+      "size": [
+        1.3,
+        0.76,
+        1.3
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:dining_chair_02",
+      "pos": [
+        2.45,
+        0.0,
+        1.35
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "size": [
+        0.5,
+        0.9,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:dining_chair_02",
+      "pos": [
+        4.15,
+        0.0,
+        1.35
+      ],
+      "yaw": -90,
+      "scale": 1.0,
+      "size": [
+        0.5,
+        0.9,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:dining_chair_02",
+      "pos": [
+        3.3,
+        0.0,
+        2.2
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "size": [
+        0.5,
+        0.9,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:vintage_oil_lamp",
+      "pos": [
+        3.15,
+        0.76,
+        1.3
+      ],
+      "scale": 0.55,
+      "shadow": false,
+      "collide": false
+    },
+    {
+      "type": "candlestick",
+      "pos": [
+        6.47,
+        1.17,
+        2.7
+      ],
+      "size": [
+        0.1,
+        0.5,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "curtain",
+      "pos": [
+        0.75,
+        0.0,
+        0.13
+      ],
+      "size": [
+        0.7,
+        4.7,
+        0.12
+      ],
+      "side": "left",
+      "tieback": 1.2,
+      "collide": false,
+      "material": {
+        "ph": "hessian_230",
+        "tint": [
+          0.42,
+          0.4,
+          0.38
+        ]
+      }
+    },
+    {
+      "type": "curtain",
+      "pos": [
+        5.95,
+        0.0,
+        0.13
+      ],
+      "size": [
+        0.7,
+        4.7,
+        0.12
+      ],
+      "side": "right",
+      "tieback": 1.2,
+      "collide": false,
+      "material": {
+        "ph": "hessian_230",
+        "tint": [
+          0.42,
+          0.4,
+          0.38
+        ]
+      }
+    }
+  ],
+  "lights": [
+    {
+      "kind": "point",
+      "pos": [
+        3.15,
+        1.02,
+        1.3
+      ],
+      "color": [
+        1.0,
+        0.6,
+        0.28
+      ],
+      "blender_power": 22,
+      "godot_energy": 0.9,
+      "range": 7,
+      "radius": 0.03,
+      "flicker": true
+    },
+    {
+      "kind": "point",
+      "pos": [
+        6.45,
+        1.72,
+        2.7
+      ],
+      "color": [
+        1.0,
+        0.62,
+        0.32
+      ],
+      "blender_power": 3,
+      "godot_energy": 0.3,
+      "range": 4,
+      "radius": 0.01,
+      "flicker": true
+    },
+    {
+      "kind": "sun",
+      "dir_from": [
+        0.25,
+        0.5,
+        -1.0
+      ],
+      "color": [
+        0.55,
+        0.66,
+        1.0
+      ],
+      "blender_power": 1.4,
+      "godot_energy": 0.35,
+      "angle": 2.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        5.7,
+        1.5,
+        6.3
+      ],
+      "look_at": [
+        2.2,
+        2.0,
+        0.7
+      ],
+      "fov": 66,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          6.68,
+          4.7
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        0.9,
+        3.9,
+        0.75
+      ],
+      "look_at": [
+        5.0,
+        0.7,
+        5.7
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          4.4
+        ],
+        "max": [
+          6.68,
+          6.7
+        ]
+      },
+      "priority": 2
+    }
+  ],
+  "spawns": {
+    "from_gang": {
+      "pos": [
+        6.1,
+        0.0,
+        5.63
+      ],
+      "yaw": 90
+    }
+  },
+  "interactables": [
+    {
+      "id": "door_gang",
+      "kind": "door",
+      "pos": [
+        6.53,
+        1.0,
+        5.63
+      ],
+      "radius": 0.9,
+      "target_room": "gang",
+      "target_spawn": "from_library",
+      "peek": {
+        "pos": [
+          6.38,
+          1.62,
+          5.93
+        ],
+        "look_at": [
+          7.98,
+          1.0,
+          4.43
+        ],
+        "fov": 42
+      }
+    },
+    {
+      "id": "birdcage",
+      "kind": "examine",
+      "pos": [
+        1.1,
+        1.2,
+        5.75
+      ],
+      "radius": 1.1,
+      "text": "Parrots, stuffed and wired to their perches. Every one of them has its head turned to the door."
+    },
+    {
+      "id": "shelves",
+      "kind": "examine",
+      "pos": [
+        0.6,
+        1.2,
+        3.6
+      ],
+      "radius": 1.0,
+      "text": "The canal has climbed the lowest shelf. The spines are swollen; the titles have run."
+    },
+    {
+      "id": "ammo_table",
+      "kind": "pickup",
+      "item": "handgun_ammo",
+      "count": 15,
+      "pos": [
+        3.6,
+        0.77,
+        1.15
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "ehbo_shelf",
+      "kind": "pickup",
+      "item": "first_aid",
+      "count": 1,
+      "pos": [
+        0.42,
+        1.08,
+        4.9
+      ],
+      "radius": 0.9
+    }
+  ],
+  "enemies": [
+    {
+      "id": "lezer",
+      "kind": "verdronkene",
+      "pos": [
+        3.3,
+        0.0,
+        0.55
+      ],
+      "yaw": 180
+    }
+  ],
+  "render": {
+    "exposure": 1.4
+  }
+}
