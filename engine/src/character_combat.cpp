@@ -354,6 +354,116 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
     reloading.on = false;
     close_w_ = 0;
     pump = 0;
+    // The recoil pad against his coat as the skin really is (goal.pad_press): the oval plates are
+    // trimmed at their edges, and the shoulder pocket is right at the torso's edge, where the chest
+    // meets the shoulder and the collar. So the coat's own vertices round the pocket are skinned
+    // afresh each time the search moves him (the raised arm reshapes the shoulder), and points over
+    // the pad and up the stock past the comb are held against them: like pressing a stamp to a
+    // cushion and looking at where it sinks. The coat is a shell over the hoodie: judged by the faces looking out, each
+    // garment on its own (a shell's inner face would call a point in the hollow behind it clear,
+    // and a point inside the jacket is in it whatever the hoodie under it says); and also as
+    // --clearance judges it, by whichever face is nearest. The deeper of the two counts.
+    struct CoatPoint { int j[4]; float w[4]; Vector3 rel[4], n; int layer; bool outer; };
+    std::vector<CoatPoint> coat;
+    std::vector<Vector3> pad, coat_at, coat_n;
+    if (goal.pad_press > 0) {
+        // The coat round his right shoulder, generously (the raised arm reshapes it, and the stock
+        // may meet it anywhere from the collar to the armpit): every vertex of it within 35 cm of
+        // the shoulder at rest. Each time, only those near the stock are looked at closely.
+        auto bone_near = [&](Vector3 p) {   // the nearest point of his skeleton there (the spine, collar, shoulder, upper arm)
+            const int seg[5][2] = {{J_SPINE, J_CHEST}, {J_CHEST, J_NECK}, {J_NECK, J_HEAD}, {J_CHEST, J_SHO_R}, {J_SHO_R, J_ELB_R}};
+            Vector3 best = rest_[J_CHEST];
+            for (const auto& sg : seg) {
+                const Vector3 a = rest_[sg[0]], ab = Vector3Subtract(rest_[sg[1]], a);
+                const float t = std::clamp(Vector3DotProduct(Vector3Subtract(p, a), ab) / std::max(Vector3LengthSqr(ab), 1e-8f), 0.0f, 1.0f);
+                const Vector3 c = Vector3Add(a, Vector3Scale(ab, t));
+                if (Vector3DistanceSqr(p, c) < Vector3DistanceSqr(p, best)) best = c;
+            }
+            return best;
+        };
+        for (size_t layer = 0; layer < skinned_.size(); ++layer) {
+            const Skinned& s = skinned_[layer];
+            if (R_BODY >= int(s.by_region.size()) || !s.mesh.boneIds || !s.mesh.normals) continue;
+            for (int v : s.by_region[R_BODY]) {
+                const Vector3 p{s.mesh.vertices[v * 3], s.mesh.vertices[v * 3 + 1], s.mesh.vertices[v * 3 + 2]};
+                if (Vector3Distance(p, rest_[J_SHO_R]) > 0.35f) continue;
+                const Vector3 nr{s.mesh.normals[v * 3], s.mesh.normals[v * 3 + 1], s.mesh.normals[v * 3 + 2]};
+                CoatPoint c{};
+                c.layer = int(layer);
+                c.outer = Vector3DotProduct(nr, Vector3Subtract(p, bone_near(p))) > 0;   // (not a shell's inner face)
+                for (int k = 0; k < 4; ++k) {
+                    c.j[k] = s.mesh.boneIds[v * 4 + k];
+                    c.w[k] = s.mesh.boneWeights[v * 4 + k];
+                    c.rel[k] = Vector3Subtract(p, rest_[c.j[k]]);
+                }
+                c.n = nr;
+                coat.push_back(c);
+            }
+        }
+        // The pad closely, and the stock from it up past the comb (where the cheek goes down on it,
+        // by his collar) more lightly: the gun as built, before the hold.
+        const cast::GunParts built = cast::r870(MatrixIdentity());
+        std::vector<Vector3> on_pad, on_stock;
+        for (size_t i = 0; i < built.fixed.count(); ++i) {
+            const Vector3 p{built.fixed.pos[i * 3], built.fixed.pos[i * 3 + 1], built.fixed.pos[i * 3 + 2]};
+            const float u = (-0.0947f - p.y) * 1000;
+            if (u < -296) on_pad.push_back(p);
+            else if (u < -140) on_stock.push_back(p);
+        }
+        for (size_t i = 0, every = std::max<size_t>(1, on_pad.size() / 200); i < on_pad.size(); i += every) pad.push_back(on_pad[i]);
+        for (size_t i = 0, every = std::max<size_t>(1, on_stock.size() / 100); i < on_stock.size(); i += every) pad.push_back(on_stock[i]);
+        coat_at.resize(coat.size());
+        coat_n.resize(coat.size());
+    }
+    // (A line down the stock, from the pad's middle to the comb, and how far the points are from it: to
+    // look only at the coat near the stock.)
+    const Vector3 pad_mid = cast::r870_at(-312, -100), comb = cast::r870_at(-140, -60);
+    auto off_line = [](Vector3 p, Vector3 a, Vector3 b) {
+        const Vector3 ab = Vector3Subtract(b, a);
+        const float t = std::clamp(Vector3DotProduct(Vector3Subtract(p, a), ab) / std::max(Vector3LengthSqr(ab), 1e-8f), 0.0f, 1.0f);
+        return Vector3Distance(p, Vector3Add(a, Vector3Scale(ab, t)));
+    };
+    float pad_r = 0;
+    for (const Vector3& b : pad) pad_r = std::max(pad_r, off_line(b, pad_mid, comb));
+    std::vector<int> near_pad;
+    float pad_in = 0;   // how far the pad is into his coat (m; below 0: clear of it by that much)
+    auto pad_depth = [&](const Matrix& G) {
+        const Vector3 mid = Vector3Transform(pad_mid, G), top = Vector3Transform(comb, G);
+        near_pad.clear();
+        for (size_t i = 0; i < coat.size(); ++i) {
+            const CoatPoint& c = coat[i];
+            Vector3 p{};
+            for (int k = 0; k < 4; ++k)
+                if (c.w[k] > 0) p = Vector3Add(p, Vector3Scale(Vector3Transform(c.rel[k], W_[c.j[k]]), c.w[k]));
+            if (off_line(p, mid, top) > pad_r + 0.05f) continue;
+            Vector3 n{};
+            for (int k = 0; k < 4; ++k)
+                if (c.w[k] > 0) n = Vector3Add(n, Vector3Scale(rotate_only(c.n, W_[c.j[k]]), c.w[k]));
+            coat_at[i] = p;
+            coat_n[i] = Vector3Normalize(n);
+            near_pad.push_back(int(i));
+        }
+        float worst = -0.05f;   // (signed: below 0, the pad is that far clear of the coat at its nearest)
+        constexpr int LAYERS = 8;
+        for (const Vector3& b : pad) {
+            const Vector3 p = Vector3Transform(b, G);
+            float best[LAYERS], any = 0.05f * 0.05f;
+            int at[LAYERS], nearest = -1;
+            for (int l = 0; l < LAYERS; ++l) { best[l] = 0.05f * 0.05f; at[l] = -1; }
+            for (int i : near_pad) {
+                const float d2 = Vector3DistanceSqr(p, coat_at[size_t(i)]);
+                if (d2 < any) { any = d2; nearest = i; }
+                if (!coat[size_t(i)].outer) continue;
+                const int l = std::min(coat[size_t(i)].layer, LAYERS - 1);
+                if (d2 < best[l]) { best[l] = d2; at[l] = i; }
+            }
+            auto depth = [&](int i) { return Vector3DotProduct(Vector3Subtract(coat_at[size_t(i)], p), coat_n[size_t(i)]); };
+            for (int l = 0; l < LAYERS; ++l)   // (the deepest it is into any one garment)
+                if (at[l] >= 0) worst = std::max(worst, depth(at[l]));
+            if (nearest >= 0) worst = std::max(worst, depth(nearest));   // (and as --clearance has it)
+        }
+        return worst;
+    };
     float gaps[3]{};   // how far off the butt, the left hand and the eye end up (m)
     Vector3 eye_g{};   // the eye in the gun's measure: u v w (mm)
     float look = 0, roll = 0;   // the face: how far it turns from the aim, and how far it tips over
@@ -388,7 +498,7 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
         gaps[2] = 0.001f * Vector3Length({eye_u.off(eye_g.x), eye_v.off(eye_g.y), eye_w.off(eye_g.z)});
         parts[0] = 600.0f * (1.0f - Vector3DotProduct(bore, aim));
         parts[1] = 4000.0f * gaps[0] * gaps[0];
-        parts[2] = (support_ ? (cheek ? 4000.0f : 40000.0f) : 1000.0f) * gaps[1] * gaps[1];   // (carried low: the left hand on the wood, not near it)
+        parts[2] = (support_ ? (cheek && goal.pad_press <= 0 ? 4000.0f : 40000.0f) : 1000.0f) * gaps[1] * gaps[1];   // (carried low, or the pad on the coat: the left hand on the wood, not near it)
         parts[3] = cheek ? 3000.0f * gaps[2] * gaps[2] : 0.0f;
         // The elbows down, the modern way: the right one dropped under the stock rather than winged
         // out to make a pocket, the left one under the fore-end.
@@ -431,6 +541,11 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
             if (!cheek)   // (carried low, the comb lies along his chest by the armpit: the whole stock clear of the coat)
                 for (float k : {0.08f, 0.14f, 0.2f, 0.4f}) in = std::max(in, torso_in(Vector3Transform(Vector3Lerp(butt, belly, k), G), 0.04f));
             parts[8] = 40000.0f * std::max(in, 0.0f) * std::max(in, 0.0f) + 400.0f * std::max(in, 0.0f);
+            if (goal.pad_press > 0) {   // the pad against the coat, pressing it in no more than a few millimetres
+                pad_in = pad_depth(G);
+                const float over = std::max(0.0f, pad_in - goal.pad_press), clear = std::max(0.0f, -pad_in - 0.002f);
+                parts[8] += 40000.0f * over * over + 400.0f * over + 200000.0f * clear * clear;   // (against it, not off it)
+            }
         }
         if (loading) {
             support_ = &grips::SHOTGUN_LEFT;
@@ -463,6 +578,19 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
         }
         return parts[0] + parts[1] + parts[2] + parts[3] + parts[4] + parts[5] + parts[6] + parts[7] + parts[8] + parts[9];
     };
+    // The pose table as it is, scored the same way (to compare the fit with).
+    char was[320] = "";
+    {
+        const float table[K] = {T[J_SHO_R].x, T[J_SHO_R].y, T[J_SHO_R].z, T[J_ELB_R].x, T[J_WRI_R].x, T[J_WRI_R].y, T[J_WRI_R].z,
+                                T[J_SHO_L].x, T[J_SHO_L].y, T[J_SHO_L].z, T[J_ELB_L].x, T[J_WRI_L].x, T[J_WRI_L].z,
+                                T[J_NECK].x, T[J_NECK].y, T[J_NECK].z, 0, T[J_HEAD].x, T[J_HEAD].y, T[J_HEAD].z,
+                                T[J_SPINE].y, T[J_CHEST].x, T[J_CHEST].y};
+        const float c = eval(table);
+        std::snprintf(was, sizeof was,
+                      "\n  (the pose table as it is: cost %.4f, butt %.1f cm off the pocket, the pad %.0f mm into his coat; eye %.1f cm off"
+                      " (u %.0f v %.0f w %.0f mm), face %.0f deg off the aim, tipped %.0f deg)",
+                      c, gaps[0] * 100, pad_in * 1000, gaps[2] * 100, eye_g.x, eye_g.y, eye_g.z, look * RAD2DEG, roll * RAD2DEG);
+    }
     unsigned rng = 0x2545F491u;
     auto rnd = [&rng]() { rng ^= rng << 13; rng ^= rng >> 17; rng ^= rng << 5; return float(rng & 0xFFFFFF) / 16777215.0f; };
     // The first start is fixed (never the pose tables, which hold the last fit), so the tool gives
@@ -499,7 +627,23 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
         }
         if (cur < best) { best = cur; std::copy(q, q + K, bestq); }
     }
-    eval(bestq);
+    for (float& v : bestq) v = std::round(v * 1000) / 1000;   // (as the pose table will have it)
+    best = eval(bestq);
+    // The check --clearance makes, on the whole of his skin as this pose has it: it should agree.
+    char checked[320] = "";
+    {   // (and where the butt came to rest, as a pocket: from the shoulder joint, in the chest's frame)
+        const Matrix G = MatrixMultiply(shotgun_hold(), W_[J_WRI_R]);
+        Matrix C = W_[J_CHEST];
+        C.m12 = C.m13 = C.m14 = 0;
+        const Vector3 at = Vector3Transform(Vector3Subtract(Vector3Transform(butt, G), joint(J_SHO_R)), MatrixTranspose(C));
+        int n = std::snprintf(checked, sizeof checked, "\n  (the butt came to rest at {%.3f, %.3f, %.3f} from the shoulder: as a pocket)", at.x, at.y, at.z);
+        if (goal.pad_press > 0) {
+            for (int j = 0; j < J_COUNT; ++j) bones_[j] = MatrixMultiply(MatrixTranslate(-rest_[j].x, -rest_[j].y, -rest_[j].z), W_[j]);
+            std::snprintf(checked + n, sizeof checked - size_t(n),
+                          "\n  (--clearance's check of it: the gun %.0f mm into his body; the pad measured at %d points against %d of the coat's)",
+                          clearance().gun.depth * 1000, int(pad.size()), int(coat.size()));
+        }
+    }
     const float* q = bestq;
     // The left arm for the pose table: as the IK left it (so it eases in from close by), or as searched.
     Vector3 sho_l{q[7], q[8], q[9]}, wri_l{q[11], 0, q[12]};
@@ -520,17 +664,18 @@ std::string Character::fit_shotgun(const ShotgunFit& goal) {
                   "cost %.4f (bore %.4f butt %.4f hand %.4f eye %.4f elbow %.4f wrist %.4f strain %.4f face %.4f into %.4f left wrist %.4f)\n"
                   "  gaps: butt %.1f cm, left hand %.1f cm, eye %.1f cm (u %.0f v %.0f w %.0f mm); face %.0f deg off the aim,"
                   " tipped %.0f deg\n"
-                  "  wrists L / R: swing %.0f / %.0f deg, twist %.0f / %.0f deg\n"
+                  "  wrists L / R: swing %.0f / %.0f deg, twist %.0f / %.0f deg; the pad %.0f mm into his coat (below 0: clear of it)%s\n"
                   "  SHO_R {%.3f, %.3f, %.3f} ELB_R %.3f WRI_R {%.3f, %.3f, %.3f}\n"
                   "  SHO_L {%.3f, %.3f, %.3f} ELB_L %.3f WRI_L {%.3f, %.3f, %.3f}%s\n"
                   "  NECK {%.3f, %.3f, %.3f} HEAD {%.3f, %.3f, %.3f} SPINE.y %.3f CHEST {%.3f, %.3f}",
                   best, parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7], parts[8], parts[9],   //
                   gaps[0] * 100, gaps[1] * 100, gaps[2] * 100, eye_g.x, eye_g.y, eye_g.z, look * RAD2DEG, roll * RAD2DEG,
-                  wst[0].x * RAD2DEG, wst[1].x * RAD2DEG, wst[0].y * RAD2DEG, wst[1].y * RAD2DEG,
+                  wst[0].x * RAD2DEG, wst[1].x * RAD2DEG, wst[0].y * RAD2DEG, wst[1].y * RAD2DEG, pad_in * 1000,
+                  goal.pad_press > 0 ? " (as his skin is)" : " (not measured)",
                   q[0], q[1], q[2], q[3], q[4], q[5], q[6],                                             // the right arm
                   sho_l.x, sho_l.y, sho_l.z, elb_l, wri_l.x, wri_l.y, wri_l.z, support_ ? " (as the IK left it)" : "",
                   q[13], q[14], q[15], q[17], q[18], q[19], q[20], q[21], q[22]);                       // the head and back
-    return buf;
+    return std::string(buf) + was + checked;
 }
 
 // ── A tool: fitting the pistol in both hands ─────────────────────────────────────

@@ -124,7 +124,8 @@ The way a shooting instructor would check it, and fitted rather than posed by ey
   down. The modern isosceles: both arms out but bent about 40 degrees, never locked, the elbows
   hanging down under the gun; the gun brought up to the eye rather than the head down to it.
 - **The 870.** The right hand shakes hands with the stock's wrist (thumb round it, not along
-  the top), the butt in the shoulder pocket, the cheek down on the comb, and the elbows down:
+  the top), the butt in the shoulder pocket against his coat (not through it: below), the cheek
+  down on the comb, and the elbows down:
   the right one dropped under the stock rather than winged out to make a pocket. The left hand holds the
   fore-end across the palm on a slant, fingers round its right side, thumb along its left, and
   goes back and forth with it when he racks the pump.
@@ -253,12 +254,25 @@ notices. Three things keep the arms honest.
   `together`), and the end of each sleeve follows the wrist a little, so a bent wrist's skin
   never pokes through the cuff.
 
+- **The butt against the coat, not through it** (`ShotgunFit::pad_press`, `--fit870`). The
+  shoulder pocket is right at the torso's edge, where the chest meets the shoulder and the collar,
+  and the oval plates are trimmed there; so the 870's aim is fitted against the coat's own skin:
+  its vertices round the shoulder, skinned afresh as the search moves him, held against points
+  over the recoil pad and up the stock past the comb. Like pressing a stamp onto a cushion and
+  looking at where it sinks. The coat is a shell over the hoodie, so each garment is judged on
+  its own by its outward faces (a shell's inner face would call a point in the hollow behind it
+  clear), and also by whichever face is nearest, as `--clearance` judges it; the deeper counts.
+  The pad must touch (no more than 2 mm clear) and press in no more than 8 mm. The pocket the
+  search is pulled toward is where the pad comes to rest (the fit reports it), just inboard of the
+  shoulder, between it and the collarbone, as a real one is.
+
 Two tools check it and tune it:
 
 ```bash
 ../build/macos/damned_waters --clearance    # play each way he carries a gun (standing, walking, running, raising
-                                            # it and lowering it) and every reload through, frame by frame: how deep
-                                            # the arms, hands and gun go into the body (and each other), both wrists,
+                                            # it, aimed and settled, lowering it) and every reload through, frame by
+                                            # frame: how deep the arms, hands and gun go into the body (and each other;
+                                            # for the gun, where along it and how many of its points), both wrists,
                                             # and where the trigger finger is (DW_CLEAR_ONLY=stance or reload: half)
 ../build/macos/damned_waters --fitreload    # search where the pistol is brought in to reload (least wrist strain,
                                             # nothing through anything); paste the result into ReloadShape

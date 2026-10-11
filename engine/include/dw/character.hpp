@@ -134,6 +134,9 @@ public:
         // low ready, carried a long time, mustn't strain them more than the aim does.
         float wrist_easy = 0;
         bool turn_as_aim = false;                 // his back turned about as he aims, so raising the gun is mostly the arms
+        // The most the recoil pad may press into his coat (m), measured against the coat's own skin
+        // round the shoulder pocket; 0: not measured (the pocket goal alone places the butt).
+        float pad_press = 0;
     };
     std::string fit_shotgun(const ShotgunFit& goal);
     // A tool (--fitpistol): the pistol in both hands, thumbs forward. Search the right arm and its

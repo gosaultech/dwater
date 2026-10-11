@@ -124,6 +124,15 @@ int main(int argc, char** argv) {
     } else if (fit870) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);
         dw::Character::ShotgunFit aim, low, reload;
+        // Aiming: the pad in the shoulder pocket against his coat, pressing it a few millimetres,
+        // not through it (measured against the coat's own skin). The pocket is where the pad comes
+        // to rest on the coat with the cheek on the comb: just inboard of the shoulder, toward the
+        // collarbone. The wrists as cared for as at the low ready.
+        aim.pad_press = 0.008f;
+        aim.pocket = {-0.075f, 0.015f, -0.167f};
+        aim.wrist_easy = 60;
+        if (const char* e = std::getenv("DW_870_AIM"))   // (trying others: pocket xyz, the press)
+            std::sscanf(e, "%f,%f,%f,%f", &aim.pocket.x, &aim.pocket.y, &aim.pocket.z, &aim.pad_press);
         // The low ready: the muzzle 35 degrees down, the butt dropped from the shoulder pocket to just
         // under it, on the chest by the armpit (pinned in the pocket, the right wrist would have to
         // turn round it, past what wrists do).
