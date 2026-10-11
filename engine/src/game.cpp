@@ -946,9 +946,12 @@ std::string Game::stage(int i) {
                 const float dx = door >= 0 ? doorways_[size_t(door)].mid_x() : -2.1f;
                 const float dz = door >= 0 ? doorways_[size_t(door)].mid_z() : 10.65f;
                 player_ = {dx, dz - 0.7f, kPi};   // at the gate, facing it (south)
-                cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
                 interact();   // it swings away from him, out over the tunnel's water
                 run(1.0f);
+                player_ = {dx + 0.3f, dz - 4.3f, kPi};   // then back up the cellar, where its shot looks at the gate
+                enter_room(room_);
+                cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+                run(0.4f);
                 name = "through_the_water_gate";
             } else {
                 beat_room_ = "herengracht";

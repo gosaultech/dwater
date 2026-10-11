@@ -991,6 +991,19 @@
       "yaw": 120,
       "scale": 1.0,
       "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:street_lamp_01",
+      "pos": [
+        17.0,
+        0.0,
+        8.15
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "collide": false,
+      "shadow": false
     }
   ],
   "lights": [
@@ -1061,6 +1074,23 @@
       "radius": 0.3,
       "godot_energy": 0.6,
       "range": 8.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        17.0,
+        3.75,
+        8.4
+      ],
+      "color": [
+        1.0,
+        0.6,
+        0.3
+      ],
+      "blender_power": 320,
+      "radius": 0.12,
+      "godot_energy": 1.0,
+      "range": 9.0
     }
   ],
   "shots": [
