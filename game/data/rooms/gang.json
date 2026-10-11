@@ -160,13 +160,13 @@
       ],
       "collide": false,
       "material": {
-        "ph": "dark_wood",
-        "tint": [
-          0.36,
-          0.29,
-          0.23
+        "color": [
+          0.26,
+          0.08,
+          0.055
         ],
-        "scale": 0.7
+        "rough": 0.5,
+        "noise": 0.18
       }
     },
     {
@@ -379,6 +379,28 @@
       ],
       "blender_power": 220,
       "godot_energy": 0.4,
+      "range": 5.0
+    },
+    {
+      "kind": "area",
+      "pos": [
+        1.6,
+        3.45,
+        2.3
+      ],
+      "look_at": [
+        1.6,
+        1.2,
+        4.2
+      ],
+      "size": 0.9,
+      "color": [
+        0.5,
+        0.62,
+        1.0
+      ],
+      "blender_power": 70,
+      "godot_energy": 0.3,
       "range": 5.0
     }
   ],
