@@ -8,8 +8,10 @@ remains in `../game/`; its room data and pre-rendered backgrounds feed this engi
 
 The canal house: its ground floor (`gang`, the entrance hall; `voorkamer`, the front parlour;
 `bibliotheek`, the library at the back), and below it the `souterrain` (the renovated half-basement)
-and the flooded cellar (`kelder`), walked through room to room with no loading screens. The attic
-bathroom (`badkamer`) is built and rendered, waiting for its stairs. And:
+and the flooded cellar (`kelder`), walked through room to room with no loading screens. Out of the
+kelder's water gate a tunnel (`waterpoort`) runs under the street to the canal, and steps climb to
+the quay outside (`herengracht`), as far as the bridge. The attic bathroom (`badkamer`) is built and
+rendered, waiting for its stairs. And:
 
 - **Backgrounds and depth.** Pre-rendered Cycles backgrounds, each with a painted depth map.
   Characters are hidden correctly behind painted furniture, like RE (1998).
@@ -325,7 +327,9 @@ flat: the camera crew moves room to room, nobody has to change the scenery.
   picture fades, his steps on the stairs, the other floor is put in place, it fades up. A stage
   blackout between scenes. The cellar door under the hall's stairs opens onto painted steps going
   down; walking through it takes him to the souterrain, whose door at the far end leads on into the
-  flooded kelder; the souterrain's stairs bring him back up.
+  flooded kelder; the souterrain's stairs bring him back up. The kelder's iron water gate swings
+  open on the tunnel to the canal (a gate's leaf is bars, `"style": "grate"`: he can see and shoot
+  through it shut), and the steps near the tunnel's mouth climb to the quay.
 - **No waiting at a door.** The plates of the rooms next door are decoded on a worker thread
   while he's still in this one and uploaded a couple per frame (`src/plates.cpp`), so the cut is
   instant; rooms out of reach are let go. A stage crew setting up the next backdrops in the wings.
@@ -369,6 +373,17 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   posts, purlins and a glazed roof light), a roll-top bath on claw feet (full of still, black
   water), a pedestal basin and a towel horse. Seen from upstairs, the canal and the houses across it
   drop away below (`"exterior": {"drop": 10.5}`), like looking down from a theatre's balcony.
+- **Outside: the street kit** (`tools/blender/street.py`). A room marked `"outdoor"` has no walls or
+  roof of its own: it stands on ground slabs beside the canal, between rows of real canal-house
+  fronts. Each front is laid out like an architect's elevation (`tools/pipeline/facade.py`,
+  unit-tested: the outline of a neck, bell, step or spout gable or a cornice, the grid of sash
+  windows and the door, the brick cut around them), then built in brick with white sashes, stone
+  sills, a stoop, a hoist beam, a few windows lit. Our own house's front goes on as a thin skin over
+  the rooms' real walls, with holes where their windows are, so its parlour glows from the street.
+  The kit also has the Amsterdammertjes (the brown bollards with three crosses), black upright
+  bikes (some knocked over), bare elms, quay railings, a houseboat, a swamped rowing boat, and a hump
+  bridge with a bulb every 40 cm round its arches. The street is built whichever room on its storey
+  is rendered, so every window onto it shows the same street.
 
 ## The death screen
 

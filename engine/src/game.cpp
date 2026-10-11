@@ -437,7 +437,7 @@ void Game::update(float dt) {
     for (size_t i = 0; i < leaves_.size(); ++i) {
         if (rooms_[size_t(doorways_[i].a)].floor != storey_) continue;
         solid_.push_back(leaves_[i].collider());
-        if (!leaves_[i].passable()) shut_.push_back(leaves_[i].collider());
+        if (!leaves_[i].passable() && !doorways_[i].grate) shut_.push_back(leaves_[i].collider());   // (bars: seen through)
     }
     update_player(g);
     {   // the stick, as a way across the floor (for leaning on doors)
@@ -933,6 +933,36 @@ std::string Game::stage(int i) {
             TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s peek %d door %.2f", name.c_str(), player_.x, player_.z,
                      spec_.id.c_str(), shot_.c_str(), peek_, door >= 0 ? leaves_[size_t(door)].angle : -9.0f);
             staged_in_ = {};
+            break;
+        }
+        case 37: case 38: case 39: {
+            // Out by the water: the kelder's iron gate pushed open on the tunnel, up the steps onto
+            // the Herengracht, and along the quay to the bridge.
+            if (i == 37) {
+                beat_room_ = "kelder";
+                beat_spawn_ = "from_waterpoort";
+                finish_beat();
+                const int door = doorway_of(room_, "water_gate");
+                const float dx = door >= 0 ? doorways_[size_t(door)].mid_x() : -2.1f;
+                const float dz = door >= 0 ? doorways_[size_t(door)].mid_z() : 10.65f;
+                player_ = {dx, dz - 0.7f, kPi};   // at the gate, facing it (south)
+                cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+                interact();   // it swings away from him, out over the tunnel's water
+                run(1.0f);
+                name = "through_the_water_gate";
+            } else {
+                beat_room_ = "herengracht";
+                beat_spawn_ = "from_waterpoort";
+                finish_beat();
+                if (i == 39) {
+                    const RoomSpec& h = rooms_[size_t(room_)];
+                    player_ = {h.bounds.x0 + 36.0f, h.bounds.z0 + 4.6f, -kPi / 2};   // walking east, toward the bridge
+                    enter_room(room_);
+                }
+                run(0.8f);
+                name = i == 38 ? "up_on_the_quay" : "to_the_bridge";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
             break;
         }
         default: {   // bitten once too often: the words coming up (26), and all of it, the choice there (14)

@@ -100,6 +100,7 @@ def add_light(spec_light, i):
     ld.energy = spec_light["blender_power"]
     ob = bpy.data.objects.new(f"light_{i}", ld)
     bpy.context.scene.collection.objects.link(ob)
+    ob.visible_camera = bool(spec_light.get("visible", False))   # a lamp lights the set; its panel isn't in the picture
     if kind == "sun":
         d = Vector(g2b(spec_light["dir_from"])).normalized()
         ob.rotation_euler = (-d).to_track_quat("-Z", "Y").to_euler()
@@ -231,7 +232,9 @@ def build_house(specs, room_id):
         coll = bpy.data.collections.new("room_" + rid)
         bpy.context.scene.collection.children.link(coll)
         before = set(bpy.data.objects)
-        lights = build_room(spec, outside=rid == room_id)
+        ext = spec.get("exterior")
+        always = isinstance(ext, dict) and ext.get("always")   # (the world seen down a tunnel from next door)
+        lights = build_room(spec, outside=rid == room_id or bool(always))
         ox, oz = house.origin(spec)
         off = Vector(g2b((ox, 0.0, oz)))
         for ob in [o for o in bpy.data.objects if o not in before]:

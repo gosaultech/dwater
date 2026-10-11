@@ -62,6 +62,12 @@ class RealHouseTests(unittest.TestCase):
     def setUp(self):
         self.specs = {p.stem: json.loads(p.read_text()) for p in ROOMS.glob("*.json")}
 
+    def test_a_street_shares_no_walls(self):   # the street outside the front: the house keeps its whole wall
+        specs = three()
+        specs["street"] = dict(room("street", (-4.3, 6.3), (8, 6), {}), outdoor=True)
+        self.assertNotIn("south", house.shared_sides(specs, "hall"))
+        self.assertEqual(house.shared_sides(specs, "street"), set())
+
     def test_hall_and_parlour_share_a_door(self):
         ds = house.doorways(self.specs)
         self.assertTrue(any({d["a"], d["b"]} == {"gang", "voorkamer"} and d["live"] for d in ds))

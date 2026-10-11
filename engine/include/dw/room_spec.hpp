@@ -33,6 +33,7 @@ struct Interactable {
 struct Opening {
     std::string side, kind, hinge;   // hinge: "left" / "right" as seen from inside this room (doors)
     float center = 0, width = 1, height = 2, sill = 0;
+    std::string style;               // a door's leaf: "" wood, "grate" iron bars (you see through it)
 };
 
 struct RoomSpec {

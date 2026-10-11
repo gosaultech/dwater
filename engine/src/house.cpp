@@ -81,6 +81,7 @@ std::vector<Doorway> doorways(const std::vector<RoomSpec>& rooms) {
             }
             const Interactable* da = d.door_a.empty() ? nullptr : find(A, d.door_a);
             d.live = d.b >= 0 || (da && !da->target_room.empty());
+            d.grate = o.style == "grate" || (d.b >= 0 && rooms[size_t(d.b)].openings[size_t(d.open_b)].style == "grate");
             out.push_back(d);
         }
     }

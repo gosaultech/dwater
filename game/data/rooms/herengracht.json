@@ -1,0 +1,1262 @@
+{
+  "_file": "damned_waters/game/data/rooms/herengracht.json \u2014 RoomSpec for the quay outside the house (the Herengracht at night), modelled after openly licensed reference photos of the canal: the house fronts on our side (ours among them, its own windows lit from inside), the cobbled street, bare elms, Amsterdammertjes, bikes, a houseboat, the canal and the far bank, a hump bridge with lamps round its arches. Outdoor: no walls or roof of its own (street.py builds the world). Single source of truth for Blender (render) and the engine (collision, cameras, things). Units: metres, Y up, north = -Z; placed in the house at \"origin\".",
+  "id": "herengracht",
+  "display_name": "Herengracht",
+  "storey": 0,
+  "origin": [
+    -20.0,
+    10.3
+  ],
+  "outdoor": {
+    "ground": [
+      {
+        "name": "pavement",
+        "min": [
+          -60.0,
+          0.0
+        ],
+        "max": [
+          100.0,
+          2.0
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "t_brick_floor_002",
+          "tint": [
+            0.42,
+            0.37,
+            0.33
+          ]
+        }
+      },
+      {
+        "name": "road",
+        "min": [
+          -60.0,
+          2.0
+        ],
+        "max": [
+          100.0,
+          6.4
+        ],
+        "y": -0.08,
+        "material": {
+          "ph": "cobblestone_02",
+          "tint": [
+            0.42,
+            0.42,
+            0.44
+          ]
+        }
+      },
+      {
+        "name": "quay",
+        "min": [
+          -60.0,
+          6.4
+        ],
+        "max": [
+          100.0,
+          8.7
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "t_brick_floor_002",
+          "tint": [
+            0.36,
+            0.32,
+            0.29
+          ]
+        }
+      }
+    ],
+    "canal": {
+      "z": 8.7,
+      "width": 25.0,
+      "water": -1.6,
+      "x": [
+        -60.0,
+        100.0
+      ],
+      "far_quay": 6.0,
+      "lit": 0.14,
+      "gaps": [
+        [
+          16.4,
+          19.4
+        ],
+        [
+          19.5,
+          20.5
+        ]
+      ]
+    },
+    "facades": [
+      {
+        "x0": -14.0,
+        "x1": -6.05,
+        "z": 0.0,
+        "facing": "south",
+        "storeys": [
+          3.8,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "bell",
+        "seed": 18,
+        "gable_h": 3.6,
+        "door_bay": 1,
+        "stoop": 0.5,
+        "lit": 0.2
+      },
+      {
+        "x0": -6.0,
+        "x1": 3.4,
+        "z": 0.0,
+        "facing": "south",
+        "storeys": [
+          3.9,
+          3.4,
+          3.2,
+          3.0,
+          2.6
+        ],
+        "bays": 5,
+        "gable": "cornice",
+        "seed": 11,
+        "door_bay": 2,
+        "stoop": 0.75,
+        "lit": 0.2
+      },
+      {
+        "x0": 3.45,
+        "x1": 12.67,
+        "z": 0.0,
+        "facing": "south",
+        "storeys": [
+          3.9,
+          3.3,
+          3.1,
+          2.9
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 12,
+        "gable_h": 4.0,
+        "door_bay": 0,
+        "stoop": 0.75,
+        "lit": 0.2
+      },
+      {
+        "x0": 12.72,
+        "x1": 22.4,
+        "z": 0.0,
+        "facing": "south",
+        "storeys": [
+          3.9,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 5,
+        "gable": "cornice",
+        "seed": 13,
+        "skin_below": 3.9,
+        "lit": 0.0,
+        "tint": [
+          0.24,
+          0.19,
+          0.17
+        ],
+        "holes": [
+          {
+            "u0": 0.87,
+            "u1": 1.73,
+            "v0": 1.41,
+            "v1": 3.22,
+            "arch": true
+          },
+          {
+            "u0": 2.45,
+            "u1": 4.71,
+            "v0": 0.0,
+            "v1": 3.37,
+            "arch": true
+          },
+          {
+            "u0": 5.37,
+            "u1": 6.16,
+            "v0": 1.38,
+            "v1": 3.2,
+            "arch": true
+          },
+          {
+            "u0": 7.805,
+            "u1": 8.855,
+            "v0": 0.0,
+            "v1": 2.55
+          },
+          {
+            "u0": 7.805,
+            "u1": 8.855,
+            "v0": 2.72,
+            "v1": 3.34
+          }
+        ]
+      },
+      {
+        "x0": 22.45,
+        "x1": 30.0,
+        "z": 0.0,
+        "facing": "south",
+        "storeys": [
+          3.8,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "bell",
+        "seed": 14,
+        "gable_h": 3.6,
+        "door_bay": 2,
+        "stoop": 0.5,
+        "lit": 0.2
+      },
+      {
+        "x0": 30.05,
+        "x1": 37.9,
+        "z": 0.0,
+        "facing": "south",
+        "storeys": [
+          3.8,
+          3.3,
+          3.0,
+          2.8,
+          2.5
+        ],
+        "bays": 3,
+        "gable": "step",
+        "seed": 15,
+        "gable_h": 3.8,
+        "door_bay": 0,
+        "stoop": 0.75,
+        "lit": 0.2
+      },
+      {
+        "x0": 37.95,
+        "x1": 46.0,
+        "z": 0.0,
+        "facing": "south",
+        "storeys": [
+          3.9,
+          3.3,
+          3.1,
+          2.9
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 16,
+        "door_bay": 1,
+        "stoop": 0.5,
+        "lit": 0.2
+      },
+      {
+        "x0": 46.05,
+        "x1": 54.0,
+        "z": 0.0,
+        "facing": "south",
+        "storeys": [
+          3.8,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 17,
+        "gable_h": 3.8,
+        "door_bay": 2,
+        "stoop": 0.5,
+        "lit": 0.2
+      }
+    ],
+    "bridges": [
+      {
+        "x0": 41.0,
+        "x1": 48.0,
+        "z0": 8.7,
+        "z1": 33.7,
+        "hump": 1.3,
+        "water": -1.6,
+        "deck": {
+          "ph": "cobblestone_02",
+          "tint": [
+            0.4,
+            0.4,
+            0.42
+          ]
+        },
+        "arches": [
+          [
+            14.7,
+            5.0,
+            1.5
+          ],
+          [
+            21.2,
+            6.0,
+            1.9
+          ],
+          [
+            27.7,
+            5.0,
+            1.5
+          ]
+        ]
+      }
+    ]
+  },
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      40.0,
+      8.7
+    ]
+  },
+  "height": 6.0,
+  "materials": {
+    "floor": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "wall": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "ceiling": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    }
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.014,
+      0.019,
+      0.036
+    ],
+    "strength": 1.0
+  },
+  "walls": {
+    "south": {
+      "openings": [
+        {
+          "kind": "door",
+          "style": "grate",
+          "center": 20.0,
+          "width": 1.0,
+          "height": 1.0,
+          "hinge": "left",
+          "open": true
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "elm",
+      "pos": [
+        2.5,
+        0.0,
+        7.55
+      ],
+      "size": [
+        0.55,
+        13.0,
+        0.55
+      ],
+      "seed": 21
+    },
+    {
+      "type": "elm",
+      "pos": [
+        11.0,
+        0.0,
+        7.55
+      ],
+      "size": [
+        0.55,
+        13.0,
+        0.55
+      ],
+      "seed": 22
+    },
+    {
+      "type": "elm",
+      "pos": [
+        24.5,
+        0.0,
+        7.55
+      ],
+      "size": [
+        0.55,
+        13.0,
+        0.55
+      ],
+      "seed": 23
+    },
+    {
+      "type": "elm",
+      "pos": [
+        33.5,
+        0.0,
+        7.55
+      ],
+      "size": [
+        0.55,
+        13.0,
+        0.55
+      ],
+      "seed": 24
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        0.8,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        2.4,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        4.0,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        5.6,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        7.2,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        8.8,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        10.4,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        12.0,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        13.6,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        15.2,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        16.8,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        18.4,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        20.0,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        23.2,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        24.8,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        26.4,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        28.0,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        29.6,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        31.2,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        32.8,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        34.4,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        36.0,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        37.6,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        39.2,
+        0.0,
+        1.85
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:covered_car",
+      "pos": [
+        6.4,
+        0.0,
+        6.95
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "size": [
+        4.4,
+        1.4,
+        1.8
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:covered_car",
+      "pos": [
+        29.4,
+        0.0,
+        6.95
+      ],
+      "yaw": 92,
+      "scale": 1.0,
+      "size": [
+        4.4,
+        1.4,
+        1.8
+      ]
+    },
+    {
+      "type": "railing",
+      "pos": [
+        26.5,
+        0.0,
+        8.55
+      ],
+      "size": [
+        5.0,
+        0.9,
+        0.05
+      ],
+      "collide": false
+    },
+    {
+      "type": "railing",
+      "pos": [
+        37.0,
+        0.0,
+        8.55
+      ],
+      "size": [
+        6.0,
+        0.9,
+        0.05
+      ],
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        35.2,
+        0.0,
+        7.9
+      ],
+      "yaw": 90,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        35.9,
+        0.0,
+        7.95
+      ],
+      "yaw": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        36.8,
+        0.05,
+        7.7
+      ],
+      "yaw": 70,
+      "roll": 88,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        38.3,
+        0.0,
+        7.95
+      ],
+      "yaw": 95,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        24.0,
+        0.05,
+        6.9
+      ],
+      "yaw": 20,
+      "roll": -86,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        12.3,
+        0.0,
+        0.55
+      ],
+      "yaw": 0,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false
+    },
+    {
+      "type": "houseboat",
+      "pos": [
+        8.2,
+        -2.15,
+        11.3
+      ],
+      "yaw": 180,
+      "size": [
+        15.0,
+        2.9,
+        4.2
+      ],
+      "seed": 4,
+      "lit_window": 2,
+      "plank": 3.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:street_lamp_01",
+      "pos": [
+        8.0,
+        0.0,
+        8.15
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "collide": false,
+      "shadow": false
+    },
+    {
+      "type": "model",
+      "model": "ph:street_lamp_01",
+      "pos": [
+        30.6,
+        0.0,
+        8.15
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "collide": false,
+      "shadow": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        23.4,
+        0.0,
+        0.6
+      ],
+      "yaw": 30,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        24.0,
+        0.0,
+        0.45
+      ],
+      "yaw": 160,
+      "scale": 0.85,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        3.9,
+        0.0,
+        0.7
+      ],
+      "yaw": 80,
+      "scale": 0.9,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:street_rat",
+      "pos": [
+        21.2,
+        0.0,
+        1.3
+      ],
+      "yaw": 120,
+      "scale": 1.0,
+      "collide": false
+    }
+  ],
+  "lights": [
+    {
+      "kind": "sun",
+      "dir_from": [
+        -0.35,
+        0.55,
+        1.0
+      ],
+      "color": [
+        0.55,
+        0.66,
+        1.0
+      ],
+      "blender_power": 1.6,
+      "godot_energy": 0.3,
+      "angle": 2.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        8.0,
+        3.75,
+        8.4
+      ],
+      "color": [
+        1.0,
+        0.6,
+        0.3
+      ],
+      "blender_power": 320,
+      "radius": 0.12,
+      "godot_energy": 1.0,
+      "range": 9.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        30.6,
+        3.75,
+        8.4
+      ],
+      "color": [
+        1.0,
+        0.6,
+        0.3
+      ],
+      "blender_power": 320,
+      "radius": 0.12,
+      "godot_energy": 1.0,
+      "range": 9.0,
+      "flicker": true
+    },
+    {
+      "kind": "point",
+      "pos": [
+        44.5,
+        2.2,
+        6.0
+      ],
+      "color": [
+        1.0,
+        0.62,
+        0.28
+      ],
+      "blender_power": 60,
+      "radius": 0.3,
+      "godot_energy": 0.6,
+      "range": 8.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "d",
+      "pos": [
+        17.5,
+        3.6,
+        1.3
+      ],
+      "look_at": [
+        2.0,
+        1.0,
+        7.6
+      ],
+      "fov": 58,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          9.0,
+          8.7
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        30.0,
+        3.4,
+        1.2
+      ],
+      "look_at": [
+        12.0,
+        0.8,
+        8.0
+      ],
+      "fov": 56,
+      "zone": {
+        "min": [
+          9.0,
+          0.0
+        ],
+        "max": [
+          19.0,
+          8.7
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "a",
+      "pos": [
+        8.0,
+        3.8,
+        1.0
+      ],
+      "look_at": [
+        30.0,
+        0.8,
+        7.5
+      ],
+      "fov": 56,
+      "zone": {
+        "min": [
+          19.0,
+          0.0
+        ],
+        "max": [
+          31.0,
+          8.7
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "c",
+      "pos": [
+        24.0,
+        2.4,
+        0.9
+      ],
+      "look_at": [
+        44.0,
+        0.9,
+        12.0
+      ],
+      "fov": 58,
+      "zone": {
+        "min": [
+          31.0,
+          0.0
+        ],
+        "max": [
+          40.0,
+          8.7
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_waterpoort": {
+      "pos": [
+        20.0,
+        0.0,
+        7.6
+      ],
+      "yaw": 0
+    }
+  },
+  "interactables": [
+    {
+      "id": "quay_steps",
+      "kind": "door",
+      "pos": [
+        20.0,
+        1.0,
+        8.55
+      ],
+      "radius": 0.9,
+      "target_room": "waterpoort",
+      "target_spawn": "from_quay"
+    },
+    {
+      "id": "front_door_outside",
+      "kind": "examine",
+      "pos": [
+        21.05,
+        1.0,
+        0.4
+      ],
+      "radius": 1.0,
+      "text": "The front door of the house you came out of. Locked from the inside."
+    },
+    {
+      "id": "houseboat",
+      "kind": "examine",
+      "pos": [
+        8.0,
+        1.0,
+        8.4
+      ],
+      "radius": 1.2,
+      "text": "A houseboat, lamp still burning in one window. Nobody answers."
+    },
+    {
+      "id": "bridge",
+      "kind": "examine",
+      "pos": [
+        39.6,
+        1.0,
+        4.5
+      ],
+      "radius": 1.4,
+      "text": "The bridge over the Herengracht. Beyond it, the way to Centraal.\n(The demo ends here for now.)"
+    },
+    {
+      "id": "shells_quay",
+      "kind": "pickup",
+      "item": "shotgun_shells",
+      "count": 4,
+      "pos": [
+        29.2,
+        0.02,
+        5.6
+      ],
+      "radius": 0.9
+    }
+  ],
+  "enemies": [
+    {
+      "id": "op_de_brug",
+      "kind": "verdronkene",
+      "pos": [
+        37.5,
+        0.0,
+        5.0
+      ],
+      "yaw": -90
+    },
+    {
+      "id": "bij_de_boot",
+      "kind": "verdronkene",
+      "pos": [
+        9.5,
+        0.0,
+        6.0
+      ],
+      "yaw": 160
+    }
+  ],
+  "render": {
+    "exposure": 1.3
+  }
+}

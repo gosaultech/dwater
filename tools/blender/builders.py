@@ -306,15 +306,29 @@ def build_shell(spec):
     thick by each room, so the two halves meet in its middle; a live doorway ("_live": the game
     hangs its leaf) is left open; a live door with no room behind it ("_stairs") gets the stairs
     down beyond it."""
+    if spec.get("outdoor"):   # a street: the ground, the canal, the houses (street.py); no walls of its own
+        import kit
+        import street
+        street.outdoor(spec)
+        for side, wall in wall_segments(spec).items():
+            for k, op in enumerate(wall["openings"]):
+                if (side, k) in spec.get("_stairs", set()):
+                    kit.stair_stub(spec, side, op)
+        return
     mats = spec["materials"]
     (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
     h, t = spec["height"], WALL_T
     shared = spec.get("_shared", set())
     ts = {side: t / 2 if side in shared else t for side in ("north", "south", "west", "east")}
     box_aabb("floor", (x0 - ts["west"], -0.2, z0 - ts["north"]), (x1 + ts["east"], 0.0, z1 + ts["south"]), material(mats["floor"]))
-    roof = spec.get("roof")
+    roof, vault = spec.get("roof"), spec.get("vault")
     eaves = (("west", "east") if roof.get("axis", "z") == "z" else ("north", "south")) if roof else ()
-    if roof:   # an attic: knee walls under the eaves, gables up to the ridge, the roof's timber (kit.py)
+    if vault:   # a barrel vault: the long walls stop at its springing (kit.py)
+        eaves = ("west", "east") if vault.get("axis", "z") == "z" else ("north", "south")
+        roof = {"eave": vault["spring"]}
+        import kit
+        kit.vault(spec)
+    elif roof:   # an attic: knee walls under the eaves, gables up to the ridge, the roof's timber (kit.py)
         import kit
         kit.roof(spec)
     else:
@@ -383,6 +397,13 @@ def _build_opening(spec, side, op, live=False):
         return
     u0, u1, v0, v1 = _opening_span(op)
     wood, dark = material("dark_wood"), material("soot")
+    if op["kind"] == "portal":   # a plain hole through the wall (the tunnel's mouth): nothing in it
+        return
+    if op.get("style") == "grate":   # an iron gate the game hangs: a stone surround, no wood
+        _wall_box(spec, side, u0 - 0.1, u1 + 0.1, v1, v1 + 0.3, -0.05, 0.3, material("stone_floor"), "gate_arch")
+        for a, b in ((u0 - 0.12, u0), (u1, u1 + 0.12)):
+            _wall_box(spec, side, a, b, v0, v1, -0.04, 0.3, material("stone_floor"), "gate_jamb")
+        return
     # Interior casing around every opening.
     for (a, b, c, d) in ((u0 - 0.08, u0, v0, v1 + 0.08), (u1, u1 + 0.08, v0, v1 + 0.08), (u0, u1, v1, v1 + 0.08)):
         _wall_box(spec, side, a, b, c, d, -0.03, 0.0, wood, "casing")
@@ -479,6 +500,7 @@ def build_exterior(spec, rng):
 def build_prop(p, room_h):
     t = p["type"]
     import kit
+    import street   # (adds the street kit's props to kit.PROPS)
     if t in kit.PROPS:   # the detailed kit: sofas, kasten, the marble mantel, models...
         return kit.build_prop(p, room_h)
     size = p.get("size", [0.45, 0.95, 0.45])

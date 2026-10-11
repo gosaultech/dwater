@@ -64,7 +64,7 @@ def references(spec: dict) -> dict[str, str]:
         walk(p, "texture")
     for w in spec.get("walls", {}).values():
         walk(w, "texture")
-    for key in ("exterior", "roof", "ceiling_beams"):   # the outside world, an attic's roof, beams
+    for key in ("exterior", "roof", "ceiling_beams", "outdoor"):   # the outside world, an attic's roof, beams, a street
         if isinstance(spec.get(key), dict):
             walk(spec[key], "texture")
     return out

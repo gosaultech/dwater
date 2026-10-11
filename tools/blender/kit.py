@@ -871,11 +871,28 @@ def build_exterior(spec, rng):
 
     zw = wall + sgn * t                          # the house's outer face
     zq = zw + sgn * ext.get("pavement", 2.5)     # our quay's edge
-    slab("street", zw, zq, -0.25, 0.0, stone)
-    slab("canal", zq, zq + sgn * width, -1.6, -1.58, water)
-    slab("quay_wall", zq, zq + sgn * 0.3, -1.6, 0.0, builders.material(brick_keys[0]))
+    qh = ext.get("quay_h", 1.6)                  # how far the water lies below the street
+    quay = builders.material(brick_keys[0])
+    if ext.get("mouth"):   # the room is a tunnel coming out under the quay: a hole in the quay wall
+        mx0, mx1 = x0 - t, x1 + t
+        for xa_, xb_ in ((x0 - 40, mx0), (mx1, x1 + 40)):
+            slab("quay_wall", zq - sgn * 0.8, zq, -qh - 1.0, 0.0, quay, xa_, xb_)
+        slab("mouth_lintel", zq - sgn * 0.8, zq, spec["height"] + drop, 0.0, quay, mx0, mx1)
+        rise = qh / 11
+        for k in range(11):   # stone steps up the quay wall, east of the mouth, from the water to the street
+            xs = mx1 + 0.4 + k * 0.32
+            slab("quay_step", zq, zq + sgn * 1.1, -qh - 0.3, -qh + (k + 1) * rise, stone, xs, xs + 0.34)
+        slab("quay_step_wall", zq, zq + sgn * 1.1, -qh - 0.3, 0.0, quay, mx1 + 0.4 + 11 * 0.32, mx1 + 0.4 + 11 * 0.32 + 0.4)
+    else:
+        slab("street", zw, zq, -0.25, 0.0, stone)
+        slab("quay_wall", zq, zq + sgn * 0.3, -qh, 0.0, quay)
+    slab("canal", zq, zq + sgn * width, -qh, -qh + 0.02, water)
     zf = zq + sgn * (width + 3.0)                # the far houses' fronts
-    slab("far_quay", zq + sgn * width, zf, -1.6, 0.0, stone)
+    slab("far_quay", zq + sgn * width, zf, -qh, 0.0, stone)
+    if ext.get("facades"):   # real canal houses (street.py), not boxes
+        import street
+        street.facade_row(x0 - 30, x1 + 30, zf, "north" if sgn > 0 else "south", rng, ext, y=-drop)
+        return
     x = x0 - 30
     while x < x1 + 30:
         w = rng.uniform(5.0, 7.0)
@@ -979,7 +996,12 @@ def _lightwell(spec, rng, ext, side):
 
 def stair_stub(spec, side, op):
     """Beyond a door that leads down (the cellar door): a short landing and a flight of worn steps
-    going down into the dark, walled in brick, so the open doorway shows where it goes."""
+    going down into the dark, walled in brick, so the open doorway shows where it goes. With
+    "stairs": "up" the flight climbs instead, open to the night at the top (the tunnel's way up to
+    the street); with "open": true it goes down from a street with no walls above the ground and no
+    roof (the quay steps down to the water)."""
+    if op.get("stairs") == "up":
+        return _stairs_up(spec, side, op)
     u0, u1, v0, v1 = builders._opening_span(op)
     t = builders.WALL_T
     (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
@@ -998,6 +1020,15 @@ def stair_stub(spec, side, op):
     landing = 0.35
     n, rise, run = 12, 0.21, 0.27
     end = t + landing + n * run + 0.3
+    if op.get("open"):   # quay steps: worn stone, walled only below the street, down into the canal
+        stone = builders.material({"color": [0.2, 0.19, 0.17], "rough": 0.8, "noise": 0.35})
+        for i in range(n):
+            top = -(i + 1) * rise
+            wa = t + i * run
+            box("quay_step", u0, u1, top - 0.25, top, wa - t, wa + run - t + 0.02, stone)
+        for ua, ub in ((u0 - 0.3, u0), (u1, u1 + 0.3)):
+            box("quay_step_wall", ua, ub, -n * rise - 1.0, 0.0, 0.0, n * run + 0.3, brick)
+        return
     box("landing", u0 - 0.05, u1 + 0.05, -0.2, 0.0, t, t + landing, step_m)
     for i in range(n):
         top = -(i + 1) * rise
@@ -1018,3 +1049,76 @@ def stair_stub(spec, side, op):
     bpy.context.scene.collection.objects.link(glow)
     c = tuple(o[i] + U[i] * (u0 + u1) / 2 + Wd[i] * (end - 0.6) for i in range(3))
     glow.location = g2b((c[0], -n * rise * 0.55 + 0.35, c[2]))
+
+
+def _stair_frame(spec, side):
+    (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
+    return {"north": ((x0, 0, z0), (1, 0, 0), (0, 0, -1)), "south": ((x0, 0, z1), (1, 0, 0), (0, 0, 1)),
+            "west": ((x0, 0, z0), (0, 0, 1), (-1, 0, 0)), "east": ((x1, 0, z0), (0, 0, 1), (1, 0, 0))}[side]
+
+
+def _stairs_up(spec, side, op):
+    """Stone steps climbing away from the doorway between brick walls, up to the street and the
+    night sky (no roof once past the doorway), a cold light falling down them from the top."""
+    u0, u1, v0, v1 = builders._opening_span(op)
+    t = builders.WALL_T
+    o, U, Wd = _stair_frame(spec, side)
+
+    def box(name, ua, ub, ya, yb, wa, wb, m):
+        pts = [tuple(o[i] + U[i] * u + Wd[i] * w for i in range(3)) for u in (ua, ub) for w in (wa, wb)]
+        lo = (min(p[0] for p in pts), ya, min(p[2] for p in pts))
+        hi = (max(p[0] for p in pts), yb, max(p[2] for p in pts))
+        return builders.box_aabb(name, lo, hi, m)
+
+    stone = builders.material({"color": [0.16, 0.15, 0.14], "rough": 0.8, "noise": 0.35})
+    brick = builders.material("brick")
+    n, rise, run = op.get("steps", 12), op.get("rise", 0.25), 0.3
+    landing = 0.5
+    end = t + landing + n * run
+    box("landing", u0 - 0.05, u1 + 0.05, -0.3, 0.0, t, t + landing, stone)
+    for i in range(n):
+        wa = t + landing + i * run
+        box("step", u0 - 0.05, u1 + 0.05, -0.3, (i + 1) * rise, wa, wa + run + 0.02, stone)
+    top = n * rise
+    for ua, ub in ((u0 - 0.35, u0 - 0.05), (u1 + 0.05, u1 + 0.35)):
+        box("stair_wall", ua, ub, -0.3, top + 1.2, t, end + 0.6, brick)
+    box("stair_head", u0 - 0.35, u1 + 0.35, v1 + 0.05, v1 + 0.6, t, t + landing + 0.3, brick)
+    box("street_above", u0 - 0.35, u1 + 0.35, top - 0.3, top, end, end + 4.0, stone)
+    ld = bpy.data.lights.new("stair_sky", "AREA")
+    ld.color = (0.55, 0.66, 1.0)
+    ld.energy = op.get("sky", 120.0)
+    ld.size = 1.2
+    sky = bpy.data.objects.new("stair_sky", ld)
+    bpy.context.scene.collection.objects.link(sky)
+    c = tuple(o[i] + U[i] * (u0 + u1) / 2 + Wd[i] * (end - 1.2) for i in range(3))
+    sky.location = g2b((c[0], top + 2.5, c[2]))
+
+
+def vault(spec):
+    """A brick barrel vault over the room, springing from the long walls ("vault": {"spring": m,
+    "axis": "z"}): the tunnel under the street."""
+    v = spec["vault"]
+    (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
+    t = builders.WALL_T
+    m = builders.material(v.get("material", "brick"))
+    along_z = v.get("axis", "z") == "z"
+    a0, a1 = (x0, x1) if along_z else (z0, z1)
+    b0, b1 = ((z0, z1) if along_z else (x0, x1))
+    r, mid, sp = (a1 - a0) / 2, (a0 + a1) / 2, v["spring"]
+    n = 18
+    verts, faces = [], []
+    for b in (b0 - t, b1 + t):
+        for k in range(n + 1):
+            ang = math.pi * k / n
+            for rr in (r, r + t):
+                a, y = mid - rr * math.cos(ang), sp + rr * math.sin(ang)
+                verts.append((a, y, b) if along_z else (b, y, a))
+    ring = 2 * (n + 1)
+    for k in range(n):
+        i0, i1 = 2 * k, 2 * (k + 1)
+        faces.append((i0, i1, ring + i1, ring + i0))                  # the inside face
+        faces.append((i0 + 1, ring + i0 + 1, ring + i1 + 1, i1 + 1))  # the outside
+        faces.append((i0, i0 + 1, i1 + 1, i1))                         # the ends
+        faces.append((ring + i0, ring + i1, ring + i1 + 1, ring + i0 + 1))
+    return mesh("vault", verts, faces, m, None)
+

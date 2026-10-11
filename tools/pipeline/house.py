@@ -115,8 +115,10 @@ def shared_sides(specs: dict[str, dict], room: str) -> set[str]:
     R = specs[room]
     x0, z0, x1, z1 = house_bounds(R)
     out = set()
+    if R.get("outdoor"):   # a street has no walls to share: the houses build their own fronts
+        return out
     for other, S in specs.items():
-        if other == room or S.get("storey", 0) != R.get("storey", 0):
+        if other == room or S.get("storey", 0) != R.get("storey", 0) or S.get("outdoor"):
             continue
         u0, w0, u1, w1 = house_bounds(S)
         overlap_x = min(x1, u1) - max(x0, u0) > 0.05

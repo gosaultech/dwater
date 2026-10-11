@@ -27,9 +27,22 @@ constexpr int VARIANTS[] = {0, 2, 1};   // who they were: the office worker, Pie
 
 // A door leaf, hinge at the origin, its width along +x, up +y, its thickness across z: a framed
 // leaf with two raised panels each side and a brass knob each side near the latch.
-Mesh leaf_mesh(float w, float h) {
+Mesh leaf_mesh(float w, float h, bool grate) {
     MeshData d;
     MeshBuilder b(d);
+    if (grate) {   // an iron gate: a flat frame, round bars, two rails, a ring to pull it by
+        const Color iron{24, 24, 26, 255}, rust{70, 38, 22, 255};
+        b.material(MAT_METAL).color(iron);
+        for (const float y : {0.04f, h * 0.5f, h - 0.04f}) b.box({w / 2, y, 0}, {w / 2, 0.025f, 0.012f}, 0.2f, 6, 2);
+        for (const float x : {0.03f, w - 0.03f}) b.box({x, h / 2, 0}, {0.025f, h / 2, 0.015f}, 0.2f, 2, 6);
+        const int n = std::max(3, int(w / 0.13f));
+        for (int k = 1; k < n; ++k) {
+            const float x = w * float(k) / float(n);
+            b.color(k % 3 ? iron : rust).tube({x, 0.03f, 0}, {x, h - 0.03f, 0}, 0.011f, 0.011f, 8);
+        }
+        b.color(iron).tube({w - 0.12f, h * 0.5f - 0.07f, 0.02f}, {w - 0.12f, h * 0.5f + 0.07f, 0.02f}, 0.008f, 0.008f, 8);
+        return upload(d);
+    }
     const Color wood{62, 39, 24, 255}, panel{54, 33, 20, 255}, brass{182, 142, 66, 255};
     const float t = doors::THICK / 2;
     b.material(MAT_WOOD).color(wood).box({w / 2, h / 2, 0}, {w / 2 - 0.003f, h / 2 - 0.003f, t}, 0.05f, 16, 10);
@@ -82,7 +95,7 @@ bool Game::load_house(const std::string& start) {
     leaves_.clear();
     for (const auto& d : doorways_) {
         leaves_.push_back(doors::hang(d.ax, d.az, d.bx, d.bz, d.nx, d.nz, d.hinge_at_a));
-        leaf_meshes_.push_back(d.live ? leaf_mesh(d.width(), d.height) : Mesh{});
+        leaf_meshes_.push_back(d.live ? leaf_mesh(d.width(), d.height, d.grate) : Mesh{});
     }
     storey_ = rooms_[size_t(room_)].floor;
     return true;

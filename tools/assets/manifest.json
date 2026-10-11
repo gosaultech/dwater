@@ -29,6 +29,15 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/brick_wall_003"
   },
+  "cobblestone_02": {
+   "kind": "texture",
+   "name": "Cobblestone 02",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/cobblestone_02"
+  },
   "concrete_floor_painted": {
    "kind": "texture",
    "name": "Concrete Floor Painted",
@@ -37,6 +46,15 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/concrete_floor_painted"
+  },
+  "covered_car": {
+   "kind": "model",
+   "name": "Covered Car",
+   "authors": [
+    "MP"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/covered_car"
   },
   "dark_wood": {
    "kind": "texture",
@@ -223,6 +241,43 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/roof_planks"
+  },
+  "street_lamp_01": {
+   "kind": "model",
+   "name": "Street Lamp 01",
+   "authors": [
+    "Josh Dean"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/street_lamp_01"
+  },
+  "street_rat": {
+   "kind": "model",
+   "name": "Street Rat",
+   "authors": [
+    "Sean Buckley"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/street_rat"
+  },
+  "t_brick_floor_002": {
+   "kind": "texture",
+   "name": "Brick Floor 002",
+   "authors": [
+    "Dimitrios Savva",
+    "Rico Cilliers"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/t_brick_floor_002"
+  },
+  "trashbag": {
+   "kind": "model",
+   "name": "Trashbag",
+   "authors": [
+    "Benny Weimer"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/trashbag"
   },
   "vintage_oil_lamp": {
    "kind": "model",

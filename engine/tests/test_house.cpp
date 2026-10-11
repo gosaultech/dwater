@@ -138,6 +138,20 @@ TEST(House, HingeSideFollowsTheSpec) {
 
 // The real house: the hall and the parlour share one doorway the game swings; the cellar door is a
 // live door with no room behind it on that floor (the stairs down); the canal fronts are flush.
+TEST(House, AGrateIsIronBars) {   // either side's opening can say so; the other doors stay wood
+    std::string back = BACK;
+    const std::string door = R"("kind": "door", "center": 2.0)";
+    back.replace(back.find(door), door.size(), R"("kind": "door", "style": "grate", "center": 2.0)");
+    const auto rooms = std::vector<RoomSpec>{load_text("hall", HALL), load_text("parlour", PARLOUR), load_text("back", back.c_str())};
+    int grates = 0;
+    for (const auto& d : house::doorways(rooms)) {
+        const bool parlour_back = (d.a == 1 && d.b == 2) || (d.a == 2 && d.b == 1);
+        EXPECT_EQ(d.grate, parlour_back);
+        grates += d.grate;
+    }
+    EXPECT_EQ(grates, 1);
+}
+
 TEST(House, TheRealHouseFitsTogether) {
     std::vector<RoomSpec> rooms;
     for (const char* id : {"gang", "kelder", "voorkamer"}) {   // (name order, as the game loads them)

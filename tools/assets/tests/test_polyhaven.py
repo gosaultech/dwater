@@ -42,6 +42,11 @@ class ReferenceTests(unittest.TestCase):
         self.assertEqual(polyhaven.references(spec), {"roof_planks": "texture", "medieval_wood": "texture",
                                                       "dark_wood": "texture"})
 
+    def test_a_streets_ground_and_bridge_are_found(self):
+        spec = {"outdoor": {"ground": [{"min": [0, 0], "max": [1, 1], "material": {"ph": "cobblestone_02"}}],
+                            "bridges": [{"deck": "ph:t_brick_floor_002"}]}}
+        self.assertEqual(polyhaven.references(spec), {"cobblestone_02": "texture", "t_brick_floor_002": "texture"})
+
     def test_plants_are_models(self):
         spec = {"exterior": {"side": "west", "lightwell": True, "plants": ["ph:potted_plant_01"]}}
         self.assertEqual(polyhaven.references(spec), {"potted_plant_01": "model"})

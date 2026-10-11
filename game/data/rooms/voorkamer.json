@@ -67,16 +67,6 @@
     ],
     "strength": 1.2
   },
-  "exterior": {
-    "side": "south",
-    "canal": 13.0,
-    "pavement": 2.6,
-    "bricks": [
-      "ph:brick_wall_003",
-      "ph:red_brick_03"
-    ],
-    "lit": 0.05
-  },
   "walls": {
     "south": {
       "openings": [

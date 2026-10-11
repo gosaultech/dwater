@@ -53,7 +53,7 @@ RoomSpec RoomSpec::load(const std::string& path) {
     for (const auto& [side, w] : walls.items())
         for (const auto& o : w.value("openings", json::array()))
             r.openings.push_back({side, o.value("kind", "door"), o.value("hinge", "left"), o.value("center", 0.0f), o.value("width", 1.0f),
-                                  o.value("height", 2.0f), o.value("sill", 0.0f)});
+                                  o.value("height", 2.0f), o.value("sill", 0.0f), o.value("style", "")});
     for (const auto& [k, s] : d["spawns"].items()) r.spawns[k] = {v3(s["pos"]), s.value("yaw", 0.0f) * DEG};
     for (const auto& l : d.value("lights", json::array())) {
         Light L;

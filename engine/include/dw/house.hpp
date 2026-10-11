@@ -28,6 +28,7 @@ struct Doorway {
     float height = 2.1f;
     bool hinge_at_a = true;             // the leaf turns on the (ax, az) end
     bool live = false;                  // the game hangs and swings its leaf (else the picture shows it shut)
+    bool grate = false;                 // an iron gate: bars, not boards (sight and shots pass through it shut)
     float mid_x() const { return (ax + bx) / 2; }
     float mid_z() const { return (az + bz) / 2; }
     float width() const;
