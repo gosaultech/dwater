@@ -175,29 +175,6 @@
           "puddles": 0.12,
           "puddle_scale": 0.9
         }
-      },
-      {
-        "name": "dam_ahead",
-        "min": [
-          -30.0,
-          -70.0
-        ],
-        "max": [
-          56.0,
-          0.0
-        ],
-        "y": 0.0,
-        "material": {
-          "ph": "cobblestone_floor_04",
-          "tint": [
-            0.75,
-            0.72,
-            0.68
-          ],
-          "wet": 0.7,
-          "puddles": 0.24,
-          "puddle_scale": 0.9
-        }
       }
     ],
     "canals": [
@@ -294,15 +271,8 @@
         "line": -6.0,
         "facing": "east",
         "lit": 0.3,
-        "shops": 0.6
-      },
-      {
-        "from": -60.0,
-        "to": -10.0,
-        "line": 50.0,
-        "facing": "west",
-        "lit": 0.35,
-        "shops": 0.5
+        "shops": 0.6,
+        "row_ends": "end"
       }
     ],
     "facades": [
@@ -641,30 +611,6 @@
           "blade": "EXCHANGE"
         },
         "stoop": 0.0
-      },
-      {
-        "facing": "east",
-        "storeys": [
-          6.0,
-          6.0,
-          6.0
-        ],
-        "bays": 11,
-        "gable": "cornice",
-        "seed": 809,
-        "lit": 0.3,
-        "z0": -75.0,
-        "z1": -12.0,
-        "x": -24.0,
-        "door_bay": 1,
-        "stoop": 0.5,
-        "lean": 0.0,
-        "classic": {
-          "height": 24.0,
-          "name": "",
-          "bays": 11,
-          "ground": 6.0
-        }
       }
     ]
   },
@@ -728,7 +674,8 @@
         4.0
       ],
       "covered": 1,
-      "seed": 3
+      "seed": 3,
+      "collide": false
     },
     {
       "type": "vehicle",
@@ -785,21 +732,6 @@
       "model": "ph:concrete_road_barrier",
       "pos": [
         3.0,
-        0.0,
-        1.2
-      ],
-      "yaw": 0,
-      "fit": [
-        3.0,
-        1.0,
-        0.7
-      ]
-    },
-    {
-      "type": "model",
-      "model": "ph:concrete_road_barrier",
-      "pos": [
-        13.0,
         0.0,
         1.2
       ],
@@ -1052,6 +984,137 @@
       ],
       "collide": false,
       "seed": 151
+    },
+    {
+      "type": "collider",
+      "pos": [
+        16.15,
+        0.0,
+        30.0
+      ],
+      "yaw": 90,
+      "size": [
+        1.8,
+        1.0,
+        0.7
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        17.5,
+        0.0,
+        30.9
+      ],
+      "yaw": 90,
+      "size": [
+        1.6,
+        1.0,
+        2.2
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        17.7,
+        0.0,
+        28.7
+      ],
+      "yaw": 90,
+      "size": [
+        0.6,
+        1.0,
+        1.9
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        18.9,
+        0.0,
+        33.2
+      ],
+      "yaw": 90,
+      "size": [
+        0.7,
+        1.0,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:concrete_road_barrier",
+      "pos": [
+        6.8,
+        0.0,
+        3.0
+      ],
+      "yaw": -30,
+      "fit": [
+        3.0,
+        1.0,
+        0.7
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:concrete_road_barrier",
+      "pos": [
+        6.8,
+        0.0,
+        3.0
+      ],
+      "yaw": -30,
+      "fit": [
+        3.0,
+        1.0,
+        0.7
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:concrete_road_barrier",
+      "pos": [
+        6.8,
+        0.0,
+        3.0
+      ],
+      "yaw": -30,
+      "fit": [
+        3.0,
+        1.0,
+        0.7
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:concrete_road_barrier",
+      "pos": [
+        6.8,
+        0.0,
+        3.0
+      ],
+      "yaw": -30,
+      "fit": [
+        3.0,
+        1.0,
+        0.7
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:concrete_road_barrier",
+      "pos": [
+        6.8,
+        0.0,
+        3.0
+      ],
+      "yaw": -30,
+      "fit": [
+        3.0,
+        1.0,
+        0.7
+      ]
     }
   ],
   "walls": {
@@ -1082,6 +1145,16 @@
           "width": 1.4583,
           "height": 2.25,
           "hinge": "left"
+        }
+      ]
+    },
+    "north": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 13.0,
+          "width": 26.0,
+          "height": 10.0
         }
       ]
     }
@@ -1280,6 +1353,14 @@
         16.245833333333334
       ],
       "yaw": 90
+    },
+    "from_dam": {
+      "pos": [
+        12.6,
+        0.0,
+        2.0
+      ],
+      "yaw": 180
     }
   },
   "interactables": [
@@ -1323,7 +1404,7 @@
         2.6
       ],
       "radius": 2.6,
-      "text": "An army checkpoint across the end of Rokin, abandoned: the barriers still up, a megaphone in the road. The Dam is beyond it."
+      "text": "An army checkpoint across the end of Rokin, abandoned: the barriers still up, one shoved aside. The Dam is beyond, all lit up."
     },
     {
       "id": "aid_post",
@@ -1359,6 +1440,18 @@
         28.6
       ],
       "radius": 0.9
+    },
+    {
+      "id": "to_dam",
+      "kind": "door",
+      "pos": [
+        12.6,
+        1.0,
+        0.2
+      ],
+      "radius": 1.6,
+      "target_room": "dam",
+      "target_spawn": "from_rokin"
     }
   ],
   "enemies": [

@@ -137,6 +137,15 @@ TEST(Inventory, AFullCaseReportsWhatDidNotFit) {
     EXPECT_EQ(inv.add(I_CELLAR_KEY, 1), 0);
 }
 
+TEST(Inventory, TheRoomsNameTheirKeys) {   // a pickup's "item" finds its item; one key to a slot
+    EXPECT_EQ(item_by_key("staff_pass"), I_STAFF_PASS);
+    EXPECT_EQ(item_by_key("cellar_key"), I_CELLAR_KEY);
+    EXPECT_EQ(item_by_key("no_such_thing"), I_NONE);
+    EXPECT_EQ(item_spec(I_STAFF_PASS).max_stack, 1);
+    EXPECT_TRUE(is_key(I_STAFF_PASS));
+    EXPECT_FALSE(is_key(I_MED_S));
+}
+
 TEST(Inventory, RemovingTheLastOneFreesTheSlot) {
     Inventory inv;
     inv.add(I_SHELLS, 6);

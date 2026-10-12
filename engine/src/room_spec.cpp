@@ -81,7 +81,7 @@ RoomSpec RoomSpec::load(const std::string& path) {
     }
     for (const auto& e : d.value("enemies", json::array()))
         r.enemies.push_back({e["id"], e.value("kind", "verdronkene"), e.value("requires_flag", ""), v3(e["pos"]),
-                             e.value("yaw", 0.0f) * DEG, e.value("emerge", false)});
+                             e.value("yaw", 0.0f) * DEG, e.value("emerge", false), e.value("lying", false)});
     for (const auto& i : d.value("interactables", json::array())) {
         Interactable I;
         I.id = i.value("id", "");

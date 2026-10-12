@@ -38,6 +38,8 @@ Like a stage after the audience has fled the theatre: the coats are still on the
 | Lifebuoys, life jackets, a dropped megaphone, a gas mask | quays, checkpoints | CC0 `lifebuoy`, `life_jacket`, `Megaphone_01`, `old_gas_mask` |
 | Looting: a smashed shop window and the glass on the pavement, shelves stripped | one or two shops a street | built |
 | Overturned terraces, a table still set | cafés | CC0 `outdoor_table_chair_set_01` |
+| The evacuation point: buses with their doors open, army trucks, a field hospital (olive tents, a red cross), mobile light towers | the squares the army used (the Dam) | built (`aftermath.bus`, `vehicle`, `aid_post` with `"military"`, `light_tower`) |
+| A shelter: camp beds in rows, blankets thrown back, a bag at each foot | churches, halls | built (`aftermath.camp_bed`) |
 
 Pickups (ammunition, medicine) are never painted into a picture: the game draws them, so they can
 be taken. Anything painted that looks like a pickup must not be one.

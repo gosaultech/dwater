@@ -20,8 +20,17 @@ apotheek (`apotheek`), the cinema's lobby (`bioscoop`) and a flower stall (`bloe
 from the Munt runs Rokin (`rokin_zuid`, `rokin_noord`), the main road to Centraal: the basin with
 its tour boats, Queen Wilhelmina on her horse, an aid post with an ambulance and a police van left by
 it, an army checkpoint at the Dam; with a hotel's lobby (`hotel_lobby`), the police post and its
-armoury (`politiepost`) and the flooded metro's ticket hall (`metro_rokin`) to search. The attic
-bathroom (`badkamer`) is built and rendered, waiting for its stairs. And:
+armoury (`politiepost`) and the flooded metro's ticket hall (`metro_rokin`) to search. Rokin ends at
+the Dam (`dam`): the Royal Palace floodlit gold, the Nieuwe Kerk, the National Monument, and the
+November funfair still lit and stopped (the Ferris wheel, a drop tower, the carousel, the stalls) in
+the middle of the evacuation point the army made of the square (buses with their doors open, army
+trucks, a field hospital, the luggage of thousands where the queues were). Inside, the Nieuwe Kerk
+was the shelter (`nieuwe_kerk`: camp beds down the nave, the first aid post, the organ), and the
+department store (`warenhuis`) has its security office (`beveiliging`). Parallel to Rokin runs the
+Kalverstraat (`kalverstraat_noord`, `kalverstraat`, `kalversteeg`), shutters down under its garlands,
+with a gun shop (`wapenhandel`), a chemist's (`drogist`) and a looted jeweller's (`juwelier`) to
+search, from Muntplein up to the Dam. The attic bathroom (`badkamer`) is built and rendered, waiting
+for its stairs. And:
 
 - **Backgrounds and depth.** Pre-rendered Cycles backgrounds, each with a painted depth map.
   Characters are hidden correctly behind painted furniture, like RE (1998).
@@ -371,10 +380,17 @@ flat: the camera crew moves room to room, nobody has to change the scenery.
   the Munt, ...), so the game holds one at a time: its streets, its shops, its Drowned (eight at
   most). Crossing into the next is a short beat, like the stairs; within a district the streets and
   shops run into each other with no beat. The map shows every district on one page, THE CITY,
-  as a street plan does.
+  as a street plan does. The beat is a door interactable with a `"target_room"` standing in the
+  gap (within 1.6 m of its middle); one that stands anywhere else never fires, and the way on is a
+  wall, so a test checks every one in the city.
 - **No waiting at a door.** The plates of the rooms next door are decoded on a worker thread
   while he's still in this one and uploaded a couple per frame (`src/plates.cpp`), so the cut is
   instant; rooms out of reach are let go. A stage crew setting up the next backdrops in the wings.
+- **The dead lie still** (`"lying"` on one of the Drowned in a room file): laid out among the
+  bodies, it stays down until he comes within 4 m and it can see him, or a shot goes off, or it's
+  hit; then it gets up the way a knocked-down one does. A mannequin in a shop window that turns its
+  head as you pass. **Keys** (the cellar key, the store's staff pass) are used at their doors and
+  never thrown away (`is_key`).
 - **What the house remembers** (`status::WorldState`, keyed `"room/id"`): what he took, read and
   unlocked, which rooms he's been in, which Drowned are dead (they stay dead), and what has happened
   (flags). Taking the cellar key sets `heard_thud`: a bang at the front door, and the two Drowned
@@ -407,6 +423,12 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   left out of the picture (the game draws it); each room's lamps light only that room, so a fire
   next door never spills through a doorway the game may show shut. Beyond the cellar door, steps
   go down into the dark.
+- **The room files are tested too** (`tools/pipeline/tests/test_house.py`), as a stage manager
+  walks the set before the show: every beat stands in its gap, every pickup has somewhere to stand
+  within reach of it (his body a circle 0.28 m in radius on the floor, his reach 1 m), and a model's
+  collider lies the way the model does (the manifest keeps each model's size), so a parked car is
+  never an invisible wall across the quay. An aid post's tent is walked into: only its table, its
+  stretchers and what lies under the sheets are solid.
 - **What the kit builds now.** The hall's carved open-tread stair (or a solid one with a plastered
   half wall, the souterrain's), floor-to-ceiling bookcases with a library ladder, a brass bird cage
   full of stuffed parrots, a round pedestal table; a black steel-glazed wall (`"steel_grid"`) onto a
@@ -460,11 +482,12 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   their pontoons (buckets of tulips, boards of bulb packets, shutters part way down), a pharmacy's
   green neon cross (`"cross"` on a shop), police crowd barriers with tape.
 - **Shop interiors** (`tools/blender/shops.py`): shelving stocked with packets and bottles in the
-  shop's colours (gaps where things were grabbed, a few knocked to the floor), counters with a
-  till, glass display cases, velvet ropes on brass posts, lit posters, a ticket booth, a cloakroom
-  rail with the coats still on it, strip lights. A thousand packets are one mesh per colour. A
-  shop's front wall is its street's (`"facade": true` on that wall): the street builds the
-  shopfront there with its door bay open (`"enter"` on the shop), and the room builds no wall.
+  shop's colours (gaps where things were grabbed, a few knocked to the floor), counters with a till,
+  glass display cases, velvet ropes on brass posts, lit posters, a ticket booth, a cloakroom rail
+  with the coats still on it, strip lights, a gun shop's wall rack (long guns stood on a felt ledge,
+  most of the slots empty, the last two chained). A thousand packets are one mesh per colour. A
+  shop's front wall is its street's (`"facade": true` on that wall): the street builds the shopfront
+  there with its door bay open (`"enter"` on the shop), and the room builds no wall.
 - **What the evacuation left** (`tools/blender/aftermath.py`, `docs/city_aftermath.md`): the city
   was emptied in a hurry, and every street says so. Hand-sprayed EVACUATIEROUTE boards pointing to
   Centraal, an aid post (a tent, stretchers, a floodlight on a generator, someone under a sheet),
@@ -474,11 +497,30 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   put in by looters (the glass on the pavement), and a tide line where the water came up the house
   fronts (`"tide"`: below it the brick is dark and still wet). Like a stage after the audience
   fled: the coats are still on the seats.
+- **The Dam's kits**: the palace (`landmarks.palace`: rusticated ground floor, two storeys of
+  pilasters, the pediment, the cupola with its ship), a gothic church front (`gothic_front`: the
+  great window lit from inside, buttresses, the ridge turret), the National Monument; the funfair
+  (`tools/blender/fair.py`: Ferris wheel, drop tower, carousel, stalls, all steel and bulbs); the
+  church inside (`tools/blender/church.py`: clustered piers, pointed arcades, the wooden vault, the
+  organ, a pulpit, gothic windows, brass chandeliers); buses, mobile light towers and camp beds for
+  the evacuation (`aftermath.py`).
+- **The great hall** (`tools/blender/halls.py`): the Beurs's brick arcades with the gallery over
+  them, steel trusses and the glass roof; and the mortuary the army made of it: body bags in rows
+  (some on trestles, one unzipped and empty), an ammunition crate, work lights on tripods, hospital
+  screens, the registration's tables with their laptops still on, a refrigerated container at the
+  gate. A landmark's shell can "enclose" a room (`"encloses"` on the prop): rendering that room
+  leaves the shell out, so from inside, the hall's own walls are the building (the back of a stage
+  flat is not the set; the room built behind it is). The Damrak shops' pieces are `shops.py`'s
+  (clogs, cheeses, the exchange's board of rates, the cashiers' glass, the safe), and a tour boat
+  can be boarded (`canal_boat`'s `"door"`, `"aisle"` and `"draught"`).
 - **The next district down the street.** Rendering a district also builds the streets of the
   districts beside it (within 40 m), so the end of a street shows the city going on, not a void.
 - **One ground per street.** Rooms on one storey are built together, and each room's lights only
   light its own things; so two streets' ground slabs must meet edge to edge and never overlap,
   or the other street's slab, unlit, shows through as a black patch.
+- **A row ends where it says.** A row of houses is laid out house by house at random widths; the
+  last one takes whatever is left of the row (never a sliver, never a house standing out in the
+  next street). A terrace ends at the corner plot, whatever its size.
 
 ## The death screen
 
@@ -611,12 +653,12 @@ status screen (items, files, map, pickups), the death screen. Still to come, in 
 
 1. **The city.** The house is in (hall, parlour, library, souterrain, kelder; the attic bathroom
    waits for its stairs), and out of it the Herengracht, Thorbeckeplein and Rembrandtplein, the
-   Munt (Reguliersbreestraat, Muntplein, the Bloemenmarkt, three shops to search). Next, Rokin as
-   the main road to Amsterdam Centraal with its landmarks (the water and its tour boats, the
-   Wilhelmina statue, the metro entrance), the Kalverstraat as a side loop of shops, the Dam (the
-   Palace, the Nieuwe Kerk, the National Monument), the Damrak; then the station and the metro
-   north under the IJ to Station Noord. Two or three shops to search in each. All pre-rendered backgrounds from RoomSpecs
-   (`docs/handoff/areas_session_prompt.md` is the brief).
+   Munt (Reguliersbreestraat, Muntplein, the Bloemenmarkt), Rokin, the main road north (its water
+   and tour boats, the Wilhelmina statue, the flooded metro), the Dam (the Palace, the Nieuwe Kerk,
+   the National Monument, the funfair, the evacuation point) and the Kalverstraat beside it, two or
+   three shops to search in each. Next, the Damrak (the Beurs, the leaning houses on the water);
+   then the station and the metro north under the IJ to Station Noord. All pre-rendered backgrounds
+   from RoomSpecs (`docs/handoff/areas_session_prompt.md` is the brief).
 2. **Polish pass over the shop interiors** (once every area is built): each one modelled to match
    one or two reference photos (the camera matched to the photo, the room and its fixtures built
    to it), its stand-ins swapped for CC0 scans, photo layers projected where modelling can't

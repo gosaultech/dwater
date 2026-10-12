@@ -1108,6 +1108,96 @@ std::string Game::stage(int i) {
             TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
             break;
         }
+        case 61: case 62: case 63: case 64: case 65: case 66: case 67: case 68: {
+            // The Dam: through the checkpoint off Rokin (the next district: a beat), the funfair, the
+            // evacuation point, the church's door pushed open and the shelter inside, the department
+            // store and its security office, the monument.
+            if (i == 61) {
+                at("rokin_noord", 12.6f, 5.0f, 0.0f);   // in the gap in the barriers, facing north
+                staged_in_ = stick_toward(0, -1, 0.5f);
+                run(4.0f);
+                name = "onto_the_dam";
+            } else if (i == 62) {
+                at("dam", 34.0f, 44.0f, 0.9f);   // among the stalls, the wheel ahead
+                run(0.6f);
+                name = "the_funfair";
+            } else if (i == 63) {
+                at("dam", 68.0f, 44.0f, -1.3f);   // at the queue for the buses
+                run(0.6f);
+                name = "the_evacuation_point";
+            } else if (i == 64) {
+                const int door = doorway_of(room_index("dam"), "door_kerk");
+                at("dam", 16.0f, 1.3f, 0.0f);   // at the church's door, facing it (north)
+                if (door >= 0) player_.x = doorways_[size_t(door)].mid_x();
+                interact();
+                run(0.7f);
+                staged_in_ = stick_toward(0, -1, 0.5f);
+                run(2.2f);
+                name = "into_the_church";
+            } else if (i == 65) {
+                at("nieuwe_kerk", 10.0f, 22.0f, 0.0f);   // down the middle of the beds, the organ ahead
+                run(0.6f);
+                name = "the_shelter";
+            } else if (i == 66) {
+                at("warenhuis", 9.0f, 15.0f, 0.4f);
+                run(0.6f);
+                name = "the_department_store";
+            } else if (i == 67) {
+                at("beveiliging", 2.4f, 4.6f, -2.5f);   // the cabinet ahead
+                run(0.6f);
+                name = "the_security_office";
+            } else {
+                at("dam", 64.0f, 30.0f, -1.6f);   // the monument ahead (east)
+                run(0.6f);
+                name = "the_monument";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
+            break;
+        }
+        case 69: case 70: case 71: case 72: case 73: case 74: case 75: {
+            // The Kalverstraat: in from Muntplein by the lane (the next district: a beat), the shopping
+            // street under its garlands, the gun shop's glass door pushed open and the shop inside, the
+            // chemist's, the looted jeweller's, and out at the top onto the Dam.
+            if (i == 69) {
+                at("muntplein", 2.4f, 2.0f, kPi / 2);   // at the lane's mouth, facing west
+                staged_in_ = stick_toward(-1, 0, 0.5f);
+                run(3.4f);
+                name = "into_the_kalverstraat";
+            } else if (i == 70) {
+                at("kalverstraat", 4.0f, 70.0f, 0.0f);   // walking north under the garlands
+                staged_in_ = stick_toward(0, -1, 0.4f);
+                run(0.8f);
+                name = "the_shopping_street";
+            } else if (i == 71) {
+                const int door = doorway_of(room_index("kalverstraat"), "door_wapenhandel");
+                at("kalverstraat", 1.2f, 67.0f, kPi / 2);   // at the gun shop's glass door, facing it (west)
+                if (door >= 0) player_.z = doorways_[size_t(door)].mid_z();
+                interact();
+                run(0.7f);
+                staged_in_ = stick_toward(-1, 0, 0.5f);
+                run(2.0f);
+                name = "into_the_gun_shop";
+            } else if (i == 72) {
+                at("wapenhandel", 4.4f, 3.4f, kPi / 2);   // at the glass counter, the rack behind it
+                run(0.6f);
+                name = "the_gun_shop";
+            } else if (i == 73) {
+                at("drogist", 6.6f, 4.6f, kPi / 2);
+                run(0.6f);
+                name = "the_chemist";
+            } else if (i == 74) {
+                at("juwelier", 2.6f, 4.2f, -kPi / 2);   // among the smashed cases
+                run(0.6f);
+                name = "the_jeweller";
+            } else {
+                at("kalverstraat_noord", 18.0f, 4.0f, 0.0f);   // at the top of the street, the Dam ahead
+                staged_in_ = stick_toward(0, -1, 0.5f);
+                run(3.6f);
+                name = "out_onto_the_dam";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
+            break;
+        }
         default: {   // bitten once too often: the words coming up (26), and all of it, the choice there (14)
             join(1, 1.0f, 8.3f, 0.0f, EState::Pursuit);
             player_ = {1.0f, 7.4f, kPi};

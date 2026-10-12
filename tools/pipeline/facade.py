@@ -111,6 +111,17 @@ def cut_rects(W: float, H: float, holes: list[tuple[float, float, float, float]]
     return out
 
 
+# ── Rows ───────────────────────────────────────────────────────────────────────────
+def row_span(x: float, w: float, x_to: float, sliver: float = 3.0) -> tuple[float, bool]:
+    """How wide the house drawn w wide at x in a row ending at x_to really is, and whether it is the
+    row's last: a house that would run past the end, or leave a gap too narrow for another house
+    (under sliver), ends where the row does. A terrace ends at the street corner: the last plot is
+    whatever is left, never a house standing out in the street."""
+    if x_to - (x + w) < sliver:
+        return x_to - x, True
+    return w, False
+
+
 # ── Shopfronts ───────────────────────────────────────────────────────────────────────
 def shop_bays(W: float, s0: float, top: float = 2.8) -> tuple[float, float, int, float]:
     """A glazed shopfront across a front W wide whose ground storey is s0 high: (u0, u1, n, top_v),

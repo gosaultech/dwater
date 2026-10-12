@@ -167,6 +167,8 @@ void Game::build_storey(int storey) {
             e.wake_flag = s.requires_flag;
             e.submerged = s.emerge;
             e.active = !e.submerged && (s.requires_flag.empty() || world_.has_flag(s.requires_flag));
+            e.lying = s.lying && !e.submerged;
+            if (e.lying) e.brain.go(EState::Floored);   // (held there: its floor timer doesn't run till it wakes)
             e.gurgle = 2.0f + 3.0f * frand();
             e.body = Character::make(Kind::Drowned, e.variant);
             enemies_.push_back(std::move(e));
@@ -450,6 +452,19 @@ void Game::update_emerging(Enemy& e, float dt) {
         e.rise += dt / RISE_TIME;
         if (e.rise >= 1.0f) { e.rise = -1; e.brain.go(EState::Pursuit); }
     }
+}
+
+// Laid out among the dead (the Beurs's rows of body bags): still until he comes near and it can see
+// him, or a shot goes off, or it's hit; then it gets up the way a floored one does, facing him.
+void Game::update_lying(Enemy& e) {
+    const float d = std::hypot(player_.x - e.a.x, player_.z - e.a.z);
+    const bool near = d < RISE_NEAR && sight_clear(e.a.x, e.a.z, player_.x, player_.z);
+    if (!near && !e.heard && e.brain.state == EState::Floored) return;
+    e.lying = false;
+    if (e.brain.state != EState::Floored) return;   // hit: whatever the hit did, it does
+    e.a.yaw = yaw_towards(e.a.x, e.a.z, player_.x, player_.z);
+    e.brain.go(EState::Floored);   // its floor timer from now: up in floor_time
+    say(e, "enemy_alert", 0.8f);
 }
 
 void Game::checkpoint() {

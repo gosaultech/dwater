@@ -2,10 +2,11 @@
 # Purpose: the shop-interior kit (Blender side) for the rooms he can walk into off the street: shelving
 # stocked with packets and bottles (gaps where they were grabbed, a few knocked to the floor),
 # counters with a till, glass display cases, velvet ropes on brass posts, lit posters, a cinema's
-# ticket booth, a cloakroom rail with the coats still on it, fluorescent strip lights. Products are
-# boxes and cylinders gathered into one mesh per colour (a shelf of a thousand packets costs a
-# handful of objects). Coordinates as in street.py (Godot frame, metres; a prop's local +z is its
-# front, its footprint centred on its spot).
+# ticket booth, a cloakroom rail with the coats still on it, fluorescent strip lights, a gun shop's
+# wall rack, a souvenir shop's clogs and cheeses, an exchange's rates board, its cashier's glass and
+# its safe. Products are boxes and cylinders gathered into one mesh per colour (a shelf of a
+# thousand packets costs a handful of objects). Coordinates as in street.py (Godot frame, metres;
+# a prop's local +z is its front, its footprint centred on its spot).
 #
 # ELI5: a set dresser's van. The architect (builders.py) puts up the walls; this fills the shelves,
 # so a shop looks like it was open until a moment ago.
@@ -22,6 +23,9 @@ PALETTES = {   # what a shop's packets look like from across the room
     "candy": [(0.85, 0.08, 0.08), (0.95, 0.8, 0.1), (0.1, 0.3, 0.8), (0.5, 0.12, 0.55), (0.95, 0.45, 0.1), (0.9, 0.9, 0.88)],
     "grocery": [(0.8, 0.15, 0.1), (0.95, 0.85, 0.3), (0.2, 0.45, 0.2), (0.9, 0.9, 0.85), (0.35, 0.2, 0.1), (0.15, 0.3, 0.65)],
     "souvenir": [(0.95, 0.45, 0.05), (0.85, 0.1, 0.1), (0.1, 0.25, 0.75), (0.95, 0.95, 0.9), (0.95, 0.8, 0.15), (0.1, 0.1, 0.1)],
+    "ammo": [(0.24, 0.28, 0.16), (0.62, 0.1, 0.07), (0.82, 0.66, 0.14), (0.12, 0.18, 0.36), (0.1, 0.1, 0.1), (0.8, 0.78, 0.72)],   # cartridge boxes
+    "guns": [(0.06, 0.06, 0.065), (0.12, 0.12, 0.13), (0.3, 0.2, 0.12), (0.05, 0.05, 0.05), (0.4, 0.4, 0.42), (0.16, 0.12, 0.08)],  # pistols, scopes, knives
+    "bar": [(0.45, 0.22, 0.05), (0.1, 0.25, 0.1), (0.75, 0.72, 0.6), (0.3, 0.12, 0.05), (0.55, 0.05, 0.08), (0.2, 0.2, 0.22)],     # bottles
 }
 METAL = {"color": [0.55, 0.56, 0.57], "rough": 0.35, "metal": 0.85, "noise": 0.1}
 BRASS = {"color": [0.72, 0.52, 0.2], "rough": 0.25, "metal": 1.0, "noise": 0.08}
@@ -120,7 +124,7 @@ def display_case(root, p, w, h, d):
     lbox(root, "case_base", (-w / 2, 0.0, -d / 2), (w / 2, 0.45, d / 2), base)
     glass = M("glass")
     lbox(root, "case_glass", (-w / 2, 0.45, -d / 2), (w / 2, h, d / 2), glass)
-    lbox(root, "case_light", (-w / 2 + 0.05, h - 0.03, -d / 2 + 0.05), (w / 2 - 0.05, h - 0.01, d / 2 - 0.05),
+    lbox(root, "case_light", (-w / 2 + 0.05, h - 0.03, -d / 2 + 0.04), (w / 2 - 0.05, h - 0.01, -d / 2 + 0.1),   # a strip at the back: the top stays glass
          builders.emissive("case_light", (1.0, 0.95, 0.85), 1.5))
     accs = _accs(len(pal))
     for y in (0.47, 0.47 + (h - 0.47) * 0.5):
@@ -200,7 +204,7 @@ def coat_rack(root, p, w, h, d):
     rod(root, "coat_rail", (-w / 2, h, 0.0), (w / 2, h, 0.0), 0.02, 0.02, rail)
     for sx in (-1, 1):
         rod(root, "coat_rail_post", (sx * w / 2, 0.0, 0.0), (sx * w / 2, h, 0.0), 0.025, 0.025, rail)
-    cols = [(0.05, 0.05, 0.06), (0.18, 0.13, 0.08), (0.1, 0.12, 0.16), (0.3, 0.05, 0.05), (0.22, 0.2, 0.17)]
+    cols = [tuple(c) for c in p.get("colors", [(0.05, 0.05, 0.06), (0.18, 0.13, 0.08), (0.1, 0.12, 0.16), (0.3, 0.05, 0.05), (0.22, 0.2, 0.17)])]
     x = -w / 2 + 0.2
     while x < w / 2 - 0.2:
         if rng.random() < 0.75:
@@ -210,6 +214,149 @@ def coat_rack(root, p, w, h, d):
                      M({"color": list(c), "rough": 0.85, "noise": 0.25}), 0.05, 2)
             kit.soft(root, "coat_shoulders", (x, h - 0.12, 0.0), (0.16, 0.1, 0.46), M({"color": list(c), "rough": 0.85}), 0.04, 2)
         x += rng.uniform(0.16, 0.26)
+
+
+def gun_rack(root, p, w, h, d):
+    """A gun shop's wall rack along local x, its face +z: a cupboard below, a felt-lined ledge the
+    butts stand on, a notched rail the barrels lean in, long guns upright in a row (a CC0 rifle).
+    Most slots are empty (taken); the first "chained" from the left are still there, a steel cable
+    through their trigger guards and a padlock on it. "slots": how many; "left": how many of the
+    unchained slots still hold a gun."""
+    rng = random.Random(p.get("seed", 13))
+    wood = M({"ph": "dark_wood", "tint": [0.42, 0.3, 0.22], "scale": 0.5})
+    felt = M({"color": [0.12, 0.2, 0.12], "rough": 0.95, "noise": 0.2})
+    ledge = 0.95
+    lbox(root, "rack_back", (-w / 2, 0.0, -d / 2), (w / 2, h, -d / 2 + 0.03), wood)
+    lbox(root, "rack_cupboard", (-w / 2, 0.0, -d / 2 + 0.03), (w / 2, ledge - 0.04, d / 2), wood)
+    lbox(root, "rack_kick", (-w / 2 + 0.02, 0.0, d / 2 - 0.04), (w / 2 - 0.02, 0.1, d / 2 + 0.005), M({"color": [0.03, 0.03, 0.03], "rough": 0.5}))
+    for i in range(max(1, int(w / 0.9))):   # the cupboard's doors
+        x0 = -w / 2 + w * i / max(1, int(w / 0.9))
+        lbox(root, "rack_door_gap", (x0 - 0.004, 0.12, d / 2), (x0 + 0.004, ledge - 0.08, d / 2 + 0.004), M({"color": [0.02, 0.015, 0.01], "rough": 0.8}))
+    lbox(root, "rack_ledge", (-w / 2, ledge - 0.04, -d / 2 + 0.03), (w / 2, ledge, d / 2), felt)
+    rail_y = ledge + 0.95
+    lbox(root, "rack_rail", (-w / 2, rail_y - 0.05, -d / 2 + 0.03), (w / 2, rail_y + 0.05, -d / 2 + 0.16), wood)
+    lbox(root, "rack_crown", (-w / 2 - 0.03, h - 0.12, -d / 2), (w / 2 + 0.03, h, -d / 2 + 0.12), wood)
+    slots = p.get("slots", max(2, int(w / 0.2)))
+    chained = min(p.get("chained", 0), slots)
+    left = p.get("left", 0)
+    full = list(range(chained)) + rng.sample(range(chained, slots), min(left, slots - chained))
+    steel = M(METAL)
+    for i in range(slots):
+        x = -w / 2 + w * (i + 0.5) / slots
+        lbox(root, "rack_notch", (x - 0.025, rail_y - 0.051, -d / 2 + 0.1), (x + 0.025, rail_y + 0.051, -d / 2 + 0.161),
+             M({"color": [0.02, 0.015, 0.01], "rough": 0.8}))
+        if i not in full:
+            continue
+        gun = builders.empty_at("rack_gun", (0.0, 0.0, 0.0), 0.0, -90.0)   # stood on its butt: its length up
+        gun.parent = root
+        gun.location = street.g2b((x, ledge + 0.58, -d / 2 + 0.12))
+        kit.model(gun, {"model": "ph:bolt_action_rifle_7_62", "fit": [1.15, 0.3, 0.3]}, 1.15, 0.3, 0.3)
+    if chained:
+        x1 = -w / 2 + w * (chained - 0.5) / slots + 0.12
+        rod(root, "rack_cable", (-w / 2 + 0.04, ledge + 0.32, -d / 2 + 0.2), (x1, ledge + 0.32, -d / 2 + 0.2), 0.006, 0.006, steel)
+        lbox(root, "rack_padlock", (x1, ledge + 0.24, -d / 2 + 0.17), (x1 + 0.05, ledge + 0.3, -d / 2 + 0.23), M(BRASS))
+
+
+def clogs(root, p, w, h, d):
+    """A souvenir shop's rack of clogs along local x (front +z): stepped shelves, pairs of wooden
+    shoes in yellow and painted blue and red, a few pairs gone, one fallen."""
+    rng = random.Random(p.get("seed", 17))
+    wood = M({"ph": "dark_wood", "tint": [0.55, 0.42, 0.3], "scale": 0.5})
+    paints = [Acc() for _ in range(3)]
+    cols = [(0.88, 0.7, 0.12), (0.12, 0.25, 0.65), (0.75, 0.1, 0.08)]
+    steps = p.get("steps", 4)
+    for k in range(steps):
+        y, z = 0.25 + k * (h - 0.3) / steps, d / 2 - 0.15 - k * (d - 0.3) / steps
+        lbox(root, "clog_shelf", (-w / 2, y - 0.03, z - 0.18), (w / 2, y, z + 0.12), wood)
+        x = -w / 2 + 0.12
+        while x < w / 2 - 0.2:
+            if rng.random() < p.get("empty", 0.2):
+                x += 0.26
+                continue
+            acc = paints[rng.randrange(3)]
+            for dx in (0.0, 0.11):   # a pair, toes out
+                acc.box((x + dx, y, z - 0.14), (x + dx + 0.09, y + 0.08, z + 0.1))
+                acc.box((x + dx + 0.01, y + 0.08, z - 0.14), (x + dx + 0.08, y + 0.11, z - 0.02))
+            x += 0.26
+    for acc, c in zip(paints, cols):
+        acc.build("clogs", M({"color": list(c), "rough": 0.35, "noise": 0.1}), root, smooth=False)
+
+
+def cheeses(root, p, w, h, d):
+    """A cheese shop's stack: wheels of Gouda in their wax (yellow, red, black), the top one cut."""
+    rng = random.Random(p.get("seed", 19))
+    wax = [M({"color": list(c), "rough": 0.4}) for c in ((0.9, 0.62, 0.08), (0.6, 0.05, 0.04), (0.06, 0.06, 0.06))]
+    r = min(w, d) / 2
+    y = 0.0
+    k = 0
+    while y < h - 0.15:
+        t = rng.uniform(0.11, 0.15)
+        kit.lathe(root, "cheese", [(r * 0.9, 0.0), (r, t * 0.3), (r, t * 0.7), (r * 0.9, t), (0.0, t)], wax[rng.randrange(3)],
+                  at=(rng.uniform(-0.02, 0.02), y, rng.uniform(-0.02, 0.02)), segments=24)
+        y += t
+        k += 1
+
+
+def rates_board(root, p, w, h, d):
+    """An exchange's board of rates: a black panel, the currencies' codes and two columns of
+    numbers in orange LEDs, still lit."""
+    lbox(root, "board", (-w / 2, 0.0, -d / 2), (w / 2, h, d / 2), M({"color": [0.01, 0.01, 0.012], "rough": 0.3}))
+    led = builders.emissive("rates_led", (1.0, 0.45, 0.08), 3.0)
+    codes = p.get("codes", ["EUR", "USD", "GBP", "CHF", "JPY", "CNY"])
+    rng = random.Random(p.get("seed", 23))
+    row = h / (len(codes) + 1)
+    text(root, "WIJ KOPEN · WIJ VERKOPEN", (0.0, h - row * 0.55, d / 2 + 0.004), row * 0.35, led, font="DejaVuSans-Bold.ttf", depth=0.0)
+    for k, c in enumerate(codes):
+        y = h - row * (k + 1.5)
+        text(root, c, (-w * 0.32, y, d / 2 + 0.004), row * 0.45, led, font="DejaVuSans-Bold.ttf", depth=0.0)
+        for col, x in ((0, 0.05), (1, 0.3)):
+            v = rng.uniform(0.6, 1.4) if c != "JPY" else rng.uniform(140, 170)
+            text(root, f"{v:.4f}" if c != "JPY" else f"{v:.2f}", (w * x, y, d / 2 + 0.004), row * 0.42, led, font="DejaVuSansMono.ttf", depth=0.0)
+
+
+def glass_partition(root, p, w, h, d):
+    """The cashier's screen across a counter along local x: thick glass panes in a steel frame from
+    the counter top (at 1.05) up to h, a steel pass-through tray under each pane, and ("gap": [x,
+    width]) the staff door left open."""
+    steel = M({"color": [0.5, 0.52, 0.55], "rough": 0.35, "metal": 0.9})
+    glass = M("glass")
+    gap = p.get("gap")
+    top = 1.05
+    x = -w / 2
+    n = max(1, int(w / 1.2))
+    for i in range(n):
+        x0, x1 = -w / 2 + w * i / n, -w / 2 + w * (i + 1) / n
+        if gap and x1 > gap[0] - gap[1] / 2 and x0 < gap[0] + gap[1] / 2:
+            continue
+        lbox(root, "pane", (x0 + 0.03, top + 0.12, -0.012), (x1 - 0.03, h, 0.012), glass)
+        lbox(root, "tray", ((x0 + x1) / 2 - 0.2, top - 0.02, -0.25), ((x0 + x1) / 2 + 0.2, top + 0.02, 0.25), steel)
+        for u in (x0, x1):
+            lbox(root, "mullion", (u - 0.03, top, -0.03), (u + 0.03, h, 0.03), steel)
+    lbox(root, "head", (-w / 2, h, -0.04), (w / 2, h + 0.08, 0.04), steel)
+    for a, b in ((-w / 2, gap[0] - gap[1] / 2), (gap[0] + gap[1] / 2, w / 2)) if gap else ((-w / 2, w / 2),):
+        if b - a > 0.05:
+            lbox(root, "counter_base", (a, 0.0, -d / 2), (b, top, d / 2), M({"color": [0.12, 0.13, 0.15], "rough": 0.4}))
+            lbox(root, "counter_top", (a, top - 0.03, -d / 2 - 0.03), (b, top, d / 2 + 0.03), M({"color": [0.8, 0.79, 0.76], "rough": 0.3}))
+
+
+def safe(root, p, w, h, d):
+    """A floor safe in grey steel, its door ("open") swung wide and the shelves inside bare."""
+    steel = M({"color": [0.3, 0.32, 0.34], "rough": 0.35, "metal": 0.8})
+    inside = M({"color": [0.05, 0.05, 0.055], "rough": 0.6})
+    if p.get("open", True):
+        lbox(root, "safe_back", (-w / 2, 0.0, -d / 2), (w / 2, h, -d / 2 + 0.08), steel)
+        for s in (-1, 1):
+            lbox(root, "safe_side", (s * w / 2 - (0.08 if s > 0 else 0.0), 0.0, -d / 2), (s * w / 2 + (0.08 if s < 0 else 0.0), h, d / 2), steel)
+        lbox(root, "safe_top", (-w / 2, h - 0.08, -d / 2), (w / 2, h, d / 2), steel)
+        lbox(root, "safe_floor", (-w / 2, 0.0, -d / 2), (w / 2, 0.08, d / 2), steel)
+        lbox(root, "safe_shelf", (-w / 2 + 0.08, h / 2, -d / 2 + 0.08), (w / 2 - 0.08, h / 2 + 0.02, d / 2), inside)
+        door = lbox(root, "safe_door", (0.0, 0.02, 0.0), (w - 0.02, h - 0.02, 0.1), steel)
+        door.location = street.g2b((w / 2, 0.0, d / 2))
+        door.rotation_euler[2] = math.radians(-100)   # swung wide on its hinge
+        rod(root, "safe_dial", (w / 2 + 0.05, h * 0.6, d / 2 + 0.3), (w / 2 + 0.1, h * 0.6, d / 2 + 0.3), 0.06, 0.06, M(BRASS), seg=16)
+    else:
+        lbox(root, "safe_body", (-w / 2, 0.0, -d / 2), (w / 2, h, d / 2), steel)
+        rod(root, "safe_dial", (0.0, h * 0.6, d / 2), (0.0, h * 0.6, d / 2 + 0.05), 0.06, 0.06, M(BRASS), seg=16)
 
 
 def strip_light(root, p, w, h, d):
@@ -317,4 +464,6 @@ def lockers(root, p, w, h, d):
 
 kit.PROPS.update({"ticket_machine": ticket_machine, "ticket_gates": ticket_gates, "escalator": escalator, "lockers": lockers,
                   "pilaster": pilaster, "wall_sign": wall_sign, "shelving": shelving, "counter": counter, "display_case": display_case, "stanchions": stanchions,
-                  "poster": poster, "ticket_booth": ticket_booth, "coat_rack": coat_rack, "strip_light": strip_light})
+                  "poster": poster, "ticket_booth": ticket_booth, "coat_rack": coat_rack, "strip_light": strip_light,
+                  "gun_rack": gun_rack, "clogs": clogs, "cheeses": cheeses, "rates_board": rates_board,
+                  "glass_partition": glass_partition, "safe": safe})

@@ -186,7 +186,11 @@
       "ends": true,
       "far_quay": 6.0,
       "lit": 0.3,
-      "shops": 0.25
+      "shops": 0.25,
+      "far_span": [
+        -40.0,
+        30.0
+      ]
     },
     "lamps": [
       [

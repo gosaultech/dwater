@@ -1,0 +1,372 @@
+{
+  "_file": "damned_waters/game/data/rooms/beveiliging.json \u2014 RoomSpec for Beveiliging (the city, district 4: the Dam): the store's security office: a wall of monitors still showing the empty floors, lockers, a desk, the guards' cabinet hanging open. Its front wall is the street's shopfront (\"facade\": the street builds it); its door is the street's. Every business name is made up. Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "beveiliging",
+  "display_name": "Beveiliging",
+  "storey": 14,
+  "origin": [
+    901.0,
+    -323.5
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      5.0,
+      8.0
+    ]
+  },
+  "height": 3.0,
+  "materials": {
+    "floor": {
+      "ph": "old_linoleum_flooring_01",
+      "tint": [
+        0.5,
+        0.52,
+        0.55
+      ],
+      "rough": 0.5
+    },
+    "wall": {
+      "color": [
+        0.6,
+        0.62,
+        0.64
+      ],
+      "rough": 0.7
+    },
+    "ceiling": {
+      "color": [
+        0.7,
+        0.7,
+        0.7
+      ],
+      "rough": 0.8
+    },
+    "skirting": null
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.01,
+      0.012,
+      0.016
+    ],
+    "strength": 0.5
+  },
+  "render": {
+    "exposure": 0.9,
+    "bloom": {
+      "threshold": 0.95,
+      "strength": 0.25,
+      "size": 0.5
+    }
+  },
+  "walls": {
+    "south": {
+      "openings": [
+        {
+          "kind": "door",
+          "center": 2.5,
+          "width": 0.9,
+          "height": 2.1,
+          "hinge": "right"
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "model",
+      "model": "ph:metal_office_desk",
+      "pos": [
+        2.6,
+        0.0,
+        1.0
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "size": [
+        1.4,
+        0.75,
+        0.7
+      ]
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        1.4,
+        1.6,
+        0.05
+      ],
+      "size": [
+        0.9,
+        0.6,
+        0.03
+      ],
+      "text": "CAM 1",
+      "color": [
+        0.5,
+        0.7,
+        1.0
+      ],
+      "glow": 1.2,
+      "collide": false
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        2.5,
+        1.6,
+        0.05
+      ],
+      "size": [
+        0.9,
+        0.6,
+        0.03
+      ],
+      "text": "CAM 2",
+      "color": [
+        0.5,
+        0.7,
+        1.0
+      ],
+      "glow": 1.2,
+      "collide": false
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        3.6,
+        1.6,
+        0.05
+      ],
+      "size": [
+        0.9,
+        0.6,
+        0.03
+      ],
+      "text": "CAM 3",
+      "color": [
+        0.5,
+        0.7,
+        1.0
+      ],
+      "glow": 1.2,
+      "collide": false
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        1.9,
+        2.3,
+        0.05
+      ],
+      "size": [
+        0.9,
+        0.6,
+        0.03
+      ],
+      "text": "CAM 4",
+      "color": [
+        0.5,
+        0.7,
+        1.0
+      ],
+      "glow": 1.2,
+      "collide": false
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        3.1,
+        2.3,
+        0.05
+      ],
+      "size": [
+        0.9,
+        0.6,
+        0.03
+      ],
+      "text": "GEEN SIGNAAL",
+      "color": [
+        1.0,
+        0.2,
+        0.15
+      ],
+      "glow": 1.5,
+      "collide": false
+    },
+    {
+      "type": "lockers",
+      "pos": [
+        4.75,
+        0.0,
+        5.0
+      ],
+      "yaw": -90,
+      "size": [
+        2.8,
+        1.9,
+        0.5
+      ],
+      "seed": 9,
+      "open": 0.4
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_monobloc_chair_01",
+      "pos": [
+        2.4,
+        0.0,
+        1.9
+      ],
+      "yaw": 160,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "strip_light",
+      "pos": [
+        2.5,
+        3.0,
+        4.0
+      ],
+      "size": [
+        2.5,
+        0.1,
+        0.2
+      ],
+      "yaw": 90,
+      "collide": false
+    }
+  ],
+  "lights": [
+    {
+      "kind": "area",
+      "pos": [
+        2.5,
+        2.95,
+        4.0
+      ],
+      "look_at": [
+        2.5,
+        0.0,
+        4.0
+      ],
+      "size": 1.2,
+      "color": [
+        0.92,
+        0.96,
+        1.0
+      ],
+      "blender_power": 160,
+      "godot_energy": 0.5,
+      "range": 5.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        3.2,
+        1.3,
+        1.2
+      ],
+      "color": [
+        0.6,
+        0.75,
+        1.0
+      ],
+      "blender_power": 25,
+      "godot_energy": 0.3,
+      "range": 3.0,
+      "radius": 0.3
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        0.5,
+        2.5,
+        7.5
+      ],
+      "look_at": [
+        3.6,
+        1.0,
+        0.8
+      ],
+      "fov": 66,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          5.0,
+          8.0
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_warenhuis": {
+      "pos": [
+        2.5,
+        0.0,
+        7.2
+      ],
+      "yaw": 0
+    }
+  },
+  "interactables": [
+    {
+      "id": "door_warenhuis",
+      "kind": "door",
+      "pos": [
+        2.5,
+        1.0,
+        7.55
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "cabinet",
+      "kind": "examine",
+      "pos": [
+        4.2,
+        1.0,
+        5.0
+      ],
+      "radius": 1.2,
+      "text": "The guards' cabinet, hanging open. Their batons are gone. In the back, behind the radios, a box they missed."
+    },
+    {
+      "id": "ammo_cabinet",
+      "kind": "pickup",
+      "item": "handgun_ammo",
+      "count": 15,
+      "pos": [
+        4.4,
+        1.0,
+        5.6
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "monitors",
+      "kind": "examine",
+      "pos": [
+        2.5,
+        1.0,
+        1.2
+      ],
+      "radius": 1.2,
+      "text": "Camera 3: the second floor. The floor is under water. Something is walking through it, slowly, toward the stairs."
+    }
+  ],
+  "enemies": []
+}

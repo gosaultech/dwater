@@ -196,13 +196,16 @@ def ensure(asset_id: str, kind: str, res: str = "1k", cache: Path = CACHE) -> di
 
 
 def update_manifest(metas: list[dict], path: Path = MANIFEST) -> dict:
-    """The ledger in git: every asset used, its licence and authors (sorted, so diffs stay quiet)."""
+    """The ledger in git: every asset used, its licence and authors (sorted, so diffs stay quiet), and
+    a model's size in millimetres along Blender's x, y (its depth) and z (up), as Poly Haven gives it."""
     m = json.loads(path.read_text()) if path.exists() else {"_file": "", "assets": {}}
     m["_file"] = ("damned_waters/tools/assets/manifest.json: the CC0 assets the room sets use "
                   "(written by tools/assets/polyhaven.py fetch).")
     for meta in metas:
         m["assets"][meta["id"]] = {"kind": meta["kind"], "name": meta["name"], "authors": meta["authors"],
                                    "license": meta["license"], "source": meta["source"]}
+        if meta["kind"] == "model" and meta.get("dimensions_mm"):   # (x, depth, height: which way it is long)
+            m["assets"][meta["id"]]["dimensions_mm"] = [round(v) for v in meta["dimensions_mm"]]
     m["assets"] = dict(sorted(m["assets"].items()))
     path.write_text(json.dumps(m, indent=1) + "\n")
     return m

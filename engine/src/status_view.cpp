@@ -473,7 +473,7 @@ void Game::draw_status_ui() {
             if (item_sel == I_HANDGUN || item_sel == I_SHOTGUN) stat = TextFormat("Holds %d", weapon_spec(item_sel == I_HANDGUN ? Weapon::Pistol : Weapon::Shotgun).mag);
             else if (status::gun_for_ammo(item_sel) >= 0) stat = std::string("Combine with the ") + weapon_spec(Weapon(status::gun_for_ammo(item_sel))).name + " to load it";
             else if (is_medicine(item_sel)) stat = health_ >= MAX_HEALTH ? "You don't need it now." : "Use it to treat your wounds.";
-            else if (item_sel == I_CELLAR_KEY) stat = "It's used at its door.";
+            else if (is_key(item_sel)) stat = "It's used at its door.";
             text(f_italic_, stat, 910, 556, 17, C_DIM);
         } else {
             text(f_italic_, "Empty.", 1060, 330, 22, C_FAINT, 1);

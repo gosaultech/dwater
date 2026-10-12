@@ -206,13 +206,13 @@ void Game::apply(const status::Command& c) {
     }
 }
 
-// What lies in the room: each model at its spot (guns and the key laid down flat, the rest
+// What lies in the room: each model at its spot (guns and keys laid down flat, the rest
 // standing as they stand), and a glint that catches the eye now and then, the way the classics
 // mark a pickup without a HUD.
 void Game::draw_loot() {
     for (const Loot& o : loot_) {
         if (item_mesh_[o.item].vertexCount == 0) continue;
-        const bool flat = o.item == I_HANDGUN || o.item == I_SHOTGUN || o.item == I_CELLAR_KEY;
+        const bool flat = o.item == I_HANDGUN || o.item == I_SHOTGUN || is_key(o.item);
         const unsigned h = unsigned(std::hash<std::string>{}(o.key + std::to_string(o.dropped)));
         const float yaw = float(h % 360) * DEG2RAD;
         const Vector3 c = item_centre_[o.item];

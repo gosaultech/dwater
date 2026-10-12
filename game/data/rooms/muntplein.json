@@ -642,6 +642,12 @@
           "center": 30.0,
           "width": 12.0,
           "height": 10.0
+        },
+        {
+          "kind": "passage",
+          "center": 2.0,
+          "width": 3.4,
+          "height": 8.0
         }
       ]
     },
@@ -816,6 +822,14 @@
         1.8
       ],
       "yaw": 180
+    },
+    "from_kalverstraat": {
+      "pos": [
+        1.8,
+        0.0,
+        2.0
+      ],
+      "yaw": -90
     }
   },
   "interactables": [
@@ -875,6 +889,18 @@
       ],
       "radius": 1.6,
       "text": "Rokin. Crowd barriers across it, one pushed flat. Beyond them, the long road to Centraal."
+    },
+    {
+      "id": "to_kalverstraat",
+      "kind": "door",
+      "pos": [
+        0.2,
+        1.0,
+        2.0
+      ],
+      "radius": 1.6,
+      "target_room": "kalversteeg",
+      "target_spawn": "from_muntplein"
     }
   ],
   "enemies": [

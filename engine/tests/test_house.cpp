@@ -202,6 +202,20 @@ TEST(House, AStreetIsLitByItsLamps) {   // the lamps the set builder plants ligh
     EXPECT_FLOAT_EQ(r.lights[2].energy, 0.9f);
 }
 
+TEST(House, TheDeadLieStillTillWoken) {   // "lying": laid out on the floor; "emerge": under the water
+    const RoomSpec r = load_text("mortuary", R"({"id": "mortuary", "bounds": {"min": [0, 0], "max": [6, 6]}, "height": 4,
+      "shots": [{"id": "a", "pos": [3, 2, 5], "look_at": [3, 1, 0], "fov": 50, "zone": {"min": [0, 0], "max": [6, 6]}}], "spawns": {},
+      "enemies": [{"id": "bag", "pos": [2, 0, 2], "lying": true}, {"id": "pool", "pos": [4, 0, 4], "emerge": true},
+                  {"id": "up", "pos": [5, 0, 1]}]})");
+    ASSERT_TRUE(r.ok());
+    ASSERT_EQ(r.enemies.size(), 3u);
+    EXPECT_TRUE(r.enemies[0].lying);
+    EXPECT_FALSE(r.enemies[0].emerge);
+    EXPECT_TRUE(r.enemies[1].emerge);
+    EXPECT_FALSE(r.enemies[1].lying);
+    EXPECT_FALSE(r.enemies[2].lying || r.enemies[2].emerge);
+}
+
 TEST(House, TheRealHouseFitsTogether) {
     std::vector<RoomSpec> rooms;
     for (const char* id : {"gang", "kelder", "voorkamer"}) {   // (name order, as the game loads them)

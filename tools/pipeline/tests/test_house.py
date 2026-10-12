@@ -1,8 +1,11 @@
 # damned_waters/tools/pipeline/tests/test_house.py
 # Purpose: the set builder's floor plan agrees with the engine's (house.hpp): doorways pair across
 # rooms placed at their origins, live doors are the ones the game swings, shared walls are found,
-# and the real house (hall, parlour, cellar) fits together.
+# and the real house (hall, parlour, cellar) fits together. And the room files themselves: every
+# way on in the city is where its gap is, a model's collider lies the way the model does, every
+# pickup can be reached, no two rooms on a storey overlap.
 import json
+import math
 import sys
 import unittest
 from pathlib import Path
@@ -12,6 +15,8 @@ sys.path.insert(0, str(HERE.parent))
 import house  # noqa: E402
 
 ROOMS = HERE.parents[2] / "game" / "data" / "rooms"
+MANIFEST = HERE.parents[2] / "tools" / "assets" / "manifest.json"
+PLAYER_R, REACH = 0.28, 1.0   # the engine's: his body on the floor plane, how far he reaches for a thing
 
 
 def room(rid, origin, size, walls, interactables=(), storey=0):
@@ -100,6 +105,64 @@ class RealHouseTests(unittest.TestCase):
     def test_facade_is_flush(self):   # the canal front of the hall and the parlour is one plane
         g, v = house.house_bounds(self.specs["gang"]), house.house_bounds(self.specs["voorkamer"])
         self.assertAlmostEqual(g[3], v[3])
+
+    def test_every_city_beat_stands_in_its_gap(self):   # a beat no opening owns never fires: the way on is a wall
+        owned = {(d["a"], d["door_a"]) for d in house.doorways(self.specs)}
+        for rid, s in self.specs.items():
+            if s.get("storey", 0) < house.CITY:
+                continue
+            for it in s.get("interactables", []):
+                if it.get("kind") == "door" and it.get("target_room"):
+                    self.assertIn((rid, it["id"]), owned, f"{rid}/{it['id']}: not within {house.DOOR_REACH} m of an opening")
+
+    def test_a_model_s_collider_lies_along_it(self):   # not an invisible wall across the quay beside a parked car
+        sizes = {k: v["dimensions_mm"] for k, v in json.loads(MANIFEST.read_text())["assets"].items() if "dimensions_mm" in v}
+        for rid, s in self.specs.items():
+            for p in s.get("props", []):
+                if p["type"] != "model" or p.get("collide", True) is False or "size" not in p or p.get("yaw_model", 0) % 180:
+                    continue
+                ref = p["model"][3:] if isinstance(p["model"], str) else p["model"]["ph"]
+                mx, my = sizes.get(ref, (1, 1, 1))[:2]   # along its x, and its depth
+                sx, sz = p["size"][0], p["size"][2]
+                if max(mx, my) > 1.3 * min(mx, my) and max(sx, sz) > 1.3 * min(sx, sz):
+                    self.assertEqual(mx > my, sx > sz, f"{rid}: {ref} at {p['pos']}: its collider runs across it")
+
+    def test_rooms_on_a_storey_never_overlap(self):   # two sets built in one place: walls through each other's floors
+        def rect(s):
+            ox, oz = s.get("origin", [0.0, 0.0])
+            (x0, z0), (x1, z1) = s["bounds"]["min"], s["bounds"]["max"]
+            return ox + x0, oz + z0, ox + x1, oz + z1
+        ids = sorted(self.specs)
+        for i, a in enumerate(ids):
+            for b in ids[i + 1:]:
+                if self.specs[a].get("storey", 0) != self.specs[b].get("storey", 0):
+                    continue
+                A, B = rect(self.specs[a]), rect(self.specs[b])
+                ox, oz = min(A[2], B[2]) - max(A[0], B[0]), min(A[3], B[3]) - max(A[1], B[1])
+                self.assertFalse(ox > 0.01 and oz > 0.01, f"{a} and {b} overlap {ox:.2f} x {oz:.2f} m")
+
+    def test_every_pickup_can_be_reached(self):   # somewhere to stand within reach of it, clear of every solid thing
+        for rid, s in self.specs.items():
+            boxes = [(p["pos"][0], p["pos"][2], p["size"][0] / 2, p["size"][2] / 2, math.radians(p.get("yaw", 0.0)))
+                     for p in s.get("props", []) if p.get("collide", True) is not False and "size" in p]
+            (x0, z0), (x1, z1) = s["bounds"]["min"], s["bounds"]["max"]
+
+            def clear(x, z):
+                if not (x0 + PLAYER_R <= x <= x1 - PLAYER_R and z0 + PLAYER_R <= z <= z1 - PLAYER_R):
+                    return False
+                for cx, cz, hx, hz, t in boxes:   # into each box's frame, as the engine's resolve_circle_obb
+                    dx, dz = x - cx, z - cz
+                    lx, lz = dx * math.cos(t) - dz * math.sin(t), dx * math.sin(t) + dz * math.cos(t)
+                    if math.hypot(lx - max(-hx, min(hx, lx)), lz - max(-hz, min(hz, lz))) < PLAYER_R:
+                        return False
+                return True
+            for it in s.get("interactables", []):
+                if it.get("kind") != "pickup":
+                    continue
+                x, z = it["pos"][0], it["pos"][2]
+                spots = [(x + REACH * a / 10 * math.cos(k * math.pi / 12), z + REACH * a / 10 * math.sin(k * math.pi / 12))
+                         for a in range(10) for k in range(24)]
+                self.assertTrue(any(clear(*q) for q in spots), f"{rid}/{it['id']}: nowhere to stand within reach of it")
 
     def test_peeks_are_shots(self):
         ids = [s["id"] for s in house.peek_shots(self.specs["voorkamer"])]

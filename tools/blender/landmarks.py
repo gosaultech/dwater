@@ -424,7 +424,9 @@ def green_cross(root, at, size=0.75):
 def canal_boat(root, p, w, h, d):
     """A glass-roofed canal cruise boat along local x (bow at +x): a low dark steel hull, glazed
     sides under a curved roof, rows of seats inside with their lights still on, its name on the
-    bow. "list": degrees it heels over (a boat that has taken water); "sunk": metres it sits low."""
+    bow. "list": degrees it heels over (a boat that has taken water); "sunk": metres it sits low.
+    For one he boards: "draught" (the hull's depth under the cabin floor), "aisle" (half the gangway
+    between the seats), "door": [x, width] on its +z side (where the pier is: no glass, no seats)."""
     hull_m = M(p.get("hull", {"color": [0.03, 0.05, 0.09], "rough": 0.35, "metal": 0.5, "noise": 0.2}))
     white = M({"color": [0.82, 0.82, 0.8], "rough": 0.4, "noise": 0.08})
     seat = M({"color": [0.32, 0.05, 0.05], "rough": 0.8})
@@ -435,7 +437,15 @@ def canal_boat(root, p, w, h, d):
     L, Wd = w, d
     bow = 2.2
     hull = Acc()   # a box hull with a pointed bow and a rounded stern
-    y0, y1 = -0.75, 0.35
+    y1 = 0.35
+    y0 = y1 - p.get("draught", 1.1)
+    door = p.get("door")
+    aisle = p.get("aisle", 0.25)
+
+    def spans(sz, a, b):   # the stretches of the +z side either side of the door, or all of it
+        if not door or sz < 0:
+            return [(a, b)]
+        return [(u, v) for u, v in ((a, door[0] - door[1] / 2), (door[0] + door[1] / 2, b)) if v - u > 0.05]
     xs = -L / 2
     xb = L / 2 - bow
     hull.box((xs, y0, -Wd / 2), (xb, y1, Wd / 2))
@@ -452,11 +462,17 @@ def canal_boat(root, p, w, h, d):
     for i in range(n + 1):
         x = c0 + (c1 - c0) * i / n
         for sz in (-1, 1):
+            if sz > 0 and door and abs(x - door[0]) < door[1] / 2:
+                continue
             posts.box((x - 0.04, y1, sz * (Wd / 2 - 0.2) - 0.03), (x + 0.04, y1 + ch * 0.62, sz * (Wd / 2 - 0.2) + 0.03))
     posts.build("cabin_posts", white, root, smooth=False)
     for sz in (-1, 1):
-        lbox(root, "cabin_glass", (c0, y1 + 0.45, sz * (Wd / 2 - 0.2) - 0.01), (c1, y1 + ch * 0.62, sz * (Wd / 2 - 0.2) + 0.01), M("glass"))
-        lbox(root, "cabin_side", (c0, y1, sz * (Wd / 2 - 0.2) - 0.03), (c1, y1 + 0.45, sz * (Wd / 2 - 0.2) + 0.03), white)
+        for a, b in spans(sz, c0, c1):
+            lbox(root, "cabin_glass", (a, y1 + 0.45, sz * (Wd / 2 - 0.2) - 0.01), (b, y1 + ch * 0.62, sz * (Wd / 2 - 0.2) + 0.01), M("glass"))
+            lbox(root, "cabin_side", (a, y1, sz * (Wd / 2 - 0.2) - 0.03), (b, y1 + 0.45, sz * (Wd / 2 - 0.2) + 0.03), white)
+    if door:   # the door's frame and the step down onto the deck
+        for u in (door[0] - door[1] / 2, door[0] + door[1] / 2):
+            lbox(root, "door_post", (u - 0.05, y1, Wd / 2 - 0.25), (u + 0.05, y1 + ch * 0.62, Wd / 2 - 0.15), white)
     roof = Acc()
     seg = 8
     for k in range(seg):
@@ -470,8 +486,10 @@ def canal_boat(root, p, w, h, d):
     x = c0 + 0.5
     while x < c1 - 0.5:
         for sz in (-1, 1):
-            seats.box((x, y1 + 0.05, sz * 0.25), (x + 0.5, y1 + 0.5, sz * (Wd / 2 - 0.35)))
-            seats.box((x, y1 + 0.5, sz * 0.25), (x + 0.08, y1 + 1.0, sz * (Wd / 2 - 0.35)))
+            if sz > 0 and door and abs(x + 0.25 - door[0]) < door[1] / 2 + 0.3:
+                continue
+            seats.box((x, y1 + 0.05, sz * aisle), (x + 0.5, y1 + 0.5, sz * (Wd / 2 - 0.35)))
+            seats.box((x, y1 + 0.5, sz * aisle), (x + 0.08, y1 + 1.0, sz * (Wd / 2 - 0.35)))
         x += 1.0
     seats.build("boat_seats", seat, root, smooth=False)
     lbox(root, "cabin_light", (c0 + 0.3, y1 + ch * 0.62 + 0.3, -0.25), (c1 - 0.3, y1 + ch * 0.62 + 0.33, 0.25),
@@ -884,7 +902,7 @@ def beurs(root, p, w, h, d):
     """The Beurs van Berlage, the old exchange (1903), its long side along local x facing +z (w long,
     h to the eaves): plain brick walls with a stone base, rows of small round-arched windows, buttresses
     flat on the wall, a steep roof; at its +x end the square clock tower (twice the height), its clock
-    lit, a pyramid cap, an arched gate at its foot."""
+    lit, a pyramid cap, an arched gate at its foot ("gate_open": a way through it into the hall)."""
     brick = M(p.get("brick", {"ph": "red_bricks_04", "tint": [0.75, 0.55, 0.45], "scale": 1.0}))
     stone = M(STONE_BEURS)
     dark = M({"color": [0.02, 0.02, 0.025], "rough": 0.15, "metal": 0.3})
@@ -921,7 +939,8 @@ def beurs(root, p, w, h, d):
         lbox(root, "tower_wall", (tx0 + a, c, -1.0), (tx0 + b, e, 0.3), brick)
     for a, b, c, e in holes[1:]:
         lbox(root, "tower_window", (a, c, -0.9), (b, e, -0.85), dark)
-    lbox(root, "tower_gate", (holes[0][0], 0.0, -0.9), (holes[0][1], 5.5, -0.85), emit((1.0, 0.7, 0.4), 0.4, "beurs_gate"))
+    if not p.get("gate_open"):   # (open: the gate is a way in, the hall behind it a room of its own)
+        lbox(root, "tower_gate", (holes[0][0], 0.0, -0.9), (holes[0][1], 5.5, -0.85), emit((1.0, 0.7, 0.4), 0.4, "beurs_gate"))
     for side in (tx0, tx1):
         lbox(root, "tower_side", (side - (0.0 if side == tx0 else 1.0), 0.0, -12.0), (side + (1.0 if side == tx0 else 0.0), th, -1.0), brick)
     cx = (tx0 + tx1) / 2

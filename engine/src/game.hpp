@@ -53,6 +53,7 @@ struct Enemy {
     bool heard = false;           // a noise reached it this frame (a shot, a footstep)
     bool crawling = false;        // lost a leg: down on the floor for good
     bool submerged = false;       // under the water, waiting ("emerge" in the room file)
+    bool lying = false;           // laid out on the floor among the dead, waiting ("lying" in the room file)
     float rise = -1;              // rising out of it: 0..1 (-1: not rising)
     float heard_t = 0;            // remembers a noise for a moment (keeps it on his trail through the house)
     float bang_t = 0;             // at a shut door: how long it has been beating on it
@@ -72,7 +73,7 @@ public:
     void update(float dt);          // input, AI, animation
     void render();                  // scene -> offscreen target
     void present() const;           // post-process to the window + HUD
-    int capture_count() const { return 61; }
+    int capture_count() const { return 76; }
     std::string stage(int i);       // pose a capture setup; returns its name
     // A still of the room (--still): the survivor standing at (x, z) facing yaw (degrees), no
     // Drowned, seen from `shot` (empty: whichever shot covers him). Render and present after.
@@ -208,6 +209,7 @@ private:
     void steer_target(const Enemy& e, float& tx, float& tz) const;    // where it heads for to reach him (a doorway first)
     void push_on_doors(Enemy& e, float dt);          // a Drowned at a shut door beats on it, then shoves it open
     void update_emerging(Enemy& e, float dt);        // under the water until he comes near; then it rises
+    void update_lying(Enemy& e);                     // still on the floor until he comes near; then it gets up
     void draw_leaves();
     void draw_panes();                           // the glass in shop doors (drawn additively, after the solids)
     void shut_doors();                           // every leaf shut, every passage open (a fresh start, trying again)

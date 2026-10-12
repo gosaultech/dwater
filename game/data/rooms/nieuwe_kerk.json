@@ -1,0 +1,1395 @@
+{
+  "_file": "damned_waters/game/data/rooms/nieuwe_kerk.json \u2014 RoomSpec for De Nieuwe Kerk (the city, district 4: the Dam): the Nieuwe Kerk inside, made an emergency shelter: rows of camp beds down the nave and the aisles under the gothic arcades and the wooden vault, the first aid post by the door, the great organ on its gallery at the far end; most of the beds empty, some not. Its front wall is the street's shopfront (\"facade\": the street builds it); its door is the street's. Every business name is made up. Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "nieuwe_kerk",
+  "display_name": "De Nieuwe Kerk",
+  "storey": 14,
+  "origin": [
+    856.0,
+    -331.2
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      20.0,
+      36.0
+    ]
+  },
+  "height": 22.0,
+  "materials": {
+    "floor": {
+      "ph": "stone_tiles_02",
+      "tint": [
+        0.72,
+        0.7,
+        0.66
+      ],
+      "rough": 0.55
+    },
+    "wall": {
+      "color": [
+        0.78,
+        0.76,
+        0.7
+      ],
+      "rough": 0.9,
+      "noise": 0.12
+    },
+    "ceiling": {
+      "color": [
+        0.12,
+        0.09,
+        0.07
+      ],
+      "rough": 0.8
+    },
+    "skirting": null
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.01,
+      0.012,
+      0.016
+    ],
+    "strength": 0.5
+  },
+  "render": {
+    "exposure": 1.0,
+    "bloom": {
+      "threshold": 0.95,
+      "strength": 0.25,
+      "size": 0.5
+    }
+  },
+  "walls": {
+    "south": {
+      "facade": true,
+      "openings": [
+        {
+          "kind": "door",
+          "center": 10.0,
+          "width": 1.8,
+          "height": 2.6,
+          "hinge": "right"
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "arcade",
+      "pos": [
+        5.0,
+        0.0,
+        18.0
+      ],
+      "yaw": 90,
+      "size": [
+        36.0,
+        22.0,
+        1.2
+      ],
+      "bay": 6.0,
+      "spring": 8.0,
+      "pier": 1.4,
+      "collide": false
+    },
+    {
+      "type": "arcade",
+      "pos": [
+        15.0,
+        0.0,
+        18.0
+      ],
+      "yaw": 90,
+      "size": [
+        36.0,
+        22.0,
+        1.2
+      ],
+      "bay": 6.0,
+      "spring": 8.0,
+      "pier": 1.4,
+      "collide": false
+    },
+    {
+      "type": "nave_vault",
+      "pos": [
+        10.0,
+        16.0,
+        18.0
+      ],
+      "yaw": 0,
+      "size": [
+        9.0,
+        5.5,
+        36.0
+      ],
+      "bay": 6.0,
+      "collide": false
+    },
+    {
+      "type": "organ",
+      "pos": [
+        10.0,
+        0.0,
+        1.6
+      ],
+      "yaw": 0,
+      "size": [
+        8.0,
+        19.0,
+        1.4
+      ],
+      "gallery": 4.5,
+      "collide": false
+    },
+    {
+      "type": "collider",
+      "pos": [
+        10.0,
+        0.0,
+        1.0
+      ],
+      "size": [
+        10.0,
+        4.5,
+        2.0
+      ]
+    },
+    {
+      "type": "pulpit",
+      "pos": [
+        14.0,
+        0.0,
+        15.0
+      ],
+      "yaw": -90,
+      "size": [
+        1.6,
+        5.2,
+        1.6
+      ]
+    },
+    {
+      "type": "counter",
+      "pos": [
+        3.0,
+        0.0,
+        31.0
+      ],
+      "size": [
+        2.4,
+        0.9,
+        0.8
+      ],
+      "yaw": 90,
+      "till": false,
+      "top": {
+        "color": [
+          0.9,
+          0.9,
+          0.9
+        ],
+        "rough": 0.4
+      }
+    },
+    {
+      "type": "counter",
+      "pos": [
+        3.0,
+        0.0,
+        27.0
+      ],
+      "size": [
+        2.4,
+        0.9,
+        0.8
+      ],
+      "yaw": 90,
+      "till": false,
+      "top": {
+        "color": [
+          0.9,
+          0.9,
+          0.9
+        ],
+        "rough": 0.4
+      }
+    },
+    {
+      "type": "model",
+      "model": "ph:medical_box",
+      "pos": [
+        3.0,
+        0.9,
+        31.6
+      ],
+      "yaw": 90,
+      "fit": [
+        0.5,
+        0.35,
+        0.3
+      ],
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:clipboard",
+      "pos": [
+        3.1,
+        0.9,
+        27.6
+      ],
+      "yaw": 70,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        1.0,
+        0.0,
+        34.5
+      ],
+      "yaw": 10,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        1.6,
+        0.0,
+        34.6
+      ],
+      "yaw": -5,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        18.0,
+        0.0,
+        31.0
+      ],
+      "size": [
+        2.6,
+        0.0,
+        6.0
+      ],
+      "seed": 51,
+      "cases": 4,
+      "bags": 5,
+      "umbrella": false,
+      "collide": false
+    },
+    {
+      "type": "gothic_pier",
+      "pos": [
+        5.0,
+        0.0,
+        6.0
+      ],
+      "size": [
+        1.4,
+        7.6,
+        1.4
+      ],
+      "rib": 0.0
+    },
+    {
+      "type": "gothic_pier",
+      "pos": [
+        15.0,
+        0.0,
+        6.0
+      ],
+      "size": [
+        1.4,
+        7.6,
+        1.4
+      ],
+      "rib": 0.0
+    },
+    {
+      "type": "gothic_pier",
+      "pos": [
+        5.0,
+        0.0,
+        12.0
+      ],
+      "size": [
+        1.4,
+        7.6,
+        1.4
+      ],
+      "rib": 0.0
+    },
+    {
+      "type": "gothic_pier",
+      "pos": [
+        15.0,
+        0.0,
+        12.0
+      ],
+      "size": [
+        1.4,
+        7.6,
+        1.4
+      ],
+      "rib": 0.0
+    },
+    {
+      "type": "gothic_pier",
+      "pos": [
+        5.0,
+        0.0,
+        18.0
+      ],
+      "size": [
+        1.4,
+        7.6,
+        1.4
+      ],
+      "rib": 0.0
+    },
+    {
+      "type": "gothic_pier",
+      "pos": [
+        15.0,
+        0.0,
+        18.0
+      ],
+      "size": [
+        1.4,
+        7.6,
+        1.4
+      ],
+      "rib": 0.0
+    },
+    {
+      "type": "gothic_pier",
+      "pos": [
+        5.0,
+        0.0,
+        24.0
+      ],
+      "size": [
+        1.4,
+        7.6,
+        1.4
+      ],
+      "rib": 0.0
+    },
+    {
+      "type": "gothic_pier",
+      "pos": [
+        15.0,
+        0.0,
+        24.0
+      ],
+      "size": [
+        1.4,
+        7.6,
+        1.4
+      ],
+      "rib": 0.0
+    },
+    {
+      "type": "gothic_pier",
+      "pos": [
+        5.0,
+        0.0,
+        30.0
+      ],
+      "size": [
+        1.4,
+        7.6,
+        1.4
+      ],
+      "rib": 0.0
+    },
+    {
+      "type": "gothic_pier",
+      "pos": [
+        15.0,
+        0.0,
+        30.0
+      ],
+      "size": [
+        1.4,
+        7.6,
+        1.4
+      ],
+      "rib": 0.0
+    },
+    {
+      "type": "gothic_window",
+      "pos": [
+        0.06,
+        3.2,
+        3.0
+      ],
+      "yaw": 90,
+      "size": [
+        2.6,
+        10.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "gothic_window",
+      "pos": [
+        19.94,
+        3.2,
+        3.0
+      ],
+      "yaw": -90,
+      "size": [
+        2.6,
+        10.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "gothic_window",
+      "pos": [
+        0.06,
+        3.2,
+        9.0
+      ],
+      "yaw": 90,
+      "size": [
+        2.6,
+        10.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "gothic_window",
+      "pos": [
+        19.94,
+        3.2,
+        9.0
+      ],
+      "yaw": -90,
+      "size": [
+        2.6,
+        10.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "gothic_window",
+      "pos": [
+        0.06,
+        3.2,
+        15.0
+      ],
+      "yaw": 90,
+      "size": [
+        2.6,
+        10.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "gothic_window",
+      "pos": [
+        19.94,
+        3.2,
+        15.0
+      ],
+      "yaw": -90,
+      "size": [
+        2.6,
+        10.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "gothic_window",
+      "pos": [
+        0.06,
+        3.2,
+        21.0
+      ],
+      "yaw": 90,
+      "size": [
+        2.6,
+        10.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "gothic_window",
+      "pos": [
+        19.94,
+        3.2,
+        21.0
+      ],
+      "yaw": -90,
+      "size": [
+        2.6,
+        10.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "gothic_window",
+      "pos": [
+        0.06,
+        3.2,
+        27.0
+      ],
+      "yaw": 90,
+      "size": [
+        2.6,
+        10.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "gothic_window",
+      "pos": [
+        19.94,
+        3.2,
+        27.0
+      ],
+      "yaw": -90,
+      "size": [
+        2.6,
+        10.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "gothic_window",
+      "pos": [
+        0.06,
+        3.2,
+        33.0
+      ],
+      "yaw": 90,
+      "size": [
+        2.6,
+        10.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "gothic_window",
+      "pos": [
+        19.94,
+        3.2,
+        33.0
+      ],
+      "yaw": -90,
+      "size": [
+        2.6,
+        10.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "chandelier",
+      "pos": [
+        10.0,
+        13.0,
+        9.0
+      ],
+      "size": [
+        2.2,
+        1.5,
+        2.2
+      ],
+      "chain": 8.0,
+      "power": 80.0,
+      "collide": false
+    },
+    {
+      "type": "chandelier",
+      "pos": [
+        10.0,
+        13.0,
+        18.0
+      ],
+      "size": [
+        2.2,
+        1.5,
+        2.2
+      ],
+      "chain": 8.0,
+      "power": 80.0,
+      "collide": false
+    },
+    {
+      "type": "chandelier",
+      "pos": [
+        10.0,
+        13.0,
+        27.0
+      ],
+      "size": [
+        2.2,
+        1.5,
+        2.2
+      ],
+      "chain": 8.0,
+      "power": 80.0,
+      "collide": false
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        8.2,
+        0.0,
+        7.0
+      ],
+      "yaw": 90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": true,
+      "seed": 826
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        8.2,
+        0.0,
+        9.6
+      ],
+      "yaw": 90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 829
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        8.2,
+        0.0,
+        12.2
+      ],
+      "yaw": 90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": true,
+      "seed": 832
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        8.2,
+        0.0,
+        14.8
+      ],
+      "yaw": 90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 834
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        8.2,
+        0.0,
+        17.4
+      ],
+      "yaw": 90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 837
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        8.2,
+        0.0,
+        20.0
+      ],
+      "yaw": 90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 839
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        8.2,
+        0.0,
+        22.6
+      ],
+      "yaw": 90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 842
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        8.2,
+        0.0,
+        25.2
+      ],
+      "yaw": 90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 845
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        11.8,
+        0.0,
+        7.0
+      ],
+      "yaw": -90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 1187
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        11.8,
+        0.0,
+        9.6
+      ],
+      "yaw": -90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": true,
+      "seed": 1189
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        11.8,
+        0.0,
+        12.2
+      ],
+      "yaw": -90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 1192
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        11.8,
+        0.0,
+        14.8
+      ],
+      "yaw": -90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 1194
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        11.8,
+        0.0,
+        17.4
+      ],
+      "yaw": -90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 1197
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        11.8,
+        0.0,
+        20.0
+      ],
+      "yaw": -90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 1200
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        11.8,
+        0.0,
+        22.6
+      ],
+      "yaw": -90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 1202
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        11.8,
+        0.0,
+        25.2
+      ],
+      "yaw": -90,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 1205
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        2.3,
+        0.0,
+        7.5
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 237
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        2.3,
+        0.0,
+        10.5
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 240
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        2.3,
+        0.0,
+        13.5
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 243
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        2.3,
+        0.0,
+        16.5
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 246
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        2.3,
+        0.0,
+        19.5
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 249
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        2.3,
+        0.0,
+        22.5
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 252
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        17.7,
+        0.0,
+        7.5
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": true,
+      "seed": 1777
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        17.7,
+        0.0,
+        10.5
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 1780
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        17.7,
+        0.0,
+        13.5
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 1783
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        17.7,
+        0.0,
+        16.5
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 1786
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        17.7,
+        0.0,
+        19.5
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 1789
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        17.7,
+        0.0,
+        22.5
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 1792
+    }
+  ],
+  "lights": [
+    {
+      "kind": "area",
+      "pos": [
+        10.0,
+        15.0,
+        10.0
+      ],
+      "look_at": [
+        10.0,
+        0.0,
+        10.0
+      ],
+      "size": 4.0,
+      "color": [
+        1.0,
+        0.82,
+        0.6
+      ],
+      "blender_power": 900,
+      "godot_energy": 0.7,
+      "range": 16.0
+    },
+    {
+      "kind": "area",
+      "pos": [
+        10.0,
+        15.0,
+        26.0
+      ],
+      "look_at": [
+        10.0,
+        0.0,
+        26.0
+      ],
+      "size": 4.0,
+      "color": [
+        1.0,
+        0.82,
+        0.6
+      ],
+      "blender_power": 900,
+      "godot_energy": 0.7,
+      "range": 16.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        3.0,
+        2.6,
+        29.0
+      ],
+      "color": [
+        0.95,
+        0.97,
+        1.0
+      ],
+      "blender_power": 120,
+      "godot_energy": 0.6,
+      "range": 6.0,
+      "radius": 0.2
+    },
+    {
+      "kind": "point",
+      "pos": [
+        10.0,
+        6.5,
+        2.5
+      ],
+      "color": [
+        1.0,
+        0.75,
+        0.45
+      ],
+      "blender_power": 160,
+      "godot_energy": 0.4,
+      "range": 8.0,
+      "radius": 0.5
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        10.0,
+        3.4,
+        35.0
+      ],
+      "look_at": [
+        10.0,
+        8.0,
+        2.0
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          6.0,
+          18.0
+        ],
+        "max": [
+          14.0,
+          36.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        13.0,
+        5.0,
+        2.8
+      ],
+      "look_at": [
+        7.0,
+        1.0,
+        30.0
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          6.0,
+          0.0
+        ],
+        "max": [
+          14.0,
+          18.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "c",
+      "pos": [
+        0.9,
+        3.2,
+        34.4
+      ],
+      "look_at": [
+        3.0,
+        3.0,
+        6.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          6.0,
+          36.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "d",
+      "pos": [
+        19.1,
+        3.2,
+        1.0
+      ],
+      "look_at": [
+        17.0,
+        2.0,
+        32.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          14.0,
+          0.0
+        ],
+        "max": [
+          20.0,
+          36.0
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_dam": {
+      "pos": [
+        10.0,
+        0.0,
+        34.8
+      ],
+      "yaw": 0
+    }
+  },
+  "interactables": [
+    {
+      "id": "door_dam",
+      "kind": "door",
+      "pos": [
+        10.0,
+        1.0,
+        35.55
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "first_aid_post",
+      "kind": "pickup",
+      "item": "first_aid",
+      "count": 1,
+      "pos": [
+        3.0,
+        0.92,
+        30.2
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "dressing_bed",
+      "kind": "pickup",
+      "item": "med_small",
+      "count": 1,
+      "pos": [
+        17.7,
+        0.48,
+        16.5
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "register",
+      "kind": "examine",
+      "pos": [
+        3.4,
+        1.0,
+        27.0
+      ],
+      "radius": 1.2,
+      "text": "The register of everyone who slept here. Four hundred names. The last page is all one word, written over and over: WATER."
+    },
+    {
+      "id": "organ",
+      "kind": "examine",
+      "pos": [
+        10.0,
+        1.0,
+        4.4
+      ],
+      "radius": 1.8,
+      "text": "The great organ. Someone's left the bellows running; it breathes, softly, without a note."
+    },
+    {
+      "id": "beds",
+      "kind": "examine",
+      "pos": [
+        10.0,
+        1.0,
+        20.0
+      ],
+      "radius": 1.6,
+      "text": "Most of the beds are empty, the blankets thrown back. Some aren't empty. Don't lift the blankets."
+    }
+  ],
+  "enemies": [
+    {
+      "id": "in_het_schip",
+      "kind": "verdronkene",
+      "pos": [
+        10.0,
+        0.0,
+        14.0
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "in_de_zijbeuk",
+      "kind": "verdronkene",
+      "pos": [
+        17.6,
+        0.0,
+        6.0
+      ],
+      "yaw": 160
+    }
+  ]
+}

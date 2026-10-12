@@ -245,6 +245,13 @@ def carousel(root, p, w, h, d):
 
 
 # ── Stalls ─────────────────────────────────────────────────────────────────────────────
+LIVERY = {   # the trailer's paint: its body and the band round it (a white box from behind is a hole in the picture)
+    "oliebollen": ((0.42, 0.05, 0.04), (0.92, 0.88, 0.75)),
+    "schiettent": ((0.05, 0.07, 0.22), (0.85, 0.75, 0.1)),
+    "suikerspin": ((0.62, 0.22, 0.4), (0.95, 0.95, 0.92)),
+    "grijper": ((0.04, 0.26, 0.11), (0.92, 0.9, 0.85)),
+    "kassa": ((0.09, 0.09, 0.1), (0.85, 0.65, 0.25)),
+}
 STALLS = {   # name on the front, awning colours, what's on the counter
     "oliebollen": ("OLIEBOLLEN", ((0.92, 0.88, 0.75), (0.6, 0.08, 0.06)), "food"),
     "schiettent": ("SCHIETTENT", ((0.1, 0.12, 0.35), (0.85, 0.75, 0.1)), "prizes"),
@@ -255,15 +262,18 @@ STALLS = {   # name on the front, awning colours, what's on the counter
 
 
 def stall(root, p, w, h, d):
-    """A fairground stall: a trailer-box w wide with its front flap up as an awning (striped), its
-    counter lit, its name in bulbs along the fascia, and on show: food, or rows of prizes (stuffed
-    toys as bright soft lumps)."""
+    """A fairground stall: a trailer-box w wide in its livery (a deep colour, a band round it, a
+    chrome skirt) with its front flap up as an awning (striped), its counter lit, its name in bulbs
+    along the fascia, and on show: food, or rows of prizes (stuffed toys as bright soft lumps)."""
     rng = random.Random(p.get("seed", 9))
     name, (ca, cb), show = STALLS.get(p.get("kind", "oliebollen"), STALLS["oliebollen"])
     name = p.get("name", name)
-    body = M({"color": [0.88, 0.86, 0.8], "rough": 0.4, "noise": 0.05})
+    paint, trim = LIVERY.get(p.get("kind", "oliebollen"), LIVERY["oliebollen"])
+    body = M({"color": list(paint), "rough": 0.3, "noise": 0.05})
     f = d / 2   # (its footprint centred on its spot, as the game's collider is: the front at +d/2)
     lbox(root, "stall_body", (-w / 2, 0.0, -d / 2), (w / 2, h, f - 0.05), body)
+    lbox(root, "stall_band", (-w / 2 - 0.01, 0.42, -d / 2 - 0.01), (w / 2 + 0.01, 0.62, f - 0.06), M({"color": list(trim), "rough": 0.35}))
+    lbox(root, "stall_skirt", (-w / 2 - 0.01, 0.0, -d / 2 - 0.01), (w / 2 + 0.01, 0.3, f - 0.06), M({"color": [0.7, 0.72, 0.74], "rough": 0.2, "metal": 0.9}))
     lbox(root, "stall_inside", (-w / 2 + 0.1, 1.0, f - 0.05), (w / 2 - 0.1, h - 0.5, f - 0.03), builders.emissive("stall_inside", (1.0, 0.85, 0.6), 1.2))
     lbox(root, "stall_counter", (-w / 2, 0.95, f - 0.1), (w / 2, 1.05, f + 0.5), M({"color": [0.5, 0.06, 0.05], "rough": 0.4}))
     flap = Acc()

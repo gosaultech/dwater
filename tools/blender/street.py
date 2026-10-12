@@ -207,7 +207,7 @@ def facade_frame(f):
 
 def facade(f, rng):
     """One house front. f: {"x0", "x1", "z" | "z0", "z1", "x", "facing": "south"|"north"|"east"|"west", "storeys": [m, ...] bottom
-    up, "bays", "gable": kind, "gable_h", "brick", "lit", "door_bay", "stoop", "lean", "plinth",
+    up, "bays", "gable": kind, "gable_h", "brick", "lit", "door_bay", "stoop", "lean", "tilt", "plinth",
     "shop": {...}, "skin_below", "holes"}. Facing south it stands on z with its front toward +z (the
     street). "skin_below": up to that height only a thin brick skin goes on (a house the game walks
     in: its rooms have the real walls and windows), with "holes" [{"u0", "u1", "v0", "v1", "arch"}].
@@ -219,6 +219,7 @@ def facade(f, rng):
     skin = f.get("skin_below", 0.0)
     lean = f.get("lean", 0.0 if skin else rng.uniform(0.25, 1.1))
     root.rotation_euler[0] = math.radians(lean)   # Amsterdam's fronts lean out over the street
+    root.rotation_euler[1] = math.radians(f.get("tilt", 0.0))   # and some on their neighbours, sideways
     T = 0.3
     k = rng.uniform(0.78, 1.0)
     tint = f.get("tint", [k, k * rng.uniform(0.94, 1.0), k * rng.uniform(0.9, 1.0)])
@@ -537,7 +538,9 @@ def facade_row(x_from, x_to, z, facing, rng, row=None, y=0.0):
     """A row of canal houses from x_from to x_to on the line z (facing south or north), or from z
     x_from to x_to on the line x = z (facing east or west): random widths, heights and gables, their
     street at height y. row: {"lit", "shops": fraction of ground floors that are shops, "shop_kinds",
-    "row_ends": "start" | "end" | "both": close that end house's walls (a row ending in open space)}."""
+    "row_ends": "start" | "end" | "both": close that end house's walls (a row ending in open space),
+    "lean": [lo, hi] degrees out over the street and "tilt": up to that many sideways (houses on
+    piles that have settled every way, as along the Damrak)}."""
     row = row or {}
     along_z = facing in ("east", "west")
     ends = row.get("row_ends", "")
@@ -550,16 +553,25 @@ def facade_row(x_from, x_to, z, facing, rng, row=None, y=0.0):
         bays = 3 if w < 7.5 else 5 if w > 8.6 else 4
         f = {"y": y, "facing": facing, "storeys": storeys, "bays": bays, "gable": kind,
              "door_bay": rng.randrange(bays), "stoop": rng.choice([0.0, 0.5, 0.75]), "lit": row.get("lit", 0.2)}
-        f.update({"z0": x, "z1": x + w - 0.04, "x": z} if along_z else {"x0": x, "x1": x + w - 0.04, "z": z})
+        span, last = layout.row_span(x, w, x_to)   # the last house ends where the row does, not out in the street
+        if span < w:   # (cut short: fewer windows across)
+            f["bays"] = min(bays, max(2, int(span / 1.6)))
+            f["door_bay"] = min(f["door_bay"], f["bays"] - 1)
+        f.update({"z0": x, "z1": x + span - 0.04, "x": z} if along_z else {"x0": x, "x1": x + span - 0.04, "z": z})
         if rng.random() < row.get("shops", 0.0):
             f["stoop"] = 0.0
             f["shop"] = shop_for(rng, row.get("shop_kinds"))
         if rng.random() < 0.12:
             f["paint"] = {"color": rng.choice([[0.6, 0.58, 0.54], [0.18, 0.2, 0.21], [0.42, 0.4, 0.34]]), "rough": 0.8, "noise": 0.15}
-        if (x == x_from and ends in ("start", "both")) or (x + w >= x_to and ends in ("end", "both")):
+        if (x == x_from and ends in ("start", "both")) or (last and ends in ("end", "both")):
             f["sides"] = True
+        if row.get("lean"):   # a row that has settled every way: forward ([lo, hi] degrees) and sideways (+/- tilt)
+            f["lean"] = rng.uniform(*row["lean"])
+            f["tilt"] = rng.uniform(-1.0, 1.0) * row.get("tilt", 0.0)
         facade(f, rng)
-        x += w
+        if last:
+            break
+        x += span
 
 
 SHOPS = {   # what a city ground floor might be, with names made up for the game (no real business)
@@ -889,7 +901,9 @@ def canal(c, rng):
     along z on the line x = "x" ("axis": "z", with "along": [z0, z1]); the water lies on the far
     side of the line ("side": 1, +z or +x) or the near ("side": -1). "ends": quay walls across the
     water at both ends too (a canal that stops at a bridge), or only at "a" (its start) or "b" (its
-    end). "far_span": [from, to] along it for the far bank's houses (default: short of both ends)."""
+    end). "far_span": [from, to] along it for the far bank's houses (default: short of both ends);
+    "far_furniture": False when they stand straight up out of the water (no lamps or trees on the
+    far quay)."""
     along_x = c.get("axis", "x") == "x"
     line = c["z"] if along_x else c["x"]
     a0, a1 = c.get("x", [-60.0, 100.0]) if along_x else c["along"]
@@ -923,7 +937,7 @@ def canal(c, rng):
     box("far_quay", a0, a1, -0.4, 0.0, far + sd * 0.3, far + sd * fq,
         M(c.get("far_ground", {"ph": "herringbone_brick", "tint": [0.7, 0.65, 0.6], "wet": 0.6})))
     u = a0 + 24
-    while u < a1 - 24:   # the far quay: lamps, trees, parked cars, nobody
+    while c.get("far_furniture", True) and u < a1 - 24:   # the far quay: lamps, trees, parked cars, nobody
         lamp(*at(u, far + sd * 1.0), power=c.get("far_lamp_power", 420.0))
         tx, tz = at(u + 7.0, far + sd * 1.2)
         builders.build_prop({"type": "plane_tree", "pos": [tx, 0.0, tz], "size": [0.45, 12.0, 0.45],

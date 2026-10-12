@@ -839,6 +839,15 @@ void Game::update_enemies(float dt) {
             e.heard = false;
             continue;
         }
+        if (e.lying) {   // one of the dead on the floor, till he comes near
+            update_lying(e);
+            if (e.lying) {
+                a.pose = Pose::Floored;
+                a.speed = 0;
+                e.heard = false;
+                continue;
+            }
+        }
         // Momentum from hits and kicks, sliding out.
         a.x += e.push_x * dt;
         a.z += e.push_z * dt;

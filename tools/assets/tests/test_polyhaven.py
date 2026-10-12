@@ -106,9 +106,13 @@ class CacheTests(unittest.TestCase):
             self.assertEqual(list(m["assets"]), ["aa", "zz"])
             self.assertEqual(json.loads(p.read_text())["assets"]["zz"]["license"], "CC0")
 
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_a_model_keeps_its_size(self):   # which way it is long: what its collider is checked against
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "manifest.json"
+            car = {"license": "CC0", "authors": ["A"], "kind": "model", "id": "car", "name": "Car", "source": "s",
+                   "dimensions_mm": [1788.96, 4380.25, 1411.11]}
+            m = polyhaven.update_manifest([car], p)
+            self.assertEqual(m["assets"]["car"]["dimensions_mm"], [1789, 4380, 1411])
 
 
 class CodeReferencesTest(unittest.TestCase):
@@ -120,3 +124,6 @@ note = "ph: not an id" """
         refs = polyhaven.code_references(src)
         self.assertEqual(refs, {"lion_head": "model", "vintage_suitcase": "model", "dark_wood": "texture"})
 
+
+if __name__ == "__main__":
+    unittest.main()

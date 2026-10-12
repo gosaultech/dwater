@@ -19,7 +19,7 @@
 namespace dw {
 
 // ── Items: what fits in the case, and how much of it stacks ────────────────────
-enum Item : int { I_NONE, I_HANDGUN, I_HANDGUN_AMMO, I_SHOTGUN, I_SHELLS, I_MED_S, I_MED_M, I_MED_L, I_CELLAR_KEY, I_COUNT };
+enum Item : int { I_NONE, I_HANDGUN, I_HANDGUN_AMMO, I_SHOTGUN, I_SHELLS, I_MED_S, I_MED_M, I_MED_L, I_CELLAR_KEY, I_STAFF_PASS, I_COUNT };
 struct ItemSpec {
     const char* key;    // the id the room data uses ("shotgun_shells")
     const char* name;   // what the status screen shows
@@ -43,6 +43,8 @@ inline const ItemSpec& item_spec(int i) {
         {"med_large", "EHBO Case", 1, 100,
          "The big green case off a pharmacy wall: splints, sutures, painkillers. Restores all of your health."},
         {"cellar_key", "Cellar Key", 1, 0, "A heavy iron key, green with verdigris. The paper tag reads 'KELDER'."},
+        {"staff_pass", "Staff Pass", 1, 0,
+         "A keycard on a red lanyard: DE ZWERM, PERSONEEL, BEVEILIGING. It opens the store's staff doors."},
     };
     return T[(i > I_NONE && i < I_COUNT) ? i : I_NONE];
 }
@@ -51,6 +53,7 @@ inline const ItemSpec& item_spec(int i) {
 // The survivor's tank holds 100. It never refills by itself: only med kits heal (S 30, M 60, L all).
 constexpr float MAX_HEALTH = 100.0f;
 inline bool is_medicine(int item) { return item_spec(item).heal > 0; }
+inline bool is_key(int item) { return item == I_CELLAR_KEY || item == I_STAFF_PASS; }   // used at its door, never thrown away
 inline float healed(float hp, int item) { return std::min(MAX_HEALTH, hp + float(item_spec(item).heal)); }
 inline int item_by_key(const char* key) {   // the room data names items by key
     for (int i = I_NONE + 1; i < I_COUNT; ++i) {

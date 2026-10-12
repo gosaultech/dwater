@@ -1,7 +1,8 @@
 # damned_waters/tools/pipeline/tests/test_facade.py
 # Purpose: unit tests for the canal-house front's arithmetic (tools/pipeline/facade.py): every
 # gable is symmetric, inside the house's width and fillable as a fan; windows sit inside their
-# storeys without overlapping; a wall cut around its holes covers exactly the rest.
+# storeys without overlapping; a wall cut around its holes covers exactly the rest; a row of houses
+# ends exactly where it should.
 import sys
 import unittest
 from pathlib import Path
@@ -90,6 +91,30 @@ class CutTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RowTest(unittest.TestCase):
+    def test_a_row_ends_exactly_at_its_end(self):
+        import random
+        rng = random.Random(7)
+        for _ in range(200):
+            x_from = rng.uniform(-50.0, 50.0)
+            x_to = x_from + rng.uniform(3.0, 120.0)
+            x, spans = x_from, []
+            while True:
+                span, last = facade.row_span(x, rng.uniform(5.0, 9.5), x_to)
+                spans.append(span)
+                x += span
+                if last:
+                    break
+            self.assertAlmostEqual(x, x_to, places=9)                   # never past the end (nor short of it)
+            self.assertGreaterEqual(min(spans), min(3.0, x_to - x_from) - 1e-9)   # no slivers
+            self.assertLessEqual(max(spans), 9.5 + 3.0)                  # the last at most takes up the gap
+
+    def test_a_house_with_room_after_it_keeps_its_width(self):
+        self.assertEqual(facade.row_span(0.0, 6.0, 20.0), (6.0, False))
+        self.assertEqual(facade.row_span(0.0, 6.0, 8.0), (8.0, True))    # a 2 m gap: this one takes it
+        self.assertEqual(facade.row_span(0.0, 6.0, 4.0), (4.0, True))    # past the end: cut to it
 
 
 class ShopTest(unittest.TestCase):

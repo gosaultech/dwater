@@ -273,7 +273,10 @@ def white_world():
     return w
 
 
-def build_room(spec, outside=True):
+def build_room(spec, outside=True, rendering=None):
+    """One room's set: its shell, its water, its street outside (outside=True), its props. A prop
+    that "encloses" the room being rendered (a landmark's shell round the hall inside it) is left
+    out: from inside, the room's own walls are the building."""
     slow = float(os.environ.get("DW_PROFILE", "0") or 0)   # DW_PROFILE=1: say what takes over a second to build
     t0 = time.time()
     builders.build_shell(spec)
@@ -283,6 +286,8 @@ def build_room(spec, outside=True):
     if slow and time.time() - t0 > slow:
         print(f"[build] {spec['id']} shell/outside {time.time() - t0:.1f}s")
     for p in spec.get("props", []):
+        if rendering and rendering in p.get("encloses", []):
+            continue
         t1 = time.time()
         builders.build_prop(p, spec["height"])
         if slow and time.time() - t1 > slow:
@@ -290,13 +295,13 @@ def build_room(spec, outside=True):
     return [add_light(light, i) for i, light in enumerate(spec.get("lights", []))]
 
 
-def _place(spec, coll_name, outside):
+def _place(spec, coll_name, outside, rendering=None):
     """Build one room into a collection of its own at its origin; its lights light only that
     collection (light linking)."""
     coll = bpy.data.collections.new(coll_name)
     bpy.context.scene.collection.children.link(coll)
     before = set(bpy.data.objects)
-    lights = build_room(spec, outside=outside)
+    lights = build_room(spec, outside=outside, rendering=rendering)
     ox, oz = house.origin(spec)
     off = Vector(g2b((ox, 0.0, oz)))
     for ob in [o for o in bpy.data.objects if o not in before]:
@@ -323,9 +328,9 @@ def build_house(specs, room_id):
         spec["_stairs"] = house.stair_openings(specs, rid)
         ext = spec.get("exterior")
         always = isinstance(ext, dict) and ext.get("always")   # (the world seen down a tunnel from next door)
-        _place(spec, "room_" + rid, outside=rid == room_id or bool(always))
+        _place(spec, "room_" + rid, outside=rid == room_id or bool(always), rendering=room_id)
     for rid in house.neighbour_streets(specs, room_id):
-        _place(dict(specs[rid], _far=True), "far_" + rid, outside=False)
+        _place(dict(specs[rid], _far=True), "far_" + rid, outside=False, rendering=room_id)
 
 
 def shots_of(spec):
