@@ -385,7 +385,7 @@ def model(root, p, w, h, d):
     k = p.get("scale", 1.0)
     if "fit" in p:   # fit inside [w, h, d] keeping proportions
         fw, fh, fd = p["fit"]
-        k = min(fw / max(size_b[0], 1e-6), fh / max(size_b[2], 1e-6), fd / max(size_b[1], 1e-6))
+        k = min(fw / max(size_b[0], 1e-6), fh / max(size_b[2], 1e-6), fd / max(size_b[1], 1e-6), p.get("max_scale", 1e9))
     cx, cy = (lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2
     holder = bpy.data.objects.new("model_" + a["id"], None)
     bpy.context.scene.collection.objects.link(holder)
@@ -394,6 +394,13 @@ def model(root, p, w, h, d):
     holder.location = (-cx * k, -cy * k, -lo[2] * k)
     if p.get("yaw_model"):
         holder.rotation_euler[2] = math.radians(p["yaw_model"])
+    if p.get("roll"):   # tipped over onto its side
+        from mathutils import Matrix, Vector
+        R = Matrix.Rotation(math.radians(p["roll"]), 3, "Y")
+        holder.rotation_euler = R.to_euler()
+        rc = R @ Vector((cx * k, cy * k, (lo[2] + hi[2]) / 2 * k))
+        zmin = min((R @ Vector((x * k, y * k, z * k))).z for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2]))
+        holder.location = (-rc.x, -rc.y, -zmin)
     for o in tops:
         o.parent = holder
     if p.get("shadow", True) is False:   # a lamp's own glass and frame must not swallow its light

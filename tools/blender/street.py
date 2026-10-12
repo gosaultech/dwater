@@ -463,8 +463,8 @@ def shopfront(root, f, W, s0, rng):
     # brighter than a real one (brighter, the bloom smears the letters into a bar)
     fh = min(0.8, s0 - top_v - 0.15)
     lbox(root, "fascia", (0.15, top_v, -0.05), (W - 0.15, top_v + fh, 0.08), frame)
-    sign_m = builders.emissive("sign_" + sh.get("name", "shop")[:12], tuple(sh.get("sign", (1.0, 0.85, 0.6))), sh.get("sign_strength", 2.6))
-    size = min(fh * 0.72, 1.55 * (W - 0.6) / max(len(sh.get("name", "x")), 1))
+    sign_m = builders.emissive("sign_" + sh.get("name", "shop")[:12], tuple(sh.get("sign", (1.0, 0.85, 0.6))), sh.get("sign_strength", 1.5))
+    size = min(fh * 0.5, 1.2 * (W - 0.6) / max(len(sh.get("name", "x")), 1))   # (a real fascia's letters: a hand high, not a sign's worth)
     import city
     if sh.get("neon"):   # bent glass tube, the way the bars and clubs do it
         city.neon_text(root, sh["name"], (W / 2, top_v + fh * 0.5, 0.12), size, sh.get("sign", (1.0, 0.3, 0.6)), sh.get("sign_strength", 5.0),
@@ -490,27 +490,38 @@ def shopfront(root, f, W, s0, rng):
         steel = M({"color": [0.42, 0.44, 0.46], "rough": 0.45, "metal": 0.7, "noise": 0.35})
         y0 = top_v - (top_v - 0.0) * drop
         lbox(root, "shutter_box", (u0 - 0.05, top_v - 0.05, -0.12), (u1 + 0.05, top_v + 0.25, 0.1), steel)
-        lbox(root, "shutter", (u0, y0, -0.06), (u1, top_v, -0.04), steel)
-        ribs = Acc()
-        y = y0 + 0.08
-        while y < top_v - 0.05:
-            ribs.box((u0, y, -0.04), (u1, y + 0.02, -0.025))
-            y += 0.1
-        ribs.build("shutter_ribs", M({"color": [0.3, 0.32, 0.34], "rough": 0.5, "metal": 0.6}), root, smooth=False)
+        slats = M({"ph": sh.get("shutter_look", "painted_metal_shutter"), "tint": sh.get("shutter_tint", [0.8, 0.82, 0.85]), "scale": 1.0})
+        lbox(root, "shutter", (u0, y0, -0.06), (u1, top_v, -0.04), slats)
+        lbox(root, "shutter_bar", (u0, y0, -0.075), (u1, y0 + 0.05, -0.035), steel)
         if sh.get("tag"):   # sprayed on it
             text(root, sh["tag"], ((u0 + u1) / 2, (y0 + top_v) / 2, -0.02), 0.32, M({"color": list(sh.get("tag_color", (0.75, 0.05, 0.05))), "rough": 0.6}),
                  font="DejaVuSans-Bold.ttf", depth=0.0)
     if sh.get("cross"):   # an apotheek: the green neon cross out over the pavement
         import landmarks
         landmarks.green_cross(root, (W - 0.2, top_v + 1.0, 0.75))
-    if sh.get("awning"):   # a striped canvas awning, wound out
-        c_a, c_b = sh["awning"]
-        cloth = M({"pattern": "stripes", "colors": [c_a, c_b], "width": 0.24})
+    if sh.get("awning"):   # a striped canvas awning, wound out: real canvas (a weave, stains), sagging
+        c_a, c_b = sh["awning"]   # between its arms, a scalloped valance along its front
+        cloth = M({"pattern": "stripes", "colors": [[c * 0.82 for c in c_a], [c * 0.82 for c in c_b]], "width": 0.24, "canvas": True})
         a = Acc()
         out, drop = sh.get("awning_out", 1.4), 0.55
-        a.quad((u0, top_v + 0.05, 0.02), (u1, top_v + 0.05, 0.02), (u1, top_v + 0.05 - drop, out), (u0, top_v + 0.05 - drop, out))
-        a.quad((u0, top_v + 0.05 - drop, out), (u1, top_v + 0.05 - drop, out), (u1, top_v - drop - 0.2, out), (u0, top_v - drop - 0.2, out))
-        a.build("awning", cloth, root, smooth=False)
+        sag = 0.05 + 0.03 * rng.random()
+
+        def pt(t, s_):   # t across the shop (0..1), s_ down the slope (0..1)
+            return (u0 + (u1 - u0) * t, top_v + 0.05 - drop * s_ - sag * math.sin(math.pi * t) * math.sin(math.pi * s_), 0.02 + (out - 0.02) * s_)
+        nu, nv = 14, 6
+        for i in range(nu):
+            for j in range(nv):
+                a.quad(pt(i / nu, j / nv), pt((i + 1) / nu, j / nv), pt((i + 1) / nu, (j + 1) / nv), pt(i / nu, (j + 1) / nv))
+        yv = top_v + 0.05 - drop
+        nsc = max(3, int((u1 - u0) / 0.32))
+        for k in range(nsc):   # the valance: a scallop to each stripe pair, hanging at the front
+            ua, ub = u0 + (u1 - u0) * k / nsc, u0 + (u1 - u0) * (k + 1) / nsc
+            for m in range(6):
+                t0, t1 = m / 6, (m + 1) / 6
+                xa, xb = ua + (ub - ua) * t0, ua + (ub - ua) * t1
+                a.quad((xa, yv, out), (xb, yv, out), (xb, yv - 0.13 - 0.07 * math.sin(math.pi * t1), out),
+                       (xa, yv - 0.13 - 0.07 * math.sin(math.pi * t0), out))
+        a.build("awning", cloth, root, smooth=True)
         for uu in (u0 + 0.05, u1 - 0.05):
             rod(root, "awning_arm", (uu, top_v - 0.6, 0.0), (uu, top_v + 0.05 - drop, out - 0.05), 0.012, 0.012, M(IRON))
 
@@ -561,6 +572,10 @@ def facade_row(x_from, x_to, z, facing, rng, row=None, y=0.0):
         if rng.random() < row.get("shops", 0.0):
             f["stoop"] = 0.0
             f["shop"] = shop_for(rng, row.get("shop_kinds"))
+            r2 = random.Random(f"shutter {x:.2f} {z:.2f}")
+            if r2.random() < 0.35:
+                f["shop"]["shutter"] = r2.choice([1.0, 1.0, 0.85, 0.6])
+                f["shop"]["shutter_look"] = r2.choice(["painted_metal_shutter", "rusty_metal_shutter"])
         if rng.random() < 0.12:
             f["paint"] = {"color": rng.choice([[0.6, 0.58, 0.54], [0.18, 0.2, 0.21], [0.42, 0.4, 0.34]]), "rough": 0.8, "noise": 0.15}
         if (x == x_from and ends in ("start", "both")) or (last and ends in ("end", "both")):

@@ -187,6 +187,9 @@ def painted(nt, out, ref):
         b.inputs["Base Color"].default_value = (*c, 1)
     b.inputs["Roughness"].default_value = ref.get("rough", 0.5)
     b.inputs["Metallic"].default_value = ref.get("metal", 0.0)
+    if "coat" in ref:   # car paint: a clear lacquer over the colour
+        b.inputs["Coat Weight"].default_value = ref["coat"]
+        b.inputs["Coat Roughness"].default_value = ref.get("coat_rough", 0.05)
     if "transmission" in ref:
         b.inputs["Transmission Weight"].default_value = ref["transmission"]
     nt.links.new(b.outputs[0], out.inputs["Surface"])
@@ -340,7 +343,8 @@ def room_card(nt, out, ref):
 
 
 def stripes(nt, out, ref):
-    """Awning canvas: two colours in stripes ref["width"] wide, across the UV's x (metres)."""
+    """Awning canvas: two colours in stripes ref["width"] wide, across the UV's x (metres); with
+    "canvas", over a real canvas's weave (a CC0 photo, "weave": its id), washed out and stained."""
     tc = nt.nodes.new("ShaderNodeTexCoord")
     wv = nt.nodes.new("ShaderNodeTexWave")
     wv.wave_type = "BANDS"
@@ -357,7 +361,48 @@ def stripes(nt, out, ref):
     nt.links.new(wv.outputs["Color"], r.inputs["Fac"])
     bs = nt.nodes.new("ShaderNodeBsdfPrincipled")
     bs.inputs["Roughness"].default_value = 0.85
-    nt.links.new(r.outputs["Color"], bs.inputs["Base Color"])
+    col = r.outputs["Color"]
+    if ref.get("canvas"):   # a real canvas's weave (a CC0 photo: its shading and its bumps), washed out, stained
+        a_ = asset(ref.get("weave", "rough_linen"))
+        d = Path(a_["_dir"])
+        dims = a_.get("dimensions_mm") or [1000, 1000]
+        mp = nt.nodes.new("ShaderNodeMapping")
+        mp.inputs["Scale"].default_value = (1000.0 / dims[0] * 2.0, 1000.0 / dims[1] * 2.0, 1.0)
+        nt.links.new(tc.outputs["UV"], mp.inputs["Vector"])
+        maps = a_.get("maps", {})
+        weave = _tex(nt, mp.outputs["Vector"], _image(d / maps["diff"], True))
+        mul = nt.nodes.new("ShaderNodeMix")
+        mul.data_type = "RGBA"
+        mul.blend_type = "MULTIPLY"
+        mul.inputs["Factor"].default_value = 0.85
+        nt.links.new(col, mul.inputs["A"])
+        nt.links.new(weave.outputs["Color"], mul.inputs["B"])
+        lift = nt.nodes.new("ShaderNodeMix")   # (the photo is a pale linen: lift it back to the stripe's colour)
+        lift.data_type = "RGBA"
+        lift.blend_type = "MIX"
+        lift.inputs["Factor"].default_value = 0.35
+        nt.links.new(mul.outputs["Result"], lift.inputs["A"])
+        nt.links.new(col, lift.inputs["B"])
+        nz = nt.nodes.new("ShaderNodeTexNoise")   # rain stains, the grime of the street
+        nz.inputs["Scale"].default_value = 2.2
+        nz.inputs["Detail"].default_value = 6.0
+        nt.links.new(tc.outputs["UV"], nz.inputs["Vector"])
+        rp = nt.nodes.new("ShaderNodeValToRGB")
+        rp.color_ramp.elements[0].position, rp.color_ramp.elements[1].position = 0.45, 0.75
+        nt.links.new(nz.outputs["Fac"], rp.inputs["Fac"])
+        dirt = nt.nodes.new("ShaderNodeMix")
+        dirt.data_type = "RGBA"
+        dirt.blend_type = "MULTIPLY"
+        nt.links.new(rp.outputs["Color"], dirt.inputs["Factor"])
+        nt.links.new(lift.outputs["Result"], dirt.inputs["A"])
+        dirt.inputs["B"].default_value = (0.55, 0.5, 0.42, 1.0)
+        col = dirt.outputs["Result"]
+        if "nor_gl" in maps:
+            nm = nt.nodes.new("ShaderNodeNormalMap")
+            nm.inputs["Strength"].default_value = 1.2
+            nt.links.new(_tex(nt, mp.outputs["Vector"], _image(d / maps["nor_gl"], False)).outputs["Color"], nm.inputs["Color"])
+            nt.links.new(nm.outputs["Normal"], bs.inputs["Normal"])
+    nt.links.new(col, bs.inputs["Base Color"])
     nt.links.new(bs.outputs[0], out.inputs["Surface"])
     return bs
 

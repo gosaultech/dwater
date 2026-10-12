@@ -29,6 +29,7 @@ import roomspec  # noqa: E402
 from roomspec import g2b  # noqa: E402
 
 REPO = HERE.parent.parent
+HAZE = {"color": [0.045, 0.052, 0.068], "start": 12.0, "depth": 85.0, "strength": 0.5}   # a street's night air, by default
 QUALITY = {  # samples, bounces, volumetric density
     "preview": dict(samples=12, bounces=4, volume=0.0),
     "ship": dict(samples=20, bounces=6, volume=0.0),
@@ -135,7 +136,8 @@ def sky_world(nt, sky, out):
 
 def bloom(s, cfg):
     """Lamps and lit signs bloom, as they do in a photograph at night (the compositor's glare);
-    cfg: {"threshold", "strength", "size"} or None to switch it off (the depth pass must not bloom)."""
+    cfg: {"threshold", "strength", "size", "haze": {"color", "start", "depth", "strength"}} or None
+    to switch it off (the depth pass must not bloom)."""
     if not cfg:
         s.use_nodes = False
         return
@@ -151,7 +153,23 @@ def bloom(s, cfg):
         if name in gl.inputs:
             gl.inputs[name].default_value = val
     t.links.new(rl.outputs["Image"], gl.inputs["Image"])
-    t.links.new(gl.outputs["Image"], comp.inputs["Image"])
+    out = gl.outputs["Image"]
+    hz = cfg.get("haze")
+    if hz:   # the night air: the far end of a street goes into the damp dark, as it does on a canal at night
+        s.view_layers[0].use_pass_mist = True
+        ms = s.world.mist_settings
+        ms.start, ms.depth, ms.falloff = hz.get("start", 15.0), hz.get("depth", 90.0), "QUADRATIC"
+        mul = t.nodes.new("CompositorNodeMath")
+        mul.operation = "MULTIPLY"
+        t.links.new(rl.outputs["Mist"], mul.inputs[0])
+        mul.inputs[1].default_value = hz.get("strength", 0.45)
+        mix = t.nodes.new("CompositorNodeMixRGB")
+        mix.blend_type = "MIX"
+        t.links.new(mul.outputs[0], mix.inputs["Fac"])
+        t.links.new(out, mix.inputs[1])
+        mix.inputs[2].default_value = (*hz.get("color", (0.05, 0.06, 0.08)), 1.0)
+        out = mix.outputs["Image"]
+    t.links.new(out, comp.inputs["Image"])
 
 
 def add_light(spec_light, i):
@@ -367,8 +385,10 @@ def main():
                 continue
             s.camera = add_camera(shot)
             t0 = time.time()
-            render_beauty(s, q, out_dir / f"{shot['id']}_color.png", spec.get("render", {}).get("exposure", 0.6),
-                          spec.get("render", {}).get("bloom"))
+            glow = spec.get("render", {}).get("bloom")
+            if spec.get("outdoor") and glow is not None and "haze" not in glow:   # every street's night air
+                glow = dict(glow, haze=HAZE)
+            render_beauty(s, q, out_dir / f"{shot['id']}_color.png", spec.get("render", {}).get("exposure", 0.6), glow)
             render_depth(s, out_dir / f"{shot['id']}_depth16.png", dmat, wworld)
             print(f"[render] {room_id}/{shot['id']} {a.quality} {res[0]}x{res[1]} in {time.time() - t0:.1f}s")
 

@@ -122,7 +122,9 @@ class RealHouseTests(unittest.TestCase):
                 if p["type"] != "model" or p.get("collide", True) is False or "size" not in p or p.get("yaw_model", 0) % 180:
                     continue
                 ref = p["model"][3:] if isinstance(p["model"], str) else p["model"]["ph"]
-                mx, my = sizes.get(ref, (1, 1, 1))[:2]   # along its x, and its depth
+                mx, my, mz = sizes.get(ref, (1, 1, 1))   # along its x, its depth, its height
+                if p.get("roll", 0) % 180:   # on its side: its height now lies along x
+                    mx = mz
                 sx, sz = p["size"][0], p["size"][2]
                 if max(mx, my) > 1.3 * min(mx, my) and max(sx, sz) > 1.3 * min(sx, sz):
                     self.assertEqual(mx > my, sx > sz, f"{rid}: {ref} at {p['pos']}: its collider runs across it")

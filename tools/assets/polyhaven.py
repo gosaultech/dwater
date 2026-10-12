@@ -42,7 +42,9 @@ KIT_DEFAULTS = {"marble_01": "texture", "dark_wood": "texture",
                 "leafy_grass": "texture", "gravel_floor": "texture", "gothic_statue": "model",
                 "CashRegister_01": "model", "horse_statue_01": "model",
                 "vintage_suitcase": "model", "wheelchair_01": "model", "vintage_crutches_01": "model", "clipboard": "model",
-                "portable_generator": "model", "portable_searchlight": "model"}
+                "portable_generator": "model", "portable_searchlight": "model",
+                "rough_linen": "texture", "beige_wall_001": "texture", "ceiling_interior": "texture", "worn_plaster_wall": "texture",
+                "painted_metal_shutter": "texture", "rusty_metal_shutter": "texture"}
 # HDRIs: a set's sky is fetched sharp (it fills the background); the rooms seen through lit windows
 # across the street are small, so a light version does.
 HDRI_RES = {"sky": "4k", "hdri": "1k"}

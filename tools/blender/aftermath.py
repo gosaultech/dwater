@@ -70,22 +70,25 @@ def evac_board(root, p, w, h, d):
 
 
 def leaflets(root, p, w, h, d):
-    """Evacuation notices blown over the ground (w by d about the spot): white and yellow sheets,
-    a printed band on each, some caught against the kerb."""
+    """Evacuation notices rained flat into the street (w by d about the spot): sodden, folded, grey."""
     rng = random.Random(p.get("seed", 11))
     sheets, bands = Acc(), Acc()
-    for _ in range(p.get("count", int(w * d * 1.2))):
+    for _ in range(p.get("count", int(w * d * 0.45))):
         x, z = rng.uniform(-w / 2, w / 2), rng.uniform(-d / 2, d / 2)
         a = rng.uniform(0, math.pi)
         c, s = math.cos(a), math.sin(a)
-        hw, hd = 0.105, 0.148
+        k = rng.uniform(0.6, 1.0)
+        hw, hd = 0.105 * k, 0.148 * k
+        lift = rng.choice([0.0, 0.0, 0.02, 0.05]) * p.get("lift", 1.0)
 
-        def at(u, v, y=0.004):
-            return (x + u * c - v * s, y + rng.uniform(0, 0.003), z + u * s + v * c)
-        sheets.quad(at(-hw, -hd), at(hw, -hd), at(hw, hd), at(-hw, hd))
-        bands.quad(at(-hw * 0.8, hd * 0.55, 0.008), at(hw * 0.8, hd * 0.55, 0.008), at(hw * 0.8, hd * 0.8, 0.008), at(-hw * 0.8, hd * 0.8, 0.008))
-    sheets.build("leaflets", M({"color": [0.82, 0.8, 0.72], "rough": 0.7, "noise": 0.2}), root, smooth=False)
-    bands.build("leaflet_print", M({"color": [0.7, 0.32, 0.02], "rough": 0.6}), root, smooth=False)
+        def at(u, v, y=0.003):
+            return (x + u * c - v * s, y, z + u * s + v * c)
+        sheets.quad(at(-hw, -hd), at(hw, -hd), at(hw, 0.0), at(-hw, 0.0))
+        sheets.quad(at(-hw, 0.0), at(hw, 0.0), at(hw, hd, 0.003 + lift), at(-hw, hd, 0.003 + lift * 0.4))
+        if rng.random() < 0.6:
+            bands.quad(at(-hw * 0.8, -hd * 0.7, 0.005), at(hw * 0.8, -hd * 0.7, 0.005), at(hw * 0.8, -hd * 0.5, 0.005), at(-hw * 0.8, -hd * 0.5, 0.005))
+    sheets.build("leaflets", M({"color": p.get("paper", [0.4, 0.39, 0.35]), "rough": p.get("rough", 0.38), "noise": 0.35, "noise_scale": 14.0, "grime": 0}), root, smooth=False)
+    bands.build("leaflet_print", M({"color": [0.3, 0.14, 0.03], "rough": 0.4, "grime": 0}), root, smooth=False)
 
 
 def luggage(root, p, w, h, d):
@@ -212,65 +215,103 @@ LIVERY = {   # body, stripe a, stripe b, word, roof light
     "car": ((0.12, 0.13, 0.15), None, None, "", None),
     "taxi": ((0.02, 0.02, 0.025), None, None, "TAXI", (1.0, 0.85, 0.4)),
     "police": ((0.72, 0.72, 0.72), (0.08, 0.15, 0.55), (0.9, 0.35, 0.05), "POLITIE", (0.1, 0.25, 1.0)),
-    "ambulance": ((0.92, 0.8, 0.05), (0.1, 0.45, 0.15), (0.92, 0.8, 0.05), "AMBULANCE", (0.1, 0.25, 1.0)),
+    "ambulance": ((0.8, 0.68, 0.04), (0.1, 0.45, 0.15), (0.92, 0.8, 0.05), "AMBULANCE", (0.1, 0.25, 1.0)),
     "army": ((0.16, 0.18, 0.12), None, None, "", None),
 }
 
 
+def _profile(w, h, van):
+    """A vehicle's side as a polygon (u along it, front at +u; v up) and a point it fans from: a
+    car's bonnet, windscreen, roof and boot, or a van's short nose and tall box."""
+    if van:
+        return [(-w / 2, 0.32), (w / 2, 0.32), (w / 2, 0.8), (w / 2 - 0.22, 1.05), (w / 2 - 0.72, 1.55), (w / 2 - 0.98, h),
+                (-w / 2 + 0.04, h), (-w / 2, h - 0.08)], (0.0, h * 0.5), (w / 2 - 0.72, 1.55, w / 2 - 0.98, h)
+    return [(-w / 2, 0.32), (w / 2, 0.32), (w / 2, 0.6), (w / 2 - 0.12, 0.8), (w / 2 - 1.05, 0.93), (w / 2 - 1.7, h),
+            (-w / 2 + 0.85, h), (-w / 2 + 0.2, 0.98), (-w / 2, 0.88)], (0.0, 0.62), (w / 2 - 1.05, 0.93, w / 2 - 1.7, h)
+
+
 def vehicle(root, p, w, h, d):
-    """A car or van left where it stopped, along local x (front +x), w long: a bevelled body, glass,
-    four wheels, its headlights on, a door ("door_open": "left" | "right") swung wide, a livery
-    ("livery": car | taxi | police | ambulance) with its stripes and roof lights lit."""
+    """A car or van left where it stopped, along local x (front +x), w long: a body swept from its
+    side's shape (bonnet, windscreen, roof; a van's tall box) with its edges rounded, glass in its
+    windows, tyres on rims in their arches, its headlights on, a door ("door_open": "left" |
+    "right") swung wide, a livery ("livery": car | taxi | police | ambulance | army) with its
+    stripes and roof lights lit."""
     body_c, sa, sb, word, roof = LIVERY[p.get("livery", "car")]
-    body = M({"color": list(body_c), "rough": 0.25, "metal": 0.5, "noise": 0.05})
-    glass, dark = M("glass"), M({"color": [0.02, 0.02, 0.02], "rough": 0.5})
+    body = M({"color": [c * 0.85 for c in body_c], "rough": 0.45, "noise": 0.1, "noise_scale": 1.5, "coat": 1.0, "grime": 1.0})
+    glass = M({"color": [0.015, 0.02, 0.025], "rough": 0.03, "metal": 0.8})
+    dark = M({"color": [0.02, 0.02, 0.02], "rough": 0.6})
+    rim_m = M({"color": [0.55, 0.56, 0.58], "rough": 0.25, "metal": 1.0})
     van = p.get("van", h > 1.8)
-    belt = 0.95 if not van else 1.15
-    kit.soft(root, "car_body", (0.0, 0.25 + (belt - 0.25) / 2, 0.0), (w, belt - 0.25, d), body, 0.12, 3)
-    cab0, cab1 = (-w / 2 + 0.3, w / 2 - 0.9) if van else (-w / 2 + 0.9, w / 2 - 1.2)
-    kit.soft(root, "car_cabin", ((cab0 + cab1) / 2, belt + (h - belt) / 2, 0.0), (cab1 - cab0, h - belt, d - 0.1), body, 0.1, 3)
-    for sz in (-1, 1):   # the side windows: the front ones on a van, all along on a car
-        x0, x1 = (cab1 - 1.0, cab1 - 0.1) if van else (cab0 + 0.1, cab1 - 0.1)
-        lbox(root, "car_window", (x0, belt + 0.08, sz * (d / 2 - 0.04) - 0.01), (x1, h - 0.1, sz * (d / 2 - 0.04) + 0.01), glass)
-    lbox(root, "windscreen", (cab1 - 0.02, belt + 0.06, -d / 2 + 0.15), (cab1 + 0.01, h - 0.08, d / 2 - 0.15), glass)
+    poly, c, (wsx0, wsy0, wsx1, wsy1) = _profile(w, h, van)
+    shell = street.fan_prism(root, "car_body", poly, c, d, body, ((0.0, 0.0, -d / 2), (1, 0, 0), (0, 1, 0), (0, 0, 1)))
+    kit.bevel(shell, 0.07, 3)
+    belt = 1.15 if van else 0.95
+    for sz in (-1, 1):   # the side glass: the cab's on a van, the whole greenhouse on a car
+        z0 = sz * (d / 2 + 0.004)
+        if van:
+            win = [(wsx1 - 0.85, belt + 0.08), (wsx0 - 0.08, belt + 0.08), (wsx1 - 0.05, h - 0.1), (wsx1 - 0.85, h - 0.1)]
+        else:
+            win = [(-w / 2 + 0.95, belt + 0.06), (wsx0 - 0.1, belt + 0.06), (wsx1 - 0.08, h - 0.07), (-w / 2 + 0.95, h - 0.07)]
+        street.fan_prism(root, "car_window", win, (sum(u for u, _ in win) / 4, sum(v for _, v in win) / 4), 0.006 * sz, glass,
+                         ((0.0, 0.0, z0), (1, 0, 0), (0, 1, 0), (0, 0, 1)))
+    ws = Acc()   # the windscreen, along its slope
+    ws.quad((wsx0 + 0.02, wsy0 + 0.02, -d / 2 + 0.12), (wsx0 + 0.02, wsy0 + 0.02, d / 2 - 0.12), (wsx1 + 0.03, wsy1 - 0.03, d / 2 - 0.15),
+            (wsx1 + 0.03, wsy1 - 0.03, -d / 2 + 0.15))
+    ws.build("windscreen", glass, root, smooth=False)
     for sx in (-1, 1):
+        x = sx * (w / 2 - (0.75 if van else 0.72))
         for sz in (-1, 1):
-            x = sx * (w / 2 - 0.7)
-            wh = kit.lathe(root, "tyre", [(0.0, -0.11), (0.33, -0.11), (0.33, 0.11), (0.0, 0.11)], dark, at=(0.0, 0.0, 0.0), segments=16)
-            wh.rotation_euler[0] = math.radians(90)
-            wh.location = g2b((x, 0.33, sz * (d / 2 - 0.08)))
+            z = sz * (d / 2 - 0.12)
+            tyre = kit.lathe(root, "tyre", [(0.21, -0.11), (0.31, -0.12), (0.34, -0.06), (0.34, 0.06), (0.31, 0.12), (0.21, 0.11)], dark,
+                             at=(0.0, 0.0, 0.0), segments=20)
+            tyre.rotation_euler[0] = math.radians(90)
+            tyre.location = g2b((x, 0.34, z))
+            rim = kit.lathe(root, "rim", [(0.0, -0.06), (0.21, -0.06), (0.21, 0.06), (0.0, 0.07)], rim_m, at=(0.0, 0.0, 0.0), segments=16)
+            rim.rotation_euler[0] = math.radians(90)
+            rim.location = g2b((x, 0.34, z + sz * 0.05))
+            arch = Acc()   # the wheel's arch: a dark half-ring on the body's side round the tyre
+            for k in range(10):
+                a0_, a1_ = math.pi * k / 10, math.pi * (k + 1) / 10
+                r0, r1 = 0.36, 0.42
+                arch.quad((x + r0 * math.cos(a0_), 0.34 + r0 * math.sin(a0_), sz * (d / 2 + 0.006)), (x + r1 * math.cos(a0_), 0.34 + r1 * math.sin(a0_), sz * (d / 2 + 0.006)),
+                          (x + r1 * math.cos(a1_), 0.34 + r1 * math.sin(a1_), sz * (d / 2 + 0.006)), (x + r0 * math.cos(a1_), 0.34 + r0 * math.sin(a1_), sz * (d / 2 + 0.006)))
+            arch.build("arch", dark, root, smooth=False)
     head = builders.emissive("headlight", (1.0, 0.95, 0.85), 12.0)
     tail = builders.emissive("taillight", (1.0, 0.05, 0.03), 4.0)
     for sz in (-1, 1):
-        lbox(root, "headlight", (w / 2 - 0.02, 0.62, sz * (d / 2 - 0.3) - 0.12), (w / 2 + 0.02, 0.74, sz * (d / 2 - 0.3) + 0.12), head)
-        lbox(root, "taillight", (-w / 2 - 0.02, 0.72, sz * (d / 2 - 0.2) - 0.1), (-w / 2 + 0.02, 0.86, sz * (d / 2 - 0.2) + 0.1), tail)
+        lbox(root, "headlight", (w / 2 - 0.01, 0.62, sz * (d / 2 - 0.3) - 0.13), (w / 2 + 0.03, 0.72, sz * (d / 2 - 0.3) + 0.13), head)
+        lbox(root, "taillight", (-w / 2 - 0.03, 0.74, sz * (d / 2 - 0.18) - 0.09), (-w / 2 + 0.01, 0.86, sz * (d / 2 - 0.18) + 0.09), tail)
+    lbox(root, "bumper_f", (w / 2 - 0.05, 0.32, -d / 2 + 0.05), (w / 2 + 0.05, 0.5, d / 2 - 0.05), dark)
+    lbox(root, "bumper_r", (-w / 2 - 0.05, 0.32, -d / 2 + 0.05), (-w / 2 + 0.05, 0.5, d / 2 - 0.05), dark)
+    lbox(root, "plate", (w / 2 + 0.05, 0.36, -0.26), (w / 2 + 0.06, 0.47, 0.26), M({"color": [0.85, 0.65, 0.05], "rough": 0.4}))   # Dutch yellow
     if sa:   # the striping down each side (Battenburg blocks on an ambulance, two bands on police)
         for sz in (-1, 1):
-            z = sz * (d / 2 + 0.005)
-            n = int(w / 0.5)
+            z = sz * (d / 2 + 0.008)
+            n = int((w - 0.6) / 0.5)
             for i in range(n):
-                c = sa if (i % 2 == 0 or p.get("livery") == "police") else sb
+                col = sa if (i % 2 == 0 or p.get("livery") == "police") else sb
                 if p.get("livery") == "police":
-                    lbox(root, "stripe", (-w / 2 + 0.2 + i * 0.5, 0.55, z - 0.004), (-w / 2 + 0.7 + i * 0.5, 0.72, z + 0.004), M({"color": list(sa), "rough": 0.3}))
-                    lbox(root, "stripe", (-w / 2 + 0.2 + i * 0.5, 0.48, z - 0.004), (-w / 2 + 0.7 + i * 0.5, 0.55, z + 0.004), M({"color": list(sb), "rough": 0.3}))
+                    lbox(root, "stripe", (-w / 2 + 0.3 + i * 0.5, 0.55, z - 0.004), (-w / 2 + 0.8 + i * 0.5, 0.7, z + 0.004), M({"color": list(sa), "rough": 0.3}))
+                    lbox(root, "stripe", (-w / 2 + 0.3 + i * 0.5, 0.49, z - 0.004), (-w / 2 + 0.8 + i * 0.5, 0.55, z + 0.004), M({"color": list(sb), "rough": 0.3}))
                 else:
-                    lbox(root, "stripe", (-w / 2 + 0.2 + i * 0.5, 0.45, z - 0.004), (-w / 2 + 0.7 + i * 0.5, 0.75, z + 0.004), M({"color": list(c), "rough": 0.3}))
-            text(root, word, (0.0, belt + 0.25 if van else 0.85, z + sz * 0.006), 0.22, M({"color": [0.05, 0.08, 0.3] if p.get("livery") == "police" else [0.1, 0.4, 0.15], "rough": 0.4}),
+                    lbox(root, "stripe", (-w / 2 + 0.3 + i * 0.5, 0.48, z - 0.004), (-w / 2 + 0.8 + i * 0.5, 0.74, z + 0.004), M({"color": list(col), "rough": 0.3}))
+            text(root, word, (-0.4 if van else 0.0, belt + 0.25 if van else 0.82, z + sz * 0.006), 0.22,
+                 M({"color": [0.05, 0.08, 0.3] if p.get("livery") == "police" else [0.1, 0.4, 0.15], "rough": 0.4}),
                  font="DejaVuSans-Bold.ttf", depth=0.0, yaw=0.0 if sz > 0 else 180.0)
     if roof:   # the roof light, lit (a taxi's sign, or the blue bar left flashing)
-        lbox(root, "roof_light", ((cab0 + cab1) / 2 - 0.5, h, -0.35), ((cab0 + cab1) / 2 + 0.5, h + 0.12, 0.35),
-             builders.emissive("roof_light_%d" % int(roof[2] * 100), roof, 8.0))
+        rx = (wsx1 - 0.6) if van else (wsx1 - 0.9)
+        lbox(root, "roof_light", (rx - 0.5, h, -0.35), (rx + 0.5, h + 0.12, 0.35), builders.emissive("roof_light_%d" % int(roof[2] * 100), roof, 8.0))
         if word == "TAXI":
-            text(root, "TAXI", ((cab0 + cab1) / 2, h + 0.06, 0.36), 0.1, dark, font="DejaVuSans-Bold.ttf", depth=0.0)
+            text(root, "TAXI", (rx, h + 0.06, 0.36), 0.1, dark, font="DejaVuSans-Bold.ttf", depth=0.0)
     if p.get("door_open"):   # the driver's door swung wide
         sz = 1 if p["door_open"] == "left" else -1
-        hinge_x = cab1 - 0.05
+        hinge_x = wsx0 - 0.05
         door = builders.empty_at("car_door", (0.0, 0.0, 0.0), 0.0)
         door.parent = root
         door.location = g2b((hinge_x, 0.0, sz * d / 2))
         door.rotation_euler[2] = math.radians(-65 * sz)
-        lbox(door, "door_panel", (-1.1, 0.3, -0.04), (0.0, belt, 0.04), body)
-        lbox(door, "door_glass", (-1.0, belt, -0.01), (-0.1, h - 0.1, 0.01), glass)
+        kit.soft(door, "door_panel", (-0.55, (0.32 + belt) / 2, 0.0), (1.1, belt - 0.32, 0.06), body, 0.02, 2)
+        lbox(door, "door_glass", (-1.0, belt, -0.01), (-0.1, h - 0.12, 0.01), glass)
 
 
 # ── Flood defences and the fire brigade ─────────────────────────────────────────────────

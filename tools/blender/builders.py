@@ -179,6 +179,66 @@ def _brick(nt, vec, c1, c2, mortar, width, row, mortar_size, offset=0.5, bias=0.
     return t
 
 
+_DRY = {"glass", "water", "canal_water", "soot"}
+
+
+def weather(m, key):
+    """Rounded edges (a render-time bevel) and dirt worked into the creases (ambient occlusion)."""
+    k = key if isinstance(key, dict) else {}
+    if (isinstance(key, str) and key in _DRY) or "emit" in k or "room" in k:
+        return
+    nt = m.node_tree
+    for b in [n for n in nt.nodes if n.type == "BSDF_PRINCIPLED"]:
+        tw = b.inputs["Transmission Weight"]
+        if tw.is_linked or tw.default_value > 0:
+            continue
+        r = k.get("bevel", 0.012)
+        if r > 0:
+            bv = nt.nodes.new("ShaderNodeBevel")
+            bv.samples = 4
+            bv.inputs["Radius"].default_value = r
+            nin = b.inputs["Normal"]
+            if nin.is_linked:
+                nt.links.new(nin.links[0].from_socket, bv.inputs["Normal"])
+            nt.links.new(bv.outputs["Normal"], nin)
+        g = k.get("grime", 0.7)
+        if g <= 0:
+            continue
+        ao = nt.nodes.new("ShaderNodeAmbientOcclusion")
+        ao.samples = 6
+        ao.inputs["Distance"].default_value = k.get("grime_reach", 0.4)
+        tc = nt.nodes.new("ShaderNodeTexCoord")
+        nz = nt.nodes.new("ShaderNodeTexNoise")
+        nz.inputs["Scale"].default_value = 2.2
+        nz.inputs["Detail"].default_value = 8.0
+        nt.links.new(tc.outputs["Object"], nz.inputs["Vector"])
+        inv = _wmath(nt, "SUBTRACT", 1.0, ao.outputs["AO"])
+        patch = _wmath(nt, "MULTIPLY", inv, nz.outputs["Fac"])
+        fac = _wmath(nt, "MULTIPLY", patch, g * 2.0, clamp=True)
+        mx = nt.nodes.new("ShaderNodeMixRGB")
+        mx.blend_type = "MULTIPLY"
+        mx.inputs["Color2"].default_value = (0.3, 0.26, 0.21, 1.0)
+        nt.links.new(fac, mx.inputs["Fac"])
+        bc = b.inputs["Base Color"]
+        if bc.is_linked:
+            nt.links.new(bc.links[0].from_socket, mx.inputs["Color1"])
+        else:
+            mx.inputs["Color1"].default_value = bc.default_value[:]
+        nt.links.new(mx.outputs["Color"], bc)
+
+
+def _wmath(nt, op, a, b, clamp=False):
+    n = nt.nodes.new("ShaderNodeMath")
+    n.operation = op
+    n.use_clamp = clamp
+    for i, v in enumerate((a, b)):
+        if isinstance(v, (int, float)):
+            n.inputs[i].default_value = v
+        else:
+            nt.links.new(v, n.inputs[i])
+    return n.outputs[0]
+
+
 def material(key):
     """Material library keyed by the names used in RoomSpec JSON. A Poly Haven reference
     ("ph:<id>" or {"ph": ...}) or a painted surface ({"color": ...}) goes to surfaces.py."""
@@ -187,6 +247,7 @@ def material(key):
         if ck not in _MATS:
             m, nt, out = _new_mat(ck[:60])
             surfaces.build(nt, out, key)
+            weather(m, key)
             _MATS[ck] = m
         return _MATS[ck]
     if key in _MATS:
@@ -269,6 +330,7 @@ def material(key):
             "typewriter": ((0.015, 0.015, 0.015), 0.35, 0.3), "plaster_raw": ((0.35, 0.33, 0.3), 0.95, 0.0),
         }.get(key, ((0.5, 0.0, 0.5), 0.5, 0.0))  # magenta = missing material, obvious on purpose
         _bsdf(nt, out, color=flat[0], rough=flat[1], metal=flat[2])
+    weather(m, key)
     _MATS[key] = m
     return m
 

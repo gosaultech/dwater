@@ -113,6 +113,20 @@
     300
    ]
   },
+  "Sofa_01": {
+   "kind": "model",
+   "name": "Sofa 01",
+   "authors": [
+    "Kirill Sannikov"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/Sofa_01",
+   "dimensions_mm": [
+    1571,
+    658,
+    797
+   ]
+  },
   "WetFloorSign_01": {
    "kind": "model",
    "name": "Wet Floor Sign 01",
@@ -163,6 +177,16 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/bark_platanus"
+  },
+  "beige_wall_001": {
+   "kind": "texture",
+   "name": "Beige Wall 001",
+   "authors": [
+    "Dimitrios Savva",
+    "Rico Cilliers"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/beige_wall_001"
   },
   "bolt_action_rifle_7_62": {
    "kind": "model",
@@ -230,6 +254,15 @@
     342
    ]
   },
+  "ceiling_interior": {
+   "kind": "texture",
+   "name": "Ceiling Interior",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/ceiling_interior"
+  },
   "christmas_photo_studio_04": {
    "kind": "hdri",
    "name": "Christmas Photo Studio 04",
@@ -270,6 +303,20 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/cobblestone_floor_04"
+  },
+  "coffee_table_round_01": {
+   "kind": "model",
+   "name": "Coffee Table Round 01",
+   "authors": [
+    "Ulan Cabanilla"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/coffee_table_round_01",
+   "dimensions_mm": [
+    1301,
+    1301,
+    491
+   ]
   },
   "concrete_floor_painted": {
    "kind": "texture",
@@ -507,6 +554,20 @@
     1403
    ]
   },
+  "hanging_picture_frame_01": {
+   "kind": "model",
+   "name": "Hanging Picture Frame 01",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/hanging_picture_frame_01",
+   "dimensions_mm": [
+    594,
+    16,
+    841
+   ]
+  },
   "hanging_picture_frame_02": {
    "kind": "model",
    "name": "Hanging Picture Frame 02",
@@ -519,6 +580,20 @@
     752,
     33,
     500
+   ]
+  },
+  "hanging_picture_frame_03": {
+   "kind": "model",
+   "name": "Hanging Picture Frame 03",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/hanging_picture_frame_03",
+   "dimensions_mm": [
+    385,
+    32,
+    502
    ]
   },
   "herringbone_brick": {
@@ -787,6 +862,20 @@
     906
    ]
   },
+  "modern_arm_chair_01": {
+   "kind": "model",
+   "name": "Modern Arm Chair 01",
+   "authors": [
+    "Vibrant Nordic"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/modern_arm_chair_01",
+   "dimensions_mm": [
+    820,
+    987,
+    1023
+   ]
+  },
   "mossy_brick": {
    "kind": "texture",
    "name": "Mossy Brick",
@@ -795,6 +884,20 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/mossy_brick"
+  },
+  "mounted_fluorescent_lights": {
+   "kind": "model",
+   "name": "Mounted Fluorescent Lights",
+   "authors": [
+    "Ulan Cabanilla"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/mounted_fluorescent_lights",
+   "dimensions_mm": [
+    912,
+    645,
+    35
+   ]
   },
   "old_gas_mask": {
    "kind": "model",
@@ -847,6 +950,17 @@
     859
    ]
   },
+  "painted_metal_shutter": {
+   "kind": "texture",
+   "name": "Painted Metal Shutter",
+   "authors": [
+    "Charlotte Baglioni",
+    "Dario Barresi",
+    "Rico Cilliers"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/painted_metal_shutter"
+  },
   "planter_box_01": {
    "kind": "model",
    "name": "Planter Box 01",
@@ -896,6 +1010,20 @@
     506,
     406,
     254
+   ]
+  },
+  "plastic_crate_03": {
+   "kind": "model",
+   "name": "Plastic Crate 03",
+   "authors": [
+    "Pacific Penguin"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/plastic_crate_03",
+   "dimensions_mm": [
+    481,
+    265,
+    266
    ]
   },
   "plastic_monobloc_chair_01": {
@@ -968,6 +1096,20 @@
     841
    ]
   },
+  "potted_plant_04": {
+   "kind": "model",
+   "name": "Potted Plant 04",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/potted_plant_04",
+   "dimensions_mm": [
+    170,
+    186,
+    268
+   ]
+  },
   "rectangular_facade_tiles": {
    "kind": "texture",
    "name": "Rectangular Facade Tiles",
@@ -1013,6 +1155,25 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/rosewood_veneer1"
   },
+  "rough_linen": {
+   "kind": "texture",
+   "name": "Rough Linen",
+   "authors": [
+    "Rico Cilliers",
+    "colormass"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/rough_linen"
+  },
+  "rusty_metal_shutter": {
+   "kind": "texture",
+   "name": "Rusty Metal Shutter",
+   "authors": [
+    "Charlotte Baglioni"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/rusty_metal_shutter"
+  },
   "rusty_painted_metal": {
    "kind": "texture",
    "name": "Rusty Painted Metal",
@@ -1051,6 +1212,20 @@
     61
    ]
   },
+  "side_table_01": {
+   "kind": "model",
+   "name": "Side Table 01",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/side_table_01",
+   "dimensions_mm": [
+    550,
+    450,
+    551
+   ]
+  },
   "small_empty_room_2": {
    "kind": "hdri",
    "name": "Small Empty Room 2",
@@ -1059,6 +1234,20 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/small_empty_room_2"
+  },
+  "sofa_02": {
+   "kind": "model",
+   "name": "Sofa 02",
+   "authors": [
+    "Kirill Sannikov"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/sofa_02",
+   "dimensions_mm": [
+    1807,
+    818,
+    709
+   ]
   },
   "square_concrete_pavers": {
    "kind": "texture",
@@ -1218,6 +1407,20 @@
     568
    ]
   },
+  "wall_clock": {
+   "kind": "model",
+   "name": "Wall Clock",
+   "authors": [
+    "PierreB3D"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/wall_clock",
+   "dimensions_mm": [
+    320,
+    47,
+    320
+   ]
+  },
   "warm_bar": {
    "kind": "hdri",
    "name": "Warm Bar",
@@ -1363,6 +1566,15 @@
     442,
     437
    ]
+  },
+  "worn_plaster_wall": {
+   "kind": "texture",
+   "name": "Worn Plaster Wall",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/worn_plaster_wall"
   }
  }
 }

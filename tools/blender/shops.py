@@ -32,9 +32,13 @@ BRASS = {"color": [0.72, 0.52, 0.2], "rough": 0.25, "metal": 1.0, "noise": 0.08}
 VELVET = {"color": [0.32, 0.02, 0.03], "rough": 0.85, "noise": 0.2}
 
 
-def stock(accs, x0, x1, y, z0, z1, rng, empty=0.15, bottles=0.3):
-    """Fill one shelf (x0..x1 at height y, depth z0..z1) with packets and bottles in the palette's
-    colours (one accumulator per colour). `empty`: how much of it was grabbed; a few lie toppled."""
+SCANS = {"pharmacy": ["medical_box", "multi_cleaner_bottle", "lubricant_spray"], "grocery": ["russian_food_cans_01", "can_rusted", "CheeseBox_01", "multi_cleaner_bottle"],
+         "souvenir": ["CheeseBox_01", "ceramic_vase_01", "brass_vase_01"], "bar": ["wine_bottles_01"], "ammo": ["ammo_box"],
+         "candy": ["CheeseBox_01"], "guns": ["ammo_box"]}
+
+
+def stock(accs, x0, x1, y, z0, z1, rng, empty=0.15, bottles=0.3, root=None, scans=None, scan_share=0.3):
+    """Fill one shelf (x0..x1 at y, depth z0..z1): packets and bottles, some real products (CC0 scans)."""
     x = x0 + 0.02
     while x < x1 - 0.05:
         wv = rng.uniform(0.05, 0.13)
@@ -42,6 +46,16 @@ def stock(accs, x0, x1, y, z0, z1, rng, empty=0.15, bottles=0.3):
             break
         if rng.random() < empty:   # a gap where it was
             x += wv + rng.uniform(0.05, 0.25)
+            continue
+        if root is not None and scans and rng.random() < scan_share:
+            sw = rng.uniform(0.12, 0.22)
+            if x + sw > x1:
+                break
+            hold = builders.empty_at("product", (0.0, 0.0, 0.0), rng.uniform(-15, 15))
+            hold.parent = root
+            hold.location = street.g2b((x + sw / 2, y, (z0 + z1) / 2))
+            kit.model(hold, {"model": "ph:" + rng.choice(scans), "fit": [sw, 0.3, z1 - z0], "max_scale": 1.0}, sw, 0.3, z1 - z0)
+            x += sw + 0.01
             continue
         acc = accs[rng.randrange(len(accs))]
         hv = rng.uniform(0.1, 0.27)
@@ -88,7 +102,8 @@ def shelving(root, p, w, h, d):
         for za, zb in zs:
             lbox(root, "shelf", (-w / 2 + 0.03, y - 0.02, za), (w / 2 - 0.03, y, zb), frame)
             if k < shelves - 1:   # (nothing on the very top)
-                stock(accs, -w / 2 + 0.04, w / 2 - 0.04, y, za + 0.02, zb - 0.02, rng, p.get("empty", 0.15), p.get("bottles", 0.3))
+                stock(accs, -w / 2 + 0.04, w / 2 - 0.04, y, za + 0.02, zb - 0.02, rng, p.get("empty", 0.15), p.get("bottles", 0.3),
+                      root, SCANS.get(p.get("palette", "grocery")), p.get("scans", 0.3))
         lbox(root, "price_rail", (-w / 2 + 0.03, y - 0.06, d / 2 - 0.01), (w / 2 - 0.03, y, d / 2 + 0.005), M({"color": [0.9, 0.9, 0.88], "rough": 0.5}))
     _build_accs(root, accs, pal)
     fallen = _accs(len(pal))   # what came off the shelves, on the floor in front
@@ -360,11 +375,18 @@ def safe(root, p, w, h, d):
 
 
 def strip_light(root, p, w, h, d):
-    """A fluorescent strip on the ceiling along local x (hung `h` below it): the tube lit, its
-    diffuser and housing round it. The room's own lights do the lighting; this is what you see."""
-    lbox(root, "strip_housing", (-w / 2, -0.04, -0.08), (w / 2, 0.0, 0.08), M({"color": [0.85, 0.85, 0.83], "rough": 0.4}))
-    lbox(root, "strip_tube", (-w / 2 + 0.03, -0.06, -0.05), (w / 2 - 0.03, -0.04, 0.05),
-         builders.emissive("strip_tube", tuple(p.get("color", (0.95, 0.98, 1.0))), p.get("glow", 6.0)))
+    """Fluorescent panels on the ceiling along local x: a row of real fittings (a CC0 scan, 0.9 by
+    0.65 m, flush under the ceiling) every 1.4 m or so, their diffusers lit. The room's own lights
+    do the lighting; this is what you see."""
+    n = max(1, int(round(w / 1.4)))
+    color = list(p.get("color", (0.95, 0.98, 1.0)))
+    for i in range(n):
+        x = -w / 2 + w * (i + 0.5) / n
+        fit = builders.empty_at("fitting", (0.0, 0.0, 0.0), 0.0)
+        fit.parent = root
+        fit.location = street.g2b((x, -0.05, 0.0))
+        kit.model(fit, {"model": "ph:mounted_fluorescent_lights", "fit": [0.92, 0.1, 0.66],
+                        "emit": [{"match": "glass", "color": color, "strength": p.get("glow", 6.0)}]}, 0.92, 0.1, 0.66)
 
 
 def pilaster(root, p, w, h, d):
@@ -462,8 +484,96 @@ def lockers(root, p, w, h, d):
             lbox(root, "locker_vent", (x0 + 0.08, h - 0.3, d / 2), (x1 - 0.08, h - 0.2, d / 2 + 0.003), M({"color": [0.05, 0.05, 0.06], "rough": 0.5}))
 
 
+TILE = {"color": [0.6, 0.58, 0.53], "rough": 0.95, "noise": 0.25, "noise_scale": 30.0, "bump": 0.4, "bevel": 0}
+STAINED = {"color": [0.45, 0.38, 0.27], "rough": 0.95, "noise": 0.55, "noise_scale": 2.5, "bump": 0.4, "bevel": 0}
+TBAR = {"color": [0.72, 0.72, 0.7], "rough": 0.4, "metal": 0.3, "noise": 0.05}
+GALV = {"color": [0.5, 0.52, 0.53], "rough": 0.38, "metal": 0.9, "noise": 0.3, "noise_scale": 2.0}
+
+
+def drop_ceiling(root, p, w, h, d):
+    """A suspended ceiling of 600 mm tiles over w by d (its underside at the prop's height): T-bar
+    grid, water-stained tiles, a few dropped open onto the dark above."""
+    rng = random.Random(p.get("seed", 5))
+    t = 0.6
+
+    def lines(L):
+        n = max(1, int(L / t))
+        o = (L - n * t) / 2
+        v = [-L / 2 + o + i * t for i in range(n + 1)]
+        return ([-L / 2] if o > 0.05 else []) + v + ([L / 2] if o > 0.05 else [])
+    xs, zs = lines(w), lines(d)
+    clean, stain, hang, void, grid = Acc(), Acc(), Acc(), Acc(), Acc()
+    for x0, x1 in zip(xs, xs[1:]):
+        for z0, z1 in zip(zs, zs[1:]):
+            r = rng.random()
+            if r < p.get("fallen", 0.04):
+                void.quad((x0, 0.004, z0), (x1, 0.004, z0), (x1, 0.004, z1), (x0, 0.004, z1))
+                a = math.radians(rng.uniform(35, 80))
+                L = x1 - x0
+                ex, ey = x0 + L * math.cos(a), -L * math.sin(a)
+                hang.quad((x0, 0.0, z0), (ex, ey, z0), (ex, ey, z1), (x0, 0.0, z1))
+            else:
+                (stain if r < p.get("fallen", 0.04) + p.get("stained", 0.12) else clean).quad(
+                    (x0, 0.0, z0), (x1, 0.0, z0), (x1, 0.0, z1), (x0, 0.0, z1))
+    for x in xs:
+        grid.box((x - 0.012, -0.014, -d / 2), (x + 0.012, 0.0, d / 2))
+    for z in zs:
+        grid.box((-w / 2, -0.014, z - 0.012), (w / 2, 0.0, z + 0.012))
+    clean.build("ceiling_tiles", M(TILE), root, smooth=False)
+    stain.build("ceiling_stained", M(STAINED), root, smooth=False)
+    hang.build("ceiling_fallen", M(STAINED), root, smooth=False)
+    void.build("ceiling_void", M({"color": [0.008, 0.008, 0.008], "rough": 1.0, "grime": 0, "bevel": 0}), root, smooth=False)
+    grid.build("ceiling_grid", M(TBAR), root, smooth=False)
+
+
+def duct(root, p, w, h, d):
+    """Galvanised air ducting along local x (its underside at the prop's height) on hangers, a flange
+    every 1.2 m, a grille now and then; a red sprinkler main beside it ("pipe": false for none)."""
+    g = M(GALV)
+    dw, dh = p.get("width", 0.5), p.get("depth", 0.32)
+    lbox(root, "duct", (-w / 2, 0.0, -dw / 2), (w / 2, dh, dw / 2), g)
+    fl, hg, gr = Acc(), Acc(), Acc()
+    n = max(1, int(w / 1.2))
+    for i in range(n + 1):
+        x = -w / 2 + w * i / n
+        fl.box((x - 0.02, -0.02, -dw / 2 - 0.02), (x + 0.02, dh + 0.02, dw / 2 + 0.02))
+        if i % 2 == 0:
+            for sz in (-1, 1):
+                hg.rod((x, dh, sz * (dw / 2 + 0.03)), (x, dh + 1.0, sz * (dw / 2 + 0.03)), 0.006, 0.006, 4)
+            hg.box((x - 0.02, -0.025, -dw / 2 - 0.04), (x + 0.02, -0.02, dw / 2 + 0.04))
+        if i % 3 == 1:
+            gr.box((x - 0.25, -0.01, -dw / 2 + 0.06), (x + 0.25, 0.0, dw / 2 - 0.06))
+    fl.build("duct_flanges", g, root, smooth=False)
+    hg.build("duct_hangers", M(street.IRON), root, smooth=False)
+    gr.build("duct_grilles", M({"color": [0.03, 0.03, 0.03], "rough": 0.6, "metal": 0.5}), root, smooth=False)
+    if p.get("pipe", True):
+        z = dw / 2 + 0.35
+        red = M({"color": [0.45, 0.04, 0.03], "rough": 0.45, "noise": 0.15})
+        heads = Acc()
+        heads.rod((-w / 2, dh * 0.6, z), (w / 2, dh * 0.6, z), 0.035, 0.035, 10)
+        for i in range(int(w / 2.4) + 1):
+            x = -w / 2 + 1.2 + i * 2.4
+            if x < w / 2:
+                heads.rod((x, dh * 0.6, z), (x, -0.08, z), 0.012, 0.012, 6)
+        heads.build("sprinkler_main", red, root)
+
+
+def exit_sign(root, p, w, h, d):
+    """A lit emergency-exit sign over a door (facing +z): a green panel, NOODUITGANG and an arrow."""
+    lbox(root, "exit_box", (-0.21, 0.0, -0.07), (0.21, 0.17, 0.0), M({"color": [0.8, 0.8, 0.77], "rough": 0.4}))
+    g = p.get("glow", 3.0)
+    lbox(root, "exit_face", (-0.2, 0.01, 0.0), (0.2, 0.16, 0.004), builders.emissive("exit_green", (0.04, 0.8, 0.22), g))
+    white = builders.emissive("exit_white", (0.9, 1.0, 0.92), g * 1.3)
+    text(root, "NOODUITGANG", (0.035, 0.085, 0.006), 0.034, white, depth=0.0)
+    a = Acc()
+    a.quad((-0.18, 0.075, 0.006), (-0.13, 0.075, 0.006), (-0.13, 0.095, 0.006), (-0.18, 0.095, 0.006))
+    a.quad((-0.19, 0.085, 0.006), (-0.16, 0.06, 0.006), (-0.16, 0.11, 0.006), (-0.19, 0.085, 0.006))
+    a.build("exit_arrow", white, root, smooth=False)
+
+
 kit.PROPS.update({"ticket_machine": ticket_machine, "ticket_gates": ticket_gates, "escalator": escalator, "lockers": lockers,
                   "pilaster": pilaster, "wall_sign": wall_sign, "shelving": shelving, "counter": counter, "display_case": display_case, "stanchions": stanchions,
                   "poster": poster, "ticket_booth": ticket_booth, "coat_rack": coat_rack, "strip_light": strip_light,
                   "gun_rack": gun_rack, "clogs": clogs, "cheeses": cheeses, "rates_board": rates_board,
-                  "glass_partition": glass_partition, "safe": safe})
+                  "glass_partition": glass_partition, "safe": safe,
+                  "drop_ceiling": drop_ceiling, "duct": duct, "exit_sign": exit_sign})
