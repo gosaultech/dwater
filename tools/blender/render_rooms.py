@@ -347,6 +347,8 @@ def build_house(specs, room_id):
         ext = spec.get("exterior")
         always = isinstance(ext, dict) and ext.get("always")   # (the world seen down a tunnel from next door)
         _place(spec, "room_" + rid, outside=rid == room_id or bool(always), rendering=room_id)
+    if not specs[room_id].get("outdoor"):   # (from indoors only its own district's streets show)
+        return
     for rid in house.neighbour_streets(specs, room_id):
         _place(dict(specs[rid], _far=True), "far_" + rid, outside=False, rendering=room_id)
 

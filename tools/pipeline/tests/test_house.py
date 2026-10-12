@@ -123,7 +123,7 @@ class RealHouseTests(unittest.TestCase):
                     continue
                 ref = p["model"][3:] if isinstance(p["model"], str) else p["model"]["ph"]
                 mx, my, mz = sizes.get(ref, (1, 1, 1))   # along its x, its depth, its height
-                if p.get("roll", 0) % 180:   # on its side: its height now lies along x
+                if p.get("tip", 0) % 180:   # on its side: its height now lies along x
                     mx = mz
                 sx, sz = p["size"][0], p["size"][2]
                 if max(mx, my) > 1.3 * min(mx, my) and max(sx, sz) > 1.3 * min(sx, sz):

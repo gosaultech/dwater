@@ -454,7 +454,15 @@ const char* POST_FS = R"(#version 330
 in vec2 fragTexCoord; uniform sampler2D texture0; uniform float u_time; uniform vec2 u_res; out vec4 finalColor;
 float h(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 void main() {
-    vec3 c = texture(texture0, fragTexCoord).rgb;
+    vec2 d = fragTexCoord - 0.5;
+    vec2 ca = d * dot(d, d) * 0.006;                              // lens fringe toward the corners
+    vec3 c = vec3(texture(texture0, fragTexCoord + ca).r, texture(texture0, fragTexCoord).g, texture(texture0, fragTexCoord - ca).b);
+    c = clamp(c, 0.0, 1.0);
+    float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    c = mix(vec3(l), c, 0.86);                                    // film: a little less colour
+    c *= mix(vec3(0.92, 1.0, 1.04), vec3(1.04, 1.0, 0.94), smoothstep(0.05, 0.6, l));   // cold shadows, warm lights
+    c = mix(c, c * c * (3.0 - 2.0 * c), 0.2);                     // a gentle S-curve
+    c = c * 0.97 + 0.01;                                          // blacks lifted a hair
     float v = smoothstep(0.4, 1.0, distance(fragTexCoord, vec2(0.5)) * 1.3);
     c *= 1.0 - v * 0.6;                                           // vignette
     c += (h(floor(fragTexCoord * u_res) + floor(u_time * 24.0) * vec2(17.0, 31.0)) - 0.5) * 0.028;   // grain

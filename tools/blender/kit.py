@@ -383,6 +383,9 @@ def model(root, p, w, h, d):
         _BOUNDS[look] = (lo, hi)
     size_b = [hi[i] - lo[i] for i in range(3)]   # Blender x, y (depth), z (height)
     k = p.get("scale", 1.0)
+    dm = a.get("dimensions_mm")
+    if dm and "fit" not in p and size_b[2] > 0 and not 0.3 < dm[2] / 1000 / size_b[2] < 3.0:
+        k *= dm[2] / 1000 / size_b[2]   # a scan modelled in other units than its listed size
     if "fit" in p:   # fit inside [w, h, d] keeping proportions
         fw, fh, fd = p["fit"]
         k = min(fw / max(size_b[0], 1e-6), fh / max(size_b[2], 1e-6), fd / max(size_b[1], 1e-6), p.get("max_scale", 1e9))
@@ -394,9 +397,9 @@ def model(root, p, w, h, d):
     holder.location = (-cx * k, -cy * k, -lo[2] * k)
     if p.get("yaw_model"):
         holder.rotation_euler[2] = math.radians(p["yaw_model"])
-    if p.get("roll"):   # tipped over onto its side
+    if p.get("tip"):   # lying on its side, resting on the floor
         from mathutils import Matrix, Vector
-        R = Matrix.Rotation(math.radians(p["roll"]), 3, "Y")
+        R = Matrix.Rotation(math.radians(p["tip"]), 3, "Y")
         holder.rotation_euler = R.to_euler()
         rc = R @ Vector((cx * k, cy * k, (lo[2] + hi[2]) / 2 * k))
         zmin = min((R @ Vector((x * k, y * k, z * k))).z for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2]))

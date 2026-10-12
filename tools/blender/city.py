@@ -108,11 +108,11 @@ def tram(root, p, w, h, d):
     """A city tram in three sections, length along local x, stopped with its lights on: the saloon
     lit inside, the headlights and the destination board (it says it isn't in service), a door open
     on the platform side (+z), the pantograph up to the wire."""
-    body = M(p.get("material", {"color": [0.32, 0.33, 0.33], "rough": 0.3, "metal": 0.1, "noise": 0.05}))
+    body = M(p.get("material", {"color": [0.3, 0.31, 0.31], "rough": 0.45, "noise": 0.1, "noise_scale": 1.5, "coat": 1.0, "grime": 1.0}))
     band = M({"color": [0.05, 0.12, 0.35], "rough": 0.35, "noise": 0.05})
     dark = M({"color": [0.015, 0.015, 0.018], "rough": 0.4})
     glass = M("glass")
-    inside = emit((1.0, 0.9, 0.75), 0.45, "tram_inside")   # the far wall of the saloon, lit
+    inside = emit((1.0, 0.86, 0.68), 0.16, "tram_inside")   # the far wall of the saloon, lit
     strip = emit((1.0, 0.95, 0.85), 6.0, "tram_strip")      # the ceiling lights
     seat = M({"color": [0.05, 0.09, 0.2], "rough": 0.8, "noise": 0.1})
     pole = M({"color": [0.85, 0.65, 0.05], "rough": 0.3, "metal": 0.4})
