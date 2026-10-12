@@ -577,6 +577,14 @@ std::string Game::stage(int i) {
         e.brain.go(st);
         return e;
     };
+    // The stick pushed toward a direction on the ground (the stick is camera-relative, as the player's is).
+    auto stick_toward = [&](float wx, float wz, float tilt) {
+        Vector3 f = Vector3Subtract(cam_.target, cam_.position);
+        f.y = 0;
+        f = Vector3Normalize(f);
+        const float l = std::hypot(wx, wz);
+        return Vector2{(wx * -f.z + wz * f.x) / l * tilt, (wx * f.x + wz * f.z) / l * tilt};
+    };
     reset_fight();
     inv_.add(I_SHOTGUN, 1);   // (the setups were made with both guns in the case)
     inv_.add(I_SHELLS, 4);
@@ -887,13 +895,6 @@ std::string Game::stage(int i) {
             // The new rooms: the library door (the view through the crack; through it into the
             // library), the stairs down into the souterrain, and the souterrain's door to the
             // flooded kelder leant ajar.
-            auto stick_toward = [&](float wx, float wz, float tilt) {
-                Vector3 f = Vector3Subtract(cam_.target, cam_.position);
-                f.y = 0;
-                f = Vector3Normalize(f);
-                const float l = std::hypot(wx, wz);
-                return Vector2{(wx * -f.z + wz * f.x) / l * tilt, (wx * f.x + wz * f.z) / l * tilt};
-            };
             int door = -1;
             if (i == 33 || i == 34) {
                 door = doorway_of(room_index("gang"), "door_library");
@@ -964,6 +965,48 @@ std::string Game::stage(int i) {
                 }
                 run(0.8f);
                 name = i == 38 ? "up_on_the_quay" : "to_the_bridge";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
+            break;
+        }
+        case 40: case 41: case 42: case 43: case 44: {
+            // The city: east past the bridge into Thorbeckeplein, down the terraces, across onto
+            // Rembrandtplein (one street running into the next, no beat), the tram, the statue.
+            auto at = [&](const char* room, float lx, float lz, float yaw) {   // lx, lz: in that room's own corner
+                beat_room_ = room;
+                beat_spawn_ = "";
+                finish_beat();
+                const RoomSpec& r = rooms_[size_t(room_)];
+                player_ = {r.bounds.x0 + lx, r.bounds.z0 + lz, yaw};
+                enter_room(room_);
+                cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+            };
+            if (i == 40) {
+                beat_room_ = "herengracht";
+                beat_spawn_ = "from_thorbeckeplein";
+                finish_beat();
+                player_.yaw = -kPi / 2;   // at the end of the street, facing on east
+                interact();               // a way through to the other storey: the beat, then Thorbeckeplein
+                run(2.0f);
+                name = "into_thorbeckeplein";
+            } else if (i == 41) {
+                at("thorbeckeplein", 8.0f, 42.0f, 0.0f);   // under the trees by the terraces, walking north
+                staged_in_ = stick_toward(0, -1, 0.5f);
+                run(0.8f);
+                name = "the_terraces";
+            } else if (i == 42) {
+                at("thorbeckeplein", 9.0f, 4.0f, 0.0f);   // at the top of the street, past the kiosk
+                staged_in_ = stick_toward(0, -1, 0.5f);
+                run(6.0f);   // over the line between the two: no door, no beat
+                name = "onto_rembrandtplein";
+            } else if (i == 43) {
+                at("rembrandtplein", 16.5f, 11.5f, -kPi / 2);   // short of the stop, the tram ahead
+                run(0.6f);
+                name = "the_tram";
+            } else {
+                at("rembrandtplein", 30.0f, 34.5f, 0.0f);   // on the park's path, the statue ahead
+                run(0.6f);
+                name = "the_statue";
             }
             TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
             break;
@@ -1319,8 +1362,15 @@ void Game::render() {
     casters_.clear();   // (reused: no allocation per frame)
     gun_lit_.clear();
     casters_.push_back(&hero_);
-    for (const auto& e : enemies_)
-        if (e.active) { casters_.push_back(&e.body); gun_lit_.push_back(&e.body); }
+    // A lamp's shadow is framed on the characters near him (the ones the shot is about): on a city
+    // square the Drowned can stand a hundred metres apart, and one shadow map stretched over all of
+    // them is too coarse to hold any of them, and picks a lamp out in the middle of nowhere.
+    constexpr float SHADOW_REACH = 14.0f;
+    for (const auto& e : enemies_) {
+        if (!e.active) continue;
+        gun_lit_.push_back(&e.body);
+        if (std::hypot(e.a.x - player_.x, e.a.z - player_.z) < SHADOW_REACH) casters_.push_back(&e.body);
+    }
     render_shadows(casters_, gun_lit_);
     bind_shadows();
     SetShaderValueMatrix(plate_, l_pInvView_, MatrixInvert(MatrixLookAt(cam_.position, cam_.target, cam_.up)));

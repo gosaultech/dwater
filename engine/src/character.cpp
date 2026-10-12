@@ -231,6 +231,11 @@ void Character::add_strands(Strands s) {
     strands_.push_back(std::move(s));
 }
 
+void Character::settle() {
+    for (auto& s : strands_) s.live = false;
+    for (auto& d : dangles_) d.live = false;
+}
+
 void Character::step_strands(float dt) {
     const float h = std::clamp(dt, 1e-4f, 1.0f / 20.0f);
     const Vector3 grav{0, -9.8f * h * h, 0};

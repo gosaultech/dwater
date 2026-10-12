@@ -1,0 +1,2428 @@
+{
+  "_file": "damned_waters/game/data/rooms/rembrandtplein.json \u2014 RoomSpec for Rembrandtplein (the city storey): the square of big caf\u00e9s and clubs round a park, the painter on his plinth in the middle, neon on the roofs, a tram stopped at the stop with its lights on and its doors open. Modelled after openly licensed night photos; every business name is made up. The power is still on; nobody is there. Outdoor (street.py and city.py build it). Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "rembrandtplein",
+  "display_name": "Rembrandtplein",
+  "storey": 10,
+  "origin": [
+    980.0,
+    -50.3
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      60.0,
+      50.0
+    ]
+  },
+  "height": 10.0,
+  "materials": {
+    "floor": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "wall": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "ceiling": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    }
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.014,
+      0.019,
+      0.036
+    ],
+    "strength": 1.0
+  },
+  "sky": {
+    "hdri": "kloppenheim_07_puresky",
+    "strength": 0.045,
+    "camera": 0.1,
+    "tint": [
+      1.0,
+      0.76,
+      0.55
+    ]
+  },
+  "render": {
+    "exposure": 0.85,
+    "bloom": {
+      "threshold": 0.85,
+      "strength": 0.45,
+      "size": 0.6
+    }
+  },
+  "outdoor": {
+    "window_rooms": [
+      "warm_bar",
+      "fireplace",
+      "small_empty_room_2",
+      "christmas_photo_studio_04",
+      "warm_restaurant_night",
+      "unfinished_office_night"
+    ],
+    "lamp_power": 380.0,
+    "lamp_energy": 1.0,
+    "ground": [
+      {
+        "name": "square",
+        "min": [
+          -30.0,
+          -30.0
+        ],
+        "max": [
+          90.0,
+          50.3
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "herringbone_brick",
+          "tint": [
+            0.8,
+            0.72,
+            0.66
+          ],
+          "wet": 0.75,
+          "puddles": 0.24,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "pavement_w",
+        "min": [
+          -30.0,
+          -30.0
+        ],
+        "max": [
+          5.0,
+          50.3
+        ],
+        "y": 0.06,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "pavement_e",
+        "min": [
+          55.0,
+          -30.0
+        ],
+        "max": [
+          90.0,
+          50.3
+        ],
+        "y": 0.06,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "pavement_n",
+        "min": [
+          5.0,
+          -30.0
+        ],
+        "max": [
+          55.0,
+          3.5
+        ],
+        "y": 0.06,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        }
+      }
+    ],
+    "parks": [
+      {
+        "min": [
+          15.0,
+          13.0
+        ],
+        "max": [
+          45.0,
+          39.0
+        ],
+        "paths": [
+          [
+            28.5,
+            13.0,
+            31.5,
+            39.0
+          ],
+          [
+            15.0,
+            24.5,
+            45.0,
+            27.5
+          ]
+        ]
+      }
+    ],
+    "tracks": [
+      {
+        "from": [
+          -30.0,
+          7.0
+        ],
+        "to": [
+          90.0,
+          7.0
+        ],
+        "y": 0.0
+      }
+    ],
+    "lamps": [
+      [
+        13.5,
+        12.0
+      ],
+      [
+        46.5,
+        12.0
+      ],
+      [
+        13.5,
+        40.0
+      ],
+      [
+        46.5,
+        40.0
+      ],
+      [
+        30.0,
+        11.5
+      ],
+      [
+        13.5,
+        26.0
+      ],
+      [
+        46.5,
+        26.0
+      ],
+      [
+        6.0,
+        22.0
+      ],
+      [
+        54.0,
+        30.0
+      ]
+    ],
+    "rooftop_signs": [
+      {
+        "at": [
+          62.5,
+          15.4,
+          18.0
+        ],
+        "text": "ZILVERMEEUW BIER",
+        "color": [
+          1.0,
+          0.18,
+          0.12
+        ],
+        "size": 1.4,
+        "yaw": -90.0
+      },
+      {
+        "at": [
+          30.0,
+          16.6,
+          -1.5
+        ],
+        "text": "GRAND CAF\u00c9",
+        "color": [
+          1.0,
+          0.75,
+          0.3
+        ],
+        "size": 1.4,
+        "yaw": 0.0
+      }
+    ],
+    "strings": [
+      [
+        [
+          1.5,
+          3.4,
+          4.0
+        ],
+        [
+          1.5,
+          3.4,
+          10.0
+        ],
+        0.35,
+        0.45
+      ],
+      [
+        [
+          1.5,
+          3.4,
+          10.0
+        ],
+        [
+          1.5,
+          3.4,
+          16.0
+        ],
+        0.35,
+        0.45
+      ],
+      [
+        [
+          1.5,
+          3.4,
+          16.0
+        ],
+        [
+          1.5,
+          3.4,
+          22.0
+        ],
+        0.35,
+        0.45
+      ],
+      [
+        [
+          1.5,
+          3.4,
+          22.0
+        ],
+        [
+          1.5,
+          3.4,
+          28.0
+        ],
+        0.35,
+        0.45
+      ],
+      [
+        [
+          1.5,
+          3.4,
+          28.0
+        ],
+        [
+          1.5,
+          3.4,
+          34.0
+        ],
+        0.35,
+        0.45
+      ],
+      [
+        [
+          1.5,
+          3.4,
+          34.0
+        ],
+        [
+          1.5,
+          3.4,
+          40.0
+        ],
+        0.35,
+        0.45
+      ],
+      [
+        [
+          1.5,
+          3.4,
+          40.0
+        ],
+        [
+          1.5,
+          3.4,
+          46.0
+        ],
+        0.35,
+        0.45
+      ]
+    ],
+    "facades": [
+      {
+        "facing": "east",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2
+        ],
+        "bays": 5,
+        "gable": "cornice",
+        "seed": 201,
+        "lit": 0.3,
+        "z0": 0.0,
+        "z1": 12.0,
+        "x": 0.0,
+        "shop": {
+          "name": "GRAND CAF\u00c9 DE LANTAARN",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 32.0,
+          "door_bay": 2,
+          "blade": "CAF\u00c9",
+          "neon": false
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 202,
+        "lit": 0.3,
+        "z0": 12.05,
+        "z1": 21.0,
+        "x": 0.0,
+        "shop": {
+          "name": "CAF\u00c9 DE SCHUTTERIJ",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "blade": "CAF\u00c9",
+          "neon": false
+        },
+        "stoop": 0.0,
+        "gable_h": 4.0
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 203,
+        "lit": 0.3,
+        "z0": 21.05,
+        "z1": 31.0,
+        "x": 0.0,
+        "shop": {
+          "name": "EETCAF\u00c9 HET SCHILDERIJ",
+          "kind": "restaurant",
+          "room": "warm_restaurant_night",
+          "sign": [
+            1.0,
+            0.3,
+            0.18
+          ],
+          "frame": [
+            0.06,
+            0.05,
+            0.05
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "blade": "EETCAF\u00c9",
+          "neon": false,
+          "awning": [
+            [
+              0.45,
+              0.06,
+              0.05
+            ],
+            [
+              0.78,
+              0.74,
+              0.66
+            ]
+          ]
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.3,
+          3.1,
+          2.9
+        ],
+        "bays": 3,
+        "gable": "bell",
+        "seed": 204,
+        "lit": 0.3,
+        "z0": 31.05,
+        "z1": 40.0,
+        "x": 0.0,
+        "shop": {
+          "name": "COFFEESHOP HAZE",
+          "kind": "coffeeshop",
+          "room": "warm_bar",
+          "sign": [
+            0.35,
+            1.0,
+            0.4
+          ],
+          "frame": [
+            0.03,
+            0.12,
+            0.05
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "blade": "COFFEESHOP",
+          "neon": true,
+          "awning": [
+            [
+              0.05,
+              0.3,
+              0.08
+            ],
+            [
+              0.85,
+              0.75,
+              0.1
+            ]
+          ]
+        },
+        "stoop": 0.0,
+        "gable_h": 3.6
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 4,
+        "gable": "step",
+        "seed": 205,
+        "lit": 0.3,
+        "z0": 40.05,
+        "z1": 50.0,
+        "x": 0.0,
+        "shop": {
+          "name": "CAF\u00c9 DE PALET",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "blade": "CAF\u00c9",
+          "neon": false
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 211,
+        "lit": 0.3,
+        "z0": 0.0,
+        "z1": 10.0,
+        "x": 60.0,
+        "shop": {
+          "name": "CLUB NEONZAAL",
+          "kind": "bar",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.2,
+            0.6
+          ],
+          "frame": [
+            0.03,
+            0.03,
+            0.04
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "blade": "CLUB",
+          "neon": true
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 212,
+        "lit": 0.3,
+        "z0": 10.05,
+        "z1": 19.0,
+        "x": 60.0,
+        "shop": {
+          "name": "KARAOKE BAR DE STER",
+          "kind": "bar",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.2,
+            0.6
+          ],
+          "frame": [
+            0.03,
+            0.03,
+            0.04
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "blade": "KARAOKE",
+          "neon": true
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 213,
+        "lit": 0.3,
+        "z0": 19.05,
+        "z1": 29.0,
+        "x": 60.0,
+        "shop": {
+          "name": "STEAKHOUSE TORO",
+          "kind": "restaurant",
+          "room": "warm_restaurant_night",
+          "sign": [
+            1.0,
+            0.3,
+            0.18
+          ],
+          "frame": [
+            0.06,
+            0.05,
+            0.05
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "blade": "STEAKS",
+          "neon": false,
+          "awning": [
+            [
+              0.45,
+              0.06,
+              0.05
+            ],
+            [
+              0.78,
+              0.74,
+              0.66
+            ]
+          ]
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "spout",
+        "seed": 214,
+        "lit": 0.3,
+        "z0": 29.05,
+        "z1": 38.0,
+        "x": 60.0,
+        "shop": {
+          "name": "BAR HET GOUDEN KALF",
+          "kind": "bar",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.2,
+            0.6
+          ],
+          "frame": [
+            0.03,
+            0.03,
+            0.04
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "blade": "BAR",
+          "neon": true
+        },
+        "stoop": 0.0,
+        "gable_h": 3.4
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2
+        ],
+        "bays": 5,
+        "gable": "cornice",
+        "seed": 215,
+        "lit": 0.3,
+        "z0": 38.05,
+        "z1": 50.0,
+        "x": 60.0,
+        "shop": {
+          "name": "DISCOTHEEK MAANLICHT",
+          "kind": "bar",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.2,
+            0.6
+          ],
+          "frame": [
+            0.03,
+            0.03,
+            0.04
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 35.2,
+          "door_bay": 1,
+          "blade": "DISCO",
+          "neon": true
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "south",
+        "storeys": [
+          4.8,
+          3.6,
+          3.4,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 6,
+        "gable": "cornice",
+        "seed": 221,
+        "lit": 0.55,
+        "x0": 0.0,
+        "x1": 14.0,
+        "z": 0.0,
+        "shop": {
+          "name": "HOTEL RIJNZICHT",
+          "kind": "hotel",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.9,
+            0.8
+          ],
+          "frame": [
+            0.12,
+            0.1,
+            0.08
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 3,
+          "blade": "HOTEL",
+          "neon": false
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "south",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 222,
+        "lit": 0.3,
+        "x0": 14.05,
+        "x1": 23.0,
+        "z": 0.0,
+        "shop": {
+          "name": "IJSSALON NAPOLI",
+          "kind": "restaurant",
+          "room": "warm_restaurant_night",
+          "sign": [
+            1.0,
+            0.3,
+            0.18
+          ],
+          "frame": [
+            0.06,
+            0.05,
+            0.05
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "blade": "GELATO",
+          "neon": false,
+          "awning": [
+            [
+              0.45,
+              0.06,
+              0.05
+            ],
+            [
+              0.78,
+              0.74,
+              0.66
+            ]
+          ]
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8
+      },
+      {
+        "facing": "south",
+        "storeys": [
+          4.8,
+          3.8,
+          3.6,
+          3.4
+        ],
+        "bays": 5,
+        "gable": "cornice",
+        "seed": 223,
+        "lit": 0.3,
+        "x0": 23.05,
+        "x1": 37.0,
+        "z": 0.0,
+        "shop": {
+          "name": "GRAND CAF\u00c9 DE KROON",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 35.2,
+          "door_bay": 2,
+          "blade": "GRAND CAF\u00c9",
+          "neon": false
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "south",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "bell",
+        "seed": 224,
+        "lit": 0.3,
+        "x0": 37.05,
+        "x1": 46.0,
+        "z": 0.0,
+        "shop": {
+          "name": "PIZZERIA DA ROSA",
+          "kind": "restaurant",
+          "room": "warm_restaurant_night",
+          "sign": [
+            1.0,
+            0.3,
+            0.18
+          ],
+          "frame": [
+            0.06,
+            0.05,
+            0.05
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "blade": "PIZZA",
+          "neon": false,
+          "awning": [
+            [
+              0.45,
+              0.06,
+              0.05
+            ],
+            [
+              0.78,
+              0.74,
+              0.66
+            ]
+          ]
+        },
+        "stoop": 0.0,
+        "gable_h": 3.6
+      },
+      {
+        "facing": "south",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2
+        ],
+        "bays": 5,
+        "gable": "cornice",
+        "seed": 225,
+        "lit": 0.3,
+        "x0": 46.05,
+        "x1": 60.0,
+        "z": 0.0,
+        "shop": {
+          "name": "CAF\u00c9 HOLLANDIA",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "blade": "CAF\u00c9",
+          "neon": false
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 231,
+        "lit": 0.3,
+        "x0": 0.0,
+        "x1": 9.5,
+        "z": 50.0,
+        "shop": {
+          "name": "FRITES \u00b7 SNACKS",
+          "kind": "restaurant",
+          "room": "warm_restaurant_night",
+          "sign": [
+            1.0,
+            0.3,
+            0.18
+          ],
+          "frame": [
+            0.06,
+            0.05,
+            0.05
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "blade": "FRITES",
+          "neon": false,
+          "awning": [
+            [
+              0.45,
+              0.06,
+              0.05
+            ],
+            [
+              0.78,
+              0.74,
+              0.66
+            ]
+          ]
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 232,
+        "lit": 0.3,
+        "x0": 9.55,
+        "x1": 19.95,
+        "z": 50.0,
+        "door_bay": 1,
+        "stoop": 0.5
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "step",
+        "seed": 233,
+        "lit": 0.3,
+        "x0": 44.05,
+        "x1": 52.0,
+        "z": 50.0,
+        "shop": {
+          "name": "CAF\u00c9 DE OUDE WACHT",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "blade": "CAF\u00c9",
+          "neon": false
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "bell",
+        "seed": 234,
+        "lit": 0.3,
+        "x0": 52.05,
+        "x1": 60.0,
+        "z": 50.0,
+        "shop": {
+          "name": "SOUVENIRS",
+          "kind": "bar",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.2,
+            0.6
+          ],
+          "frame": [
+            0.03,
+            0.03,
+            0.04
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "blade": "SOUVENIRS",
+          "neon": true
+        },
+        "stoop": 0.0,
+        "gable_h": 3.6
+      }
+    ]
+  },
+  "props": [
+    {
+      "type": "plane_tree",
+      "pos": [
+        18.0,
+        0.04,
+        16.0
+      ],
+      "size": [
+        0.6,
+        15.0,
+        0.6
+      ],
+      "seed": 400,
+      "depth": 6,
+      "leaves": 4,
+      "leaf_color": [
+        0.42,
+        0.34,
+        0.08
+      ]
+    },
+    {
+      "type": "plane_tree",
+      "pos": [
+        25.0,
+        0.04,
+        16.0
+      ],
+      "size": [
+        0.6,
+        15.0,
+        0.6
+      ],
+      "seed": 401,
+      "depth": 6,
+      "leaves": 4,
+      "leaf_color": [
+        0.42,
+        0.34,
+        0.08
+      ]
+    },
+    {
+      "type": "plane_tree",
+      "pos": [
+        35.0,
+        0.04,
+        16.0
+      ],
+      "size": [
+        0.6,
+        15.0,
+        0.6
+      ],
+      "seed": 402,
+      "depth": 6,
+      "leaves": 4,
+      "leaf_color": [
+        0.42,
+        0.34,
+        0.08
+      ]
+    },
+    {
+      "type": "plane_tree",
+      "pos": [
+        42.0,
+        0.04,
+        16.0
+      ],
+      "size": [
+        0.6,
+        15.0,
+        0.6
+      ],
+      "seed": 403,
+      "depth": 6,
+      "leaves": 4,
+      "leaf_color": [
+        0.42,
+        0.34,
+        0.08
+      ]
+    },
+    {
+      "type": "plane_tree",
+      "pos": [
+        18.0,
+        0.04,
+        36.0
+      ],
+      "size": [
+        0.6,
+        15.0,
+        0.6
+      ],
+      "seed": 404,
+      "depth": 6,
+      "leaves": 4,
+      "leaf_color": [
+        0.42,
+        0.34,
+        0.08
+      ]
+    },
+    {
+      "type": "plane_tree",
+      "pos": [
+        25.0,
+        0.04,
+        36.0
+      ],
+      "size": [
+        0.6,
+        15.0,
+        0.6
+      ],
+      "seed": 405,
+      "depth": 6,
+      "leaves": 4,
+      "leaf_color": [
+        0.42,
+        0.34,
+        0.08
+      ]
+    },
+    {
+      "type": "plane_tree",
+      "pos": [
+        35.0,
+        0.04,
+        36.0
+      ],
+      "size": [
+        0.6,
+        15.0,
+        0.6
+      ],
+      "seed": 406,
+      "depth": 6,
+      "leaves": 4,
+      "leaf_color": [
+        0.42,
+        0.34,
+        0.08
+      ]
+    },
+    {
+      "type": "plane_tree",
+      "pos": [
+        42.0,
+        0.04,
+        36.0
+      ],
+      "size": [
+        0.6,
+        15.0,
+        0.6
+      ],
+      "seed": 407,
+      "depth": 6,
+      "leaves": 4,
+      "leaf_color": [
+        0.42,
+        0.34,
+        0.08
+      ]
+    },
+    {
+      "type": "plane_tree",
+      "pos": [
+        18.0,
+        0.04,
+        21.0
+      ],
+      "size": [
+        0.6,
+        15.0,
+        0.6
+      ],
+      "seed": 408,
+      "depth": 6,
+      "leaves": 4,
+      "leaf_color": [
+        0.42,
+        0.34,
+        0.08
+      ]
+    },
+    {
+      "type": "plane_tree",
+      "pos": [
+        42.0,
+        0.04,
+        31.0
+      ],
+      "size": [
+        0.6,
+        15.0,
+        0.6
+      ],
+      "seed": 409,
+      "depth": 6,
+      "leaves": 4,
+      "leaf_color": [
+        0.42,
+        0.34,
+        0.08
+      ]
+    },
+    {
+      "type": "statue",
+      "pos": [
+        30.0,
+        0.04,
+        26.0
+      ],
+      "size": [
+        1.8,
+        4.0,
+        1.8
+      ],
+      "name": "REMBRANDT",
+      "plinth": 4.2,
+      "figure": 3.2
+    },
+    {
+      "type": "tram",
+      "pos": [
+        36.0,
+        0.0,
+        7.0
+      ],
+      "yaw": 0,
+      "size": [
+        30.0,
+        3.4,
+        2.4
+      ],
+      "board": "NIET INSTAPPEN"
+    },
+    {
+      "type": "tram_stop",
+      "pos": [
+        34.0,
+        0.0,
+        10.4
+      ],
+      "yaw": 180,
+      "size": [
+        24.0,
+        0.25,
+        2.6
+      ],
+      "collide": false
+    },
+    {
+      "type": "kiosk",
+      "pos": [
+        50.0,
+        0.0,
+        44.0
+      ],
+      "size": [
+        2.6,
+        3.2,
+        2.6
+      ],
+      "name": "BLOEMEN"
+    },
+    {
+      "type": "bench",
+      "pos": [
+        20.0,
+        0.04,
+        13.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.8,
+        0.85,
+        0.5
+      ]
+    },
+    {
+      "type": "bench",
+      "pos": [
+        40.0,
+        0.04,
+        13.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.8,
+        0.85,
+        0.5
+      ]
+    },
+    {
+      "type": "bench",
+      "pos": [
+        20.0,
+        0.04,
+        38.4
+      ],
+      "yaw": 180,
+      "size": [
+        1.8,
+        0.85,
+        0.5
+      ]
+    },
+    {
+      "type": "bench",
+      "pos": [
+        40.0,
+        0.04,
+        38.4
+      ],
+      "yaw": 180,
+      "size": [
+        1.8,
+        0.85,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        1.58,
+        0.0,
+        3.03
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        3.18,
+        0.0,
+        3.18
+      ],
+      "yaw": 10,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        1.47,
+        0.0,
+        6.21
+      ],
+      "yaw": 80,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        3.32,
+        0.0,
+        6.0
+      ],
+      "yaw": -10,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "heater",
+      "pos": [
+        4.6,
+        0.06,
+        4.6
+      ],
+      "size": [
+        0.5,
+        2.2,
+        0.5
+      ],
+      "power": 50.0
+    },
+    {
+      "type": "windbreak",
+      "pos": [
+        5.2,
+        0.06,
+        5.8
+      ],
+      "yaw": 90,
+      "size": [
+        6.0,
+        1.5,
+        0.1
+      ],
+      "collide": false,
+      "name": "GRAND CAF\u00c9 DE LANTAARN"
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        1.46,
+        0.0,
+        15.02
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        3.24,
+        0.0,
+        14.95
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        1.66,
+        0.0,
+        18.26
+      ],
+      "yaw": 10,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        3.25,
+        0.0,
+        18.37
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "heater",
+      "pos": [
+        4.6,
+        0.06,
+        16.6
+      ],
+      "size": [
+        0.5,
+        2.2,
+        0.5
+      ],
+      "power": 50.0
+    },
+    {
+      "type": "windbreak",
+      "pos": [
+        5.2,
+        0.06,
+        17.8
+      ],
+      "yaw": 90,
+      "size": [
+        6.0,
+        1.5,
+        0.1
+      ],
+      "collide": false,
+      "name": "GRAND CAF\u00c9 DE LANTAARN"
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        1.42,
+        0.0,
+        26.85
+      ],
+      "yaw": 10,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ],
+      "roll": 84
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        3.24,
+        0.0,
+        27.14
+      ],
+      "yaw": -10,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        1.58,
+        0.0,
+        30.37
+      ],
+      "yaw": 80,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        3.09,
+        0.0,
+        30.1
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "heater",
+      "pos": [
+        4.6,
+        0.06,
+        28.6
+      ],
+      "size": [
+        0.5,
+        2.2,
+        0.5
+      ],
+      "power": 50.0
+    },
+    {
+      "type": "windbreak",
+      "pos": [
+        5.2,
+        0.06,
+        29.8
+      ],
+      "yaw": 90,
+      "size": [
+        6.0,
+        1.5,
+        0.1
+      ],
+      "collide": false,
+      "name": "GRAND CAF\u00c9 DE LANTAARN"
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        1.66,
+        0.0,
+        38.98
+      ],
+      "yaw": -10,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        3.16,
+        0.0,
+        39.03
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        1.68,
+        0.0,
+        42.11
+      ],
+      "yaw": 10,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        3.21,
+        0.0,
+        41.96
+      ],
+      "yaw": 80,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "heater",
+      "pos": [
+        4.6,
+        0.06,
+        40.6
+      ],
+      "size": [
+        0.5,
+        2.2,
+        0.5
+      ],
+      "power": 50.0
+    },
+    {
+      "type": "windbreak",
+      "pos": [
+        5.2,
+        0.06,
+        41.8
+      ],
+      "yaw": 90,
+      "size": [
+        6.0,
+        1.5,
+        0.1
+      ],
+      "collide": false,
+      "name": "GRAND CAF\u00c9 DE LANTAARN"
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        8.11,
+        0.0,
+        2.15
+      ],
+      "yaw": -10,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        9.55,
+        0.0,
+        2.43
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        25.89,
+        0.0,
+        2.41
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ],
+      "roll": 84
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        27.59,
+        0.0,
+        2.44
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        49.97,
+        0.0,
+        2.23
+      ],
+      "yaw": 10,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        51.71,
+        0.0,
+        2.08
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "bike",
+      "pos": [
+        57.5,
+        0.06,
+        22.0
+      ],
+      "yaw": 8,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 50
+    },
+    {
+      "type": "bike",
+      "pos": [
+        57.5,
+        0.06,
+        22.7
+      ],
+      "yaw": 0,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 51
+    },
+    {
+      "type": "bike",
+      "pos": [
+        57.5,
+        0.06,
+        23.4
+      ],
+      "yaw": 8,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 52
+    },
+    {
+      "type": "bike",
+      "pos": [
+        57.5,
+        0.06,
+        24.1
+      ],
+      "yaw": 0,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 53
+    },
+    {
+      "type": "bike",
+      "pos": [
+        57.5,
+        0.06,
+        24.8
+      ],
+      "yaw": 8,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 54
+    },
+    {
+      "type": "bike",
+      "pos": [
+        12.0,
+        0.05,
+        45.5
+      ],
+      "yaw": 40,
+      "roll": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 60
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        55.6,
+        0.06,
+        4.0
+      ],
+      "yaw": 10,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        56.1,
+        0.06,
+        4.6
+      ],
+      "yaw": 100,
+      "scale": 0.9,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:standing_chalkboard_01",
+      "pos": [
+        4.6,
+        0.06,
+        13.6
+      ],
+      "yaw": 70,
+      "scale": 0.8,
+      "collide": false
+    }
+  ],
+  "walls": {
+    "south": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 32.0,
+          "width": 24.0,
+          "height": 10.0
+        }
+      ]
+    }
+  },
+  "lights": [
+    {
+      "kind": "sun",
+      "dir_from": [
+        -0.35,
+        0.55,
+        1.0
+      ],
+      "color": [
+        0.55,
+        0.66,
+        1.0
+      ],
+      "blender_power": 0.12,
+      "godot_energy": 0.25,
+      "angle": 2.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        36.0,
+        2.0,
+        9.0
+      ],
+      "color": [
+        1.0,
+        0.92,
+        0.8
+      ],
+      "blender_power": 0,
+      "godot_energy": 0.8,
+      "range": 8.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        3.0,
+        3.3,
+        21.0
+      ],
+      "color": [
+        1.0,
+        0.72,
+        0.38
+      ],
+      "blender_power": 0,
+      "godot_energy": 0.6,
+      "range": 12.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        57.0,
+        3.0,
+        25.0
+      ],
+      "color": [
+        1.0,
+        0.3,
+        0.6
+      ],
+      "blender_power": 0,
+      "godot_energy": 0.5,
+      "range": 10.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        32.0,
+        3.2,
+        48.5
+      ],
+      "look_at": [
+        30.0,
+        3.4,
+        18.0
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          14.0,
+          40.0
+        ],
+        "max": [
+          46.0,
+          50.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        9.0,
+        3.2,
+        46.0
+      ],
+      "look_at": [
+        3.0,
+        1.6,
+        6.0
+      ],
+      "fov": 58,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          14.0,
+          50.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "c",
+      "pos": [
+        52.0,
+        3.4,
+        12.5
+      ],
+      "look_at": [
+        55.0,
+        2.2,
+        44.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          46.0,
+          0.0
+        ],
+        "max": [
+          60.0,
+          50.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "d",
+      "pos": [
+        6.0,
+        3.0,
+        11.0
+      ],
+      "look_at": [
+        44.0,
+        2.0,
+        6.0
+      ],
+      "fov": 58,
+      "zone": {
+        "min": [
+          14.0,
+          0.0
+        ],
+        "max": [
+          46.0,
+          13.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "e",
+      "pos": [
+        21.0,
+        3.4,
+        37.0
+      ],
+      "look_at": [
+        30.0,
+        4.5,
+        26.0
+      ],
+      "fov": 58,
+      "zone": {
+        "min": [
+          14.0,
+          13.0
+        ],
+        "max": [
+          46.0,
+          40.0
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_thorbeckeplein": {
+      "pos": [
+        32.0,
+        0.0,
+        48.5
+      ],
+      "yaw": 0
+    }
+  },
+  "interactables": [
+    {
+      "id": "statue",
+      "kind": "examine",
+      "pos": [
+        30.0,
+        1.0,
+        28.6
+      ],
+      "radius": 1.6,
+      "text": "Rembrandt, in bronze, looking down at the square. Somebody has hung a bicycle lock round his ankle."
+    },
+    {
+      "id": "tram",
+      "kind": "examine",
+      "pos": [
+        36.0,
+        1.0,
+        9.0
+      ],
+      "radius": 2.0,
+      "text": "Tram 4 to Centraal. The doors stand open and the lights are on. The driver's seat is wet."
+    },
+    {
+      "id": "lantaarn",
+      "kind": "examine",
+      "pos": [
+        1.2,
+        1.0,
+        6.0
+      ],
+      "radius": 1.6,
+      "text": "Grand Caf\u00e9 de Lantaarn. Every table set; a birthday cake on one, its candles burned to stubs."
+    },
+    {
+      "id": "first_aid_kiosk",
+      "kind": "pickup",
+      "item": "first_aid",
+      "count": 1,
+      "pos": [
+        50.0,
+        0.9,
+        45.4
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "shells_tram",
+      "kind": "pickup",
+      "item": "shotgun_shells",
+      "count": 6,
+      "pos": [
+        33.0,
+        0.3,
+        9.8
+      ],
+      "radius": 1.0
+    }
+  ],
+  "enemies": [
+    {
+      "id": "op_het_plein",
+      "kind": "verdronkene",
+      "pos": [
+        26.0,
+        0.04,
+        30.0
+      ],
+      "yaw": 160
+    },
+    {
+      "id": "bij_de_tram",
+      "kind": "verdronkene",
+      "pos": [
+        40.0,
+        0.0,
+        9.6
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "op_het_terras_2",
+      "kind": "verdronkene",
+      "pos": [
+        3.2,
+        0.06,
+        30.0
+      ],
+      "yaw": 90
+    },
+    {
+      "id": "voor_de_club",
+      "kind": "verdronkene",
+      "pos": [
+        56.0,
+        0.06,
+        6.0
+      ],
+      "yaw": -90
+    }
+  ]
+}

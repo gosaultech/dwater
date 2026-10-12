@@ -319,26 +319,68 @@ def fireplace_classic(root, p, w, h, d):
     builders.part(root, "embers", (0, 0.145, 0.0), (r * 1.4, 0.02, 0.2), emb)
 
 
+_MODELS = {}   # a model already imported, by asset and look: its objects, to copy
+_BOUNDS = {}   # and its measured size
+
+
+def _import(a, look):
+    """The model's objects: imported once per asset and look, then linked copies (they share the
+    meshes and materials: a street of forty café chairs is one chair, forty times)."""
+    first = _MODELS.get(look)
+    if first is None:
+        before = set(bpy.data.objects)
+        bpy.ops.import_scene.gltf(filepath=str(surfaces.Path(a["_dir"]) / a["gltf"]))
+        new = [o for o in bpy.data.objects if o not in before]
+        _MODELS[look] = new
+        return new, True
+    copies = {}
+    for o in first:
+        c = o.copy()   # (data shared: a linked duplicate)
+        bpy.context.scene.collection.objects.link(c)
+        copies[o] = c
+    for o, c in copies.items():
+        c.parent = copies.get(o.parent)
+        if o.parent is not None and o.parent not in copies:
+            c.parent = None
+    return list(copies.values()), False
+
+
+def reset_models():
+    _MODELS.clear()
+    _BOUNDS.clear()
+
+
 def model(root, p, w, h, d):
     """A Poly Haven model (glTF), standing on the prop's spot, facing its front; "scale" or "fit";
     "emit" lights the parts whose material names match (a street lamp's bulb and glass)."""
     ref = p["model"]
     a = surfaces.asset(ref[3:] if isinstance(ref, str) else ref["ph"])
-    before = set(bpy.data.objects)
-    bpy.ops.import_scene.gltf(filepath=str(surfaces.Path(a["_dir"]) / a["gltf"]))
-    new = [o for o in bpy.data.objects if o not in before]
+    import json as _json
+    look = a["id"] + _json.dumps([p.get("tint"), p.get("emit")], sort_keys=True)
+    new, fresh = _import(a, look)
+    for o in new:   # (a copy's parent is still the first one's holder until it's put on its own)
+        if o.parent is not None and o.parent not in new:
+            o.parent = None
     tops = [o for o in new if o.parent is None]
-    # measure in the prop's own (unrotated) frame
-    lo = [1e9, 1e9, 1e9]
-    hi = [-1e9, -1e9, -1e9]
-    bpy.context.view_layer.update()
-    for o in new:
-        if o.type != "MESH":
-            continue
-        for c in o.bound_box:
-            wc = o.matrix_world @ surfaces_vec(c)
-            for i in range(3):
-                lo[i], hi[i] = min(lo[i], wc[i]), max(hi[i], wc[i])
+    for o in tops:   # measure from the model's own place, not the first copy's
+        if not fresh:
+            o.matrix_parent_inverse.identity()
+    # measure in the prop's own (unrotated) frame: once per model (a scene update costs a second
+    # in a full street; the copies are the same size)
+    if look in _BOUNDS:
+        lo, hi = _BOUNDS[look]
+    else:
+        lo = [1e9, 1e9, 1e9]
+        hi = [-1e9, -1e9, -1e9]
+        bpy.context.view_layer.update()
+        for o in new:
+            if o.type != "MESH":
+                continue
+            for c in o.bound_box:
+                wc = o.matrix_world @ surfaces_vec(c)
+                for i in range(3):
+                    lo[i], hi[i] = min(lo[i], wc[i]), max(hi[i], wc[i])
+        _BOUNDS[look] = (lo, hi)
     size_b = [hi[i] - lo[i] for i in range(3)]   # Blender x, y (depth), z (height)
     k = p.get("scale", 1.0)
     if "fit" in p:   # fit inside [w, h, d] keeping proportions
@@ -357,14 +399,14 @@ def model(root, p, w, h, d):
     if p.get("shadow", True) is False:   # a lamp's own glass and frame must not swallow its light
         for o in new:
             o.visible_shadow = False
-    for glow in p.get("emit", []):   # a lamp's bulb and glass, lit: {"match": "bulb", "color", "strength"}
+    for glow in p.get("emit", []) if fresh else []:   # a lamp's bulb and glass, lit (copies share them)
         em = builders.emissive("model_" + glow["match"], tuple(glow.get("color", (1.0, 0.7, 0.4))), glow.get("strength", 20.0))
         for o in new:
             for slot in getattr(o, "material_slots", []):
                 if slot.material and glow["match"] in slot.material.name:
                     slot.material = em
     tint = p.get("tint")
-    if tint:
+    if tint and fresh:   # (copies share the first one's materials, already tinted)
         for o in new:
             for slot in getattr(o, "material_slots", []):
                 m = slot.material

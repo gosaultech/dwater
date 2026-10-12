@@ -508,7 +508,8 @@ def build_exterior(spec, rng):
 def build_prop(p, room_h):
     t = p["type"]
     import kit
-    import street   # (adds the street kit's props to kit.PROPS)
+    import street  # noqa: F401  (adds the street kit's props to kit.PROPS)
+    import city  # noqa: F401  (and the city kit's)
     if t in kit.PROPS:   # the detailed kit: sofas, kasten, the marble mantel, models...
         return kit.build_prop(p, room_h)
     size = p.get("size", [0.45, 0.95, 0.45])

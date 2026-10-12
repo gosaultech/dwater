@@ -169,20 +169,41 @@ def area_light(parent, at, size_x, size_y, power, color, name="spill"):
     ob.parent = parent
     ob.location = g2b(at)
     ob.rotation_euler = (math.radians(-90), 0.0, 0.0)
-    ob.visible_camera = False
+    hide_panel(ob)
     return ob
 
 
+def hide_panel(ob):
+    """A light lights the set, but its panel is never in the picture: not straight to the lens, nor
+    through the glass it stands behind (a shop window, a tram's), nor mirrored in wet stone."""
+    ob.visible_camera = False
+    ob.visible_transmission = False
+    ob.visible_glossy = False
+
+
 # ── Canal-house fronts ──────────────────────────────────────────────────────────────
+FACING = {"south": 0.0, "north": 180.0, "east": 90.0, "west": -90.0}
+
+
+def facade_frame(f):
+    """Where a front stands and how wide it is. Facing south or north it runs along x from "x0" to
+    "x1" on the line z = "z"; facing east or west it runs along z from "z0" to "z1" on x = "x". The
+    root is at its left-hand end as you face it, so u (along it) runs to the right."""
+    facing = f.get("facing", "south")
+    y = f.get("y", 0.0)
+    if facing in ("south", "north"):
+        return f["x1"] - f["x0"], ((f["x0"] if facing == "south" else f["x1"]), y, f["z"]), FACING[facing]
+    return f["z1"] - f["z0"], (f["x"], y, (f["z1"] if facing == "east" else f["z0"])), FACING[facing]
+
+
 def facade(f, rng):
-    """One house front. f: {"x0", "x1", "z", "facing": "south"|"north", "storeys": [m, ...] bottom
+    """One house front. f: {"x0", "x1", "z" | "z0", "z1", "x", "facing": "south"|"north"|"east"|"west", "storeys": [m, ...] bottom
     up, "bays", "gable": kind, "gable_h", "brick", "lit", "door_bay", "stoop", "lean", "plinth",
     "shop": {...}, "skin_below", "holes"}. Facing south it stands on z with its front toward +z (the
     street). "skin_below": up to that height only a thin brick skin goes on (a house the game walks
     in: its rooms have the real walls and windows), with "holes" [{"u0", "u1", "v0", "v1", "arch"}]."""
-    W = f["x1"] - f["x0"]
-    south = f.get("facing", "south") == "south"
-    root = builders.empty_at("facade", (f["x0"] if south else f["x1"], f.get("y", 0.0), f["z"]), 0.0 if south else 180.0)
+    W, at, yaw = facade_frame(f)
+    root = builders.empty_at("facade", at, yaw)
     skin = f.get("skin_below", 0.0)
     lean = f.get("lean", 0.0 if skin else rng.uniform(0.25, 1.1))
     root.rotation_euler[0] = math.radians(lean)   # Amsterdam's fronts lean out over the street
@@ -371,11 +392,25 @@ def shopfront(root, f, W, s0, rng):
     # the shop's light out through its window, warm, onto the pavement and whatever stands there
     area_light(root, (W / 2, top_v * 0.55, -0.5), u1 - u0 - 0.2, top_v * 0.8, sh.get("power", 90.0) * W,
                tuple(sh.get("light", (1.0, 0.72, 0.45))))
-    # the fascia board with the name lit on it
-    lbox(root, "fascia", (0.15, top_v, -0.05), (W - 0.15, top_v + 0.55, 0.08), frame)
-    sign_m = builders.emissive("sign_" + sh.get("name", "shop")[:12], tuple(sh.get("sign", (1.0, 0.85, 0.6))), sh.get("sign_strength", 6.0))
-    text(root, sh.get("name", "CAFÉ"), (W / 2, top_v + 0.275, 0.09), min(0.36, 1.6 * (W - 0.6) / max(len(sh.get("name", "x")), 1)),
-         sign_m, font=sh.get("font", "DejaVuSerif-Bold.ttf"))
+    # the fascia board with the name lit on it: big enough to read across the square, and lit no
+    # brighter than a real one (brighter, the bloom smears the letters into a bar)
+    fh = min(0.8, s0 - top_v - 0.15)
+    lbox(root, "fascia", (0.15, top_v, -0.05), (W - 0.15, top_v + fh, 0.08), frame)
+    sign_m = builders.emissive("sign_" + sh.get("name", "shop")[:12], tuple(sh.get("sign", (1.0, 0.85, 0.6))), sh.get("sign_strength", 2.6))
+    size = min(fh * 0.72, 1.55 * (W - 0.6) / max(len(sh.get("name", "x")), 1))
+    import city
+    if sh.get("neon"):   # bent glass tube, the way the bars and clubs do it
+        city.neon_text(root, sh["name"], (W / 2, top_v + fh * 0.5, 0.12), size, sh.get("sign", (1.0, 0.3, 0.6)), sh.get("sign_strength", 5.0),
+                       font=sh.get("font", "DejaVuSans-Bold.ttf"), tube=size * 0.03)
+    else:
+        text(root, sh.get("name", "CAFÉ"), (W / 2, top_v + fh * 0.5, 0.09), size, sign_m, font=sh.get("font", "DejaVuSerif-Bold.ttf"))
+    pane = (door_i + 1) % n if n > 1 else 0   # a little neon hung in a window that isn't the door
+    if sh.get("window_neon", True):
+        word = sh.get("window_word") or {"coffeeshop": "OPEN", "bar": "BIER", "restaurant": "OPEN", "hotel": ""}.get(sh.get("kind"), "OPEN")
+        if word:
+            a = u0 + (u1 - u0) * (pane + 0.5) / n
+            col = sh.get("window_color") or ((1.0, 0.15, 0.1) if word == "OPEN" else (1.0, 0.55, 0.12))
+            city.neon_text(root, word, (a, top_v - 1.05, -0.32), 0.24, col, 5.0, font="DejaVuSans-Bold.ttf", tube=0.008)
     if sh.get("blade"):   # a blade sign out over the pavement, lit, both faces
         bu = W - 0.2
         rod(root, "blade_arm", (bu, top_v + 1.25, 0.0), (bu, top_v + 1.25, 0.95), 0.02, 0.02, M(IRON))
@@ -396,9 +431,11 @@ def shopfront(root, f, W, s0, rng):
 
 
 def facade_row(x_from, x_to, z, facing, rng, row=None, y=0.0):
-    """A row of canal houses along z from x_from to x_to, random widths, heights and gables, their
-    street at height y."""
+    """A row of canal houses from x_from to x_to on the line z (facing south or north), or from z
+    x_from to x_to on the line x = z (facing east or west): random widths, heights and gables, their
+    street at height y. row: {"lit", "shops": fraction of ground floors that are shops, "shop_kinds"}."""
     row = row or {}
+    along_z = facing in ("east", "west")
     x = x_from
     while x < x_to:
         w = rng.uniform(5.0, 9.5)
@@ -406,12 +443,43 @@ def facade_row(x_from, x_to, z, facing, rng, row=None, y=0.0):
         n = rng.choice([4, 4, 5, 3])
         storeys = [rng.uniform(3.4, 3.9)] + [rng.uniform(2.9, 3.3) for _ in range(n - 1)]
         bays = 3 if w < 7.5 else 5 if w > 8.6 else 4
-        f = {"x0": x, "x1": x + w - 0.04, "z": z, "y": y, "facing": facing, "storeys": storeys, "bays": bays, "gable": kind,
+        f = {"y": y, "facing": facing, "storeys": storeys, "bays": bays, "gable": kind,
              "door_bay": rng.randrange(bays), "stoop": rng.choice([0.0, 0.5, 0.75]), "lit": row.get("lit", 0.2)}
+        f.update({"z0": x, "z1": x + w - 0.04, "x": z} if along_z else {"x0": x, "x1": x + w - 0.04, "z": z})
+        if rng.random() < row.get("shops", 0.0):
+            f["stoop"] = 0.0
+            f["shop"] = shop_for(rng, row.get("shop_kinds"))
         if rng.random() < 0.12:
             f["paint"] = {"color": rng.choice([[0.6, 0.58, 0.54], [0.18, 0.2, 0.21], [0.42, 0.4, 0.34]]), "rough": 0.8, "noise": 0.15}
         facade(f, rng)
         x += w
+
+
+SHOPS = {   # what a city ground floor might be, with names made up for the game (no real business)
+    "cafe": [("CAFÉ DE KROONLUCHTER", "warm_bar"), ("CAFÉ 'T HOEKJE", "warm_bar"), ("EETCAFÉ DE ZWAAN", "warm_restaurant_night")],
+    "coffeeshop": [("COFFEESHOP GROENE VLINDER", "warm_bar"), ("COFFEESHOP HAZE", "warm_bar"), ("THE LAZY OWL COFFEESHOP", "warm_bar")],
+    "restaurant": [("RISTORANTE DA PIETRO", "warm_restaurant_night"), ("STEAKHOUSE EL GAUCHO", "warm_restaurant_night"),
+                   ("PANNENKOEKENHUIS", "warm_restaurant_night")],
+    "bar": [("CLUB NACHTVLINDER", "warm_bar"), ("BAR ZEVEN", "warm_bar"), ("KARAOKE", "warm_bar")],
+}
+SHOP_LOOK = {   # sign colour, frame colour, font, awning
+    "cafe": ((1.0, 0.8, 0.5), (0.2, 0.05, 0.035), "DejaVuSerif-BoldItalic.ttf", None),
+    "coffeeshop": ((0.35, 1.0, 0.4), (0.03, 0.12, 0.05), "DejaVuSans-Bold.ttf", [[0.05, 0.3, 0.08], [0.85, 0.75, 0.1]]),
+    "restaurant": ((1.0, 0.25, 0.15), (0.06, 0.05, 0.05), "DejaVuSerif-Bold.ttf", [[0.45, 0.06, 0.05], [0.78, 0.74, 0.66]]),
+    "bar": ((1.0, 0.2, 0.6), (0.03, 0.03, 0.04), "DejaVuSans-Bold.ttf", None),
+}
+
+
+def shop_for(rng, kinds=None):
+    """A made-up shop for a ground floor: its name, the room inside, its colours."""
+    kind = rng.choice(kinds or list(SHOPS))
+    name, room = rng.choice(SHOPS[kind])
+    sign, frame, font, awning = SHOP_LOOK[kind]
+    s = {"name": name, "kind": kind, "room": room, "sign": list(sign), "frame": list(frame), "font": font,
+         "blade": name.split()[-1] if len(name) > 12 else name, "glow": 0.6, "power": rng.uniform(60.0, 95.0)}
+    if awning:
+        s["awning"] = awning
+    return s
 
 
 # ── Street furniture ────────────────────────────────────────────────────────────────
@@ -749,10 +817,14 @@ def outdoor(spec):
             facade_row(xa + 20, xb - 20, zf, "north", rng, c)
     for f in o.get("facades", []):
         facade(f, random.Random(f.get("seed", 1)))
+    for i, row in enumerate(o.get("rows", [])):   # streets running on out of the set: rows of houses (some shops)
+        facade_row(row["from"], row["to"], row["line"], row["facing"], random.Random(f"{spec['id']}{i}"), row)
     for lx, lz in o.get("lamps", []):
         lamp(lx, lz, power=o.get("lamp_power", 380.0))
     for b in o.get("bridges", []):
         hump_bridge(spec, b)
+    import city   # the squares' pieces: strings of lights, trams, parks, rooftop neon
+    city.extras(spec)
 
 
 PROPS = {"bollard": bollard, "bike": bike, "elm": plane_tree, "plane_tree": plane_tree, "railing": railing,

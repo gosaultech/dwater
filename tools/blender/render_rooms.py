@@ -10,6 +10,7 @@
 # Normally you run tools/pipeline/build_backgrounds.py, which calls this.
 import argparse
 import math
+import os
 import random
 import sys
 import time
@@ -68,6 +69,8 @@ def enable_gpu():
 def new_scene(spec, q, res):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     builders.reset_material_cache()
+    import kit
+    kit.reset_models()
     s = bpy.context.scene
     s.render.engine = "CYCLES"
     s.render.resolution_x, s.render.resolution_y = res
@@ -158,7 +161,8 @@ def add_light(spec_light, i):
     ld.energy = spec_light["blender_power"]
     ob = bpy.data.objects.new(f"light_{i}", ld)
     bpy.context.scene.collection.objects.link(ob)
-    ob.visible_camera = bool(spec_light.get("visible", False))   # a lamp lights the set; its panel isn't in the picture
+    ob.visible_camera = bool(spec_light.get("visible", False))   # a lamp lights the set; its panel isn't in the picture,
+    ob.visible_transmission = ob.visible_camera                    # not even through a window
     if kind == "sun":
         d = Vector(g2b(spec_light["dir_from"])).normalized()
         ob.rotation_euler = (-d).to_track_quat("-Z", "Y").to_euler()
@@ -270,12 +274,19 @@ def white_world():
 
 
 def build_room(spec, outside=True):
+    slow = float(os.environ.get("DW_PROFILE", "0") or 0)   # DW_PROFILE=1: say what takes over a second to build
+    t0 = time.time()
     builders.build_shell(spec)
     builders.build_water(spec)
     if outside:
         builders.build_exterior(spec, random.Random(spec["id"]))
+    if slow and time.time() - t0 > slow:
+        print(f"[build] {spec['id']} shell/outside {time.time() - t0:.1f}s")
     for p in spec.get("props", []):
+        t1 = time.time()
         builders.build_prop(p, spec["height"])
+        if slow and time.time() - t1 > slow:
+            print(f"[build] {spec['id']} prop {p['type']} {p.get('model', '')} {time.time() - t1:.1f}s")
     return [add_light(light, i) for i, light in enumerate(spec.get("lights", []))]
 
 

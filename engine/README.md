@@ -10,8 +10,10 @@ The canal house: its ground floor (`gang`, the entrance hall; `voorkamer`, the f
 `bibliotheek`, the library at the back), and below it the `souterrain` (the renovated half-basement)
 and the flooded cellar (`kelder`), walked through room to room with no loading screens. Out of the
 kelder's water gate a tunnel (`waterpoort`) runs under the street to the canal, and steps climb to
-the quay outside (`herengracht`), as far as the bridge. The attic bathroom (`badkamer`) is built and
-rendered, waiting for its stairs. And:
+the quay outside (`herengracht`), as far as the bridge. Past the bridge the street runs on into the
+city: Thorbeckeplein (`thorbeckeplein`, the street of bars and terraces) and on across onto
+Rembrandtplein (`rembrandtplein`, the square with its park, its statue and a tram at the stop). The
+attic bathroom (`badkamer`) is built and rendered, waiting for its stairs. And:
 
 - **Backgrounds and depth.** Pre-rendered Cycles backgrounds, each with a painted depth map.
   Characters are hidden correctly behind painted furniture, like RE (1998).
@@ -341,9 +343,17 @@ flat: the camera crew moves room to room, nobody has to change the scenery.
   picture fades, his steps on the stairs, the other floor is put in place, it fades up. A stage
   blackout between scenes. The cellar door under the hall's stairs opens onto painted steps going
   down; walking through it takes him to the souterrain, whose door at the far end leads on into the
-  flooded kelder; the souterrain's stairs bring him back up. The kelder's iron water gate swings
+  flooded kelder; the souterrain's stairs bring him back up. He arrives as he is: his hair and
+  straps are laid out afresh where he stands (`Character::settle`), not swung over from where he was. The kelder's iron water gate swings
   open on the tunnel to the canal (a gate's leaf is bars, `"style": "grate"`: he can see and shoot
   through it shut), and the steps near the tunnel's mouth climb to the quay.
+- **Streets run into each other** (`"kind": "passage"` in a wall's openings). A passage is a gap
+  with no leaf: always open, never shut, seen and shot through. Two rooms on one storey that meet
+  at a passage are one walk (Thorbeckeplein's top end is Rembrandtplein's bottom edge: he walks
+  across and the camera cuts, as at an open door). A passage with no room behind it on its storey
+  is a beat to another storey, like the stairs: the Herengracht is on the house's storey, the city
+  beyond the bridge is its own (`"storey": 10`, "THE CITY" on the map). Like crossing from one film
+  set to the next on the same sound stage, or being driven to another studio.
 - **No waiting at a door.** The plates of the rooms next door are decoded on a worker thread
   while he's still in this one and uploaded a couple per frame (`src/plates.cpp`), so the cut is
   instant; rooms out of reach are let go. A stage crew setting up the next backdrops in the wings.
@@ -418,6 +428,15 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   and their light; the game reads the same list, so he is lit by the lamps you see. A bloom in the
   compositor makes lamps and signs glow as they do in a photograph at night (never in the depth
   map).
+- **The city kit** (`tools/blender/city.py`), for the squares: neon lettering bent from glass tube
+  (`"neon": true` on a bar's or coffeeshop's shop) and big neon signs on the roofs
+  (`"rooftop_signs"`), strings of bulbs slung between the trees over the terraces (`"strings"`:
+  from, to, sag, bulb spacing), tram rails let into the street (`"tracks"`) and a tram stopped at
+  its stop with its lights on and its doors open, benches, a bronze statue on a floodlit plinth,
+  kiosks, terrace windbreaks, and a park (`"parks"`: a lawn, gravel paths, low iron fences).
+- **One ground per street.** Rooms on one storey are built together, and each room's lights only
+  light its own things; so two streets' ground slabs must meet edge to edge and never overlap,
+  or the other street's slab, unlit, shows through as a black patch.
 
 ## The death screen
 
@@ -549,8 +568,9 @@ Done in the C++ engine: combat (both guns, kick, dodge, counters, gore), the rel
 status screen (items, files, map, pickups), the death screen. Still to come, in order:
 
 1. **The city.** The house is in (hall, parlour, library, souterrain, kelder; the attic bathroom
-   waits for its stairs). Next: the streets along the canals, Amsterdam Centraal, and the metro
-   north under the IJ to Station Noord. All pre-rendered backgrounds from RoomSpecs
+   waits for its stairs), and out of it the Herengracht, Thorbeckeplein and Rembrandtplein. Next,
+   on toward Amsterdam Centraal: Reguliersbreestraat and the Munt, Rokin and the Kalverstraat, the
+   Dam, the Damrak; then the station and the metro north under the IJ to Station Noord. All pre-rendered backgrounds from RoomSpecs
    (`docs/handoff/areas_session_prompt.md` is the brief).
 2. Saves (the typewriter), a title screen.
 3. **#27 (polish, deferred): a palm arch joint**, so the 870's right wrist cocks less (about 49

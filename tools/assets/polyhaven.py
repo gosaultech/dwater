@@ -37,7 +37,8 @@ KIT_DEFAULTS = {"marble_01": "texture", "dark_wood": "texture",
                 "brick_wall_10": "texture", "dark_brick_wall": "texture", "distressed_painted_planks": "texture",
                 "large_sandstone_blocks": "texture", "grey_roof_tiles": "texture", "mossy_brick": "texture",
                 "bark_platanus": "texture", "rusty_painted_metal": "texture", "wood_peeling_paint_weathered": "texture",
-                "herringbone_brick": "texture", "street_lamp_01": "model"}
+                "herringbone_brick": "texture", "street_lamp_01": "model",
+                "leafy_grass": "texture", "gravel_floor": "texture", "gothic_statue": "model"}
 # HDRIs: a set's sky is fetched sharp (it fills the background); the rooms seen through lit windows
 # across the street are small, so a light version does.
 HDRI_RES = {"sky": "4k", "hdri": "1k"}

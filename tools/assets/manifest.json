@@ -188,6 +188,25 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/floor_pebbles_01"
   },
+  "gothic_statue": {
+   "kind": "model",
+   "name": "Gothic Statue",
+   "authors": [
+    "Benny Weimer"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/gothic_statue"
+  },
+  "gravel_floor": {
+   "kind": "texture",
+   "name": "Gravel Floor",
+   "authors": [
+    "Jenelle van Heerden",
+    "Matterfield"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/gravel_floor"
+  },
   "grey_roof_tiles": {
    "kind": "texture",
    "name": "Grey Roof Tiles",
@@ -280,6 +299,15 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/large_sandstone_blocks"
+  },
+  "leafy_grass": {
+   "kind": "texture",
+   "name": "Leafy Grass",
+   "authors": [
+    "Charlotte Baglioni"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/leafy_grass"
   },
   "marble_01": {
    "kind": "texture",

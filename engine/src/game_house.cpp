@@ -337,6 +337,7 @@ void Game::finish_beat() {
     holding_ = false;
     if (to.floor != storey_) build_storey(to.floor);
     enter_room(r);
+    hero_.settle();
     animate(0.0f);
 }
 
@@ -459,6 +460,7 @@ void Game::retry() {
     for (auto& l : leaves_) { l.angle = l.target = 0; l.moving = false; }
     build_storey(rooms_[size_t(c.room)].floor);
     enter_room(c.room);
+    hero_.settle();
     animate(0.0f);
 }
 

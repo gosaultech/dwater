@@ -1,7 +1,8 @@
 // damned_waters/engine/tests/test_world_map.cpp
 // Purpose: GoogleTest suite for the map's layout (world_map.hpp): two rooms joined by a doorway
 // meet at it, a room off a stair goes on its own storey, and the real room files lay out with the
-// parlour west of the hall, the cellar a storey down and the attic bathroom up under the roof.
+// parlour west of the hall, the cellar a storey down, the attic bathroom up under the roof and the
+// city's squares on a storey of their own.
 #include <gtest/gtest.h>
 
 #include <cmath>
@@ -47,9 +48,10 @@ TEST(WorldMap, TheHouseLaysOut) {
     ASSERT_TRUE(gang && voor && kelder);
     EXPECT_LT(voor->ox + voor->bounds.x1, gang->ox + 0.01f);   // the parlour is west of the hall
     EXPECT_EQ(kelder->storey, -1);
-    const auto s = storeys(rooms);   // top first: the attic, the ground floor, the cellars
-    ASSERT_EQ(s.size(), 3u);
-    EXPECT_EQ(s[0], 2);
-    EXPECT_EQ(s[1], 0);
-    EXPECT_EQ(s[2], -1);
+    const auto s = storeys(rooms);   // top first: the city outside, the attic, the ground floor, the cellars
+    ASSERT_EQ(s.size(), 4u);
+    EXPECT_EQ(s[0], 10);
+    EXPECT_EQ(s[1], 2);
+    EXPECT_EQ(s[2], 0);
+    EXPECT_EQ(s[3], -1);
 }

@@ -64,6 +64,10 @@ class Character {
 public:
     static Character make(Kind k, int variant = 0);
     void place(Vector3 pos, float yaw) { pos_ = pos; yaw_ = yaw; }
+    // Put somewhere rather than walked there (the beat between storeys, trying again): his hair and
+    // straps are laid out afresh where he stands, instead of swinging over from where he was (from a
+    // kilometre away, that's a sheet of coat stretched across the picture).
+    void settle();
     // Ease toward `pose`, step the dangles, then rebuild the skin.
     void animate(Pose pose, float speed, float dt, float aim_pitch = 0.0f);
     void draw(const Material& m, bool shadow_caster = false) const;   // shadow_caster: for a light's depth map
