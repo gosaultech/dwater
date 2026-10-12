@@ -16,8 +16,12 @@ Rembrandtplein (`rembrandtplein`, the square with its park, its statue and a tra
 of it lies the Munt: Reguliersbreestraat (`reguliersbreestraat`, its art-deco picture palace and its
 apotheek), Muntplein (`muntplein`, the Munttoren, the way north up Rokin barred for now) and the
 floating flower market (`bloemenmarkt`); three of its shops he can walk into and search: the
-apotheek (`apotheek`), the cinema's lobby (`bioscoop`) and a flower stall (`bloemenkraam`). The
-attic bathroom (`badkamer`) is built and rendered, waiting for its stairs. And:
+apotheek (`apotheek`), the cinema's lobby (`bioscoop`) and a flower stall (`bloemenkraam`). North
+from the Munt runs Rokin (`rokin_zuid`, `rokin_noord`), the main road to Centraal: the basin with
+its tour boats, Queen Wilhelmina on her horse, an aid post with an ambulance and a police van left by
+it, an army checkpoint at the Dam; with a hotel's lobby (`hotel_lobby`), the police post and its
+armoury (`politiepost`) and the flooded metro's ticket hall (`metro_rokin`) to search. The attic
+bathroom (`badkamer`) is built and rendered, waiting for its stairs. And:
 
 - **Backgrounds and depth.** Pre-rendered Cycles backgrounds, each with a painted depth map.
   Characters are hidden correctly behind painted furniture, like RE (1998).

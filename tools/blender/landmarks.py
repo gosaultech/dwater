@@ -58,10 +58,12 @@ def point(root, at, power, color=(1.0, 0.75, 0.45), radius=0.1):
     return ob
 
 
-def octagon(root, name, profile, m, y0):
-    """A turned octagon with its flat faces to the four points of the compass (as the tower's are)."""
+def octagon(root, name, profile, m, y0, x=0.0, z=0.0):
+    """A turned octagon standing at (x, y0, z) with its flat faces to the four points of the compass
+    (as the tower's are): turned about its own axis, then put in place."""
     ob = kit.lathe(root, name, profile, m, at=(0.0, y0, 0.0), segments=8, smooth=False)
     ob.rotation_euler[2] = math.radians(22.5)
+    ob.location = g2b((x, 0.0, z))
     return ob
 
 
@@ -94,7 +96,7 @@ def munttoren(root, p, w, h, d):
     q.build("quoins", stone, root, smooth=False)
     # the doorway on the square (+z): a shop's warm light behind its glass, in a stone surround
     lbox(root, "door_surround", (-1.15, 0.9, d / 2 - 0.02), (1.15, 3.8, d / 2 + 0.06), stone)
-    lbox(root, "door_glass", (-0.85, 0.9, d / 2 + 0.06), (0.85, 3.5, d / 2 + 0.08), emit((1.0, 0.72, 0.42), 1.6, "munt_door"))
+    lbox(root, "door_glass", (-0.85, 0.9, d / 2 + 0.06), (0.85, 3.5, d / 2 + 0.08), emit((1.0, 0.62, 0.3), 0.45, "munt_door"))
     for n_out in ((0, 1), (1, 0), (0, -1), (-1, 0)):   # lancet windows, two up each face
         nx, nz = n_out
         rx, rz = nz, -nx
@@ -245,7 +247,7 @@ def deco_front(root, f, W, s0, rng):
         # poster cases either side of the doors, lit from inside
         title, col = POSTERS[int(t0 > 0) * 2 + rng.randrange(2)]
         lbox(root, "poster_case", (t0 + 0.45, 0.55, 0.5), (t0 + tw - 0.45, 2.55, 0.62), bronze)
-        lbox(root, "poster", (t0 + 0.55, 0.65, 0.62), (t0 + tw - 0.55, 2.45, 0.63), emit(col, 1.1, "poster_%s" % title[:6]))
+        lbox(root, "poster", (t0 + 0.55, 0.65, 0.62), (t0 + tw - 0.55, 2.45, 0.63), emit(col, 0.5, "poster_%s" % title[:6]))
         text(root, title, (cx, 2.15, 0.64), 0.16, emit((1.0, 0.92, 0.75), 2.0, "poster_title"), font="DejaVuSerif-Bold.ttf", depth=0.0)
         text(root, "VANAVOND", (cx, 0.95, 0.64), 0.11, emit((1.0, 0.92, 0.75), 2.0, "poster_title"), font="DejaVuSans-Bold.ttf", depth=0.0)
     # the marquee over the doors: its name in neon, bulbs all round, light pouring down
@@ -504,7 +506,7 @@ def equestrian(root, p, w, h, d):
     """A bronze rider on a horse on a tall granite plinth, the name cut in it, floodlit. (The
     horse is a CC0 scan stood in bronze; the rider is built: a long riding habit over the saddle,
     the body upright, a hat.) Size: the plinth's [w, h, d]."""
-    granite = M({"color": [0.32, 0.31, 0.3], "rough": 0.45, "noise": 0.3})
+    granite = M({"color": [0.16, 0.155, 0.15], "rough": 0.45, "noise": 0.3})   # dark polished granite (floodlit, pale stone burns out)
     bronze = M({"color": [0.13, 0.17, 0.12], "rough": 0.4, "metal": 0.8, "noise": 0.25})
     kit.soft(root, "plinth_step", (0.0, 0.25, 0.0), (w + 1.0, 0.5, d + 1.0), granite, 0.04, 2)
     kit.soft(root, "plinth", (0.0, 0.5 + (h - 0.8) / 2, 0.0), (w, h - 0.8, d), granite, 0.04, 2)
@@ -522,7 +524,7 @@ def equestrian(root, p, w, h, d):
     ball(root, "rider_head", (0.0, y + 1.2, 0.0), 0.12, bronze, seg=12)
     kit.lathe(root, "rider_hat", [(0.2, 0.0), (0.2, 0.03), (0.1, 0.05), (0.09, 0.16), (0.0, 0.17)], bronze, at=(0.0, y + 1.28, 0.0), segments=14)
     for sz in (-1, 1):
-        spot(root, (sz * 4.0, 0.4, 4.0), (0.0, h + 1.6, 0.0), p.get("flood", 900.0), size=26.0)
+        spot(root, (sz * 4.0, 0.4, 4.0), (0.0, h + 1.8, 0.0), p.get("flood", 260.0), size=18.0)
 
 
 # ── Fronts: a museum's stone, a hotel's flags, the metro's glass ──────────────────────────
@@ -600,6 +602,405 @@ def metro_front(root, f, W, s0, rng):
              yaw=0.0 if sgn > 0 else 180.0)
 
 
+# ── The Dam: the palace, the Nieuwe Kerk, the National Monument ─────────────────────────────
+def palace(root, p, w, h, d):
+    """The Royal Palace on the Dam (Jacob van Campen's town hall, 1665), its front along local x
+    facing +z, w wide: a rusticated ground floor with seven small arched doors in the middle, two
+    storeys of tall windows between pilasters, an attic, the middle seven bays standing forward
+    under a pediment full of carving, and on the roof the cupola: a square base, an open drum, a
+    copper dome, a lantern, a ship for a vane. Floodlit gold from the square, as it is every night.
+    h: the cornice's height (the cupola rises above it)."""
+    stone = M(p.get("stone", {"ph": "large_sandstone_blocks", "tint": [0.86, 0.76, 0.58], "scale": 1.2}))
+    dark = M({"color": [0.015, 0.018, 0.02], "rough": 0.12, "metal": 0.3})
+    lit = emit((1.0, 0.72, 0.4), 0.7, "palace_lit")
+    copper = M(COPPER)
+    gold = M(GOLD)
+    rng = __import__("random").Random(p.get("seed", 5))
+    n = p.get("bays", 23)
+    bay = w / n
+    g0 = h * 0.2   # the ground floor
+    s1 = g0 + (h - g0) * 0.42
+    mid0, mid1 = (n - 7) // 2, (n - 7) // 2 + 7
+    out = 0.9   # how far the middle bays stand forward
+    holes = []
+    for i in range(n):
+        u = bay * (i + 0.5)
+        if mid0 <= i < mid1:   # the seven small arched doors of the middle (for the seven provinces)
+            holes.append((u - bay * 0.22, u + bay * 0.22, 0.0, g0 * 0.72))
+        else:
+            holes.append((u - bay * 0.18, u + bay * 0.18, g0 * 0.25, g0 * 0.8))
+        holes.append((u - bay * 0.2, u + bay * 0.2, g0 + 1.0, s1 - 1.4))
+        holes.append((u - bay * 0.2, u + bay * 0.2, s1 + 0.9, h - 2.6))
+    for u0, u1, v0, v1 in layout.cut_rects(w, h, holes):   # the front, cut round its windows
+        zf = out if mid0 * bay <= (u0 + u1) / 2 < mid1 * bay else 0.0
+        lbox(root, "palace_front", (u0, v0, zf - 1.0), (u1, v1, zf), stone)
+    for u0, u1, v0, v1 in holes:
+        zf = out if mid0 * bay <= (u0 + u1) / 2 < mid1 * bay else 0.0
+        lbox(root, "palace_window", (u0, v0, zf - 0.85), (u1, v1, zf - 0.8), lit if rng.random() < p.get("lit", 0.18) else dark)
+    for k in (mid0, mid1):   # the returns where the middle stands forward
+        lbox(root, "palace_return", (k * bay - 0.5, 0.0, 0.0), (k * bay + 0.5, h, out), stone)
+    order = Acc()   # rustication, the floor bands, the pilasters and their capitals
+    for k in range(int(g0 / 0.6)):
+        order.box((0.0, k * 0.6, 0.0), (w, k * 0.6 + 0.05, 0.03))
+    for y in (g0, s1, h - 1.6):
+        order.box((-0.2, y - 0.25, 0.0), (w + 0.2, y + 0.2, 0.35 + out))
+    for i in range(n + 1):
+        u = bay * i
+        zf = out if mid0 <= i <= mid1 else 0.0
+        for y0, y1 in ((g0 + 0.2, s1 - 0.25), (s1 + 0.2, h - 1.85)):
+            order.box((u - 0.4, y0, zf), (u + 0.4, y1, zf + 0.3))
+            order.box((u - 0.55, y1 - 0.5, zf), (u + 0.55, y1, zf + 0.45))
+    order.build("palace_order", stone, root, smooth=False)
+    lbox(root, "palace_cornice", (-0.4, h - 1.6, -1.0), (w + 0.4, h - 0.6, 1.2 + out), stone)
+    lbox(root, "palace_attic", (0.0, h - 0.6, -1.0), (w, h + 1.2, 0.2), stone)
+    # the pediment over the middle seven bays, its tympanum carved (dark recesses for the figures)
+    pw = (mid1 - mid0) * bay
+    ph = pw * 0.22
+    pc = (mid0 * bay + mid1 * bay) / 2
+    fan_prism = street.fan_prism
+    fan_prism(root, "pediment", [(-pw / 2 - 0.6, 0.0), (pw / 2 + 0.6, 0.0), (0.0, ph + 0.5)], (0.0, 0.5), -1.2, stone,
+              ((pc, h - 0.6, out + 0.6), (1, 0, 0), (0, 1, 0), (0, 0, 1)))
+    fan_prism(root, "tympanum", [(-pw / 2 + 0.6, 0.0), (pw / 2 - 0.6, 0.0), (0.0, ph - 0.6)], (0.0, 0.4), 0.05, M({"color": [0.5, 0.42, 0.3], "rough": 0.7, "noise": 0.4}),
+              ((pc, h - 0.4, out + 0.65), (1, 0, 0), (0, 1, 0), (0, 0, 1)))
+    figs = Acc()
+    for k in range(15):   # the carving: figures in the tympanum, more at the middle
+        t = (k + 0.5) / 15
+        u = pc - pw / 2 + 1.2 + (pw - 2.4) * t
+        top = (ph - 0.9) * (1 - abs(2 * t - 1))
+        if top > 0.6:
+            figs.box((u - 0.25, h - 0.3, out + 0.7), (u + 0.25, h - 0.3 + top * rng.uniform(0.6, 0.95), out + 1.0))
+    figs.build("pediment_figures", stone, root, smooth=False)
+    # its sides, d deep (it's seen end-on from the corners of the square): stone, a grid of windows,
+    # the attic and cornice going round; a lead roof over the whole block
+    for u in (0.0, w):
+        side = [(t0, t1, v0, v1) for t0, t1, v0, v1 in
+                [(d * (k + 0.5) / 8 - 1.0, d * (k + 0.5) / 8 + 1.0, y0, y1) for k in range(8)
+                 for y0, y1 in ((g0 * 0.25, g0 * 0.8), (g0 + 1.0, s1 - 1.4), (s1 + 0.9, h - 2.6))]]
+        for a, b, c, e in layout.cut_rects(d, h, side):
+            lo, hi = (u - 1.0, c, -b), (u, e, -a)
+            if u > 0:
+                lo, hi = (u, c, -b), (u + 1.0, e, -a)
+            lbox(root, "palace_side", lo, hi, stone)
+        for a, b, c, e in side:
+            x0, x1 = (u - 0.85, u - 0.8) if u == 0.0 else (u + 0.8, u + 0.85)
+            lbox(root, "palace_side_window", (x0, c, -b), (x1, e, -a), dark)
+        lbox(root, "palace_side_cornice", (u - 1.4 if u == 0.0 else u - 0.4, h - 1.6, -d), (u + 0.4 if u == 0.0 else u + 1.4, h - 0.6, 0.0), stone)
+        lbox(root, "palace_side_attic", (u - 1.0 if u == 0.0 else u, h - 0.6, -d), (u if u == 0.0 else u + 1.0, h + 1.2, 0.0), stone)
+    lbox(root, "palace_back", (0.0, 0.0, -d - 1.0), (w, h + 1.2, -d), stone)
+    lbox(root, "palace_roof", (0.0, h + 0.6, -d), (w, h + 1.0, 0.0), M(LEAD))
+    # the cupola: a square base, an open drum of columns, a copper dome, a lantern, the ship
+    cx, cz = w / 2, -d / 2
+    base = h + 1.2
+    lbox(root, "cupola_base", (cx - 6.0, base, cz - 6.0), (cx + 6.0, base + 4.0, cz + 6.0), stone)
+    lbox(root, "cupola_base_cornice", (cx - 6.4, base + 4.0, cz - 6.4), (cx + 6.4, base + 4.6, cz + 6.4), stone)
+    rod(root, "palace_clock", (cx, base + 2.0, cz + 6.0), (cx, base + 2.0, cz + 6.12), 1.3, 1.3, emit((1.0, 0.92, 0.75), 0.9, "palace_clock"), seg=32)
+    cols = Acc()
+    R = 4.6
+    for k in range(8):
+        a = math.radians(22.5 + 45 * k)
+        cols.rod((cx + R * math.cos(a), base + 4.6, cz + R * math.sin(a)), (cx + R * math.cos(a), base + 10.0, cz + R * math.sin(a)), 0.4, 0.34, 10)
+    cols.build("drum_columns", stone, root)
+    point(root, (cx, base + 7.0, cz), p.get("cupola_light", 900.0), (1.0, 0.75, 0.45), radius=0.8)
+    octagon(root, "drum_entablature", [(R + 0.7, 0.0), (R + 0.7, 1.0), (0.0, 1.0)], stone, base + 10.0, cx, cz)
+    dome = [(R + 0.5, 0.0), (R + 0.3, 1.2), (R * 0.8, 2.8), (R * 0.45, 4.0), (1.2, 4.6), (0.0, 4.65)]
+    kit.lathe(root, "palace_dome", dome, copper, at=(cx, base + 11.0, cz), segments=24)
+    lant = base + 15.6
+    lc = Acc()
+    for k in range(8):
+        a = math.radians(22.5 + 45 * k)
+        lc.rod((cx + 1.1 * math.cos(a), lant, cz + 1.1 * math.sin(a)), (cx + 1.1 * math.cos(a), lant + 2.6, cz + 1.1 * math.sin(a)), 0.12, 0.1, 6)
+    lc.build("lantern_columns", stone, root)
+    point(root, (cx, lant + 1.3, cz), 120.0, (1.0, 0.75, 0.45), radius=0.3)
+    kit.lathe(root, "lantern_cap", [(1.5, 0.0), (1.2, 0.6), (0.4, 1.4), (0.1, 2.4), (0.0, 2.45)], copper, at=(cx, lant + 2.6, cz), segments=16)
+    ball(root, "vane_ball", (cx, lant + 5.3, cz), 0.35, gold, seg=14)
+    ship = Acc()   # the cog on the vane: a hull, a mast, a sail
+    ship.quad((cx - 1.0, lant + 5.8, cz), (cx + 1.0, lant + 5.8, cz), (cx + 0.7, lant + 5.4, cz), (cx - 0.7, lant + 5.4, cz))
+    ship.quad((cx - 0.05, lant + 5.8, cz), (cx + 0.05, lant + 5.8, cz), (cx + 0.05, lant + 7.4, cz), (cx - 0.05, lant + 7.4, cz))
+    ship.quad((cx + 0.1, lant + 6.0, cz), (cx + 0.9, lant + 6.1, cz), (cx + 0.8, lant + 7.1, cz), (cx + 0.1, lant + 7.2, cz))
+    ship.build("vane_ship", gold, root, smooth=False)
+    # floodlit from the square: a row of warm uplights along the foot, and two up at the cupola
+    for k in range(5):
+        u = w * (k + 0.5) / 5
+        spot(root, (u, 0.3, 9.0), (u, h * 0.6, 0.0), p.get("flood", 1600.0), (1.0, 0.78, 0.48), size=48.0)
+    for sx in (-1, 1):
+        spot(root, (cx + sx * 14.0, 0.3, 16.0), (cx, base + 9.0, cz), p.get("flood", 1600.0) * 1.5, (1.0, 0.8, 0.5), size=22.0)
+
+
+def gothic_front(root, p, w, h, d):
+    """A gothic church's transept front (the Nieuwe Kerk's on the Dam) along local x facing +z: brick
+    walls with sandstone dressings, a huge pointed window of tracery lit from inside, buttresses with
+    pinnacles either side, the gable over it, the steep roof running back d, and a slender ridge
+    turret (a dakruiter) with its spire. h: the eaves; the gable rises above."""
+    brick = M(p.get("brick", {"ph": "medieval_red_brick", "tint": [0.7, 0.55, 0.46], "scale": 1.0}))
+    stone = M({"ph": "large_sandstone_blocks", "tint": [0.8, 0.74, 0.62], "scale": 0.8})
+    lead = M(LEAD)
+    glass = emit((1.0, 0.7, 0.38), p.get("glow", 0.55), "church_window")
+    gh = w * 0.75                          # the gable's height over the eaves
+    span = w * 0.56                        # the window's width
+    sill = h * 0.18
+    rise = span * math.sin(math.radians(60))   # an equilateral pointed arch: each side an arc of radius = span
+    u0, u1 = w / 2 - span / 2, w / 2 + span / 2
+
+    def half_open(y):   # how far the window's opening reaches either side of the middle at height y
+        if y < h:
+            return span / 2
+        t = y - h
+        return math.sqrt(max(span * span - t * t, 0.0)) - span / 2 if t < rise else 0.0
+
+    holes = [(u0, u1, sill, h)]
+    door = p.get("door")   # (u centre, width, height): the way in under the window, its leaf the game's
+    if door:
+        du, dw, dh = door
+        holes.append((du - dw / 2, du + dw / 2, 0.0, dh))
+        arch_m = stone
+        lbox(root, "door_lintel", (du - dw / 2 - 0.4, dh, -1.2), (du + dw / 2 + 0.4, dh + 0.5, 0.15), arch_m)
+        for sgn in (-1, 1):
+            lbox(root, "door_jamb", (du + sgn * dw / 2 - (0.4 if sgn < 0 else 0.0), 0.0, -1.2),
+                 (du + sgn * dw / 2 + (0.4 if sgn > 0 else 0.0), dh, 0.15), arch_m)
+        lbox(root, "door_tympanum", (du - dw / 2, dh, -1.0), (du + dw / 2, min(dh + 1.6, sill - 0.4), -0.9), stone)
+    for a, b, c, e in layout.cut_rects(w, h, holes):   # the wall up to the eaves
+        lbox(root, "church_wall", (a, c, -1.2), (b, e, 0.0), brick)
+    course = 0.25   # the gable in courses, each cut round the window's pointed head
+    y = h
+    while y < h + gh - 0.01:
+        yt = min(y + course, h + gh)
+        half_g = (w / 2) * (1 - (y + yt - 2 * h) / 2 / gh)
+        ho = half_open((y + yt) / 2)
+        if ho > 0.05:
+            for sgn in (-1, 1):
+                lo, hi = sorted((w / 2 + sgn * ho, w / 2 + sgn * half_g))
+                if hi - lo > 0.02:
+                    lbox(root, "church_gable", (lo, y, -1.2), (hi, yt, 0.0), brick)
+            lbox(root, "church_window_head", (w / 2 - ho, y, -1.0), (w / 2 + ho, yt, -0.95), glass)
+        else:
+            lbox(root, "church_gable", (w / 2 - half_g, y, -1.2), (w / 2 + half_g, yt, 0.0), brick)
+        y = yt
+    lbox(root, "church_window_light", (u0, sill, -1.0), (u1, h, -0.95), glass)
+    tr = Acc()   # tracery: mullions up into the head, transoms across
+    n = 6
+    for i in range(1, n):
+        u = u0 + span * i / n
+        top = h + math.sqrt(max(span * span - (abs(u - w / 2) + span / 2) ** 2, 0.0)) if abs(u - w / 2) < span / 2 else h
+        tr.box((u - 0.09, sill, -0.95), (u + 0.09, top - 0.1, -0.75))
+    for k in range(1, 4):
+        yy = sill + (h - sill) * k / 4
+        tr.box((u0, yy - 0.07, -0.95), (u1, yy + 0.07, -0.75))
+    tr.build("tracery", stone, root, smooth=False)
+    lbox(root, "window_sill", (u0 - 0.3, sill - 0.3, -1.2), (u1 + 0.3, sill, 0.25), stone)
+    for u in (0.0, w):   # buttresses stepping back, pinnacles on top
+        for y0, y1, dz in ((0.0, h * 0.5, 2.2), (h * 0.5, h * 0.85, 1.4), (h * 0.85, h + 1.5, 0.8)):
+            lbox(root, "buttress", (u - 0.9, y0, -0.5), (u + 0.9, y1, dz), brick)
+            lbox(root, "buttress_cap", (u - 1.0, y1 - 0.2, -0.5), (u + 1.0, y1, dz + 0.15), stone)
+        kit.lathe(root, "pinnacle", [(0.55, 0.0), (0.5, 0.2), (0.0, 3.2)], stone, at=(u, h + 1.5, 0.15), segments=4, smooth=False)
+    # the roof back from the gable, and the ridge turret with its spire
+    street.fan_prism(root, "church_roof", [(-w / 2 - 0.3, 0.0), (w / 2 + 0.3, 0.0), (0.0, gh + 0.4)], (0.0, 0.5), -d,
+                     M({"color": [0.12, 0.12, 0.13], "rough": 0.4, "metal": 0.6}), ((w / 2, h, -1.0), (1, 0, 0), (0, 1, 0), (0, 0, 1)))
+    tz, ty = -d * 0.55, h + gh + 0.2
+    spire = p.get("spire", 12.0)
+    octagon(root, "turret", [(1.4, 0.0), (1.4, 3.6), (1.7, 3.8), (1.7, 4.1), (0.0, 4.1)], lead, ty, w / 2, tz)
+    kit.lathe(root, "turret_spire", [(1.5, 0.0), (0.12, spire), (0.0, spire + 0.1)], lead, at=(w / 2, ty + 4.1, tz), segments=8, smooth=False)
+    ball(root, "spire_ball", (w / 2, ty + 4.1 + spire * 0.6, tz), 0.3, M(GOLD), seg=12)
+    point(root, (w / 2, h * 0.6, -3.0), p.get("inside", 700.0), (1.0, 0.72, 0.42), radius=2.0)   # the light inside, out through the glass
+    spot(root, (w / 2, 0.3, 12.0), (w / 2, h + gh * 0.5, 0.0), p.get("flood", 1400.0), (1.0, 0.8, 0.55), size=40.0)
+
+
+def monument(root, p, w, h, d):
+    """The National Monument on the Dam: a white stone pillar 22 m high (h) on a round stepped
+    platform (w across), the figures of the war's suffering on its front (here: their blocks and
+    shadows), two lions on pedestals either side, the curved wall behind. Floodlit white."""
+    travertine = M({"color": [0.78, 0.76, 0.7], "rough": 0.7, "noise": 0.3})
+    r = w / 2
+    steps = [(r, 0.0), (r, 0.3), (r - 0.6, 0.3), (r - 0.6, 0.6), (r - 1.2, 0.6), (r - 1.2, 0.9), (0.0, 0.9)]
+    kit.lathe(root, "monument_steps", steps, travertine, at=(0.0, 0.0, 0.0), segments=48)
+    base = 0.9
+    sq = Acc()
+    s0, s1 = 2.2, 1.0
+    sq.box((-s0, base, -s0), (s0, base + 2.0, s0))
+    sq.build("pillar_base", travertine, root, smooth=False)
+    shaft = kit.lathe(root, "pillar", [(s0 * 1.2, 0.0), (s1 * 1.35, h - base - 2.0), (s1 * 1.5, h - base - 1.6), (0.0, h - base - 1.6)],
+                      travertine, at=(0.0, base + 2.0, 0.0), segments=4, smooth=False)
+    shaft.rotation_euler[2] = math.radians(45)
+    figs = Acc()   # the reliefs on the front: figures in high relief, men in chains, a woman with a child
+    rng = __import__("random").Random(3)
+    for k in range(9):
+        y = base + 2.2 + k * 0.9
+        wdt = s0 * 1.6 * (1 - k / 14)
+        figs.box((-wdt / 2 + rng.uniform(-0.1, 0.1), y, s0 * 0.85 - k * 0.02), (wdt / 2 + rng.uniform(-0.1, 0.1), y + 0.8, s0 * 0.85 + 0.35 - k * 0.02))
+    figs.build("reliefs", travertine, root, smooth=False)
+    for sx in (-1, 1):   # the lions on their pedestals
+        lbox(root, "lion_pedestal", (sx * (r - 2.0) - 0.8, base, -0.8), (sx * (r - 2.0) + 0.8, base + 1.6, 0.8), travertine)
+        lion = builders.empty_at("lion", (0.0, 0.0, 0.0), 0.0)
+        lion.parent = root
+        lion.location = g2b((sx * (r - 2.0), base + 1.6, 0.0))
+        kit.model(lion, {"model": "ph:lion_head", "fit": [1.2, 1.3, 1.2], "tint": [0.85, 0.82, 0.75]}, 0, 0, 0)
+    wall = Acc()   # the curved wall behind
+    seg = 24
+    for k in range(seg):
+        a0 = math.pi * (0.15 + 0.7 * k / seg)
+        a1 = math.pi * (0.15 + 0.7 * (k + 1) / seg)
+        R = r + 1.0
+        wall.quad((R * math.cos(a0), 0.0, -R * math.sin(a0)), (R * math.cos(a1), 0.0, -R * math.sin(a1)),
+                  (R * math.cos(a1), 2.6, -R * math.sin(a1)), (R * math.cos(a0), 2.6, -R * math.sin(a0)))
+    wall.build("monument_wall", travertine, root, smooth=False)
+    for k, (ax, az) in enumerate(((0.0, r + 6.0), (r + 5.0, 3.0), (-r - 5.0, 3.0))):
+        spot(root, (ax, 0.3, az), (0.0, h * 0.55, 0.0), p.get("flood", 1500.0), (0.92, 0.95, 1.0), size=26.0)
+
+
+# ── The Kalverstraat's light garlands ───────────────────────────────────────────────────
+def garland(root, p, w, h, d):
+    """A garland of lights slung across a shopping street (along local x, w wide, hung at h): a
+    swag of bulbs, and from its middle a lit shape hanging (a chandelier of bulbs on a frame)."""
+    bulbs, wire = Acc(), Acc()
+    n = int(w / 0.25)
+    pts = []
+    for i in range(n + 1):
+        t = i / n
+        x = -w / 2 + w * t
+        y = h - 4 * t * (1 - t) * p.get("sag", 0.9)
+        pts.append((x, y, 0.0))
+        bulbs.rod((x, y - 0.02, 0.0), (x, y - 0.09, 0.0), 0.03, 0.03, 6)
+    for a, b in zip(pts, pts[1:]):
+        wire.rod(a, b, 0.006, 0.006, 3)
+    cy = h - p.get("sag", 0.9) - 0.1
+    for k in range(3):   # the hanging shape: three rings of bulbs, wider toward the bottom
+        ry = cy - 0.35 - k * 0.45
+        rr = 0.35 + k * 0.25
+        m = int(rr * 2 * math.pi / 0.18)
+        for j in range(m):
+            a = 2 * math.pi * j / m
+            bulbs.rod((rr * math.cos(a), ry, rr * math.sin(a)), (rr * math.cos(a), ry - 0.07, rr * math.sin(a)), 0.028, 0.028, 6)
+        wire.rod((0.0, cy, 0.0), (rr, ry, 0.0), 0.008, 0.008, 3)
+        wire.rod((0.0, cy, 0.0), (-rr, ry, 0.0), 0.008, 0.008, 3)
+    wire.build("garland_wire", M({"color": [0.05, 0.05, 0.05], "rough": 0.5}), root)
+    bulbs.build("garland_bulbs", emit(tuple(p.get("color", (1.0, 0.85, 0.55))), p.get("glow", 8.0), "garland_bulb"), root)
+    point(root, (0.0, cy - 0.6, 0.0), p.get("power", 60.0), tuple(p.get("color", (1.0, 0.8, 0.5))), radius=0.5)
+
+
+# ── Damrak and Centraal: the Beurs, the station ────────────────────────────────────────────
+STONE_BEURS = {"ph": "large_sandstone_blocks", "tint": [0.8, 0.74, 0.62], "scale": 0.8}
+
+
+def beurs(root, p, w, h, d):
+    """The Beurs van Berlage, the old exchange (1903), its long side along local x facing +z (w long,
+    h to the eaves): plain brick walls with a stone base, rows of small round-arched windows, buttresses
+    flat on the wall, a steep roof; at its +x end the square clock tower (twice the height), its clock
+    lit, a pyramid cap, an arched gate at its foot."""
+    brick = M(p.get("brick", {"ph": "red_bricks_04", "tint": [0.75, 0.55, 0.45], "scale": 1.0}))
+    stone = M(STONE_BEURS)
+    dark = M({"color": [0.02, 0.02, 0.025], "rough": 0.15, "metal": 0.3})
+    lit = emit((1.0, 0.75, 0.45), 0.6, "beurs_lit")
+    rng = __import__("random").Random(p.get("seed", 7))
+    bay = 3.6
+    n = int((w - 12.0) / bay)
+    holes = []
+    for i in range(n):   # small round-headed windows in three rows (the heads are suggested by the mesh above)
+        u = 1.8 + bay * (i + 0.5)
+        for v0, v1 in ((1.8, 4.0), (5.6, 8.2), (10.0, h - 1.8)):
+            holes.append((u - 0.7, u + 0.7, v0, v1))
+    for a, b, c, e in layout.cut_rects(w - 12.0, h, holes):
+        lbox(root, "beurs_wall", (a, c, -0.8), (b, e, 0.0), brick)
+    for a, b, c, e in holes:
+        lbox(root, "beurs_window", (a, c, -0.7), (b, e, -0.65), lit if rng.random() < 0.15 else dark)
+        lbox(root, "beurs_sill", (a - 0.1, c - 0.15, -0.8), (b + 0.1, c, 0.12), stone)
+    lbox(root, "beurs_base", (0.0, 0.0, -0.8), (w - 12.0, 1.2, 0.15), stone)
+    flat = Acc()
+    for i in range(n + 1):   # the flat buttresses between the bays
+        u = 1.8 + bay * i
+        flat.box((u - 0.35, 1.2, 0.0), (u + 0.35, h - 0.6, 0.25))
+    flat.build("beurs_piers", brick, root, smooth=False)
+    lbox(root, "beurs_eaves", (-0.2, h - 0.6, -0.8), (w - 12.0 + 0.2, h, 0.5), stone)
+    street.fan_prism(root, "beurs_roof", [(-d / 2 - 0.3, 0.0), (d / 2 + 0.3, 0.0), (0.0, d * 0.45)], (0.0, 0.5), -(w - 12.0),
+                     M({"color": [0.14, 0.15, 0.16], "rough": 0.5, "metal": 0.4}), ((0.0, h, -d / 2), (0, 0, 1), (0, 1, 0), (1, 0, 0)))
+    # the tower at the +x end: 12 m square, twice the eaves' height, a clock on its front
+    tx0, tx1 = w - 12.0, w
+    th = h * 2.1
+    holes = [(tx0 + 4.0, tx1 - 4.0, 0.0, 5.5)]   # the gate
+    for v0 in (8.0, 13.0, 18.0):
+        holes.append((tx0 + 5.0, tx1 - 5.0, v0, v0 + 3.0))
+    for a, b, c, e in layout.cut_rects(tx1 - tx0, th, [(a - tx0, b - tx0, c, e) for a, b, c, e in holes]):
+        lbox(root, "tower_wall", (tx0 + a, c, -1.0), (tx0 + b, e, 0.3), brick)
+    for a, b, c, e in holes[1:]:
+        lbox(root, "tower_window", (a, c, -0.9), (b, e, -0.85), dark)
+    lbox(root, "tower_gate", (holes[0][0], 0.0, -0.9), (holes[0][1], 5.5, -0.85), emit((1.0, 0.7, 0.4), 0.4, "beurs_gate"))
+    for side in (tx0, tx1):
+        lbox(root, "tower_side", (side - (0.0 if side == tx0 else 1.0), 0.0, -12.0), (side + (1.0 if side == tx0 else 0.0), th, -1.0), brick)
+    cx = (tx0 + tx1) / 2
+    rod(root, "beurs_clock", (cx, th - 5.0, 0.3), (cx, th - 5.0, 0.42), 1.6, 1.6, emit((1.0, 0.92, 0.72), 1.0, "beurs_clock"), seg=32)
+    lbox(root, "tower_parapet", (tx0 - 0.3, th, -12.3), (tx1 + 0.3, th + 1.0, 0.6), stone)
+    kit.lathe(root, "tower_cap", [(5.6, 0.0), (0.4, 7.0), (0.0, 7.2)], M({"color": [0.12, 0.13, 0.14], "rough": 0.4, "metal": 0.5}),
+              at=(cx, th + 1.0, -6.0), segments=4, smooth=False).rotation_euler[2] = math.radians(45)
+    for k in range(3):
+        spot(root, (tx0 + 4.0 * k + 2.0, 0.3, 8.0), (cx, th * 0.6, 0.0), p.get("flood", 900.0), (1.0, 0.8, 0.55), size=30.0)
+
+
+
+def station(root, p, w, h, d):
+    """Amsterdam Centraal's front (Cuypers, 1889) along local x facing +z, w wide: red brick banded
+    with sandstone, two storeys of round-arched windows, long wings either side of the middle, where
+    two towers stand by the entrance (a clock on the west one, a wind dial on the east), the middle
+    under a gable with the city's arms, the doors lit; behind it the great arched roof of the train
+    shed. Floodlit, as at night."""
+    brick = M(p.get("brick", {"ph": "red_bricks_04", "tint": [0.8, 0.52, 0.42], "scale": 1.0}))
+    stone = M({"ph": "large_sandstone_blocks", "tint": [0.86, 0.8, 0.68], "scale": 0.8})
+    dark = M({"color": [0.02, 0.02, 0.025], "rough": 0.15, "metal": 0.3})
+    lit = emit((1.0, 0.78, 0.5), 0.8, "station_lit")
+    rng = __import__("random").Random(p.get("seed", 9))
+    bay = 4.2
+    n = int(w / bay)
+    holes = []
+    for i in range(n):
+        u = bay * (i + 0.5)
+        for v0, v1 in ((1.4, 5.8), (7.6, h - 2.6)):
+            holes.append((u - 1.1, u + 1.1, v0, v1))
+    mid0, mid1 = w / 2 - 14.0, w / 2 + 14.0
+    holes = [hh for hh in holes if hh[1] < mid0 or hh[0] > mid1]   # (the middle has its own front)
+    for a, b, c, e in layout.cut_rects(w, h, holes):
+        lbox(root, "station_wall", (a, c, -1.0), (b, e, 0.0), brick)
+    for a, b, c, e in holes:
+        lbox(root, "station_window", (a, c, -0.9), (b, e, -0.85), lit if rng.random() < 0.45 else dark)
+    bands = Acc()
+    for y in (1.2, 6.6, h - 1.4):   # sandstone bands across the brick
+        bands.box((0.0, y, 0.0), (w, y + 0.45, 0.12))
+    bands.build("station_bands", stone, root, smooth=False)
+    lbox(root, "station_roof", (0.0, h, -d), (w, h + 0.6, 0.2), M({"color": [0.14, 0.12, 0.11], "rough": 0.5, "metal": 0.3}))
+    street.fan_prism(root, "station_roof_ridge", [(-d / 2, 0.0), (d / 2, 0.0), (0.0, 6.0)], (0.0, 0.5), -w,
+                     M({"color": [0.18, 0.2, 0.2], "rough": 0.5, "metal": 0.4}), ((0.0, h + 0.6, -d / 2), (0, 0, 1), (0, 1, 0), (1, 0, 0)))
+    # the middle: a projecting front, three great arches to the hall, a gable with the arms
+    mh = h + 8.0
+    lbox(root, "station_mid", (mid0, 0.0, -1.0), (mid1, mh, 1.5), brick)
+    for k in range(3):
+        u = mid0 + 6.0 + 8.0 * k
+        lbox(root, "station_arch", (u - 2.6, 0.0, 1.5), (u + 2.6, 8.5, 1.6), emit((1.0, 0.82, 0.55), 1.1, "station_arch"))
+        lbox(root, "station_arch_frame", (u - 3.0, 8.5, 1.5), (u + 3.0, 9.2, 1.8), stone)
+    street.fan_prism(root, "station_gable", [(-14.0, 0.0), (14.0, 0.0), (0.0, 9.0)], (0.0, 0.5), 2.5, brick,
+                     ((w / 2, mh, -1.0), (1, 0, 0), (0, 1, 0), (0, 0, 1)))
+    kit.soft(root, "station_arms", (w / 2, mh + 3.0, 1.6), (4.0, 3.2, 0.3), M({"color": [0.75, 0.08, 0.06], "rough": 0.4}), 0.1, 2)
+    text(root, "XXX", (w / 2, mh + 3.0, 1.78), 0.9, M({"color": [0.92, 0.92, 0.9], "rough": 0.4}), font="DejaVuSans-Bold.ttf", depth=0.02)
+    for side, dial in ((-1, "clock"), (1, "wind")):   # the two towers
+        tx = w / 2 + side * 16.5
+        tw = 6.0
+        th = mh + 14.0
+        lbox(root, "station_tower", (tx - tw / 2, 0.0, -1.0), (tx + tw / 2, th, 2.0), brick)
+        lbox(root, "station_tower_band", (tx - tw / 2 - 0.1, th - 6.0, -1.1), (tx + tw / 2 + 0.1, th - 5.5, 2.1), stone)
+        rod(root, "station_dial", (tx, th - 3.2, 2.0), (tx, th - 3.2, 2.12), 2.0, 2.0, emit((1.0, 0.94, 0.78), 1.2, "station_dial") if dial == "clock" else
+            M({"color": [0.85, 0.65, 0.22], "rough": 0.3, "metal": 0.9}), seg=32)
+        kit.lathe(root, "station_tower_cap", [(4.4, 0.0), (3.0, 2.0), (0.6, 7.5), (0.0, 7.6)], M({"color": [0.2, 0.3, 0.27], "rough": 0.4, "metal": 0.4}),
+                  at=(tx, th, 0.5), segments=8, smooth=False)
+        ball(root, "station_finial", (tx, th + 8.0, 0.5), 0.4, M(GOLD), seg=12)
+    # the train shed's arch rising behind
+    seg = 18
+    shed = Acc()
+    R = p.get("shed", 22.0)
+    for k in range(seg):
+        a0, a1 = math.pi * k / seg, math.pi * (k + 1) / seg
+        shed.quad((w / 2 - R * math.cos(a0) * 2.2, h + R * math.sin(a0) * 0.6, -d - 2.0), (w / 2 - R * math.cos(a1) * 2.2, h + R * math.sin(a1) * 0.6, -d - 2.0),
+                  (w / 2 - R * math.cos(a1) * 2.2, h + R * math.sin(a1) * 0.6, -d - 60.0), (w / 2 - R * math.cos(a0) * 2.2, h + R * math.sin(a0) * 0.6, -d - 60.0))
+    shed.build("train_shed", M({"color": [0.1, 0.12, 0.13], "rough": 0.3, "metal": 0.6}), root, smooth=True)
+    for k in range(6):   # floodlit from the square
+        u = w * (k + 0.5) / 6
+        spot(root, (u, 0.3, 14.0), (u, h * 0.7, 0.0), p.get("flood", 1300.0), (1.0, 0.8, 0.52), size=44.0)
+
+
 # ── Police lines ─────────────────────────────────────────────────────────────────────
 def crowd_barrier(root, p, w, h, d):
     """A row of galvanised crowd barriers (dranghekken) along local x, hooked end to end on their
@@ -628,4 +1029,5 @@ def crowd_barrier(root, p, w, h, d):
 
 
 kit.PROPS.update({"munttoren": munttoren, "flower_stall": flower_stall, "crowd_barrier": crowd_barrier, "flower_buckets": flower_buckets,
-                  "canal_boat": canal_boat, "pier": pier, "equestrian": equestrian})
+                  "canal_boat": canal_boat, "pier": pier, "equestrian": equestrian, "palace": palace, "gothic_front": gothic_front,
+                  "monument": monument, "garland": garland, "beurs": beurs, "station": station})

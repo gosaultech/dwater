@@ -72,7 +72,7 @@ public:
     void update(float dt);          // input, AI, animation
     void render();                  // scene -> offscreen target
     void present() const;           // post-process to the window + HUD
-    int capture_count() const { return 53; }
+    int capture_count() const { return 61; }
     std::string stage(int i);       // pose a capture setup; returns its name
     // A still of the room (--still): the survivor standing at (x, z) facing yaw (degrees), no
     // Drowned, seen from `shot` (empty: whichever shot covers him). Render and present after.

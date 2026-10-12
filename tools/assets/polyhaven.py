@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 import urllib.request
 from pathlib import Path
@@ -85,6 +86,17 @@ def references(spec: dict) -> dict[str, str]:
         out[sky["hdri"]] = "sky"
     for room in (spec.get("outdoor") or {}).get("window_rooms", []):   # real rooms behind lit windows
         out.setdefault(room, "hdri")
+    return out
+
+
+def code_references(source: str) -> dict[str, str]:
+    """The assets the set-building code itself names (a kit's lions, its suitcases), so they're
+    fetched without a RoomSpec asking: "ph:<id>" in quotes is a model, {"ph": "<id>"} a texture."""
+    out: dict[str, str] = {}
+    for m in re.finditer(r'"ph:([A-Za-z0-9_]+)"', source):
+        out.setdefault(m.group(1), "model")
+    for m in re.finditer(r'"ph"\s*:\s*"([A-Za-z0-9_]+)"', source):
+        out.setdefault(m.group(1), "texture")
     return out
 
 
@@ -204,6 +216,9 @@ def main(argv=None):
     ap.add_argument("--extra", default="", help="more specs (files or dirs), comma separated")
     a = ap.parse_args(argv)
     wanted: dict[str, str] = dict(KIT_DEFAULTS)
+    for f in sorted((REPO / "tools" / "blender").glob("*.py")):   # what the kits name in their own code
+        for k, v in code_references(f.read_text(encoding="utf-8")).items():
+            wanted.setdefault(k, v)
     paths = [Path(a.specs)] + [Path(p) for p in a.extra.split(",") if p]
     for p in paths:
         for f in sorted(p.glob("*.json")) if p.is_dir() else [p]:

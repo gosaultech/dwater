@@ -1,0 +1,1386 @@
+{
+  "_file": "damned_waters/game/data/rooms/rokin_noord.json \u2014 RoomSpec for Rokin (the city, district 3: Rokin): the north half of Rokin: the head of the basin and Queen Wilhelmina on her horse, the metro's way in (shut: the station has flooded), the police post, an aid post in the road with an ambulance and a police van left by it, and across the end of the street, at the Dam, an army checkpoint, abandoned. Modelled after openly licensed photographs; every business name is made up, the landmarks keep theirs. The power is still on; nobody is there. Outdoor (street.py, city.py and landmarks.py build it). Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "rokin_noord",
+  "display_name": "Rokin",
+  "storey": 12,
+  "origin": [
+    883.4,
+    -224.60000000000002
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      26.0,
+      80.0
+    ]
+  },
+  "height": 10.0,
+  "materials": {
+    "floor": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "wall": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "ceiling": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    }
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.014,
+      0.019,
+      0.036
+    ],
+    "strength": 1.0
+  },
+  "sky": {
+    "hdri": "kloppenheim_07_puresky",
+    "strength": 0.045,
+    "camera": 0.1,
+    "tint": [
+      1.0,
+      0.76,
+      0.55
+    ]
+  },
+  "render": {
+    "exposure": 0.85,
+    "bloom": {
+      "threshold": 0.9,
+      "strength": 0.4,
+      "size": 0.55
+    }
+  },
+  "outdoor": {
+    "window_rooms": [
+      "warm_bar",
+      "fireplace",
+      "small_empty_room_2",
+      "christmas_photo_studio_04",
+      "warm_restaurant_night",
+      "unfinished_office_night"
+    ],
+    "lamp_power": 380.0,
+    "lamp_energy": 1.0,
+    "tide": 0.7,
+    "ground": [
+      {
+        "name": "quay",
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          6.0,
+          80.0
+        ],
+        "y": 0.06,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.7,
+            0.69,
+            0.66
+          ],
+          "wet": 0.75,
+          "puddles": 0.27,
+          "puddle_scale": 0.9
+        },
+        "kerb": false
+      },
+      {
+        "name": "road",
+        "min": [
+          6.0,
+          0.0
+        ],
+        "max": [
+          22.0,
+          80.0
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "herringbone_brick",
+          "tint": [
+            0.8,
+            0.72,
+            0.66
+          ],
+          "wet": 0.8,
+          "puddles": 0.27,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "pavement_e",
+        "min": [
+          22.0,
+          0.0
+        ],
+        "max": [
+          26.0,
+          80.0
+        ],
+        "y": 0.06,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "west_pavement",
+        "min": [
+          -6.0,
+          0.0
+        ],
+        "max": [
+          0.0,
+          40.0
+        ],
+        "y": 0.06,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "dam_ahead",
+        "min": [
+          -30.0,
+          -70.0
+        ],
+        "max": [
+          56.0,
+          0.0
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "cobblestone_floor_04",
+          "tint": [
+            0.75,
+            0.72,
+            0.68
+          ],
+          "wet": 0.7,
+          "puddles": 0.24,
+          "puddle_scale": 0.9
+        }
+      }
+    ],
+    "canals": [
+      {
+        "axis": "z",
+        "x": 0.0,
+        "side": -1,
+        "width": 16.0,
+        "along": [
+          40.0,
+          80.0
+        ],
+        "ends": "a",
+        "far_quay": 5.0,
+        "lit": 0.3,
+        "shops": 0.3,
+        "far_span": [
+          40.0,
+          80.0
+        ]
+      }
+    ],
+    "tracks": [
+      {
+        "from": [
+          14.0,
+          80.0
+        ],
+        "to": [
+          14.0,
+          -40.0
+        ],
+        "y": 0.0
+      }
+    ],
+    "lamps": [
+      [
+        1.4,
+        4.0
+      ],
+      [
+        1.4,
+        16.0
+      ],
+      [
+        1.4,
+        28.0
+      ],
+      [
+        1.4,
+        40.0
+      ],
+      [
+        1.4,
+        52.0
+      ],
+      [
+        1.4,
+        64.0
+      ],
+      [
+        1.4,
+        76.0
+      ],
+      [
+        24.6,
+        10.0
+      ],
+      [
+        24.6,
+        22.0
+      ],
+      [
+        24.6,
+        34.0
+      ],
+      [
+        24.6,
+        46.0
+      ],
+      [
+        24.6,
+        58.0
+      ],
+      [
+        24.6,
+        70.0
+      ]
+    ],
+    "rows": [
+      {
+        "from": 0.05,
+        "to": 38.0,
+        "line": -6.0,
+        "facing": "east",
+        "lit": 0.3,
+        "shops": 0.6
+      },
+      {
+        "from": -60.0,
+        "to": -10.0,
+        "line": 50.0,
+        "facing": "west",
+        "lit": 0.35,
+        "shops": 0.5
+      }
+    ],
+    "facades": [
+      {
+        "facing": "west",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 5,
+        "gable": "cornice",
+        "seed": 803,
+        "lit": 0.3,
+        "z0": 0.0,
+        "z1": 12.0,
+        "x": 26.0,
+        "shop": {
+          "name": "MODEHUIS DE GRACHT",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "MODE",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "smashed": [
+            0,
+            2,
+            4
+          ]
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          5.0,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 802,
+        "lit": 0.3,
+        "z0": 12.05,
+        "z1": 22.0,
+        "x": 26.0,
+        "shop": {
+          "name": "METRO",
+          "kind": "metro",
+          "room": "unfinished_office_night",
+          "sign": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "frame": [
+            0.3,
+            0.32,
+            0.35
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 38.4,
+          "door_bay": 2,
+          "neon": false,
+          "enter": true,
+          "top": 3.8
+        },
+        "stoop": 0.0,
+        "lean": 0.0,
+        "metro": {
+          "name": "ROKIN"
+        }
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.2,
+          3.3,
+          3.1,
+          2.9
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 804,
+        "lit": 0.3,
+        "z0": 22.05,
+        "z1": 30.0,
+        "x": 26.0,
+        "shop": {
+          "name": "BOEKHANDEL ROKIN",
+          "kind": "books",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.88,
+            0.7
+          ],
+          "frame": [
+            0.06,
+            0.12,
+            0.1
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "BOEKEN",
+          "awning": [
+            [
+              0.05,
+              0.2,
+              0.15
+            ],
+            [
+              0.8,
+              0.75,
+              0.62
+            ]
+          ]
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.2,
+          3.3,
+          3.1,
+          2.9
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 801,
+        "lit": 0.5,
+        "z0": 30.05,
+        "z1": 40.0,
+        "x": 26.0,
+        "shop": {
+          "name": "POLITIE",
+          "kind": "police",
+          "room": "unfinished_office_night",
+          "sign": [
+            0.95,
+            0.97,
+            1.0
+          ],
+          "frame": [
+            0.02,
+            0.06,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 28.8,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "POLITIE",
+          "enter": true
+        },
+        "stoop": 0.0,
+        "lean": 0.0
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.2,
+          3.3,
+          3.1,
+          2.9
+        ],
+        "bays": 3,
+        "gable": "bell",
+        "seed": 805,
+        "lit": 0.3,
+        "z0": 40.05,
+        "z1": 48.0,
+        "x": 26.0,
+        "door_bay": 1,
+        "stoop": 0.5,
+        "gable_h": 3.6
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 806,
+        "lit": 0.3,
+        "z0": 48.05,
+        "z1": 58.0,
+        "x": 26.0,
+        "shop": {
+          "name": "CAF\u00c9 DE KONINGIN",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "CAF\u00c9"
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.2,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "step",
+        "seed": 807,
+        "lit": 0.3,
+        "z0": 58.05,
+        "z1": 66.0,
+        "x": 26.0,
+        "shop": {
+          "name": "SIGARENMAGAZIJN",
+          "kind": "snack",
+          "room": "warm_restaurant_night",
+          "sign": [
+            1.0,
+            0.85,
+            0.2
+          ],
+          "frame": [
+            0.35,
+            0.04,
+            0.03
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "SIGAREN",
+          "awning": [
+            [
+              0.75,
+              0.05,
+              0.04
+            ],
+            [
+              0.95,
+              0.85,
+              0.2
+            ]
+          ]
+        },
+        "stoop": 0.0,
+        "gable_h": 3.6
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2
+        ],
+        "bays": 5,
+        "gable": "cornice",
+        "seed": 808,
+        "lit": 0.3,
+        "z0": 66.05,
+        "z1": 80.0,
+        "x": 26.0,
+        "shop": {
+          "name": "WISSELKANTOOR \u00b7 EXCHANGE",
+          "kind": "hotel",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.9,
+            0.8
+          ],
+          "frame": [
+            0.12,
+            0.1,
+            0.08
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "EXCHANGE"
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          6.0,
+          6.0,
+          6.0
+        ],
+        "bays": 11,
+        "gable": "cornice",
+        "seed": 809,
+        "lit": 0.3,
+        "z0": -75.0,
+        "z1": -12.0,
+        "x": -24.0,
+        "door_bay": 1,
+        "stoop": 0.5,
+        "lean": 0.0,
+        "classic": {
+          "height": 24.0,
+          "name": "",
+          "bays": 11,
+          "ground": 6.0
+        }
+      }
+    ]
+  },
+  "props": [
+    {
+      "type": "railing",
+      "pos": [
+        0.25,
+        0.0,
+        60.0
+      ],
+      "yaw": 90,
+      "size": [
+        40.0,
+        1.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "railing",
+      "pos": [
+        -8.0,
+        0.0,
+        40.25
+      ],
+      "yaw": 0,
+      "size": [
+        16.0,
+        1.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "equestrian",
+      "pos": [
+        3.2,
+        0.06,
+        42.6
+      ],
+      "yaw": 180,
+      "size": [
+        2.2,
+        3.4,
+        3.4
+      ],
+      "name": "WILHELMINA"
+    },
+    {
+      "type": "aid_post",
+      "pos": [
+        17.5,
+        0.0,
+        30.0
+      ],
+      "yaw": 90,
+      "size": [
+        4.0,
+        2.9,
+        4.0
+      ],
+      "covered": 1,
+      "seed": 3
+    },
+    {
+      "type": "vehicle",
+      "pos": [
+        11.0,
+        0.0,
+        24.0
+      ],
+      "yaw": 95,
+      "size": [
+        6.0,
+        2.6,
+        2.1
+      ],
+      "livery": "ambulance",
+      "van": true,
+      "door_open": "right"
+    },
+    {
+      "type": "vehicle",
+      "pos": [
+        22.0,
+        0.0,
+        46.0
+      ],
+      "yaw": 85,
+      "size": [
+        5.4,
+        2.3,
+        2.0
+      ],
+      "livery": "police",
+      "van": true,
+      "door_open": "left"
+    },
+    {
+      "type": "vehicle",
+      "pos": [
+        8.0,
+        0.0,
+        5.5
+      ],
+      "yaw": 10,
+      "size": [
+        6.4,
+        2.8,
+        2.3
+      ],
+      "livery": "army",
+      "van": true
+    },
+    {
+      "type": "model",
+      "model": "ph:concrete_road_barrier",
+      "pos": [
+        3.0,
+        0.0,
+        1.2
+      ],
+      "yaw": 0,
+      "fit": [
+        3.0,
+        1.0,
+        0.7
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:concrete_road_barrier",
+      "pos": [
+        13.0,
+        0.0,
+        1.2
+      ],
+      "yaw": 0,
+      "fit": [
+        3.0,
+        1.0,
+        0.7
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:concrete_road_barrier",
+      "pos": [
+        16.2,
+        0.0,
+        1.2
+      ],
+      "yaw": 0,
+      "fit": [
+        3.0,
+        1.0,
+        0.7
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:concrete_road_barrier",
+      "pos": [
+        19.4,
+        0.0,
+        1.2
+      ],
+      "yaw": 0,
+      "fit": [
+        3.0,
+        1.0,
+        0.7
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:concrete_road_barrier",
+      "pos": [
+        22.6,
+        0.0,
+        1.2
+      ],
+      "yaw": 0,
+      "fit": [
+        3.0,
+        1.0,
+        0.7
+      ]
+    },
+    {
+      "type": "sandbags",
+      "pos": [
+        24.5,
+        0.06,
+        2.5
+      ],
+      "yaw": 0,
+      "size": [
+        3.0,
+        1.1,
+        0.5
+      ],
+      "seed": 8
+    },
+    {
+      "type": "evac_board",
+      "pos": [
+        5.5,
+        0.0,
+        7.5
+      ],
+      "yaw": 0,
+      "size": [
+        1.8,
+        1.9,
+        0.6
+      ],
+      "arrow": "up",
+      "text": "EVACUATIE VIA DAM",
+      "to": "CENTRAAL",
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:Megaphone_01",
+      "pos": [
+        14.5,
+        0.0,
+        6.5
+      ],
+      "yaw": 70,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:old_gas_mask",
+      "pos": [
+        16.4,
+        0.0,
+        8.6
+      ],
+      "yaw": 200,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_jerrycan_green",
+      "pos": [
+        11.6,
+        0.0,
+        3.6
+      ],
+      "yaw": 30,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        21.5,
+        0.06,
+        16.245833333333334
+      ],
+      "size": [
+        3.0,
+        0.0,
+        4.5
+      ],
+      "seed": 9,
+      "cases": 4,
+      "bags": 3,
+      "chair": true,
+      "crutches": true,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        9.0,
+        0.0,
+        38.0
+      ],
+      "size": [
+        5.0,
+        0.0,
+        4.0
+      ],
+      "seed": 10,
+      "cases": 2,
+      "bags": 3,
+      "pushchair": false,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        12.0,
+        0.0,
+        40.0
+      ],
+      "size": [
+        26.0,
+        0.0,
+        76.0
+      ],
+      "seed": 11,
+      "count": 300,
+      "collide": false
+    },
+    {
+      "type": "sandbags",
+      "pos": [
+        25.3,
+        0.06,
+        29.6875
+      ],
+      "yaw": 90,
+      "size": [
+        3.6,
+        0.6,
+        0.45
+      ],
+      "seed": 12
+    },
+    {
+      "type": "sandbags",
+      "pos": [
+        25.3,
+        0.06,
+        35.8875
+      ],
+      "yaw": 90,
+      "size": [
+        3.0,
+        0.6,
+        0.45
+      ],
+      "seed": 13
+    },
+    {
+      "type": "model",
+      "model": "ph:lifebuoy",
+      "pos": [
+        0.35,
+        0.55,
+        64.0
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        1.0,
+        0.06,
+        20.0
+      ],
+      "yaw": 10,
+      "roll": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 150
+    },
+    {
+      "type": "bike",
+      "pos": [
+        1.6,
+        0.06,
+        21.0
+      ],
+      "yaw": 160,
+      "roll": -82,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 151
+    }
+  ],
+  "walls": {
+    "south": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 13.0,
+          "width": 26.0,
+          "height": 10.0
+        }
+      ]
+    },
+    "east": {
+      "openings": [
+        {
+          "kind": "door",
+          "style": "glass",
+          "center": 16.2458,
+          "width": 1.4583,
+          "height": 3.25,
+          "hinge": "left"
+        },
+        {
+          "kind": "door",
+          "style": "glass",
+          "center": 32.6875,
+          "width": 1.4583,
+          "height": 2.25,
+          "hinge": "left"
+        }
+      ]
+    }
+  },
+  "lights": [
+    {
+      "kind": "sun",
+      "dir_from": [
+        -0.35,
+        0.55,
+        1.0
+      ],
+      "color": [
+        0.55,
+        0.66,
+        1.0
+      ],
+      "blender_power": 0.12,
+      "godot_energy": 0.25,
+      "angle": 2.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        17.5,
+        2.0,
+        30.0
+      ],
+      "color": [
+        0.95,
+        0.97,
+        1.0
+      ],
+      "blender_power": 0,
+      "godot_energy": 0.9,
+      "range": 9.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        22.0,
+        2.6,
+        46.0
+      ],
+      "color": [
+        0.15,
+        0.3,
+        1.0
+      ],
+      "blender_power": 0,
+      "godot_energy": 0.8,
+      "range": 7.0,
+      "flicker": true
+    },
+    {
+      "kind": "point",
+      "pos": [
+        11.0,
+        2.9,
+        24.0
+      ],
+      "color": [
+        0.15,
+        0.3,
+        1.0
+      ],
+      "blender_power": 0,
+      "godot_energy": 0.7,
+      "range": 7.0,
+      "flicker": true
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        3.2,
+        3.2,
+        79.0
+      ],
+      "look_at": [
+        20.0,
+        2.0,
+        56.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          60.0
+        ],
+        "max": [
+          26.0,
+          80.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        20.5,
+        3.0,
+        63.0
+      ],
+      "look_at": [
+        4.0,
+        3.6,
+        41.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          40.0
+        ],
+        "max": [
+          26.0,
+          60.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "c",
+      "pos": [
+        6.5,
+        3.4,
+        39.0
+      ],
+      "look_at": [
+        24.0,
+        1.6,
+        22.0
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          0.0,
+          20.0
+        ],
+        "max": [
+          26.0,
+          40.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "d",
+      "pos": [
+        21.0,
+        3.6,
+        24.5
+      ],
+      "look_at": [
+        9.0,
+        4.0,
+        -14.0
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          26.0,
+          20.0
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_rokin_zuid": {
+      "pos": [
+        13.0,
+        0.0,
+        78.5
+      ],
+      "yaw": 0
+    },
+    "from_politiepost": {
+      "pos": [
+        24.6,
+        0.06,
+        32.6875
+      ],
+      "yaw": 90
+    },
+    "from_metro": {
+      "pos": [
+        24.6,
+        0.06,
+        16.245833333333334
+      ],
+      "yaw": 90
+    }
+  },
+  "interactables": [
+    {
+      "id": "door_politie",
+      "kind": "door",
+      "pos": [
+        25.55,
+        1.0,
+        32.6875
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "door_metro",
+      "kind": "door",
+      "pos": [
+        25.55,
+        1.0,
+        16.245833333333334
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "wilhelmina",
+      "kind": "examine",
+      "pos": [
+        3.2,
+        1.0,
+        45.4
+      ],
+      "radius": 1.8,
+      "text": "Queen Wilhelmina on her horse, looking north up Rokin. Someone has tied a child's balloon to her stirrup."
+    },
+    {
+      "id": "checkpoint",
+      "kind": "examine",
+      "pos": [
+        12.0,
+        1.0,
+        2.6
+      ],
+      "radius": 2.6,
+      "text": "An army checkpoint across the end of Rokin, abandoned: the barriers still up, a megaphone in the road. The Dam is beyond it."
+    },
+    {
+      "id": "aid_post",
+      "kind": "examine",
+      "pos": [
+        15.0,
+        1.0,
+        30.0
+      ],
+      "radius": 1.6,
+      "text": "A first aid post. They were checking everyone here before the trams. Under the sheet is someone they couldn't help."
+    },
+    {
+      "id": "shells_van",
+      "kind": "pickup",
+      "item": "shotgun_shells",
+      "count": 4,
+      "pos": [
+        21.0,
+        0.0,
+        48.6
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "dressing_aid",
+      "kind": "pickup",
+      "item": "med_small",
+      "count": 1,
+      "pos": [
+        16.4,
+        0.78,
+        28.6
+      ],
+      "radius": 0.9
+    }
+  ],
+  "enemies": [
+    {
+      "id": "bij_de_koningin",
+      "kind": "verdronkene",
+      "pos": [
+        6.0,
+        0.06,
+        50.0
+      ],
+      "yaw": 160
+    },
+    {
+      "id": "bij_de_ambulance",
+      "kind": "verdronkene",
+      "pos": [
+        13.0,
+        0.0,
+        27.0
+      ],
+      "yaw": 20
+    }
+  ]
+}

@@ -18,6 +18,8 @@ import street
 from roomspec import g2b
 from street import Acc, M, lbox, rod, text, ball
 
+STEEL = {"color": [0.6, 0.61, 0.63], "rough": 0.35, "metal": 0.9}
+
 PLY = {"color": [0.55, 0.45, 0.32], "rough": 0.8, "noise": 0.3}
 SPRAY_RED = {"color": [0.6, 0.03, 0.02], "rough": 0.6}
 SPRAY_BLACK = {"color": [0.02, 0.02, 0.02], "rough": 0.6}
@@ -153,7 +155,9 @@ def aid_post(root, p, w, h, d):
     its clipboards, stretchers, a floodlight on a stand fed by a generator, lit, and ("covered": n)
     a body or two under sheets."""
     rng = random.Random(p.get("seed", 19))
-    canvas, steel = M(CANVAS), M({"color": [0.6, 0.6, 0.62], "rough": 0.35, "metal": 0.9})
+    military = p.get("military", False)   # the army's field hospital: olive drab, a red cross on white
+    canvas = M({"color": [0.24, 0.26, 0.17], "rough": 0.9, "noise": 0.2} if military else CANVAS)
+    steel = M({"color": [0.6, 0.6, 0.62], "rough": 0.35, "metal": 0.9})
     for sx in (-1, 1):
         for sz in (-1, 1):
             rod(root, "tent_leg", (sx * w / 2, 0.0, sz * d / 2), (sx * w / 2, 2.1, sz * d / 2), 0.025, 0.025, steel)
@@ -164,8 +168,14 @@ def aid_post(root, p, w, h, d):
     roof.build("tent_roof", canvas, root, smooth=False)
     for sz in (-1,):   # a valance with the cross on it, on the back
         lbox(root, "tent_valance", (-w / 2, 1.85, sz * d / 2 - 0.01), (w / 2, 2.1, sz * d / 2 + 0.01), canvas)
-    text(root, p.get("name", "EHBO · HULPPOST"), (0.0, 1.97, d / 2 + 0.02), 0.13, M({"color": [0.05, 0.3, 0.12], "rough": 0.6}),
-         font="DejaVuSans-Bold.ttf", depth=0.0)
+    if military:   # the red cross on a white field, on the front valance
+        lbox(root, "cross_field", (-0.45, 1.86, d / 2 + 0.005), (0.45, 2.09, d / 2 + 0.015), M({"color": [0.9, 0.9, 0.88], "rough": 0.7}))
+        red = M({"color": [0.75, 0.04, 0.03], "rough": 0.6})
+        lbox(root, "cross_v", (-0.04, 1.89, d / 2 + 0.016), (0.04, 2.06, d / 2 + 0.02), red)
+        lbox(root, "cross_h", (-0.1, 1.94, d / 2 + 0.016), (0.1, 2.01, d / 2 + 0.02), red)
+    else:
+        text(root, p.get("name", "EHBO · HULPPOST"), (0.0, 1.97, d / 2 + 0.02), 0.13, M({"color": [0.05, 0.3, 0.12], "rough": 0.6}),
+             font="DejaVuSans-Bold.ttf", depth=0.0)
     lbox(root, "aid_table", (-0.9, 0.72, -d / 2 + 0.3), (0.9, 0.76, -d / 2 + 1.0), M({"color": [0.85, 0.85, 0.82], "rough": 0.5}))
     for sx in (-1, 1):
         rod(root, "table_leg", (sx * 0.85, 0.0, -d / 2 + 0.65), (sx * 0.85, 0.72, -d / 2 + 0.65), 0.02, 0.02, steel)
@@ -201,7 +211,7 @@ def aid_post(root, p, w, h, d):
 LIVERY = {   # body, stripe a, stripe b, word, roof light
     "car": ((0.12, 0.13, 0.15), None, None, "", None),
     "taxi": ((0.02, 0.02, 0.025), None, None, "TAXI", (1.0, 0.85, 0.4)),
-    "police": ((0.9, 0.9, 0.9), (0.08, 0.15, 0.55), (0.9, 0.35, 0.05), "POLITIE", (0.1, 0.25, 1.0)),
+    "police": ((0.72, 0.72, 0.72), (0.08, 0.15, 0.55), (0.9, 0.35, 0.05), "POLITIE", (0.1, 0.25, 1.0)),
     "ambulance": ((0.92, 0.8, 0.05), (0.1, 0.45, 0.15), (0.92, 0.8, 0.05), "AMBULANCE", (0.1, 0.25, 1.0)),
     "army": ((0.16, 0.18, 0.12), None, None, "", None),
 }
@@ -298,6 +308,86 @@ def fire_pump(root, p, w, h, d):
     for a, b in zip(pts, pts[1:]):
         hose.rod(a, b, 0.045, 0.045, 8)
     hose.build("hose", M({"color": [0.75, 0.68, 0.5], "rough": 0.7}), root)
+
+
+# ── The evacuation point ────────────────────────────────────────────────────────────────
+def bus(root, p, w, h, d):
+    """A city bus along local x (front +x), w long ("bendy": two halves and the bellows): white and
+    grey, its saloon lit, the doors open, the destination display saying where everyone was sent."""
+    body = M({"color": [0.82, 0.83, 0.84], "rough": 0.3, "metal": 0.3})
+    band = M({"color": [0.12, 0.16, 0.22], "rough": 0.35})
+    dark = M({"color": [0.02, 0.02, 0.02], "rough": 0.5})
+    inside = builders.emissive("bus_inside", (0.95, 0.97, 1.0), 0.6)
+    halves = ((-w / 2, -0.3), (0.3, w / 2)) if p.get("bendy", w > 14.0) else ((-w / 2, w / 2),)
+    for x0, x1 in halves:
+        lbox(root, "bus_skirt", (x0, 0.35, -d / 2), (x1, 1.05, d / 2), body)
+        lbox(root, "bus_roof", (x0, h - 0.45, -d / 2), (x1, h, d / 2), body)
+        lbox(root, "bus_band", (x0, 1.0, -d / 2 - 0.005), (x1, 1.1, d / 2 + 0.005), band)
+        lbox(root, "bus_saloon", (x0 + 0.3, 1.05, -0.02), (x1 - 0.3, h - 0.45, 0.02), inside)
+        for sz in (-1, 1):
+            lbox(root, "bus_window", (x0 + 0.1, 1.1, sz * d / 2 - 0.01), (x1 - 0.1, h - 0.5, sz * d / 2 + 0.01), M("glass"))
+            for k in range(int((x1 - x0) / 1.4) + 1):
+                xx = x0 + 0.1 + k * 1.4
+                lbox(root, "bus_pillar", (xx - 0.05, 1.1, sz * d / 2 - 0.012), (xx + 0.05, h - 0.5, sz * d / 2 + 0.012), dark)
+        for xx in (x0 + 1.4, x1 - 1.4):
+            for sz in (-1, 1):
+                t = kit.lathe(root, "bus_tyre", [(0.0, -0.15), (0.5, -0.15), (0.5, 0.15), (0.0, 0.15)], dark, segments=16)
+                t.rotation_euler[0] = math.radians(90)
+                t.location = g2b((xx, 0.5, sz * (d / 2 - 0.15)))
+    if len(halves) > 1:
+        lbox(root, "bus_bellows", (-0.3, 0.4, -d / 2 + 0.1), (0.3, h - 0.1, d / 2 - 0.1), dark)
+    lbox(root, "bus_windscreen", (w / 2 - 0.02, 1.0, -d / 2 + 0.1), (w / 2 + 0.02, h - 0.4, d / 2 - 0.1), M("glass"))
+    lbox(root, "bus_display", (w / 2 + 0.01, h - 0.4, -d / 2 + 0.25), (w / 2 + 0.03, h - 0.1, d / 2 - 0.25), dark)
+    text(root, p.get("board", "EVACUATIE · CENTRAAL"), (w / 2 + 0.04, h - 0.25, 0.0), 0.16, builders.emissive("bus_board", (1.0, 0.65, 0.1), 6.0),
+         font="DejaVuSansMono-Bold.ttf", depth=0.0, yaw=90.0)
+    for sz in (-1, 1):
+        lbox(root, "bus_headlight", (w / 2 - 0.02, 0.55, sz * (d / 2 - 0.3) - 0.12), (w / 2 + 0.02, 0.7, sz * (d / 2 - 0.3) + 0.12),
+             builders.emissive("headlight", (1.0, 0.95, 0.85), 12.0))
+    for xx in (w * 0.3, -w * 0.1) if len(halves) > 1 else (w * 0.3,):   # its doors folded open on the kerb side (+z)
+        lbox(root, "bus_door_open", (xx - 0.6, 0.35, d / 2 - 0.03), (xx + 0.6, h - 0.5, d / 2 + 0.005), inside)
+
+
+def light_tower(root, p, w, h, d):
+    """A mobile lighting mast on its trailer: a telescopic mast h high, four floodlights at the top
+    blazing down on the square, the generator box humming. (Its light is a real light.)"""
+    yellow = M({"color": [0.85, 0.65, 0.05], "rough": 0.4, "metal": 0.3})
+    steel = M(STEEL)
+    lbox(root, "lt_trailer", (-1.1, 0.35, -0.7), (1.1, 1.5, 0.7), yellow)
+    for sz in (-1, 1):
+        t = kit.lathe(root, "lt_wheel", [(0.0, -0.1), (0.33, -0.1), (0.33, 0.1), (0.0, 0.1)], M({"color": [0.02, 0.02, 0.02], "rough": 0.5}), segments=12)
+        t.rotation_euler[0] = math.radians(90)
+        t.location = g2b((0.0, 0.33, sz * 0.75))
+    rod(root, "lt_mast", (0.0, 1.5, 0.0), (0.0, h, 0.0), 0.08, 0.05, steel)
+    rod(root, "lt_bar", (-0.9, h, 0.0), (0.9, h, 0.0), 0.04, 0.04, steel)
+    head = builders.emissive("lt_head", (0.95, 0.97, 1.0), 25.0)
+    for sx in (-0.65, -0.22, 0.22, 0.65):
+        lbox(root, "lt_head", (sx - 0.18, h - 0.25, 0.05), (sx + 0.18, h + 0.1, 0.25), head)
+    import landmarks
+    tgt = p.get("aim", [0.0, 0.0, 8.0])
+    landmarks.spot(root, (0.0, h - 0.2, 0.4), tuple(tgt), p.get("power", 4000.0), (0.95, 0.97, 1.0), size=70.0)
+
+
+def camp_bed(root, p, w, h, d):
+    """A folding camp bed (veldbed) along local z: green canvas on an aluminium frame, a grey blanket
+    thrown back or ("occupied") a shape under it, a pillow, a bag at its foot."""
+    rng = random.Random(p.get("seed", 31))
+    canvas = M({"color": [0.2, 0.25, 0.15], "rough": 0.9, "noise": 0.2})
+    alu = M({"color": [0.7, 0.71, 0.72], "rough": 0.3, "metal": 0.9})
+    lbox(root, "bed_canvas", (-w / 2, h - 0.04, -d / 2), (w / 2, h, d / 2), canvas)
+    for sx in (-1, 1):
+        rod(root, "bed_rail", (sx * w / 2, h, -d / 2), (sx * w / 2, h, d / 2), 0.015, 0.015, alu)
+    for z in (-d / 2 + 0.1, 0.0, d / 2 - 0.1):
+        rod(root, "bed_leg", (-w / 2, 0.0, z), (w / 2, h, z), 0.012, 0.012, alu)
+        rod(root, "bed_leg", (w / 2, 0.0, z), (-w / 2, h, z), 0.012, 0.012, alu)
+    blanket = M({"color": list(rng.choice([(0.35, 0.35, 0.36), (0.42, 0.38, 0.3), (0.3, 0.33, 0.4)])), "rough": 0.95, "noise": 0.3})
+    if p.get("occupied"):
+        kit.soft(root, "bed_shape", (0.0, h + 0.12, 0.1), (w * 0.7, 0.22, d * 0.75), blanket, 0.09, 3)
+    else:
+        kit.soft(root, "bed_blanket", (0.0, h + 0.04, d * 0.25), (w + 0.05, 0.06, d * 0.45), blanket, 0.03, 2)
+    kit.soft(root, "bed_pillow", (0.0, h + 0.07, -d / 2 + 0.25), (w * 0.8, 0.1, 0.35), M({"color": [0.85, 0.85, 0.82], "rough": 0.9}), 0.04, 2)
+
+
+kit.PROPS.update({"bus": bus, "light_tower": light_tower, "camp_bed": camp_bed})
 
 
 kit.PROPS.update({"evac_board": evac_board, "leaflets": leaflets, "luggage": luggage, "broken_glass": broken_glass,

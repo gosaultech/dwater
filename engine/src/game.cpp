@@ -1062,6 +1062,52 @@ std::string Game::stage(int i) {
             TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
             break;
         }
+        case 53: case 54: case 55: case 56: case 57: case 58: case 59: case 60: {
+            // Rokin: through the gap in the barriers off Muntplein (the next district: a beat), the
+            // tour boats, into the hotel, the queen on her horse, the aid post, the police post's
+            // armoury, the flooded metro, the checkpoint at the Dam.
+            if (i == 53) {
+                at("muntplein", 31.0f, 3.2f, 0.0f);   // at the knocked-down barrier, facing north
+                staged_in_ = stick_toward(0, -1, 0.5f);
+                run(3.6f);
+                name = "onto_rokin";
+            } else if (i == 54) {
+                at("rokin_zuid", 4.5f, 31.0f, 0.4f);   // on the quay, the boats ahead
+                run(0.6f);
+                name = "the_tour_boats";
+            } else if (i == 55) {
+                const int door = doorway_of(room_index("rokin_zuid"), "door_hotel");
+                at("rokin_zuid", 24.8f, 27.2f, -kPi / 2);   // at the hotel's glass door, facing it (east)
+                if (door >= 0) player_.z = doorways_[size_t(door)].mid_z();
+                interact();
+                run(0.7f);
+                staged_in_ = stick_toward(1, 0, 0.5f);
+                run(2.2f);
+                name = "into_the_hotel";
+            } else if (i == 56) {
+                at("rokin_noord", 8.0f, 47.5f, 0.6f);   // the queen at the head of the basin
+                run(0.6f);
+                name = "wilhelmina";
+            } else if (i == 57) {
+                at("rokin_noord", 13.5f, 33.5f, -1.2f);   // by the tent
+                run(0.6f);
+                name = "the_aid_post";
+            } else if (i == 58) {
+                at("politiepost", 7.4f, 6.6f, -2.2f);   // behind the counter, the cage ahead
+                run(0.6f);
+                name = "the_armoury";
+            } else if (i == 59) {
+                at("metro_rokin", 4.8f, 3.4f, -kPi / 2);   // at the gates, the escalators beyond
+                run(0.6f);
+                name = "the_flooded_metro";
+            } else {
+                at("rokin_noord", 12.0f, 10.0f, 0.0f);   // the checkpoint ahead, the Dam beyond
+                run(0.6f);
+                name = "the_checkpoint";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
+            break;
+        }
         default: {   // bitten once too often: the words coming up (26), and all of it, the choice there (14)
             join(1, 1.0f, 8.3f, 0.0f, EState::Pursuit);
             player_ = {1.0f, 7.4f, kPi};

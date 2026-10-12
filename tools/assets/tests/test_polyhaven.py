@@ -109,3 +109,14 @@ class CacheTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CodeReferencesTest(unittest.TestCase):
+    def test_models_and_textures_named_in_kit_code(self):
+        src = """kit.model(lion, {"model": "ph:lion_head", "fit": [1, 1, 1]})
+_model(root, "ph:vintage_suitcase", (0, 0, 0))
+wood = M({"ph": "dark_wood", "tint": [0.5, 0.4, 0.3]})
+note = "ph: not an id" """
+        refs = polyhaven.code_references(src)
+        self.assertEqual(refs, {"lion_head": "model", "vintage_suitcase": "model", "dark_wood": "texture"})
+

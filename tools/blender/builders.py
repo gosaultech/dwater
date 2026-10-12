@@ -530,6 +530,8 @@ def build_prop(p, room_h):
     import landmarks  # noqa: F401  (the Munttoren, the flower stalls)
     import shops  # noqa: F401  (shop interiors: shelving, counters, the cinema's booth)
     import aftermath  # noqa: F401  (what the evacuation left: luggage, vehicles, sandbags, the aid post)
+    import fair  # noqa: F401  (the Dam's funfair: the wheel, the drop tower, the carousel, the stalls)
+    import church  # noqa: F401  (the Nieuwe Kerk inside: piers, arcades, the vault, the organ)
     if t in kit.PROPS:   # the detailed kit: sofas, kasten, the marble mantel, models...
         return kit.build_prop(p, room_h)
     size = p.get("size", [0.45, 0.95, 0.45])

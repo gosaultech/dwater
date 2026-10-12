@@ -484,6 +484,21 @@ def shopfront(root, f, W, s0, rng):
         for sgn in (-1, 1):
             text(root, sh["blade"], (bu + sgn * 0.045, top_v + 0.82, 0.55), 0.13, sign_m, yaw=90 * sgn,
                  font=sh.get("font", "DejaVuSerif-Bold.ttf"))
+    if sh.get("shutter"):   # the roller shutter pulled down over the glass ("shutter": how far, 0..1), ribbed steel
+        drop = sh["shutter"]
+        steel = M({"color": [0.42, 0.44, 0.46], "rough": 0.45, "metal": 0.7, "noise": 0.35})
+        y0 = top_v - (top_v - 0.0) * drop
+        lbox(root, "shutter_box", (u0 - 0.05, top_v - 0.05, -0.12), (u1 + 0.05, top_v + 0.25, 0.1), steel)
+        lbox(root, "shutter", (u0, y0, -0.06), (u1, top_v, -0.04), steel)
+        ribs = Acc()
+        y = y0 + 0.08
+        while y < top_v - 0.05:
+            ribs.box((u0, y, -0.04), (u1, y + 0.02, -0.025))
+            y += 0.1
+        ribs.build("shutter_ribs", M({"color": [0.3, 0.32, 0.34], "rough": 0.5, "metal": 0.6}), root, smooth=False)
+        if sh.get("tag"):   # sprayed on it
+            text(root, sh["tag"], ((u0 + u1) / 2, (y0 + top_v) / 2, -0.02), 0.32, M({"color": list(sh.get("tag_color", (0.75, 0.05, 0.05))), "rough": 0.6}),
+                 font="DejaVuSans-Bold.ttf", depth=0.0)
     if sh.get("cross"):   # an apotheek: the green neon cross out over the pavement
         import landmarks
         landmarks.green_cross(root, (W - 0.2, top_v + 1.0, 0.75))

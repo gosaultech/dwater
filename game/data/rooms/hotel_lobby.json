@@ -1,0 +1,617 @@
+{
+  "_file": "damned_waters/game/data/rooms/hotel_lobby.json \u2014 RoomSpec for Grand Hotel de Keizerskroon (the city, district 3: Rokin): the lobby of a grand hotel on Rokin: marble floor, gilt pilasters, the reception desk with the keys still on their hooks, armchairs, the lift's brass doors; by the door, the guests' luggage, left when the buses came. Its front wall is the street's shopfront (\"facade\": the street builds it); its door is the street's. Every business name is made up. Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "hotel_lobby",
+  "display_name": "Grand Hotel de Keizerskroon",
+  "storey": 12,
+  "origin": [
+    909.6999999999999,
+    -125.25000000000001
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      12.0,
+      14.95
+    ]
+  },
+  "height": 4.6,
+  "materials": {
+    "floor": "ph:marble_01",
+    "wall": {
+      "color": [
+        0.62,
+        0.55,
+        0.44
+      ],
+      "rough": 0.6,
+      "noise": 0.08
+    },
+    "ceiling": {
+      "color": [
+        0.75,
+        0.7,
+        0.62
+      ],
+      "rough": 0.6
+    },
+    "skirting": {
+      "color": [
+        0.2,
+        0.15,
+        0.1
+      ],
+      "rough": 0.4
+    },
+    "skirting_height": 0.15
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.01,
+      0.012,
+      0.016
+    ],
+    "strength": 0.5
+  },
+  "render": {
+    "exposure": 1.0,
+    "bloom": {
+      "threshold": 0.95,
+      "strength": 0.25,
+      "size": 0.5
+    }
+  },
+  "walls": {
+    "west": {
+      "facade": true,
+      "openings": [
+        {
+          "kind": "door",
+          "style": "glass",
+          "center": 8.1925,
+          "width": 1.335,
+          "height": 2.25,
+          "hinge": "left"
+        }
+      ]
+    },
+    "north": {
+      "openings": [
+        {
+          "kind": "door",
+          "center": 8.0,
+          "width": 1.6,
+          "height": 2.4
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "counter",
+      "pos": [
+        10.4,
+        0.0,
+        7.475
+      ],
+      "size": [
+        4.4,
+        1.1,
+        0.7
+      ],
+      "yaw": -90,
+      "material": {
+        "ph": "rosewood_veneer1",
+        "tint": [
+          0.6,
+          0.42,
+          0.32
+        ],
+        "scale": 0.6
+      }
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        11.7,
+        0.0,
+        7.475
+      ],
+      "size": [
+        3.0,
+        2.2,
+        0.35
+      ],
+      "yaw": -90,
+      "palette": "souvenir",
+      "empty": 0.5,
+      "seed": 11,
+      "shelves": 5,
+      "frame": {
+        "ph": "rosewood_veneer1",
+        "tint": [
+          0.55,
+          0.38,
+          0.28
+        ],
+        "scale": 0.6
+      },
+      "fallen": 0
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        11.96,
+        2.9,
+        7.475
+      ],
+      "size": [
+        2.6,
+        0.45,
+        0.03
+      ],
+      "yaw": -90,
+      "text": "RECEPTIE",
+      "color": [
+        1.0,
+        0.8,
+        0.45
+      ],
+      "glow": 2.5,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:ArmChair_01",
+      "pos": [
+        3.0,
+        0.0,
+        3.0
+      ],
+      "yaw": 60,
+      "scale": 1.0,
+      "size": [
+        0.8,
+        0.9,
+        0.8
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:ArmChair_01",
+      "pos": [
+        5.0,
+        0.0,
+        2.6
+      ],
+      "yaw": -20,
+      "scale": 1.0,
+      "size": [
+        0.8,
+        0.9,
+        0.8
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:ArmChair_01",
+      "pos": [
+        3.4,
+        0.0,
+        11.95
+      ],
+      "yaw": 130,
+      "scale": 1.0,
+      "size": [
+        0.8,
+        0.9,
+        0.8
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:CoffeeTable_01",
+      "pos": [
+        4.0,
+        0.0,
+        4.0
+      ],
+      "yaw": 10,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.5,
+        0.6
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:Chandelier_01",
+      "pos": [
+        6.0,
+        3.3,
+        3.9749999999999996
+      ],
+      "yaw": 0,
+      "fit": [
+        1.4,
+        1.3,
+        1.4
+      ],
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:Chandelier_01",
+      "pos": [
+        6.0,
+        3.3,
+        10.975
+      ],
+      "yaw": 0,
+      "fit": [
+        1.4,
+        1.3,
+        1.4
+      ],
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_01",
+      "pos": [
+        0.8,
+        0.0,
+        0.8
+      ],
+      "yaw": 0,
+      "scale": 1.2,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_01",
+      "pos": [
+        0.8,
+        0.0,
+        14.149999999999999
+      ],
+      "yaw": 90,
+      "scale": 1.2,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        2.6,
+        0.0,
+        10.5925
+      ],
+      "size": [
+        2.4,
+        0.0,
+        2.6
+      ],
+      "seed": 7,
+      "cases": 5,
+      "bags": 2,
+      "umbrella": false,
+      "collide": false
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        8.0,
+        2.65,
+        0.04
+      ],
+      "size": [
+        1.4,
+        0.35,
+        0.03
+      ],
+      "text": "LIFT",
+      "color": [
+        0.8,
+        0.62,
+        0.3
+      ],
+      "lit": false,
+      "panel": {
+        "color": [
+          0.55,
+          0.4,
+          0.18
+        ],
+        "rough": 0.3,
+        "metal": 0.9
+      },
+      "collide": false
+    },
+    {
+      "type": "pilaster",
+      "pos": [
+        11.97,
+        0.0,
+        1.5
+      ],
+      "yaw": -90,
+      "size": [
+        0.45,
+        4.6,
+        0.18
+      ],
+      "material": {
+        "color": [
+          0.85,
+          0.82,
+          0.75
+        ],
+        "rough": 0.3
+      },
+      "lamp": true,
+      "collide": false
+    },
+    {
+      "type": "pilaster",
+      "pos": [
+        11.97,
+        0.0,
+        4.475
+      ],
+      "yaw": -90,
+      "size": [
+        0.45,
+        4.6,
+        0.18
+      ],
+      "material": {
+        "color": [
+          0.85,
+          0.82,
+          0.75
+        ],
+        "rough": 0.3
+      },
+      "lamp": true,
+      "collide": false
+    },
+    {
+      "type": "pilaster",
+      "pos": [
+        11.97,
+        0.0,
+        10.475
+      ],
+      "yaw": -90,
+      "size": [
+        0.45,
+        4.6,
+        0.18
+      ],
+      "material": {
+        "color": [
+          0.85,
+          0.82,
+          0.75
+        ],
+        "rough": 0.3
+      },
+      "lamp": true,
+      "collide": false
+    },
+    {
+      "type": "pilaster",
+      "pos": [
+        11.97,
+        0.0,
+        13.45
+      ],
+      "yaw": -90,
+      "size": [
+        0.45,
+        4.6,
+        0.18
+      ],
+      "material": {
+        "color": [
+          0.85,
+          0.82,
+          0.75
+        ],
+        "rough": 0.3
+      },
+      "lamp": true,
+      "collide": false
+    }
+  ],
+  "lights": [
+    {
+      "kind": "point",
+      "pos": [
+        6.0,
+        3.2,
+        3.9749999999999996
+      ],
+      "color": [
+        1.0,
+        0.8,
+        0.55
+      ],
+      "blender_power": 300,
+      "godot_energy": 0.8,
+      "range": 9.0,
+      "radius": 0.3
+    },
+    {
+      "kind": "point",
+      "pos": [
+        6.0,
+        3.2,
+        10.975
+      ],
+      "color": [
+        1.0,
+        0.8,
+        0.55
+      ],
+      "blender_power": 260,
+      "godot_energy": 0.8,
+      "range": 9.0,
+      "radius": 0.3
+    },
+    {
+      "kind": "point",
+      "pos": [
+        11.0,
+        2.4,
+        7.475
+      ],
+      "color": [
+        1.0,
+        0.75,
+        0.45
+      ],
+      "blender_power": 40,
+      "godot_energy": 0.3,
+      "range": 4.0,
+      "radius": 0.1
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        1.0,
+        3.4,
+        14.149999999999999
+      ],
+      "look_at": [
+        11.0,
+        1.0,
+        5.475
+      ],
+      "fov": 64,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          6.0,
+          14.95
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        11.2,
+        3.4,
+        0.8
+      ],
+      "look_at": [
+        1.0,
+        1.2,
+        11.95
+      ],
+      "fov": 64,
+      "zone": {
+        "min": [
+          6.0,
+          0.0
+        ],
+        "max": [
+          12.0,
+          14.95
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_street": {
+      "pos": [
+        0.8,
+        0.0,
+        8.192499999999999
+      ],
+      "yaw": -90
+    }
+  },
+  "interactables": [
+    {
+      "id": "door_street",
+      "kind": "door",
+      "pos": [
+        0.45,
+        1.0,
+        8.192499999999999
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "first_aid_reception",
+      "kind": "pickup",
+      "item": "first_aid",
+      "count": 1,
+      "pos": [
+        10.4,
+        1.12,
+        8.875
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "keys",
+      "kind": "examine",
+      "pos": [
+        10.0,
+        1.0,
+        6.475
+      ],
+      "radius": 1.3,
+      "text": "Every key still on its hook. The register is open at tonight's page; the last guest signed in at 22:51."
+    },
+    {
+      "id": "lift",
+      "kind": "examine",
+      "pos": [
+        8.0,
+        1.0,
+        0.5
+      ],
+      "radius": 1.1,
+      "text": "The lift is stuck between floors. Something inside it is knocking, slowly."
+    },
+    {
+      "id": "luggage",
+      "kind": "examine",
+      "pos": [
+        2.6,
+        1.0,
+        10.5925
+      ],
+      "radius": 1.4,
+      "text": "Labels from Osaka, Lyon, Leeds. They left it all by the door when the buses came, meaning to come back for it."
+    }
+  ],
+  "enemies": [
+    {
+      "id": "de_portier",
+      "kind": "verdronkene",
+      "pos": [
+        9.0,
+        0.0,
+        5.074999999999999
+      ],
+      "yaw": -90
+    }
+  ]
+}

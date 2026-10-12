@@ -37,6 +37,15 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/Chandelier_02"
   },
+  "Chandelier_03": {
+   "kind": "model",
+   "name": "Chandelier 03",
+   "authors": [
+    "Kirill Sannikov"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/Chandelier_03"
+  },
   "ClassicConsole_01": {
    "kind": "model",
    "name": "Classic Console 01",
@@ -73,6 +82,15 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/WetFloorSign_01"
   },
+  "ammo_box": {
+   "kind": "model",
+   "name": "Ammo Box",
+   "authors": [
+    "DanKit"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/ammo_box"
+  },
   "antique_ceramic_vase_01": {
    "kind": "model",
    "name": "Antique Ceramic Vase 01",
@@ -90,6 +108,15 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/bark_platanus"
+  },
+  "bolt_action_rifle_7_62": {
+   "kind": "model",
+   "name": "Bolt Action Rifle 7.62",
+   "authors": [
+    "Mateusz Sadek"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/bolt_action_rifle_7_62"
   },
   "brick_pavement_02": {
    "kind": "texture",
@@ -128,6 +155,15 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/brick_wall_10"
+  },
+  "cardboard_box_01": {
+   "kind": "model",
+   "name": "Cardboard Box 01",
+   "authors": [
+    "Rahul Chaudhary"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/cardboard_box_01"
   },
   "christmas_photo_studio_04": {
    "kind": "hdri",
@@ -239,6 +275,15 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/distressed_painted_planks"
+  },
+  "drawer_cabinet": {
+   "kind": "model",
+   "name": "Drawer Cabinet",
+   "authors": [
+    "Ulan Cabanilla"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/drawer_cabinet"
   },
   "fancy_picture_frame_01": {
    "kind": "model",
@@ -435,6 +480,15 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/lantern_chandelier_01"
   },
+  "large_floor_tiles_02": {
+   "kind": "texture",
+   "name": "Large Floor Tiles 02",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/large_floor_tiles_02"
+  },
   "large_sandstone_blocks": {
    "kind": "texture",
    "name": "Large Sandstone Blocks",
@@ -470,6 +524,15 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/lifebuoy"
+  },
+  "lion_head": {
+   "kind": "model",
+   "name": "Lion Head",
+   "authors": [
+    "Tina"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/lion_head"
   },
   "marble_01": {
    "kind": "texture",
@@ -596,6 +659,24 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/plastered_wall"
+  },
+  "plastic_crate_01": {
+   "kind": "model",
+   "name": "Plastic Crate 01",
+   "authors": [
+    "PierreB3D"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/plastic_crate_01"
+  },
+  "plastic_crate_02": {
+   "kind": "model",
+   "name": "Plastic Crate 02",
+   "authors": [
+    "Fabi_G"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/plastic_crate_02"
   },
   "plastic_monobloc_chair_01": {
    "kind": "model",
@@ -750,6 +831,15 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/steel_frame_shelves_01"
+  },
+  "stone_tiles_02": {
+   "kind": "texture",
+   "name": "Stone Tiles 02",
+   "authors": [
+    "Charlotte Baglioni"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/stone_tiles_02"
   },
   "street_lamp_01": {
    "kind": "model",
@@ -907,6 +997,15 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/wood_peeling_paint_weathered"
+  },
+  "wood_planks_grey": {
+   "kind": "texture",
+   "name": "Wood Planks Grey",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/wood_planks_grey"
   },
   "wooden_bucket_01": {
    "kind": "model",

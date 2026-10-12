@@ -797,6 +797,14 @@ PROPS = {"bookcase": bookcase, "ladder": ladder, "birdcage": birdcage, "round_ta
          "bathtub": bathtub, "basin": basin, "towel_rail": towel_rail}
 
 
+def collider(root, p, w, h, d):
+    """Nothing to see: a solid the game walks into (a fairground ride's platform, a gallery's foot)."""
+    return None
+
+
+PROPS["collider"] = collider
+
+
 def build_prop(p, room_h):
     """A kit prop at its spot (pos = bottom-centre of its footprint, yaw about up)."""
     size = p.get("size", [0.5, 0.5, 0.5])

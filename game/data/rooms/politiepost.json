@@ -1,0 +1,512 @@
+{
+  "_file": "damned_waters/game/data/rooms/politiepost.json \u2014 RoomSpec for Politiepost Rokin (the city, district 3: Rokin): the police post on Rokin: a waiting room with its plastic chairs, the front counter behind its glass, desks, lockers, and in the corner the armoury cage, stood open and nearly empty. Its front wall is the street's shopfront (\"facade\": the street builds it); its door is the street's. Every business name is made up. Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "politiepost",
+  "display_name": "Politiepost Rokin",
+  "storey": 12,
+  "origin": [
+    909.6999999999999,
+    -194.55
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      10.0,
+      9.95
+    ]
+  },
+  "height": 3.6,
+  "materials": {
+    "floor": {
+      "ph": "old_linoleum_flooring_01",
+      "tint": [
+        0.6,
+        0.62,
+        0.65
+      ],
+      "rough": 0.5
+    },
+    "wall": {
+      "color": [
+        0.72,
+        0.74,
+        0.76
+      ],
+      "rough": 0.7,
+      "noise": 0.05
+    },
+    "ceiling": {
+      "color": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "rough": 0.8
+    },
+    "wainscot": {
+      "color": [
+        0.08,
+        0.12,
+        0.3
+      ],
+      "rough": 0.4
+    },
+    "wainscot_height": 1.0,
+    "skirting": {
+      "color": [
+        0.05,
+        0.06,
+        0.1
+      ],
+      "rough": 0.4
+    },
+    "skirting_height": 0.1
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.01,
+      0.012,
+      0.016
+    ],
+    "strength": 0.5
+  },
+  "render": {
+    "exposure": 0.85,
+    "bloom": {
+      "threshold": 0.95,
+      "strength": 0.25,
+      "size": 0.5
+    }
+  },
+  "walls": {
+    "west": {
+      "facade": true,
+      "openings": [
+        {
+          "kind": "door",
+          "style": "glass",
+          "center": 2.6375,
+          "width": 1.4583,
+          "height": 2.25,
+          "hinge": "left"
+        }
+      ]
+    },
+    "east": {
+      "openings": [
+        {
+          "kind": "door",
+          "center": 2.0,
+          "width": 0.9,
+          "height": 2.1
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "counter",
+      "pos": [
+        4.2,
+        0.0,
+        3.4
+      ],
+      "size": [
+        5.2,
+        1.05,
+        0.7
+      ],
+      "yaw": -90,
+      "till": false,
+      "material": {
+        "color": [
+          0.08,
+          0.12,
+          0.3
+        ],
+        "rough": 0.4
+      }
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_monobloc_chair_01",
+      "pos": [
+        0.8,
+        0.0,
+        6.0
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "size": [
+        0.5,
+        0.8,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_monobloc_chair_01",
+      "pos": [
+        0.8,
+        0.0,
+        7.0
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "size": [
+        0.5,
+        0.8,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_monobloc_chair_01",
+      "pos": [
+        1.6,
+        0.0,
+        8.8
+      ],
+      "yaw": 200,
+      "roll": 88,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        0.05,
+        1.6,
+        8.2
+      ],
+      "size": [
+        1.6,
+        1.0,
+        0.03
+      ],
+      "yaw": 90,
+      "text": "GEZOCHT",
+      "lit": false,
+      "color": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "panel": {
+        "color": [
+          0.7,
+          0.62,
+          0.45
+        ],
+        "rough": 0.8
+      },
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_office_desk",
+      "pos": [
+        6.6,
+        0.0,
+        2.0
+      ],
+      "yaw": -90,
+      "scale": 1.0,
+      "size": [
+        1.4,
+        0.75,
+        0.7
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_office_desk",
+      "pos": [
+        6.6,
+        0.0,
+        5.0
+      ],
+      "yaw": -90,
+      "scale": 1.0,
+      "size": [
+        1.4,
+        0.75,
+        0.7
+      ]
+    },
+    {
+      "type": "lockers",
+      "pos": [
+        9.75,
+        0.0,
+        4.6
+      ],
+      "yaw": -90,
+      "size": [
+        3.6,
+        1.9,
+        0.5
+      ],
+      "seed": 3,
+      "open": 0.35
+    },
+    {
+      "type": "model",
+      "model": "ph:steel_frame_shelves_01",
+      "pos": [
+        9.5,
+        0.0,
+        8.6
+      ],
+      "yaw": -90,
+      "fit": [
+        1.8,
+        2.0,
+        0.5
+      ]
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        7.4,
+        0.0,
+        7.6
+      ],
+      "yaw": 0,
+      "size": [
+        5.0,
+        2.2,
+        0.1
+      ],
+      "tape": false,
+      "seed": 2,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        0.3,
+        3.0,
+        0.4
+      ],
+      "yaw": 135,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "strip_light",
+      "pos": [
+        2.2,
+        3.6,
+        4.975
+      ],
+      "size": [
+        3.0,
+        0.1,
+        0.2
+      ],
+      "yaw": 90,
+      "collide": false
+    },
+    {
+      "type": "strip_light",
+      "pos": [
+        7.0,
+        3.6,
+        4.975
+      ],
+      "size": [
+        3.0,
+        0.1,
+        0.2
+      ],
+      "yaw": 90,
+      "collide": false
+    }
+  ],
+  "lights": [
+    {
+      "kind": "area",
+      "pos": [
+        2.2,
+        3.5,
+        4.975
+      ],
+      "look_at": [
+        2.2,
+        0.0,
+        4.975
+      ],
+      "size": 1.4,
+      "color": [
+        0.92,
+        0.96,
+        1.0
+      ],
+      "blender_power": 90,
+      "godot_energy": 0.5,
+      "range": 7.0
+    },
+    {
+      "kind": "area",
+      "pos": [
+        7.0,
+        3.5,
+        4.975
+      ],
+      "look_at": [
+        7.0,
+        0.0,
+        4.975
+      ],
+      "size": 1.4,
+      "color": [
+        0.92,
+        0.96,
+        1.0
+      ],
+      "blender_power": 60,
+      "godot_energy": 0.4,
+      "range": 7.0,
+      "flicker": true
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        0.6,
+        2.9,
+        0.6
+      ],
+      "look_at": [
+        8.5,
+        1.0,
+        7.5
+      ],
+      "fov": 64,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          4.2,
+          9.95
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        9.4,
+        2.9,
+        1.0
+      ],
+      "look_at": [
+        2.0,
+        1.0,
+        8.5
+      ],
+      "fov": 64,
+      "zone": {
+        "min": [
+          4.2,
+          0.0
+        ],
+        "max": [
+          10.0,
+          9.95
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_street": {
+      "pos": [
+        0.8,
+        0.0,
+        2.6374999999999993
+      ],
+      "yaw": -90
+    }
+  },
+  "interactables": [
+    {
+      "id": "door_street",
+      "kind": "door",
+      "pos": [
+        0.45,
+        1.0,
+        2.6374999999999993
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "armoury",
+      "kind": "examine",
+      "pos": [
+        8.4,
+        1.0,
+        7.4
+      ],
+      "radius": 1.4,
+      "text": "The armoury cage stands open. The rifles are gone; whoever took them left in a hurry, and left these."
+    },
+    {
+      "id": "shells_armoury",
+      "kind": "pickup",
+      "item": "shotgun_shells",
+      "count": 8,
+      "pos": [
+        9.3,
+        1.05,
+        8.2
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "ammo_armoury",
+      "kind": "pickup",
+      "item": "handgun_ammo",
+      "count": 20,
+      "pos": [
+        9.3,
+        1.05,
+        9.1
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "back_office",
+      "kind": "examine",
+      "pos": [
+        9.6,
+        1.0,
+        2.0
+      ],
+      "radius": 1.0,
+      "text": "The cells. Locked. Something in there is breathing water."
+    }
+  ],
+  "enemies": [
+    {
+      "id": "de_agent",
+      "kind": "verdronkene",
+      "pos": [
+        6.0,
+        0.0,
+        3.6
+      ],
+      "yaw": -90
+    }
+  ]
+}
