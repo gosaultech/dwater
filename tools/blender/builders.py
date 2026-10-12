@@ -327,8 +327,23 @@ def build_shell(spec):
     (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
     h, t = spec["height"], WALL_T
     shared = spec.get("_shared", set())
+    # A shop's front wall is the street's: the street builds the house front with the shopfront in
+    # it ("facade": true on that wall), in the wall's place, so the room builds no wall there (its
+    # floor and ceiling still run out under and over it, to the street).
+    fronts = {side for side, w in spec.get("walls", {}).items() if isinstance(w, dict) and w.get("facade")}
     ts = {side: t / 2 if side in shared else t for side in ("north", "south", "west", "east")}
-    box_aabb("floor", (x0 - ts["west"], -0.2, z0 - ts["north"]), (x1 + ts["east"], 0.0, z1 + ts["south"]), material(mats["floor"]))
+    fx0, fz0, fx1, fz1 = x0 - ts["west"], z0 - ts["north"], x1 + ts["east"], z1 + ts["south"]
+    holes = spec.get("floor_holes", [])   # wells in the floor (escalators down): the floor round them, a pit wall at each edge
+    if holes:
+        import facade as layout
+        for u0, u1, v0, v1 in layout.cut_rects(fx1 - fx0, fz1 - fz0, [(a - fx0, c - fx0, b - fz0, d - fz0) for a, b, c, d in holes]):
+            box_aabb("floor", (fx0 + u0, -0.2, fz0 + v0), (fx0 + u1, 0.0, fz0 + v1), material(mats["floor"]))
+        pit = material(mats.get("pit", {"color": [0.25, 0.25, 0.26], "rough": 0.6}))
+        for a, b, c, d in holes:
+            for lo, hi in (((a, -6.0, b - 0.2), (c, 0.0, b)), ((a, -6.0, d), (c, 0.0, d + 0.2)), ((a - 0.2, -6.0, b), (a, 0.0, d)), ((c, -6.0, b), (c + 0.2, 0.0, d))):
+                box_aabb("pit", lo, hi, pit)
+    else:
+        box_aabb("floor", (fx0, -0.2, fz0), (fx1, 0.0, fz1), material(mats["floor"]))
     roof, vault = spec.get("roof"), spec.get("vault")
     eaves = (("west", "east") if roof.get("axis", "z") == "z" else ("north", "south")) if roof else ()
     if vault:   # a barrel vault: the long walls stop at its springing (kit.py)
@@ -358,6 +373,8 @@ def build_shell(spec):
     wall_mat = material(mats["wall"])
     wain_key, wain_h = mats.get("wainscot", ""), mats.get("wainscot_height", 0.0)
     for side, wall in wall_segments(spec).items():
+        if side in fronts:
+            continue
         hs = roof["eave"] if side in eaves else h
         (ax, az), (bx, bz) = wall["line"]
         length = abs(bx - ax) + abs(bz - az)
@@ -510,6 +527,9 @@ def build_prop(p, room_h):
     import kit
     import street  # noqa: F401  (adds the street kit's props to kit.PROPS)
     import city  # noqa: F401  (and the city kit's)
+    import landmarks  # noqa: F401  (the Munttoren, the flower stalls)
+    import shops  # noqa: F401  (shop interiors: shelving, counters, the cinema's booth)
+    import aftermath  # noqa: F401  (what the evacuation left: luggage, vehicles, sandbags, the aid post)
     if t in kit.PROPS:   # the detailed kit: sofas, kasten, the marble mantel, models...
         return kit.build_prop(p, room_h)
     size = p.get("size", [0.45, 0.95, 0.45])

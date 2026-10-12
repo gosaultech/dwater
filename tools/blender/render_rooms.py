@@ -290,32 +290,42 @@ def build_room(spec, outside=True):
     return [add_light(light, i) for i, light in enumerate(spec.get("lights", []))]
 
 
+def _place(spec, coll_name, outside):
+    """Build one room into a collection of its own at its origin; its lights light only that
+    collection (light linking)."""
+    coll = bpy.data.collections.new(coll_name)
+    bpy.context.scene.collection.children.link(coll)
+    before = set(bpy.data.objects)
+    lights = build_room(spec, outside=outside)
+    ox, oz = house.origin(spec)
+    off = Vector(g2b((ox, 0.0, oz)))
+    for ob in [o for o in bpy.data.objects if o not in before]:
+        for c in list(ob.users_collection):
+            c.objects.unlink(ob)
+        coll.objects.link(ob)
+        if ob.parent is None:
+            ob.location += off
+    for L in lights:
+        L.light_linking.receiver_collection = coll
+
+
 def build_house(specs, room_id):
     """The whole storey `room_id` is on, each room at its origin, so an open doorway shows the
     real room beyond it. Each room's objects go in their own collection and its lights light only
     that collection (light linking): a lamp next door never spills through a doorway the game may
-    show shut. Shared walls are built half by each room; doorways the game swings are left open."""
+    show shut. Shared walls are built half by each room; doorways the game swings are left open.
+    In the city, the next districts' streets are built too, to be seen down the street ("_far": their
+    shops show a room behind the glass, not the room itself)."""
     for rid in house.storey_rooms(specs, room_id):
         spec = dict(specs[rid])
         spec["_shared"] = house.shared_sides(specs, rid)
         spec["_live"] = house.live_openings(specs, rid)
         spec["_stairs"] = house.stair_openings(specs, rid)
-        coll = bpy.data.collections.new("room_" + rid)
-        bpy.context.scene.collection.children.link(coll)
-        before = set(bpy.data.objects)
         ext = spec.get("exterior")
         always = isinstance(ext, dict) and ext.get("always")   # (the world seen down a tunnel from next door)
-        lights = build_room(spec, outside=rid == room_id or bool(always))
-        ox, oz = house.origin(spec)
-        off = Vector(g2b((ox, 0.0, oz)))
-        for ob in [o for o in bpy.data.objects if o not in before]:
-            for c in list(ob.users_collection):
-                c.objects.unlink(ob)
-            coll.objects.link(ob)
-            if ob.parent is None:
-                ob.location += off
-        for L in lights:
-            L.light_linking.receiver_collection = coll
+        _place(spec, "room_" + rid, outside=rid == room_id or bool(always))
+    for rid in house.neighbour_streets(specs, room_id):
+        _place(dict(specs[rid], _far=True), "far_" + rid, outside=False)
 
 
 def shots_of(spec):

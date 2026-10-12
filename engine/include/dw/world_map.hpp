@@ -39,7 +39,11 @@ std::vector<Room> load_all(const std::string& dir);
 // Place every room that can be reached from `start` (which sits at the origin, unless the room
 // files give origins: then those stand) through doors.
 void place(std::vector<Room>& rooms, const std::string& start);
-// The storeys there are, top first (0 before -1).
+// The page of the map a storey is drawn on. The city's districts (storey 10 and up: each its own
+// storey, so the game holds one district at a time) are laid out in one frame and share a page,
+// "THE CITY", the way a street plan shows every district on one sheet.
+inline int page(int storey) { return storey >= 10 ? 10 : storey; }
+// The map's pages there are, top first (0 before -1).
 std::vector<int> storeys(const std::vector<Room>& rooms);
 // A point snapped onto the nearest edge of a rectangle (a door sits in a wall).
 std::pair<float, float> to_edge(const Rect2& r, float x, float z);

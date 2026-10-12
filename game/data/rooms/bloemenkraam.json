@@ -1,0 +1,340 @@
+{
+  "_file": "damned_waters/game/data/rooms/bloemenkraam.json \u2014 RoomSpec for Bloemenkraam 4 (the city, district 2: the Munt): a stall of the floating flower market, inside: staging of buckets of tulips, boards of bulb packets, the till at the front; through the glass at the back, the black water of the Singel. Its front wall is the street's shopfront (\"facade\": the street builds it); its door is the street's. Every business name is made up. Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "bloemenkraam",
+  "display_name": "Bloemenkraam 4",
+  "storey": 11,
+  "origin": [
+    822.1000000000001,
+    -44.8
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      7.0,
+      4.5
+    ]
+  },
+  "height": 2.8,
+  "materials": {
+    "floor": {
+      "ph": "wood_floor_worn",
+      "tint": [
+        0.55,
+        0.45,
+        0.38
+      ],
+      "rough": 0.6
+    },
+    "wall": {
+      "ph": "wood_peeling_paint_weathered",
+      "tint": [
+        0.35,
+        0.6,
+        0.4
+      ],
+      "scale": 1.0
+    },
+    "ceiling": {
+      "color": [
+        0.8,
+        0.82,
+        0.78
+      ],
+      "rough": 0.6
+    },
+    "skirting": null
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.01,
+      0.012,
+      0.016
+    ],
+    "strength": 0.5
+  },
+  "render": {
+    "exposure": 0.95,
+    "bloom": {
+      "threshold": 0.95,
+      "strength": 0.25,
+      "size": 0.5
+    }
+  },
+  "walls": {
+    "south": {
+      "facade": true,
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 3.5,
+          "width": 1.8,
+          "height": 2.2
+        }
+      ]
+    },
+    "north": {
+      "openings": [
+        {
+          "kind": "window",
+          "center": 1.8,
+          "width": 2.4,
+          "sill": 0.9,
+          "height": 1.5
+        },
+        {
+          "kind": "window",
+          "center": 5.2,
+          "width": 2.4,
+          "sill": 0.9,
+          "height": 1.5
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "counter",
+      "pos": [
+        5.6,
+        0.0,
+        3.4
+      ],
+      "size": [
+        1.6,
+        0.95,
+        0.6
+      ],
+      "yaw": -90
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        0.3,
+        0.0,
+        2.2
+      ],
+      "size": [
+        3.6,
+        2.0,
+        0.45
+      ],
+      "yaw": 90,
+      "palette": "souvenir",
+      "empty": 0.3,
+      "seed": 7,
+      "shelves": 4
+    },
+    {
+      "type": "model",
+      "model": "ph:seeding_tray_01",
+      "pos": [
+        2.0,
+        0.9,
+        0.6
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:garden_gnome",
+      "pos": [
+        6.5,
+        0.0,
+        0.5
+      ],
+      "yaw": 220,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:watering_can_metal_01",
+      "pos": [
+        1.2,
+        0.0,
+        3.9
+      ],
+      "yaw": 70,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wicker_basket_01",
+      "pos": [
+        3.4,
+        0.0,
+        0.6
+      ],
+      "yaw": 10,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "strip_light",
+      "pos": [
+        3.5,
+        2.8,
+        2.2
+      ],
+      "size": [
+        4.0,
+        0.1,
+        0.2
+      ],
+      "collide": false,
+      "color": [
+        1.0,
+        0.95,
+        0.85
+      ]
+    },
+    {
+      "type": "flower_buckets",
+      "pos": [
+        3.5,
+        0.0,
+        1.0
+      ],
+      "size": [
+        5.6,
+        0.6,
+        0.9
+      ],
+      "yaw": 0,
+      "seed": 77,
+      "collide": true
+    }
+  ],
+  "lights": [
+    {
+      "kind": "area",
+      "pos": [
+        3.5,
+        2.75,
+        2.2
+      ],
+      "look_at": [
+        3.5,
+        0.0,
+        2.2
+      ],
+      "size": 2.0,
+      "color": [
+        1.0,
+        0.92,
+        0.8
+      ],
+      "blender_power": 140,
+      "godot_energy": 0.7,
+      "range": 6.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        6.6,
+        2.3,
+        4.2
+      ],
+      "look_at": [
+        1.2,
+        0.9,
+        0.8
+      ],
+      "fov": 64,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          3.5,
+          4.5
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        0.4,
+        2.3,
+        4.1
+      ],
+      "look_at": [
+        6.0,
+        0.9,
+        0.8
+      ],
+      "fov": 64,
+      "zone": {
+        "min": [
+          3.5,
+          0.0
+        ],
+        "max": [
+          7.0,
+          4.5
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_street": {
+      "pos": [
+        3.5,
+        0.0,
+        4.0
+      ],
+      "yaw": 0
+    }
+  },
+  "interactables": [
+    {
+      "id": "dressing",
+      "kind": "pickup",
+      "item": "med_small",
+      "count": 1,
+      "pos": [
+        5.6,
+        0.97,
+        3.0
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "tin",
+      "kind": "examine",
+      "pos": [
+        5.2,
+        1.0,
+        3.8
+      ],
+      "radius": 0.9,
+      "text": "A first aid tin under the till, the kind every stall keeps for thorns and cut fingers."
+    },
+    {
+      "id": "window",
+      "kind": "examine",
+      "pos": [
+        3.5,
+        1.0,
+        0.4
+      ],
+      "radius": 1.2,
+      "text": "Through the glass, the Singel. Something pale turns over under the surface and is gone."
+    }
+  ],
+  "enemies": []
+}

@@ -48,10 +48,27 @@ TEST(WorldMap, TheHouseLaysOut) {
     ASSERT_TRUE(gang && voor && kelder);
     EXPECT_LT(voor->ox + voor->bounds.x1, gang->ox + 0.01f);   // the parlour is west of the hall
     EXPECT_EQ(kelder->storey, -1);
-    const auto s = storeys(rooms);   // top first: the city outside, the attic, the ground floor, the cellars
+    const auto s = storeys(rooms);   // top first: the city outside (one page, every district), the attic, the ground floor, the cellars
     ASSERT_EQ(s.size(), 4u);
     EXPECT_EQ(s[0], 10);
     EXPECT_EQ(s[1], 2);
     EXPECT_EQ(s[2], 0);
     EXPECT_EQ(s[3], -1);
+}
+
+TEST(WorldMap, TheCityIsOnePage) {   // each district is its own storey, but the map shows them together
+    EXPECT_EQ(page(10), 10);
+    EXPECT_EQ(page(11), 10);
+    EXPECT_EQ(page(14), 10);
+    EXPECT_EQ(page(2), 2);
+    EXPECT_EQ(page(-1), -1);
+    std::vector<Room> rooms(4);
+    rooms[0].storey = 11;
+    rooms[1].storey = 0;
+    rooms[2].storey = 10;
+    rooms[3].storey = 12;
+    const auto s = storeys(rooms);
+    ASSERT_EQ(s.size(), 2u);
+    EXPECT_EQ(s[0], 10);
+    EXPECT_EQ(s[1], 0);
 }

@@ -152,6 +152,21 @@ TEST(House, AGrateIsIronBars) {   // either side's opening can say so; the other
     EXPECT_EQ(grates, 1);
 }
 
+TEST(House, AShopDoorIsGlass) {   // a glass door is its own kind: neither bars nor wood
+    std::string back = BACK;
+    const std::string door = R"("kind": "door", "center": 2.0)";
+    back.replace(back.find(door), door.size(), R"("kind": "door", "style": "glass", "center": 2.0)");
+    const auto rooms = std::vector<RoomSpec>{load_text("hall", HALL), load_text("parlour", PARLOUR), load_text("back", back.c_str())};
+    int glass = 0;
+    for (const auto& d : house::doorways(rooms)) {
+        const bool parlour_back = (d.a == 1 && d.b == 2) || (d.a == 2 && d.b == 1);
+        EXPECT_EQ(d.glass, parlour_back);
+        EXPECT_FALSE(d.grate);
+        glass += d.glass;
+    }
+    EXPECT_EQ(glass, 1);
+}
+
 TEST(House, StreetsRunOnThroughPassages) {   // two street sets meet at an open way: no leaf, no wall
     const char* A = R"({"id": "quay", "origin": [0, 0], "outdoor": {}, "bounds": {"min": [0, 0], "max": [20, 8]}, "height": 6,
       "walls": {"east": {"openings": [{"kind": "passage", "center": 4.0, "width": 6.0, "height": 6.0}]}},

@@ -72,7 +72,7 @@ public:
     void update(float dt);          // input, AI, animation
     void render();                  // scene -> offscreen target
     void present() const;           // post-process to the window + HUD
-    int capture_count() const { return 45; }
+    int capture_count() const { return 53; }
     std::string stage(int i);       // pose a capture setup; returns its name
     // A still of the room (--still): the survivor standing at (x, z) facing yaw (degrees), no
     // Drowned, seen from `shot` (empty: whichever shot covers him). Render and present after.
@@ -209,6 +209,9 @@ private:
     void push_on_doors(Enemy& e, float dt);          // a Drowned at a shut door beats on it, then shoves it open
     void update_emerging(Enemy& e, float dt);        // under the water until he comes near; then it rises
     void draw_leaves();
+    void draw_panes();                           // the glass in shop doors (drawn additively, after the solids)
+    void shut_doors();                           // every leaf shut, every passage open (a fresh start, trying again)
+    Matrix leaf_matrix(size_t i) const;          // where leaf i hangs now (hinge at the origin, along +x)
     void checkpoint();                              // remember him as he came into this room (Try again)
     void retry();                                   // dead: back to the last room's threshold, as he was
     const PlateStore::Pair* current_plate() const;
@@ -222,6 +225,7 @@ private:
     std::vector<Obb2> statics_, sight_, solid_;     // this storey's walls and props; walls only; + the leaves (per frame)
     std::vector<Obb2> shut_;                        // the leaves that block sight now (per frame; kept: no allocation)
     std::vector<Mesh> leaf_meshes_;                 // each live doorway's leaf: the hinge at the origin, along +x
+    std::vector<Mesh> pane_meshes_;                 // a glass door's pane, in the leaf's frame (empty: no glass)
     std::string ambience_;                          // the loop playing now (changes only when a room's differs)
     int peek_ = -1, peek_room_ = -1;                // peeking through doorway peek_ (from room peek_room_'s side)
     Shot peek_shot_;

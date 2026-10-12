@@ -1,0 +1,939 @@
+{
+  "_file": "damned_waters/game/data/rooms/muntplein.json \u2014 RoomSpec for Muntplein (the city, district 2: the Munt): the square over the water where the Singel begins and Rokin runs north, the Munttoren on its corner with its clock stopped at 11:47, the trams' rails curving through it, crowd barriers across the way up Rokin. Modelled after openly licensed photographs; every business name is made up, the landmarks keep theirs. The power is still on; nobody is there. Outdoor (street.py, city.py and landmarks.py build it). Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "muntplein",
+  "display_name": "Muntplein",
+  "storey": 11,
+  "origin": [
+    865.4000000000001,
+    -64.0
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      44.0,
+      36.0
+    ]
+  },
+  "height": 12.0,
+  "materials": {
+    "floor": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "wall": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "ceiling": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    }
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.014,
+      0.019,
+      0.036
+    ],
+    "strength": 1.0
+  },
+  "sky": {
+    "hdri": "kloppenheim_07_puresky",
+    "strength": 0.045,
+    "camera": 0.1,
+    "tint": [
+      1.0,
+      0.76,
+      0.55
+    ]
+  },
+  "render": {
+    "exposure": 0.85,
+    "bloom": {
+      "threshold": 0.9,
+      "strength": 0.4,
+      "size": 0.55
+    }
+  },
+  "outdoor": {
+    "window_rooms": [
+      "warm_bar",
+      "fireplace",
+      "small_empty_room_2",
+      "christmas_photo_studio_04",
+      "warm_restaurant_night",
+      "unfinished_office_night"
+    ],
+    "lamp_power": 400.0,
+    "lamp_energy": 1.0,
+    "ground": [
+      {
+        "name": "square",
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          44.0,
+          36.0
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "herringbone_brick",
+          "tint": [
+            0.8,
+            0.72,
+            0.66
+          ],
+          "wet": 0.8,
+          "puddles": 0.27,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "rokin_road",
+        "min": [
+          18.0,
+          -62.0
+        ],
+        "max": [
+          44.0,
+          -0.0
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "herringbone_brick",
+          "tint": [
+            0.8,
+            0.72,
+            0.66
+          ],
+          "wet": 0.8,
+          "puddles": 0.27,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "rokin_pavement",
+        "min": [
+          44.0,
+          -62.0
+        ],
+        "max": [
+          50.0,
+          0.0
+        ],
+        "y": 0.06,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        }
+      }
+    ],
+    "canals": [
+      {
+        "axis": "z",
+        "x": 18.0,
+        "side": -1,
+        "width": 16.0,
+        "along": [
+          -70.0,
+          0.0
+        ],
+        "ends": true,
+        "far_quay": 5.0,
+        "lit": 0.3,
+        "shops": 0.35
+      }
+    ],
+    "tracks": [
+      {
+        "from": [
+          44.0,
+          20.7
+        ],
+        "to": [
+          37.0,
+          20.7
+        ],
+        "y": 0.0
+      },
+      {
+        "from": [
+          37.0,
+          20.7
+        ],
+        "to": [
+          32.0,
+          15.7
+        ],
+        "y": 0.0
+      },
+      {
+        "from": [
+          32.0,
+          15.7
+        ],
+        "to": [
+          32.0,
+          -60.0
+        ],
+        "y": 0.0
+      }
+    ],
+    "lamps": [
+      [
+        12.0,
+        10.0
+      ],
+      [
+        14.0,
+        30.0
+      ],
+      [
+        26.0,
+        34.5
+      ],
+      [
+        40.0,
+        12.0
+      ],
+      [
+        40.0,
+        29.0
+      ],
+      [
+        19.0,
+        2.0
+      ],
+      [
+        43.0,
+        1.0
+      ],
+      [
+        20.0,
+        -20.0
+      ],
+      [
+        20.0,
+        -40.0
+      ],
+      [
+        43.0,
+        -20.0
+      ]
+    ],
+    "rows": [
+      {
+        "from": -62.0,
+        "to": -0.05,
+        "line": 50.0,
+        "facing": "west",
+        "lit": 0.35,
+        "shops": 0.5
+      },
+      {
+        "from": 0.0,
+        "to": 44.0,
+        "line": 36.0,
+        "facing": "north",
+        "lit": 0.3,
+        "shops": 0.5
+      }
+    ],
+    "facades": [
+      {
+        "facing": "west",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 401,
+        "lit": 0.3,
+        "z0": 0.05,
+        "z1": 13.65,
+        "x": 44.0,
+        "shop": {
+          "name": "GRAND CAF\u00c9 DE MUNT",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 32.0,
+          "door_bay": 2,
+          "neon": false,
+          "blade": "CAF\u00c9"
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 402,
+        "lit": 0.3,
+        "z0": 23.75,
+        "z1": 36.0,
+        "x": 44.0,
+        "shop": {
+          "name": "SOUVENIRS \u00b7 DELFTS BLAUW",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "SOUVENIRS",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ]
+        },
+        "stoop": 0.0
+      }
+    ]
+  },
+  "props": [
+    {
+      "type": "munttoren",
+      "pos": [
+        5.0,
+        0.0,
+        17.0
+      ],
+      "size": [
+        7.0,
+        36.0,
+        7.0
+      ],
+      "yaw": 0
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        31.0,
+        0.0,
+        0.6
+      ],
+      "size": [
+        26.0,
+        1.1,
+        0.7
+      ],
+      "yaw": 0,
+      "seed": 3
+    },
+    {
+      "type": "tram",
+      "pos": [
+        32.0,
+        0.0,
+        -21.0
+      ],
+      "yaw": 90,
+      "size": [
+        30.0,
+        3.4,
+        2.4
+      ],
+      "board": "NIET INSTAPPEN",
+      "power": 260.0,
+      "collide": false
+    },
+    {
+      "type": "bench",
+      "pos": [
+        14.0,
+        0.0,
+        12.0
+      ],
+      "yaw": 90,
+      "size": [
+        1.8,
+        0.85,
+        0.5
+      ]
+    },
+    {
+      "type": "bench",
+      "pos": [
+        14.0,
+        0.0,
+        26.0
+      ],
+      "yaw": 90,
+      "size": [
+        1.8,
+        0.85,
+        0.5
+      ]
+    },
+    {
+      "type": "kiosk",
+      "pos": [
+        24.0,
+        0.0,
+        31.5
+      ],
+      "size": [
+        2.6,
+        3.2,
+        2.6
+      ],
+      "name": "TABAK \u00b7 LOTTO"
+    },
+    {
+      "type": "railing",
+      "pos": [
+        0.25,
+        0.0,
+        17.0
+      ],
+      "yaw": 90,
+      "size": [
+        14.0,
+        1.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "railing",
+      "pos": [
+        9.0,
+        0.0,
+        0.25
+      ],
+      "yaw": 0,
+      "size": [
+        18.0,
+        1.0,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        39.3,
+        0.0,
+        3.5
+      ],
+      "yaw": 10,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        40.9,
+        0.0,
+        3.75
+      ],
+      "yaw": 80,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        39.3,
+        0.0,
+        8.18
+      ],
+      "yaw": 80,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ],
+      "roll": 84
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        41.19,
+        0.0,
+        8.12
+      ],
+      "yaw": 80,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "bike",
+      "pos": [
+        40.5,
+        0.0,
+        3.0
+      ],
+      "yaw": 8,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 90
+    },
+    {
+      "type": "bike",
+      "pos": [
+        40.5,
+        0.0,
+        3.7
+      ],
+      "yaw": 0,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 91
+    },
+    {
+      "type": "bike",
+      "pos": [
+        40.5,
+        0.0,
+        4.4
+      ],
+      "yaw": 8,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 92
+    },
+    {
+      "type": "bike",
+      "pos": [
+        40.5,
+        0.0,
+        5.1
+      ],
+      "yaw": 0,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 93
+    },
+    {
+      "type": "bike",
+      "pos": [
+        40.5,
+        0.0,
+        5.8
+      ],
+      "yaw": 8,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 94
+    },
+    {
+      "type": "bike",
+      "pos": [
+        26.0,
+        0.0,
+        14.0
+      ],
+      "yaw": 60,
+      "roll": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 99
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        18.4,
+        0.0,
+        1.2
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "bollard",
+      "pos": [
+        18.4,
+        0.0,
+        4.0
+      ],
+      "size": [
+        0.2,
+        0.9,
+        0.2
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        42.8,
+        0.0,
+        9.0
+      ],
+      "yaw": 30,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        24.0,
+        0.0,
+        12.0
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "size": [
+        0.5,
+        1.0,
+        0.5
+      ]
+    }
+  ],
+  "walls": {
+    "east": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 18.7,
+          "width": 10.0,
+          "height": 10.0
+        }
+      ]
+    },
+    "west": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 30.0,
+          "width": 12.0,
+          "height": 10.0
+        }
+      ]
+    }
+  },
+  "lights": [
+    {
+      "kind": "sun",
+      "dir_from": [
+        -0.35,
+        0.55,
+        1.0
+      ],
+      "color": [
+        0.55,
+        0.66,
+        1.0
+      ],
+      "blender_power": 0.12,
+      "godot_energy": 0.25,
+      "angle": 2.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        5.0,
+        6.0,
+        23.0
+      ],
+      "color": [
+        1.0,
+        0.85,
+        0.65
+      ],
+      "blender_power": 0,
+      "godot_energy": 1.0,
+      "range": 12.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        42.5,
+        3.0,
+        27.0
+      ],
+      "look_at": [
+        5.0,
+        12.0,
+        17.0
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          30.0,
+          10.0
+        ],
+        "max": [
+          44.0,
+          36.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        16.0,
+        2.8,
+        35.0
+      ],
+      "look_at": [
+        8.0,
+        10.0,
+        12.0
+      ],
+      "fov": 64,
+      "zone": {
+        "min": [
+          0.0,
+          22.0
+        ],
+        "max": [
+          30.0,
+          36.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "c",
+      "pos": [
+        24.0,
+        3.4,
+        3.5
+      ],
+      "look_at": [
+        4.0,
+        5.0,
+        24.0
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          30.0,
+          22.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "d",
+      "pos": [
+        40.0,
+        3.4,
+        13.0
+      ],
+      "look_at": [
+        26.0,
+        3.0,
+        -24.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          30.0,
+          0.0
+        ],
+        "max": [
+          44.0,
+          10.0
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_reguliersbreestraat": {
+      "pos": [
+        42.5,
+        0.0,
+        18.7
+      ],
+      "yaw": 90
+    },
+    "from_bloemenmarkt": {
+      "pos": [
+        1.5,
+        0.0,
+        30.0
+      ],
+      "yaw": -90
+    }
+  },
+  "interactables": [
+    {
+      "id": "munttoren",
+      "kind": "examine",
+      "pos": [
+        5.0,
+        1.0,
+        21.2
+      ],
+      "radius": 1.6,
+      "text": "The Munttoren. Its clock stopped at 11:47. Up in the lantern the carillon still plays a few bars every quarter hour, to nobody."
+    },
+    {
+      "id": "rokin",
+      "kind": "examine",
+      "pos": [
+        31.0,
+        1.0,
+        1.5
+      ],
+      "radius": 2.6,
+      "text": "Rokin. Crowd barriers across it, police tape snapping in the wind. Beyond them, the long road to Centraal."
+    },
+    {
+      "id": "police_belt",
+      "kind": "pickup",
+      "item": "shotgun_shells",
+      "count": 5,
+      "pos": [
+        27.0,
+        0.05,
+        2.2
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "singel",
+      "kind": "examine",
+      "pos": [
+        0.8,
+        1.0,
+        11.0
+      ],
+      "radius": 1.4,
+      "text": "The Singel. Something under the water is moving the boats against the quay, slowly, like breathing."
+    }
+  ],
+  "enemies": [
+    {
+      "id": "op_de_munt",
+      "kind": "verdronkene",
+      "pos": [
+        20.0,
+        0.0,
+        18.0
+      ],
+      "yaw": 120
+    },
+    {
+      "id": "bij_de_toren",
+      "kind": "verdronkene",
+      "pos": [
+        11.0,
+        0.0,
+        24.0
+      ],
+      "yaw": 60
+    }
+  ]
+}

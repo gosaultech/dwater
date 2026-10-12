@@ -12,7 +12,11 @@ and the flooded cellar (`kelder`), walked through room to room with no loading s
 kelder's water gate a tunnel (`waterpoort`) runs under the street to the canal, and steps climb to
 the quay outside (`herengracht`), as far as the bridge. Past the bridge the street runs on into the
 city: Thorbeckeplein (`thorbeckeplein`, the street of bars and terraces) and on across onto
-Rembrandtplein (`rembrandtplein`, the square with its park, its statue and a tram at the stop). The
+Rembrandtplein (`rembrandtplein`, the square with its park, its statue and a tram at the stop). West
+of it lies the Munt: Reguliersbreestraat (`reguliersbreestraat`, its art-deco picture palace and its
+apotheek), Muntplein (`muntplein`, the Munttoren, the way north up Rokin barred for now) and the
+floating flower market (`bloemenmarkt`); three of its shops he can walk into and search: the
+apotheek (`apotheek`), the cinema's lobby (`bioscoop`) and a flower stall (`bloemenkraam`). The
 attic bathroom (`badkamer`) is built and rendered, waiting for its stairs. And:
 
 - **Backgrounds and depth.** Pre-rendered Cycles backgrounds, each with a painted depth map.
@@ -354,6 +358,16 @@ flat: the camera crew moves room to room, nobody has to change the scenery.
   is a beat to another storey, like the stairs: the Herengracht is on the house's storey, the city
   beyond the bridge is its own (`"storey": 10`, "THE CITY" on the map). Like crossing from one film
   set to the next on the same sound stage, or being driven to another studio.
+- **Shops he can walk into.** A shop is a room of its own behind its street's shopfront: its door is
+  a glass one (`"style": "glass"`: a dark frame with a push bar, the pane drawn so only what it
+  reflects is added, so the lit shop shows through it; the Drowned see through it too), pushed
+  open like any other, and the camera cuts inside. What he finds there (ammunition, field
+  dressings, first aid kits) lies where it was left: on the counter, behind the till, on the wall.
+- **The city's districts.** Each district of the city is a storey of its own (10: Rembrandtplein, 11:
+  the Munt, ...), so the game holds one at a time: its streets, its shops, its Drowned (eight at
+  most). Crossing into the next is a short beat, like the stairs; within a district the streets and
+  shops run into each other with no beat. The map shows every district on one page, THE CITY,
+  as a street plan does.
 - **No waiting at a door.** The plates of the rooms next door are decoded on a worker thread
   while he's still in this one and uploaded a couple per frame (`src/plates.cpp`), so the cut is
   instant; rooms out of reach are let go. A stage crew setting up the next backdrops in the wings.
@@ -434,6 +448,30 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   from, to, sag, bulb spacing), tram rails let into the street (`"tracks"`) and a tram stopped at
   its stop with its lights on and its doors open, benches, a bronze statue on a floodlit plinth,
   kiosks, terrace windbreaks, and a park (`"parks"`: a lawn, gravel paths, low iron fences).
+- **Landmarks** (`tools/blender/landmarks.py`), built from a few measurements each: the Munttoren
+  (brick base with sandstone quoins, the octagon with its four clock faces lit and stopped at 11:47,
+  the open lantern with its bells, a lead ogee dome, a gilded ball), an art-deco picture palace's
+  front (`"deco"` on a front: tiled towers with copper domes, a stained-glass window, a marquee
+  ringed with bulbs, floodlights, a vertical THEATER sign), the Bloemenmarkt's glasshouse stalls on
+  their pontoons (buckets of tulips, boards of bulb packets, shutters part way down), a pharmacy's
+  green neon cross (`"cross"` on a shop), police crowd barriers with tape.
+- **Shop interiors** (`tools/blender/shops.py`): shelving stocked with packets and bottles in the
+  shop's colours (gaps where things were grabbed, a few knocked to the floor), counters with a
+  till, glass display cases, velvet ropes on brass posts, lit posters, a ticket booth, a cloakroom
+  rail with the coats still on it, strip lights. A thousand packets are one mesh per colour. A
+  shop's front wall is its street's (`"facade": true` on that wall): the street builds the
+  shopfront there with its door bay open (`"enter"` on the shop), and the room builds no wall.
+- **What the evacuation left** (`tools/blender/aftermath.py`, `docs/city_aftermath.md`): the city
+  was emptied in a hurry, and every street says so. Hand-sprayed EVACUATIEROUTE boards pointing to
+  Centraal, an aid post (a tent, stretchers, a floodlight on a generator, someone under a sheet),
+  suitcases and bags and a pushchair dropped in the road, evacuation leaflets everywhere, cars and
+  vans left with their doors open and their lights on (a taxi, an ambulance, a police van, an army
+  truck), sandbag walls at the doors, a fire pump with its hose down into the canal, shop windows
+  put in by looters (the glass on the pavement), and a tide line where the water came up the house
+  fronts (`"tide"`: below it the brick is dark and still wet). Like a stage after the audience
+  fled: the coats are still on the seats.
+- **The next district down the street.** Rendering a district also builds the streets of the
+  districts beside it (within 40 m), so the end of a street shows the city going on, not a void.
 - **One ground per street.** Rooms on one storey are built together, and each room's lights only
   light its own things; so two streets' ground slabs must meet edge to edge and never overlap,
   or the other street's slab, unlit, shows through as a black patch.
@@ -568,13 +606,21 @@ Done in the C++ engine: combat (both guns, kick, dodge, counters, gore), the rel
 status screen (items, files, map, pickups), the death screen. Still to come, in order:
 
 1. **The city.** The house is in (hall, parlour, library, souterrain, kelder; the attic bathroom
-   waits for its stairs), and out of it the Herengracht, Thorbeckeplein and Rembrandtplein. Next,
-   on toward Amsterdam Centraal: Reguliersbreestraat and the Munt, Rokin and the Kalverstraat, the
-   Dam, the Damrak; then the station and the metro north under the IJ to Station Noord. All pre-rendered backgrounds from RoomSpecs
+   waits for its stairs), and out of it the Herengracht, Thorbeckeplein and Rembrandtplein, the
+   Munt (Reguliersbreestraat, Muntplein, the Bloemenmarkt, three shops to search). Next, Rokin as
+   the main road to Amsterdam Centraal with its landmarks (the water and its tour boats, the
+   Wilhelmina statue, the metro entrance), the Kalverstraat as a side loop of shops, the Dam (the
+   Palace, the Nieuwe Kerk, the National Monument), the Damrak; then the station and the metro
+   north under the IJ to Station Noord. Two or three shops to search in each. All pre-rendered backgrounds from RoomSpecs
    (`docs/handoff/areas_session_prompt.md` is the brief).
-2. Saves (the typewriter), a title screen.
-3. **#27 (polish, deferred): a palm arch joint**, so the 870's right wrist cocks less (about 49
+2. **Polish pass over the shop interiors** (once every area is built): each one modelled to match
+   one or two reference photos (the camera matched to the photo, the room and its fixtures built
+   to it), its stand-ins swapped for CC0 scans, photo layers projected where modelling can't
+   compete (packed shelves, posters, flowers), its light matched; checked side by side with the
+   photo. Only CC0 / CC-BY photos go into a picture; the rest are for layout only.
+3. Saves (the typewriter), a title screen.
+4. **#27 (polish, deferred): a palm arch joint**, so the 870's right wrist cocks less (about 49
    degrees toward the little finger now). A rig change: rebuild `survivor.dwc`, then refit the
    grips (`--fitgrips`) and the poses (`--fitpistol`, `--fit870`).
-4. Reload tuning from play-testing (timing, the 870's hip load).
-5. Rumble and the SDL3 backend; the cyclist and the other creatures.
+5. Reload tuning from play-testing (timing, the 870's hip load).
+6. Rumble and the SDL3 backend; the cyclist and the other creatures.

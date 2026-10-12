@@ -82,7 +82,7 @@ void Game::reset_fight() {
     hero_.set_weapon(0);
     hero_.limp = 0;
     reset_world();
-    for (auto& l : leaves_) { l.angle = l.target = 0; l.moving = l.closing = false; }
+    shut_doors();
     beat_ = {};
     peek_ = -1;
     wake_t_ = -1;

@@ -90,3 +90,26 @@ class CutTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ShopTest(unittest.TestCase):
+    def test_the_door_is_the_hole_between_two_posts(self):
+        for W in (6.0, 8.95, 12.0):
+            u0, u1, n, top_v = facade.shop_bays(W, 4.2)
+            for bay in range(n):
+                uc, width, height = facade.shop_door(W, 4.2, bay)
+                left, right = u0 + (u1 - u0) * bay / n, u0 + (u1 - u0) * (bay + 1) / n   # the posts' centres
+                self.assertAlmostEqual(uc - width / 2, left + 0.05, places=9)               # 5 cm half a post
+                self.assertAlmostEqual(uc + width / 2, right - 0.05, places=9)
+                self.assertAlmostEqual(height, top_v - 0.55, places=9)
+                self.assertGreater(width, 1.0)   # wide enough to walk through
+
+    def test_a_door_bay_past_the_end_is_the_last(self):
+        n = facade.shop_bays(9.0, 4.2)[2]
+        self.assertEqual(facade.shop_door(9.0, 4.2, 99), facade.shop_door(9.0, 4.2, n - 1))
+
+    def test_along_the_wall_runs_from_each_front_s_left_hand_end(self):
+        self.assertEqual(facade.along_wall({"facing": "south", "x0": 10.0, "x1": 19.0}, 2.0), 12.0)
+        self.assertEqual(facade.along_wall({"facing": "north", "x0": 10.0, "x1": 19.0}, 2.0), 17.0)
+        self.assertEqual(facade.along_wall({"facing": "east", "z0": 3.0, "z1": 12.0}, 2.0), 10.0)
+        self.assertEqual(facade.along_wall({"facing": "west", "z0": 3.0, "z1": 12.0}, 2.0), 5.0)

@@ -37,6 +37,8 @@ IRON = {"color": [0.02, 0.02, 0.022], "rough": 0.45, "metal": 0.7, "noise": 0.1}
 DOORS = [[0.05, 0.16, 0.11], [0.05, 0.05, 0.055], [0.32, 0.05, 0.04], [0.07, 0.1, 0.22], [0.55, 0.52, 0.46]]
 CURTAINS = [[0.32, 0.07, 0.05], [0.12, 0.17, 0.1], [0.55, 0.5, 0.4], [0.4, 0.33, 0.22]]
 _ROOMS = ["warm_bar"]   # the interiors lit windows may show (set per set from "window_rooms")
+FAR = False   # building a street of the next district over, only to be seen in the distance (render_rooms)
+TIDE = 0.0    # how high the flood came up the house fronts (m; set per street from "outdoor": {"tide"})
 
 
 def M(key):
@@ -99,6 +101,13 @@ class Acc:
         n = len(self.v)
         self.v += [p0, p1, p2, p3]
         self.f.append((n, n + 1, n + 2, n + 3))
+
+    def box(self, lo, hi):
+        """An axis-aligned box from its min to its max corner (a shop's thousand packets: one mesh)."""
+        (x0, y0, z0), (x1, y1, z1) = lo, hi
+        n = len(self.v)
+        self.v += [(x, y, z) for x in (x0, x1) for y in (y0, y1) for z in (z0, z1)]
+        self.f += [tuple(n + i for i in q) for q in ((0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3))]
 
     def build(self, name, m, parent, smooth=True):
         return kit.mesh(name, self.v, self.f, m, parent, smooth=smooth) if self.f else None
@@ -201,7 +210,10 @@ def facade(f, rng):
     up, "bays", "gable": kind, "gable_h", "brick", "lit", "door_bay", "stoop", "lean", "plinth",
     "shop": {...}, "skin_below", "holes"}. Facing south it stands on z with its front toward +z (the
     street). "skin_below": up to that height only a thin brick skin goes on (a house the game walks
-    in: its rooms have the real walls and windows), with "holes" [{"u0", "u1", "v0", "v1", "arch"}]."""
+    in: its rooms have the real walls and windows), with "holes" [{"u0", "u1", "v0", "v1", "arch"}].
+    "sides": the house is the end of its row, so its side and back walls go up under its roof (else
+    only the front stands, the neighbours hiding the rest; at a corner a side wall would stand in the
+    next front's windows)."""
     W, at, yaw = facade_frame(f)
     root = builders.empty_at("facade", at, yaw)
     skin = f.get("skin_below", 0.0)
@@ -210,9 +222,24 @@ def facade(f, rng):
     T = 0.3
     k = rng.uniform(0.78, 1.0)
     tint = f.get("tint", [k, k * rng.uniform(0.94, 1.0), k * rng.uniform(0.9, 1.0)])
-    brick = M(f["paint"]) if f.get("paint") else M({"ph": f.get("brick") or rng.choice(BRICKS), "tint": tint, "scale": 1.0})
+    brick_spec = f["paint"] if f.get("paint") else {"ph": f.get("brick") or rng.choice(BRICKS), "tint": tint, "scale": 1.0}
+    brick = M(brick_spec)
+    tide = f.get("tide", TIDE)
+    if tide > 0:   # below the tide line the brick is dark and still wet, the way the water left it
+        wet_spec = dict(brick_spec, wet=0.95)
+        if "tint" in wet_spec:
+            wet_spec["tint"] = [c * 0.5 for c in wet_spec["tint"]]
+        if "color" in wet_spec:
+            wet_spec["color"] = [c * 0.5 for c in wet_spec["color"]]
+        wet_brick = M(wet_spec)
     trim, stone, glass = M(TRIM), M(STONE), M("glass")
     storeys = f["storeys"]
+    if f.get("deco"):   # a picture palace, not a canal house (landmarks.deco_front)
+        return deco(root, f, W, storeys[0], rng)
+    if f.get("classic"):   # a museum's stone front (landmarks.classic_front)
+        import landmarks
+        landmarks.classic_front(root, f, W, rng)
+        return root
     stoop = f.get("stoop", 0.0)
     shop = f.get("shop")
     g = layout.window_grid(W, storeys, f.get("bays", 3), f.get("win_w", 1.05), None if shop else f.get("door_bay"))
@@ -226,7 +253,12 @@ def facade(f, rng):
         holes.append((0.3, W - 0.3, 0.0, min(storeys[0] - 0.7, shop.get("top", 2.8))))
     # the brick: full thickness above the skin line, cut round the windows, the door and the shop
     for u0, u1, v0, v1 in layout.cut_rects(W, H - skin, [(a, b, max(c - skin, 0.0), d - skin) for a, b, c, d in holes]):
-        lbox(root, "brick", (u0, v0 + skin, -T), (u1, v1 + skin, 0.0), brick)
+        a, b = v0 + skin, v1 + skin
+        if tide > a:   # (split at the tide line)
+            lbox(root, "brick_wet", (u0, a, -T), (u1, min(b, tide), 0.0), wet_brick)
+            a = tide
+        if b > a:
+            lbox(root, "brick", (u0, a, -T), (u1, b, 0.0), brick)
     if skin > 0:   # the thin skin over the rooms' own wall, around their openings
         sh = [(h["u0"], h["u1"], h["v0"], h["v1"]) for h in f.get("holes", [])]
         for u0, u1, v0, v1 in layout.cut_rects(W, skin, sh):
@@ -249,6 +281,12 @@ def facade(f, rng):
         front_door(root, door, stoop, trim, stone, glass, rng, f.get("lit", 0.2))
     if shop:
         shopfront(root, f, W, storeys[0], rng)
+    if f.get("metro"):   # a metro station's way in: canopy, name, the sign on its pole
+        import landmarks
+        landmarks.metro_front(root, f, W, storeys[0], rng)
+    if f.get("flags"):   # a grand hotel's flags out over the street
+        import landmarks
+        landmarks.hotel_flags(root, W, storeys[0] + 0.5, f["flags"])
     if f.get("street_sign"):   # the city's red name plate: white letters and three white crosses
         ss = f["street_sign"]
         u, v = ss.get("u", 0.8), ss.get("v", 2.9)
@@ -257,6 +295,13 @@ def facade(f, rng):
         text(root, ss["text"], (u + 0.1, v, 0.026), 0.15, white, depth=0.002)
         text(root, "XXX", (u - 0.48, v, 0.026), 0.07, white, depth=0.002)
     top(root, f, W, H, T, brick, trim, stone, rng)
+    if f.get("sides") and not skin:   # a house at the end of its row: its own walls back under its roof
+        kind = f.get("gable", "cornice")
+        hs = H + 0.95 if kind == "cornice" else H
+        depth = 9.7
+        lbox(root, "side_wall", (0.0, 0.0, -depth), (0.3, hs, -T), brick)
+        lbox(root, "side_wall", (W - 0.3, 0.0, -depth), (W, hs, -T), brick)
+        lbox(root, "back_wall", (0.0, 0.0, -depth), (W, hs, -depth + 0.3), brick)
     return root
 
 
@@ -366,13 +411,19 @@ def shopfront(root, f, W, s0, rng):
     f["shop"]: {"name", "kind", "room", "frame": rgb, "sign": rgb, "awning": [rgb, rgb], "blade": text,
     "door_bay", "power"}."""
     sh = f["shop"]
-    top_v = min(s0 - 0.7, sh.get("top", 2.8))
-    u0, u1, riser = 0.3, W - 0.3, 0.42
+    u0, u1, n, top_v = layout.shop_bays(W, s0, sh.get("top", 2.8))
+    riser = 0.42
     frame = M({"color": sh.get("frame", [0.03, 0.045, 0.035]), "rough": 0.35, "noise": 0.12})
     glass = M("glass")
-    lbox(root, "riser", (u0, 0.0, -0.2), (u1, riser, -0.12), frame)
-    n = max(2, int((u1 - u0) / 1.4))
-    door_i = sh.get("door_bay", n // 2)
+    door_i = min(sh.get("door_bay", n // 2), n - 1)
+    # A shop he can walk into ("enter"): the real room is built behind the glass (its own RoomSpec),
+    # and the door bay is left open for the game's glass door. Seen from the next district over
+    # (FAR), where that room isn't built, it is a shop like any other.
+    enter = sh.get("enter") and not FAR
+    da, db = u0 + (u1 - u0) * door_i / n, u0 + (u1 - u0) * (door_i + 1) / n
+    for a, b in ((u0, da), (db, u1)) if enter else ((u0, u1),):
+        if b - a > 0.02:
+            lbox(root, "riser", (a, 0.0, -0.2), (b, riser, -0.12), frame)
     for i in range(n + 1):   # posts
         uu = u0 + (u1 - u0) * i / n
         lbox(root, "shop_post", (uu - 0.05, 0.0, -0.2), (uu + 0.05, top_v, -0.08), frame)
@@ -381,14 +432,29 @@ def shopfront(root, f, W, s0, rng):
     for i in range(n):
         a, b = u0 + (u1 - u0) * i / n + 0.05, u0 + (u1 - u0) * (i + 1) / n - 0.05
         bottom = 0.0 if i == door_i else riser
+        if enter and i == door_i:   # the transom light over the open door only; the game hangs the door
+            lbox(root, "shop_glass", (a, top_v - 0.5, -0.165), (b, top_v - 0.1, -0.16), glass)
+            continue
+        if i in sh.get("smashed", []):   # put in by looters: a jagged corner left, the rest on the pavement
+            left = Acc()
+            left.quad((a, bottom, -0.163), (a + (b - a) * 0.35, bottom, -0.163), (a, bottom + (top_v - bottom) * 0.4, -0.163), (a, bottom, -0.163))
+            left.quad((b, top_v - 0.1, -0.163), (b - (b - a) * 0.5, top_v - 0.1, -0.163), (b, top_v - 0.1 - (top_v - bottom) * 0.3, -0.163), (b, top_v - 0.1, -0.163))
+            left.build("shop_glass_left", glass, root, smooth=False)
+            import aftermath
+            shards = builders.empty_at("shards", (0.0, 0.0, 0.0), 0.0)
+            shards.parent = root
+            shards.location = g2b(((a + b) / 2, 0.0, 0.0))
+            aftermath.broken_glass(shards, {"seed": i + 31}, b - a + 0.6, 0.0, 1.4)
+            continue
         lbox(root, "shop_glass", (a, bottom, -0.165), (b, top_v - 0.1, -0.16), glass)
         if i == door_i:   # the glass door: a frame and a long brass push bar
             for c, e in ((a, a + 0.08), (b - 0.08, b)):
                 lbox(root, "door_stile", (c, 0.0, -0.17), (e, top_v - 0.55, -0.14), frame)
             lbox(root, "door_rail", (a, 0.0, -0.17), (b, 0.12, -0.14), frame)
             rod(root, "push_bar", (b - 0.16, 0.8, -0.11), (b - 0.16, 1.5, -0.11), 0.015, 0.015, M("brass"))
-    room_card(root, u0 - 0.2, u1 + 0.2, -0.1, top_v + 0.2, -1.6, sh.get("room", "warm_bar"), sh.get("glow", 1.6), rng,
-              span_u=0.06 * W, span_v=0.32)
+    if not enter:
+        room_card(root, u0 - 0.2, u1 + 0.2, -0.1, top_v + 0.2, -1.6, sh.get("room", "warm_bar"), sh.get("glow", 1.6), rng,
+                  span_u=0.06 * W, span_v=0.32)
     # the shop's light out through its window, warm, onto the pavement and whatever stands there
     area_light(root, (W / 2, top_v * 0.55, -0.5), u1 - u0 - 0.2, top_v * 0.8, sh.get("power", 90.0) * W,
                tuple(sh.get("light", (1.0, 0.72, 0.45))))
@@ -418,6 +484,9 @@ def shopfront(root, f, W, s0, rng):
         for sgn in (-1, 1):
             text(root, sh["blade"], (bu + sgn * 0.045, top_v + 0.82, 0.55), 0.13, sign_m, yaw=90 * sgn,
                  font=sh.get("font", "DejaVuSerif-Bold.ttf"))
+    if sh.get("cross"):   # an apotheek: the green neon cross out over the pavement
+        import landmarks
+        landmarks.green_cross(root, (W - 0.2, top_v + 1.0, 0.75))
     if sh.get("awning"):   # a striped canvas awning, wound out
         c_a, c_b = sh["awning"]
         cloth = M({"pattern": "stripes", "colors": [c_a, c_b], "width": 0.24})
@@ -430,12 +499,33 @@ def shopfront(root, f, W, s0, rng):
             rod(root, "awning_arm", (uu, top_v - 0.6, 0.0), (uu, top_v + 0.05 - drop, out - 0.05), 0.012, 0.012, M(IRON))
 
 
+def deco(root, f, W, s0, rng):
+    """A cinema front: its glazed doors between two towers (the shopfront's, set in by the towers'
+    width, so its door bay is facade.shop_door(W - 2 * tower_w) along from the first tower), the tiled
+    wall round them up to the marquee, the rest landmarks.deco_front."""
+    import landmarks
+    tw = f["deco"].get("tower_w", 3.2)
+    tiles = M(f["deco"].get("tiles", {"color": [0.62, 0.66, 0.56], "rough": 0.35, "noise": 0.1}))
+    top_v = layout.shop_bays(W - 2 * tw, s0, f["shop"].get("top", 2.8))[3]
+    lbox(root, "deco_band", (tw, top_v, -0.4), (W - tw, s0, -0.05), tiles)
+    for u0, u1 in ((tw, tw + 0.3), (W - tw - 0.3, W - tw)):
+        lbox(root, "deco_pier", (u0, 0.0, -0.4), (u1, top_v, 0.0), tiles)
+    doors = builders.empty_at("cinema_doors", (0.0, 0.0, 0.0), 0.0)
+    doors.parent = root
+    doors.location = g2b((tw, 0.0, 0.0))
+    shopfront(doors, f, W - 2 * tw, s0, rng)
+    landmarks.deco_front(root, f, W, s0, rng)
+    return root
+
+
 def facade_row(x_from, x_to, z, facing, rng, row=None, y=0.0):
     """A row of canal houses from x_from to x_to on the line z (facing south or north), or from z
     x_from to x_to on the line x = z (facing east or west): random widths, heights and gables, their
-    street at height y. row: {"lit", "shops": fraction of ground floors that are shops, "shop_kinds"}."""
+    street at height y. row: {"lit", "shops": fraction of ground floors that are shops, "shop_kinds",
+    "row_ends": "start" | "end" | "both": close that end house's walls (a row ending in open space)}."""
     row = row or {}
     along_z = facing in ("east", "west")
+    ends = row.get("row_ends", "")
     x = x_from
     while x < x_to:
         w = rng.uniform(5.0, 9.5)
@@ -451,6 +541,8 @@ def facade_row(x_from, x_to, z, facing, rng, row=None, y=0.0):
             f["shop"] = shop_for(rng, row.get("shop_kinds"))
         if rng.random() < 0.12:
             f["paint"] = {"color": rng.choice([[0.6, 0.58, 0.54], [0.18, 0.2, 0.21], [0.42, 0.4, 0.34]]), "rough": 0.8, "noise": 0.15}
+        if (x == x_from and ends in ("start", "both")) or (x + w >= x_to and ends in ("end", "both")):
+            f["sides"] = True
         facade(f, rng)
         x += w
 
@@ -776,12 +868,66 @@ def hump_bridge(spec, b):
 
 
 # ── The ground, the quay, the canal, the far bank ─────────────────────────────────────
+def canal(c, rng):
+    """A canal beside the street: the water between two quay walls, and across it the far quay with
+    its lamps, trees and houses. It runs along x on the line z = "z" ("axis": "x", the default) or
+    along z on the line x = "x" ("axis": "z", with "along": [z0, z1]); the water lies on the far
+    side of the line ("side": 1, +z or +x) or the near ("side": -1). "ends": quay walls across the
+    water at both ends too (a canal that stops at a bridge), or only at "a" (its start) or "b" (its
+    end). "far_span": [from, to] along it for the far bank's houses (default: short of both ends)."""
+    along_x = c.get("axis", "x") == "x"
+    line = c["z"] if along_x else c["x"]
+    a0, a1 = c.get("x", [-60.0, 100.0]) if along_x else c["along"]
+    sd = c.get("side", 1)
+    width, water, fq = c["width"], c.get("water", -1.6), c.get("far_quay", 6.0)
+    far = line + sd * width
+
+    def box(name, u0, u1, y0, y1, w0, w1, m):   # u along the canal, w across it
+        w0, w1 = min(w0, w1), max(w0, w1)
+        if along_x:
+            builders.box_aabb(name, (u0, y0, w0), (u1, y1, w1), m)
+        else:
+            builders.box_aabb(name, (w0, y0, u0), (w1, y1, u1), m)
+
+    def at(u, w):
+        return (u, w) if along_x else (w, u)
+
+    quay = M({"ph": "mossy_brick", "scale": 1.0})
+    box("canal", a0, a1, water - 0.02, water, line, far, M("canal_water"))
+    box("canal_bed", a0, a1, water - 3.0, water - 2.9, line, far, M({"color": [0.01, 0.012, 0.01], "rough": 1.0}))
+    for k, (wa, wb) in enumerate(((line - sd * 0.3, line), (far, far + sd * 0.3))):
+        gaps = c.get("gaps", []) if k == 0 else []
+        us = [a0] + [v for gp in sorted(gaps) for v in gp] + [a1]
+        for u0, u1 in zip(us[::2], us[1::2]):
+            box("quay_wall", u0, u1, water - 3.0, 0.0, wa, wb, quay)
+            box("quay_edge", u0, u1, -0.08, 0.04, wa - 0.05, wb + 0.05, M(STONE))
+    ends = c.get("ends")
+    for which, (u0, u1) in (("a", (a0 - 0.3, a0)), ("b", (a1, a1 + 0.3))):
+        if ends is True or ends == which:
+            box("quay_wall", u0, u1, water - 3.0, 0.0, line, far, quay)
+    box("far_quay", a0, a1, -0.4, 0.0, far + sd * 0.3, far + sd * fq,
+        M(c.get("far_ground", {"ph": "herringbone_brick", "tint": [0.7, 0.65, 0.6], "wet": 0.6})))
+    u = a0 + 24
+    while u < a1 - 24:   # the far quay: lamps, trees, parked cars, nobody
+        lamp(*at(u, far + sd * 1.0), power=c.get("far_lamp_power", 420.0))
+        tx, tz = at(u + 7.0, far + sd * 1.2)
+        builders.build_prop({"type": "plane_tree", "pos": [tx, 0.0, tz], "size": [0.45, 12.0, 0.45],
+                             "seed": int(u * 7) % 997, "depth": 5}, 12.0)
+        u += 14.0
+    if c.get("far_houses", True):
+        facing = ("north" if sd > 0 else "south") if along_x else ("west" if sd > 0 else "east")
+        f0, f1 = c.get("far_span", [a0 + 20, a1 - 20])
+        facade_row(f0, f1, far + sd * fq, facing, rng, dict(c, row_ends=c.get("row_ends", "both")))
+
+
 def outdoor(spec):
     """Everything an "outdoor" RoomSpec stands in: its ground slabs, the quay wall and the canal,
     the far quay with its lamps, trees and houses, the fronts on its own side, its lamps, the bridge
     (built whichever room is being rendered: it's the world outside every window)."""
-    global _ROOMS
+    global _ROOMS, FAR, TIDE
     o = spec["outdoor"]
+    FAR = bool(spec.get("_far"))
+    TIDE = o.get("tide", 0.0)
     _ROOMS = o.get("window_rooms", _ROOMS)
     rng = random.Random(spec["id"])
     for g in o.get("ground", []):
@@ -790,31 +936,8 @@ def outdoor(spec):
         builders.box_aabb(g.get("name", "ground"), (gx0, y - 0.4, gz0), (gx1, y, gz1), M(g.get("material", STONE)))
         if g.get("kerb"):   # a granite kerb along the ground's far edge
             builders.box_aabb("kerb", (gx0, y - 0.4, gz1 - 0.18), (gx1, y + 0.03, gz1), M(STONE))
-    c = o.get("canal")
-    if c:
-        zq, width, water = c["z"], c["width"], c.get("water", -1.6)
-        xa, xb = c.get("x", [-60.0, 100.0])
-        quay = M({"ph": "mossy_brick", "scale": 1.0})
-        builders.box_aabb("canal", (xa, water - 0.02, zq), (xb, water, zq + width), M("canal_water"))
-        builders.box_aabb("canal_bed", (xa, water - 3.0, zq), (xb, water - 2.9, zq + width), M({"color": [0.01, 0.012, 0.01], "rough": 1.0}))
-        for k, (za, zb) in enumerate(((zq - 0.3, zq), (zq + width, zq + width + 0.3))):
-            gaps = c.get("gaps", []) if k == 0 else []
-            xs = [xa] + [v for gp in sorted(gaps) for v in gp] + [xb]
-            for u0, u1 in zip(xs[::2], xs[1::2]):
-                builders.box_aabb("quay_wall", (u0, water - 3.0, za), (u1, 0.0, zb), quay)
-                builders.box_aabb("quay_edge", (u0, -0.08, za - 0.05), (u1, 0.04, zb + 0.05), M(STONE))
-        fq = c.get("far_quay", 6.0)
-        builders.box_aabb("far_quay", (xa, -0.4, zq + width + 0.3), (xb, 0.0, zq + width + fq),
-                          M(c.get("far_ground", {"ph": "herringbone_brick", "tint": [0.7, 0.65, 0.6], "wet": 0.6})))
-        zf = zq + width + fq
-        x = xa + 24
-        while x < xb - 24:   # the far quay: lamps, trees, parked cars, nobody
-            lamp(x, zq + width + 1.0, power=c.get("far_lamp_power", 420.0))
-            builders.build_prop({"type": "plane_tree", "pos": [x + 7.0, 0.0, zq + width + 1.2], "size": [0.45, 12.0, 0.45],
-                                 "seed": int(x * 7) % 997, "depth": 5}, 12.0)
-            x += 14.0
-        if c.get("far_houses", True):
-            facade_row(xa + 20, xb - 20, zf, "north", rng, c)
+    for c in ([o["canal"]] if o.get("canal") else []) + o.get("canals", []):
+        canal(c, rng)
     for f in o.get("facades", []):
         facade(f, random.Random(f.get("seed", 1)))
     for i, row in enumerate(o.get("rows", [])):   # streets running on out of the set: rows of houses (some shops)

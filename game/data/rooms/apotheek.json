@@ -1,0 +1,557 @@
+{
+  "_file": "damned_waters/game/data/rooms/apotheek.json \u2014 RoomSpec for Apotheek de Zwarte Kat (the city, district 2: the Munt): a chemist's off Reguliersbreestraat: shelving of packets and bottles, picked over, the counter at the back with the dispensary shelves behind it, and on the wall the big green EHBO case. Its front wall is the street's shopfront (\"facade\": the street builds it); its door is the street's. Every business name is made up. Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "apotheek",
+  "display_name": "Apotheek de Zwarte Kat",
+  "storey": 11,
+  "origin": [
+    926.25,
+    -59.599999999999994
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      9.45,
+      9.0
+    ]
+  },
+  "height": 4.0,
+  "materials": {
+    "floor": {
+      "ph": "terrazzo_tiles",
+      "tint": [
+        0.8,
+        0.8,
+        0.78
+      ],
+      "rough": 0.3
+    },
+    "wall": {
+      "color": [
+        0.86,
+        0.88,
+        0.86
+      ],
+      "rough": 0.6,
+      "noise": 0.05
+    },
+    "ceiling": {
+      "color": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "rough": 0.7
+    },
+    "wainscot": {
+      "color": [
+        0.06,
+        0.24,
+        0.14
+      ],
+      "rough": 0.25,
+      "noise": 0.06
+    },
+    "wainscot_height": 1.1,
+    "skirting": {
+      "color": [
+        0.03,
+        0.1,
+        0.06
+      ],
+      "rough": 0.4
+    },
+    "skirting_height": 0.1
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.01,
+      0.012,
+      0.016
+    ],
+    "strength": 0.5
+  },
+  "render": {
+    "exposure": 0.75,
+    "bloom": {
+      "threshold": 0.95,
+      "strength": 0.25,
+      "size": 0.5
+    }
+  },
+  "walls": {
+    "south": {
+      "facade": true,
+      "openings": [
+        {
+          "kind": "door",
+          "style": "glass",
+          "center": 5.4625,
+          "width": 1.375,
+          "height": 2.25,
+          "hinge": "left"
+        }
+      ]
+    },
+    "north": {
+      "openings": [
+        {
+          "kind": "door",
+          "center": 0.9,
+          "width": 0.9,
+          "height": 2.1,
+          "hinge": "right"
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "counter",
+      "pos": [
+        4.4,
+        0.0,
+        2.6
+      ],
+      "size": [
+        4.4,
+        1.0,
+        0.7
+      ],
+      "yaw": 0
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        4.4,
+        0.0,
+        0.3
+      ],
+      "size": [
+        5.2,
+        2.4,
+        0.45
+      ],
+      "yaw": 0,
+      "palette": "pharmacy",
+      "empty": 0.45,
+      "seed": 1,
+      "fallen": 0
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        2.6,
+        0.0,
+        5.9
+      ],
+      "size": [
+        2.6,
+        1.6,
+        0.9
+      ],
+      "yaw": 0,
+      "double": true,
+      "palette": "pharmacy",
+      "empty": 0.3,
+      "seed": 2,
+      "shelves": 4
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        7.6,
+        0.0,
+        5.9
+      ],
+      "size": [
+        2.6,
+        1.6,
+        0.9
+      ],
+      "yaw": 0,
+      "double": true,
+      "palette": "pharmacy",
+      "empty": 0.25,
+      "seed": 3,
+      "shelves": 4
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        0.3,
+        0.0,
+        6.0
+      ],
+      "size": [
+        4.6,
+        2.2,
+        0.45
+      ],
+      "yaw": 90,
+      "palette": "pharmacy",
+      "empty": 0.2,
+      "seed": 4
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        8.3,
+        1.85,
+        0.04
+      ],
+      "size": [
+        0.9,
+        0.22,
+        0.03
+      ],
+      "text": "EHBO",
+      "color": [
+        0.3,
+        1.0,
+        0.45
+      ],
+      "glow": 2.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:WetFloorSign_01",
+      "pos": [
+        5.0,
+        0.0,
+        4.4
+      ],
+      "yaw": 30,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:korean_fire_extinguisher_01",
+      "pos": [
+        0.25,
+        0.0,
+        8.6
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        4.4,
+        2.75,
+        0.04
+      ],
+      "size": [
+        3.6,
+        0.55,
+        0.03
+      ],
+      "text": "APOTHEEK",
+      "color": [
+        0.3,
+        1.0,
+        0.45
+      ],
+      "glow": 2.5,
+      "collide": false
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        0.04,
+        2.3,
+        6.0
+      ],
+      "size": [
+        2.4,
+        0.4,
+        0.03
+      ],
+      "yaw": 90,
+      "text": "VERZORGING",
+      "lit": false,
+      "color": [
+        0.85,
+        0.88,
+        0.85
+      ],
+      "panel": {
+        "color": [
+          0.06,
+          0.24,
+          0.14
+        ],
+        "rough": 0.4
+      },
+      "collide": false
+    },
+    {
+      "type": "strip_light",
+      "pos": [
+        2.6,
+        4.0,
+        4.5
+      ],
+      "size": [
+        3.0,
+        0.1,
+        0.2
+      ],
+      "collide": false
+    },
+    {
+      "type": "strip_light",
+      "pos": [
+        7.6,
+        4.0,
+        4.5
+      ],
+      "size": [
+        3.0,
+        0.1,
+        0.2
+      ],
+      "collide": false
+    },
+    {
+      "type": "strip_light",
+      "pos": [
+        4.4,
+        4.0,
+        1.6
+      ],
+      "size": [
+        4.4,
+        0.1,
+        0.2
+      ],
+      "collide": false
+    }
+  ],
+  "lights": [
+    {
+      "kind": "area",
+      "pos": [
+        2.6,
+        3.9,
+        4.5
+      ],
+      "look_at": [
+        2.6,
+        0.0,
+        4.5
+      ],
+      "size": 1.6,
+      "color": [
+        0.92,
+        0.97,
+        1.0
+      ],
+      "blender_power": 120,
+      "godot_energy": 0.5,
+      "range": 8.0
+    },
+    {
+      "kind": "area",
+      "pos": [
+        7.6,
+        3.9,
+        4.5
+      ],
+      "look_at": [
+        7.6,
+        0.0,
+        4.5
+      ],
+      "size": 1.6,
+      "color": [
+        0.92,
+        0.97,
+        1.0
+      ],
+      "blender_power": 70,
+      "godot_energy": 0.4,
+      "range": 8.0
+    },
+    {
+      "kind": "area",
+      "pos": [
+        4.4,
+        3.9,
+        1.6
+      ],
+      "look_at": [
+        4.4,
+        0.0,
+        1.6
+      ],
+      "size": 1.4,
+      "color": [
+        0.92,
+        0.97,
+        1.0
+      ],
+      "blender_power": 90,
+      "godot_energy": 0.4,
+      "range": 6.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        5.462499999999999,
+        2.6,
+        8.6
+      ],
+      "color": [
+        0.4,
+        1.0,
+        0.55
+      ],
+      "blender_power": 12,
+      "godot_energy": 0.3,
+      "range": 4.0,
+      "radius": 0.2
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        8.95,
+        2.8,
+        8.5
+      ],
+      "look_at": [
+        3.0,
+        1.0,
+        1.8
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          9.45,
+          5.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        0.6,
+        2.9,
+        3.6
+      ],
+      "look_at": [
+        7.949999999999999,
+        0.9,
+        8.6
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          0.0,
+          5.0
+        ],
+        "max": [
+          9.45,
+          9.0
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_street": {
+      "pos": [
+        5.462499999999999,
+        0.0,
+        8.3
+      ],
+      "yaw": 0
+    }
+  },
+  "interactables": [
+    {
+      "id": "door_street",
+      "kind": "door",
+      "pos": [
+        5.462499999999999,
+        1.0,
+        8.55
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "ehbo_case",
+      "kind": "pickup",
+      "item": "med_large",
+      "count": 1,
+      "pos": [
+        8.3,
+        1.3,
+        0.4
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "first_aid_counter",
+      "kind": "pickup",
+      "item": "first_aid",
+      "count": 1,
+      "pos": [
+        3.0,
+        1.02,
+        2.6
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "dispensary",
+      "kind": "examine",
+      "pos": [
+        4.4,
+        1.0,
+        1.4
+      ],
+      "radius": 1.4,
+      "text": "The dispensary shelves are bare where the painkillers were. Someone came for those first."
+    },
+    {
+      "id": "back_door",
+      "kind": "examine",
+      "pos": [
+        0.9,
+        1.0,
+        0.35
+      ],
+      "radius": 1.0,
+      "text": "The back room. Bolted from the other side."
+    }
+  ],
+  "enemies": [
+    {
+      "id": "de_apotheker",
+      "kind": "verdronkene",
+      "pos": [
+        5.6,
+        0.0,
+        1.5
+      ],
+      "yaw": 180
+    }
+  ]
+}

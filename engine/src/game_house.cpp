@@ -27,9 +27,30 @@ constexpr int VARIANTS[] = {0, 2, 1};   // who they were: the office worker, Pie
 
 // A door leaf, hinge at the origin, its width along +x, up +y, its thickness across z: a framed
 // leaf with two raised panels each side and a brass knob each side near the latch.
-Mesh leaf_mesh(float w, float h, bool grate) {
+// A shop door's glass (in the leaf's frame, the hinge at the origin): one pane inside the frame.
+Mesh pane_mesh(float w, float h) {
     MeshData d;
     MeshBuilder b(d);
+    b.material(MAT_STEEL).color({10, 12, 14, 255}).box({w / 2, (0.24f + h - 0.1f) / 2, 0}, {w / 2 - 0.07f, (h - 0.1f - 0.24f) / 2, 0.004f}, 0.0f, 2, 2);
+    return upload(d);
+}
+
+Mesh leaf_mesh(float w, float h, bool grate, bool glass) {
+    MeshData d;
+    MeshBuilder b(d);
+    if (glass) {   // a shop door: a dark anodised frame, a kick plate, a long push bar each side
+        const Color frame{34, 34, 36, 255}, bar{150, 150, 152, 255};
+        b.material(MAT_STEEL).color(frame);
+        for (const float x : {0.035f, w - 0.035f}) b.box({x, h / 2, 0}, {0.035f, h / 2, 0.022f}, 0.1f, 2, 8);   // stiles
+        b.box({w / 2, h - 0.05f, 0}, {w / 2, 0.05f, 0.022f}, 0.1f, 8, 2);                                       // top rail
+        b.box({w / 2, 0.12f, 0}, {w / 2, 0.12f, 0.022f}, 0.1f, 8, 2);                                           // kick plate
+        b.color(bar);
+        for (float side : {-1.0f, 1.0f}) {
+            b.tube({0.18f, 1.02f, side * 0.07f}, {w - 0.12f, 1.02f, side * 0.07f}, 0.016f, 0.016f, 10);
+            for (const float x : {0.22f, w - 0.16f}) b.tube({x, 1.02f, side * 0.022f}, {x, 1.02f, side * 0.07f}, 0.012f, 0.012f, 8);
+        }
+        return upload(d);
+    }
     if (grate) {   // an iron gate: a flat frame, round bars, two rails, a ring to pull it by
         const Color iron{24, 24, 26, 255}, rust{70, 38, 22, 255};
         b.material(MAT_METAL).color(iron);
@@ -95,9 +116,10 @@ bool Game::load_house(const std::string& start) {
     leaves_.clear();
     for (const auto& d : doorways_) {
         leaves_.push_back(doors::hang(d.ax, d.az, d.bx, d.bz, d.nx, d.nz, d.hinge_at_a));
-        leaf_meshes_.push_back(d.live && !d.passage ? leaf_mesh(d.width(), d.height, d.grate) : Mesh{});
-        if (d.passage) leaves_.back().angle = leaves_.back().target = doors::OPEN;   // (a way through: always open)
+        leaf_meshes_.push_back(d.live && !d.passage ? leaf_mesh(d.width(), d.height, d.grate, d.glass) : Mesh{});
+        pane_meshes_.push_back(d.live && !d.passage && d.glass ? pane_mesh(d.width(), d.height) : Mesh{});
     }
+    shut_doors();   // (the passages among them stand open)
     storey_ = rooms_[size_t(room_)].floor;
     return true;
 }
@@ -457,7 +479,7 @@ void Game::retry() {
     world_ = c.world;
     notes_ = c.notes;
     player_ = c.at;
-    for (auto& l : leaves_) { l.angle = l.target = 0; l.moving = false; }
+    shut_doors();
     build_storey(rooms_[size_t(c.room)].floor);
     enter_room(c.room);
     hero_.settle();
@@ -479,15 +501,34 @@ Camera3D Game::shot_camera(const Shot& s) const {
     return c;
 }
 
+// Every door shut again (a fresh start, trying again). A passage has no door: it stays open, or
+// walking through it into the next district would never start the beat.
+void Game::shut_doors() {
+    for (size_t i = 0; i < leaves_.size(); ++i) {
+        doors::Leaf& l = leaves_[i];
+        l.angle = l.target = doorways_[i].passage ? doors::OPEN : 0.0f;
+        l.moving = l.closing = false;
+    }
+}
+
+Matrix Game::leaf_matrix(size_t i) const {
+    const doors::Leaf& L = leaves_[i];
+    const V2 dir = L.dir();
+    return MatrixMultiply(MatrixRotateY(std::atan2(-dir.z, dir.x)), MatrixTranslate(L.hx, 0.0f, L.hz));
+}
+
 void Game::draw_leaves() {
     for (size_t i = 0; i < leaves_.size(); ++i) {
         const auto& d = doorways_[i];
         if (!d.live || leaf_meshes_[i].vertexCount == 0 || rooms_[size_t(d.a)].floor != storey_) continue;
-        const doors::Leaf& L = leaves_[i];
-        const V2 dir = L.dir();
-        const Matrix m = MatrixMultiply(MatrixRotateY(std::atan2(-dir.z, dir.x)), MatrixTranslate(L.hx, 0.0f, L.hz));
-        DrawMesh(leaf_meshes_[i], char_mat_, m);
+        DrawMesh(leaf_meshes_[i], char_mat_, leaf_matrix(i));
     }
+}
+
+void Game::draw_panes() {
+    for (size_t i = 0; i < pane_meshes_.size(); ++i)
+        if (pane_meshes_[i].vertexCount > 0 && rooms_[size_t(doorways_[i].a)].floor == storey_)
+            DrawMesh(pane_meshes_[i], char_mat_, leaf_matrix(i));
 }
 
 }  // namespace dw

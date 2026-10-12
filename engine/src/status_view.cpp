@@ -558,7 +558,7 @@ void Game::draw_status_ui() {
     auto visited = [&](const worldmap::Room& r) { return world_.visited.count(r.id) > 0; };
     std::vector<const worldmap::Room*> shown;
     for (const auto& r : map_) {
-        if (!r.placed || r.storey != storey) continue;
+        if (!r.placed || worldmap::page(r.storey) != storey) continue;
         bool known = visited(r);
         for (const auto& o : map_)
             if (visited(o))

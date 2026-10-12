@@ -77,6 +77,17 @@ class RealHouseTests(unittest.TestCase):
         self.assertNotIn("south", house.shared_sides(specs, "hall"))
         self.assertEqual(house.shared_sides(specs, "street"), set())
 
+    def test_the_next_district_s_streets_are_seen(self):   # built for the picture, only if near enough
+        specs = {"square": dict(room("square", (0, 0), (40, 30), {}, storey=10), outdoor=True),
+                 "shop": room("shop", (-10, 0), (10, 8), {}, storey=10),
+                 "street": dict(room("street", (-70, 0), (70, 10), {}, storey=11), outdoor=True),
+                 "far": dict(room("far", (500, 0), (20, 20), {}, storey=12), outdoor=True),
+                 "lobby": room("lobby", (-40, 10), (12, 12), {}, storey=11),
+                 "hall": room("hall", (0, 0), (2, 6), {})}
+        self.assertEqual(house.neighbour_streets(specs, "square"), ["street"])   # not its shops, not the far one
+        self.assertEqual(house.neighbour_streets(specs, "lobby"), ["square"])
+        self.assertEqual(house.neighbour_streets(specs, "hall"), [])             # the house sees no districts
+
     def test_hall_and_parlour_share_a_door(self):
         ds = house.doorways(self.specs)
         self.assertTrue(any({d["a"], d["b"]} == {"gang", "voorkamer"} and d["live"] for d in ds))

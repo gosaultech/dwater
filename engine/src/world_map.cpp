@@ -86,7 +86,7 @@ void place(std::vector<Room>& rooms, const std::string& start) {
 std::vector<int> storeys(const std::vector<Room>& rooms) {
     std::vector<int> s;
     for (const auto& r : rooms)
-        if (std::find(s.begin(), s.end(), r.storey) == s.end()) s.push_back(r.storey);
+        if (std::find(s.begin(), s.end(), page(r.storey)) == s.end()) s.push_back(page(r.storey));
     std::sort(s.begin(), s.end(), std::greater<int>());
     return s;
 }

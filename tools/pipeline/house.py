@@ -141,6 +141,29 @@ def storey_rooms(specs: dict[str, dict], room: str) -> list[str]:
     return sorted(r for r, d in specs.items() if d.get("storey", 0) == s)
 
 
+CITY = 10   # storeys from here up are the city's districts (one storey each), in one frame
+
+
+def neighbour_streets(specs: dict[str, dict], room: str, reach: float = 40.0) -> list[str]:
+    """The streets of the next districts over that can be seen from `room`'s storey: outdoor rooms
+    on other city storeys within `reach` metres of any room of this one. The game holds one district
+    at a time, but the picture shows the city running on (the next street's houses at the end of
+    this one), the way a stage set paints the street beyond the wings."""
+    s = specs[room].get("storey", 0)
+    if s < CITY:
+        return []
+    here = [house_bounds(specs[r]) for r in storey_rooms(specs, room)]
+
+    def gap(a, b):
+        dx = max(a[0] - b[2], b[0] - a[2], 0.0)
+        dz = max(a[1] - b[3], b[1] - a[3], 0.0)
+        return (dx * dx + dz * dz) ** 0.5
+
+    return sorted(r for r, d in specs.items()
+                  if d.get("outdoor") and d.get("storey", 0) >= CITY and d.get("storey", 0) != s
+                  and any(gap(house_bounds(d), h) < reach for h in here))
+
+
 def peek_shots(spec: dict) -> list[dict]:
     """The doors' views through the crack, as shots to render ("peek_<door id>")."""
     out = []

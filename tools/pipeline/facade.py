@@ -109,3 +109,29 @@ def cut_rects(W: float, H: float, holes: list[tuple[float, float, float, float]]
                 out.append((ua, ub, v, ga))
             v = max(v, gb)
     return out
+
+
+# ── Shopfronts ───────────────────────────────────────────────────────────────────────
+def shop_bays(W: float, s0: float, top: float = 2.8) -> tuple[float, float, int, float]:
+    """A glazed shopfront across a front W wide whose ground storey is s0 high: (u0, u1, n, top_v),
+    the glazing from u0 to u1 in n equal bays (posts between them) up to the head at top_v."""
+    u0, u1 = 0.3, W - 0.3
+    return u0, u1, max(2, int((u1 - u0) / 1.4)), min(s0 - 0.7, top)
+
+
+def shop_door(W: float, s0: float, door_bay: int | None = None, top: float = 2.8) -> tuple[float, float, float]:
+    """The shop's door: (u centre, width, height) of the hole between two posts, up to the transom.
+    The street's wall and the shop's own wall put their doorway exactly here, so the game hangs one
+    door in it (a door in a hole two builders cut from either side, meeting in the middle)."""
+    u0, u1, n, top_v = shop_bays(W, s0, top)
+    i = n // 2 if door_bay is None else min(max(door_bay, 0), n - 1)
+    bay = (u1 - u0) / n
+    return u0 + bay * (i + 0.5), bay - 0.1, top_v - 0.55
+
+
+def along_wall(f: dict, u: float) -> float:
+    """Where the point u along a house front (u runs to the right as you face it) lies along the
+    street's wall it stands on: x for a front facing south or north, z for one facing east or west."""
+    facing = f.get("facing", "south")
+    return {"south": lambda: f["x0"] + u, "north": lambda: f["x1"] - u,
+            "east": lambda: f["z1"] - u, "west": lambda: f["z0"] + u}[facing]()
