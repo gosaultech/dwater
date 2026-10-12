@@ -398,6 +398,26 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   bikes (some knocked over), bare elms, quay railings, a houseboat, a swamped rowing boat, and a hump
   bridge with a bulb every 40 cm round its arches. The street is built whichever room on its storey
   is rendered, so every window onto it shows the same street.
+- **Made to look like the photographs.** Like the rooms, the street is matched to reference photos
+  of the canals at night (openly licensed, kept out of the repo) and dressed in CC0 scans: old Dutch
+  brick (five kinds, a little different house to house), painted window frames and doors, bluestone
+  sills and stoops, grey roof tiles, plane-tree bark, mossy brick at the waterline, and wet
+  herringbone pavers. `"wet"` on any scan darkens it and makes it glossy, with still puddles
+  (`"puddles"`) that mirror the lamps, as the streets are after rain.
+- **The sky** is a CC0 night-sky panorama (`"sky": {"hdri": ...}`), clouds lit from below by the
+  city. How bright it looks and how much light it gives are set apart, the way a film set lights a
+  painted backdrop for the lens and not for the actors.
+- **Lit windows show real rooms.** Behind each lit window is a patch of a CC0 interior panorama (a
+  bar, a fireplace, an office), a different patch for every window, so the street looks lived in;
+  the dark ones show the same rooms, unlit. The glass reflects the sky and the lamps.
+- **Shops, cafés and coffeeshops** (`"shop"` on a front): a glazed front on a stall riser, the shop
+  inside, its name lit on the fascia, a blade sign over the pavement, an awning, and its light
+  falling out onto the terrace. The power is still on all over the city; nobody is there. Terraces
+  use CC0 café tables and chairs, chalkboards, planters, and patio heaters still burning.
+- **Lamps** (`"outdoor": {"lamps": [[x, z], ...]}`): CC0 street lamps with their lanterns alight
+  and their light; the game reads the same list, so he is lit by the lamps you see. A bloom in the
+  compositor makes lamps and signs glow as they do in a photograph at night (never in the depth
+  map).
 
 ## The death screen
 

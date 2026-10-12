@@ -16,6 +16,7 @@ WALL_T = 0.3     # wall thickness, grown outward from the bounds (engine: room_s
 PAIR_TOL = 0.06  # doorway ends this close are the same hole
 DOOR_REACH = 1.6
 SIDES = ("north", "south", "west", "east")
+WAYS = ("door", "passage")   # openings he walks through: a door (a leaf the game swings) or a passage (open)
 OPPOSITE = {"north": "south", "south": "north", "west": "east", "east": "west"}
 
 
@@ -68,7 +69,7 @@ def doorways(specs: dict[str, dict]) -> list[dict]:
     for a in ids:
         A = specs[a]
         for side, k, op in openings(A):
-            if op.get("kind") != "door" or (a, side, k) in used:
+            if op.get("kind") not in WAYS or (a, side, k) in used:
                 continue
             used.add((a, side, k))
             ax, az, bx, bz = opening_ends(A, side, op)
@@ -78,7 +79,7 @@ def doorways(specs: dict[str, dict]) -> list[dict]:
                 if b == a or specs[b].get("storey", 0) != A.get("storey", 0) or d["b"]:
                     continue
                 for side_b, m, op_b in openings(specs[b]):
-                    if op_b.get("kind") != "door" or (b, side_b, m) in used:
+                    if op_b.get("kind") not in WAYS or (b, side_b, m) in used:
                         continue
                     px0, pz0, px1, pz1 = opening_ends(specs[b], side_b, op_b)
                     if math.hypot(px0 - ax, pz0 - az) < PAIR_TOL and math.hypot(px1 - bx, pz1 - bz) < PAIR_TOL:
@@ -87,6 +88,7 @@ def doorways(specs: dict[str, dict]) -> list[dict]:
                         break
             door = _door_near(A, (ax + bx) / 2, (az + bz) / 2)
             d["live"] = d["b"] is not None or bool(door and door.get("target_room"))
+            d["passage"] = op.get("kind") == "passage"
             d["door_a"] = door["id"] if door else None
             out.append(d)
     return out

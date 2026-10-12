@@ -320,7 +320,8 @@ def fireplace_classic(root, p, w, h, d):
 
 
 def model(root, p, w, h, d):
-    """A Poly Haven model (glTF), standing on the prop's spot, facing its front; "scale" or "fit"."""
+    """A Poly Haven model (glTF), standing on the prop's spot, facing its front; "scale" or "fit";
+    "emit" lights the parts whose material names match (a street lamp's bulb and glass)."""
     ref = p["model"]
     a = surfaces.asset(ref[3:] if isinstance(ref, str) else ref["ph"])
     before = set(bpy.data.objects)
@@ -356,6 +357,12 @@ def model(root, p, w, h, d):
     if p.get("shadow", True) is False:   # a lamp's own glass and frame must not swallow its light
         for o in new:
             o.visible_shadow = False
+    for glow in p.get("emit", []):   # a lamp's bulb and glass, lit: {"match": "bulb", "color", "strength"}
+        em = builders.emissive("model_" + glow["match"], tuple(glow.get("color", (1.0, 0.7, 0.4))), glow.get("strength", 20.0))
+        for o in new:
+            for slot in getattr(o, "material_slots", []):
+                if slot.material and glow["match"] in slot.material.name:
+                    slot.material = em
     tint = p.get("tint")
     if tint:
         for o in new:
@@ -857,7 +864,7 @@ def build_exterior(spec, rng):
     wall = z0 if side == "north" else z1
     t = builders.WALL_T
     width = ext.get("canal", 12.0)
-    water = builders.material("water")
+    water = builders.material("canal_water")
     stone = builders.material(ext.get("quay", {"color": [0.12, 0.12, 0.12], "rough": 0.8, "noise": 0.3}))
     brick_keys = ext.get("bricks", ["ph:brick_wall_003"])
     lit = builders.emissive("window", (1.0, 0.55, 0.25), 3.0)
@@ -889,9 +896,14 @@ def build_exterior(spec, rng):
     slab("canal", zq, zq + sgn * width, -qh, -qh + 0.02, water)
     zf = zq + sgn * (width + 3.0)                # the far houses' fronts
     slab("far_quay", zq + sgn * width, zf, -qh, 0.0, stone)
-    if ext.get("facades"):   # real canal houses (street.py), not boxes
+    if ext.get("facades"):   # real canal houses (street.py), not boxes, and the far quay's lamps
         import street
+        street._ROOMS = ext.get("window_rooms", street._ROOMS)
         street.facade_row(x0 - 30, x1 + 30, zf, "north" if sgn > 0 else "south", rng, ext, y=-drop)
+        lx = x0 - 24
+        while lx < x1 + 24:
+            street.lamp(lx, zq + sgn * (width + 1.0), y=-drop, power=ext.get("far_lamp_power", 420.0))
+            lx += 14.0
         return
     x = x0 - 30
     while x < x1 + 30:

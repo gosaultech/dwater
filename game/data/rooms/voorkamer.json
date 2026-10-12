@@ -997,6 +997,21 @@
     }
   ],
   "render": {
-    "exposure": 1.4
+    "exposure": 1.4,
+    "bloom": {
+      "threshold": 1.0,
+      "strength": 0.25,
+      "size": 0.5
+    }
+  },
+  "sky": {
+    "hdri": "kloppenheim_07_puresky",
+    "strength": 0.045,
+    "camera": 0.13,
+    "tint": [
+      1.0,
+      0.76,
+      0.55
+    ]
   }
 }

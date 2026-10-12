@@ -19,6 +19,24 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/antique_ceramic_vase_01"
   },
+  "bark_platanus": {
+   "kind": "texture",
+   "name": "Bark Platanus",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/bark_platanus"
+  },
+  "brick_pavement_02": {
+   "kind": "texture",
+   "name": "Brick Pavement 02",
+   "authors": [
+    "Charlotte Baglioni"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/brick_pavement_02"
+  },
   "brick_wall_003": {
    "kind": "texture",
    "name": "Brick Wall 003",
@@ -28,6 +46,34 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/brick_wall_003"
+  },
+  "brick_wall_09": {
+   "kind": "texture",
+   "name": "Brick Wall 09",
+   "authors": [
+    "Matterfield",
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/brick_wall_09"
+  },
+  "brick_wall_10": {
+   "kind": "texture",
+   "name": "Brick Wall 10",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/brick_wall_10"
+  },
+  "christmas_photo_studio_04": {
+   "kind": "hdri",
+   "name": "Christmas Photo Studio 04",
+   "authors": [
+    "Sergej Majboroda"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/christmas_photo_studio_04"
   },
   "cobblestone_02": {
    "kind": "texture",
@@ -55,6 +101,16 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/covered_car"
+  },
+  "dark_brick_wall": {
+   "kind": "texture",
+   "name": "Dark Brick Wall",
+   "authors": [
+    "Dario Barresi",
+    "Dimitrios Savva"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/dark_brick_wall"
   },
   "dark_wood": {
    "kind": "texture",
@@ -85,6 +141,15 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/dirty_carpet"
   },
+  "distressed_painted_planks": {
+   "kind": "texture",
+   "name": "Distressed Painted Planks",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/distressed_painted_planks"
+  },
   "fancy_picture_frame_01": {
    "kind": "model",
    "name": "Fancy Picture Frame 01",
@@ -105,6 +170,15 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/fancy_picture_frame_02"
   },
+  "fireplace": {
+   "kind": "hdri",
+   "name": "Fireplace",
+   "authors": [
+    "Greg Zaal"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/fireplace"
+  },
   "floor_pebbles_01": {
    "kind": "texture",
    "name": "Floor Pebbles 01",
@@ -114,6 +188,15 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/floor_pebbles_01"
   },
+  "grey_roof_tiles": {
+   "kind": "texture",
+   "name": "Grey Roof Tiles",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/grey_roof_tiles"
+  },
   "hanging_picture_frame_02": {
    "kind": "model",
    "name": "Hanging Picture Frame 02",
@@ -122,6 +205,15 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/hanging_picture_frame_02"
+  },
+  "herringbone_brick": {
+   "kind": "texture",
+   "name": "Herringbone Brick",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/herringbone_brick"
   },
   "herringbone_parquet": {
    "kind": "texture",
@@ -161,6 +253,16 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/jug_01"
   },
+  "kloppenheim_07_puresky": {
+   "kind": "sky",
+   "name": "Kloppenheim 07 (Pure Sky)",
+   "authors": [
+    "Greg Zaal",
+    "Jarod Guest"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/kloppenheim_07_puresky"
+  },
   "lantern_chandelier_01": {
    "kind": "model",
    "name": "Lantern Chandelier 01",
@@ -169,6 +271,15 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/lantern_chandelier_01"
+  },
+  "large_sandstone_blocks": {
+   "kind": "texture",
+   "name": "Large Sandstone Blocks",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/large_sandstone_blocks"
   },
   "marble_01": {
    "kind": "texture",
@@ -188,6 +299,24 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/marble_bust_01"
   },
+  "medieval_red_brick": {
+   "kind": "texture",
+   "name": "Medieval Red Brick",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/medieval_red_brick"
+  },
+  "mossy_brick": {
+   "kind": "texture",
+   "name": "Mossy Brick",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/mossy_brick"
+  },
   "ornate_mirror_01": {
    "kind": "model",
    "name": "Ornate Mirror 01",
@@ -196,6 +325,24 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/ornate_mirror_01"
+  },
+  "outdoor_table_chair_set_01": {
+   "kind": "model",
+   "name": "Outdoor Table Chair Set 01",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/outdoor_table_chair_set_01"
+  },
+  "planter_box_01": {
+   "kind": "model",
+   "name": "Planter Box 01",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/planter_box_01"
   },
   "plastered_wall": {
    "kind": "texture",
@@ -233,6 +380,15 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/red_brick_03"
   },
+  "red_bricks_04": {
+   "kind": "texture",
+   "name": "Red Bricks 04",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/red_bricks_04"
+  },
   "roof_planks": {
    "kind": "texture",
    "name": "Roof Planks",
@@ -241,6 +397,42 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/roof_planks"
+  },
+  "rusty_painted_metal": {
+   "kind": "texture",
+   "name": "Rusty Painted Metal",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/rusty_painted_metal"
+  },
+  "small_empty_room_2": {
+   "kind": "hdri",
+   "name": "Small Empty Room 2",
+   "authors": [
+    "Sergej Majboroda"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/small_empty_room_2"
+  },
+  "square_concrete_pavers": {
+   "kind": "texture",
+   "name": "Square Concrete Pavers",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/square_concrete_pavers"
+  },
+  "standing_chalkboard_01": {
+   "kind": "model",
+   "name": "Standing Chalkboard 01",
+   "authors": [
+    "ParzivalCG"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/standing_chalkboard_01"
   },
   "street_lamp_01": {
    "kind": "model",
@@ -279,6 +471,15 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/trashbag"
   },
+  "unfinished_office_night": {
+   "kind": "hdri",
+   "name": "Unfinished Office Night",
+   "authors": [
+    "Sergej Majboroda"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/unfinished_office_night"
+  },
   "vintage_oil_lamp": {
    "kind": "model",
    "name": "Vintage Oil Lamp",
@@ -288,6 +489,26 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/vintage_oil_lamp"
   },
+  "warm_bar": {
+   "kind": "hdri",
+   "name": "Warm Bar",
+   "authors": [
+    "Greg Zaal",
+    "Jarod Guest"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/warm_bar"
+  },
+  "warm_restaurant_night": {
+   "kind": "hdri",
+   "name": "Warm Restaurant Night",
+   "authors": [
+    "Greg Zaal",
+    "Jarod Guest"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/warm_restaurant_night"
+  },
   "wine_barrel_01": {
    "kind": "model",
    "name": "Wine Barrel 01",
@@ -296,6 +517,16 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/wine_barrel_01"
+  },
+  "wood_peeling_paint_weathered": {
+   "kind": "texture",
+   "name": "Wood Peeling Paint Weathered",
+   "authors": [
+    "Dimitrios Savva",
+    "Rob Tuytel"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/wood_peeling_paint_weathered"
   },
   "wooden_bucket_01": {
    "kind": "model",

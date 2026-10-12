@@ -152,6 +152,41 @@ TEST(House, AGrateIsIronBars) {   // either side's opening can say so; the other
     EXPECT_EQ(grates, 1);
 }
 
+TEST(House, StreetsRunOnThroughPassages) {   // two street sets meet at an open way: no leaf, no wall
+    const char* A = R"({"id": "quay", "origin": [0, 0], "outdoor": {}, "bounds": {"min": [0, 0], "max": [20, 8]}, "height": 6,
+      "walls": {"east": {"openings": [{"kind": "passage", "center": 4.0, "width": 6.0, "height": 6.0}]}},
+      "shots": [{"id": "a", "pos": [5, 3, 1], "look_at": [20, 1, 6], "fov": 55, "zone": {"min": [0, 0], "max": [20, 8]}}],
+      "spawns": {"s": {"pos": [10, 0, 4]}}})";
+    const char* B = R"({"id": "square", "origin": [20.3, -2], "outdoor": {}, "bounds": {"min": [0, 0], "max": [30, 12]}, "height": 6,
+      "walls": {"west": {"openings": [{"kind": "passage", "center": 6.0, "width": 6.0, "height": 6.0}]}},
+      "shots": [{"id": "a", "pos": [5, 3, 1], "look_at": [20, 1, 6], "fov": 55, "zone": {"min": [0, 0], "max": [30, 12]}}],
+      "spawns": {"s": {"pos": [10, 0, 4]}}})";
+    const auto rooms = std::vector<RoomSpec>{load_text("quay", A), load_text("square", B)};
+    const auto doors = house::doorways(rooms);
+    ASSERT_EQ(doors.size(), 1u);
+    EXPECT_TRUE(doors[0].passage);
+    EXPECT_TRUE(doors[0].live);
+    EXPECT_EQ(doors[0].b, 1);
+    EXPECT_FALSE(in_walls(rooms[0], 20.15f, 4.0f));   // the quay's east wall is open there
+    EXPECT_TRUE(in_walls(rooms[0], 20.15f, 7.8f));    // and shut beside it
+    EXPECT_EQ(house::next_doorway(doors, 0, 1), 0);
+}
+
+TEST(House, AStreetIsLitByItsLamps) {   // the lamps the set builder plants light him in the game too
+    const char* STREET = R"({"id": "street", "origin": [-20, 10], "outdoor": {"lamps": [[8, 8.2], [30, 8.2]], "lamp_energy": 0.9},
+      "bounds": {"min": [0, 0], "max": [40, 8]}, "height": 6,
+      "lights": [{"kind": "sun", "dir_from": [0, 1, 1], "color": [0.5, 0.6, 1.0]}],
+      "shots": [{"id": "a", "pos": [5, 3, 1], "look_at": [20, 1, 6], "fov": 55, "zone": {"min": [0, 0], "max": [40, 8]}}],
+      "spawns": {"s": {"pos": [20, 0, 4]}}})";
+    const RoomSpec r = load_text("street", STREET);
+    ASSERT_EQ(r.lights.size(), 3u);
+    EXPECT_EQ(r.lights[1].kind, "point");
+    EXPECT_NEAR(r.lights[1].pos.x, -12.0f, 1e-5f);   // moved to its origin with everything else
+    EXPECT_NEAR(r.lights[1].pos.y, LAMP_HEAD, 1e-5f);
+    EXPECT_NEAR(r.lights[2].pos.z, 18.2f, 1e-5f);
+    EXPECT_FLOAT_EQ(r.lights[2].energy, 0.9f);
+}
+
 TEST(House, TheRealHouseFitsTogether) {
     std::vector<RoomSpec> rooms;
     for (const char* id : {"gang", "kelder", "voorkamer"}) {   // (name order, as the game loads them)

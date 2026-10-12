@@ -47,6 +47,19 @@ class ReferenceTests(unittest.TestCase):
                             "bridges": [{"deck": "ph:t_brick_floor_002"}]}}
         self.assertEqual(polyhaven.references(spec), {"cobblestone_02": "texture", "t_brick_floor_002": "texture"})
 
+    def test_a_sky_and_the_rooms_behind_lit_windows_are_hdris(self):
+        spec = {"sky": {"hdri": "kloppenheim_07_puresky", "strength": 0.5},
+                "outdoor": {"window_rooms": ["warm_bar", "fireplace"]}}
+        self.assertEqual(polyhaven.references(spec), {"kloppenheim_07_puresky": "sky", "warm_bar": "hdri", "fireplace": "hdri"})
+
+    def test_hdri_picks_the_hdr_at_its_size(self):
+        files = {"hdri": {"1k": {"hdr": {"url": "u1.hdr", "md5": "a"}, "exr": {"url": "u1.exr"}},
+                          "4k": {"hdr": {"url": "u4.hdr", "md5": "b"}}}}
+        self.assertEqual(polyhaven.pick_hdri(files, "4k"), {"url": "u4.hdr", "md5": "b"})
+        with self.assertRaises(KeyError):
+            polyhaven.pick_hdri(files, "2k")
+        self.assertEqual(polyhaven.HDRI_RES["sky"], "4k")
+
     def test_plants_are_models(self):
         spec = {"exterior": {"side": "west", "lightwell": True, "plants": ["ph:potted_plant_01"]}}
         self.assertEqual(polyhaven.references(spec), {"potted_plant_01": "model"})

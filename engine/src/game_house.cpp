@@ -95,7 +95,8 @@ bool Game::load_house(const std::string& start) {
     leaves_.clear();
     for (const auto& d : doorways_) {
         leaves_.push_back(doors::hang(d.ax, d.az, d.bx, d.bz, d.nx, d.nz, d.hinge_at_a));
-        leaf_meshes_.push_back(d.live ? leaf_mesh(d.width(), d.height, d.grate) : Mesh{});
+        leaf_meshes_.push_back(d.live && !d.passage ? leaf_mesh(d.width(), d.height, d.grate) : Mesh{});
+        if (d.passage) leaves_.back().angle = leaves_.back().target = doors::OPEN;   // (a way through: always open)
     }
     storey_ = rooms_[size_t(room_)].floor;
     return true;
@@ -123,7 +124,7 @@ void Game::build_storey(int storey) {
             for (const auto& it : rooms_[size_t(r)].interactables)
                 if (it.id == id && !it.lock.empty() && !world_.unlocked.count(status::WorldState::key(rooms_[size_t(r)].id, it.id))) locked = true;
         }
-        leaves_[i].locked = locked;
+        leaves_[i].locked = locked || d.passage;   // (a passage never swings: it's not a door)
     }
     // The Drowned of this storey, as the world remembers them: the dead stay dead, the rest are
     // back where they were waiting.
@@ -302,6 +303,11 @@ bool Game::use_door(int room, const Interactable& it) {
         if (t >= 0 && rooms_[size_t(t)].floor != storey_) { start_beat(it.target_room, it.target_spawn); return true; }
         if (!it.text.empty()) show_text(it.text);
         return !it.text.empty();
+    }
+    if (doorways_[size_t(di)].passage) {   // a way through, not a door: across it to another storey, or nothing to do
+        const int t = room_index(it.target_room);
+        if (t >= 0 && rooms_[size_t(t)].floor != storey_) { start_beat(it.target_room, it.target_spawn); return true; }
+        return false;
     }
     doors::Leaf& L = leaves_[size_t(di)];
     if (L.locked) { sfx_.play("door_locked", 0.8f); show_text("It won't open."); return true; }

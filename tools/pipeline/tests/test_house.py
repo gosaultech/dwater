@@ -62,6 +62,15 @@ class RealHouseTests(unittest.TestCase):
     def setUp(self):
         self.specs = {p.stem: json.loads(p.read_text()) for p in ROOMS.glob("*.json")}
 
+    def test_streets_meet_at_a_passage(self):   # an open way between two street sets: one doorway, live
+        quay = dict(room("quay", (0, 0), (20, 8), {"east": {"openings": [{"kind": "passage", "center": 4.0, "width": 6.0}]}}), outdoor=True)
+        square = dict(room("square", (20.3, -2), (30, 12), {"west": {"openings": [{"kind": "passage", "center": 6.0, "width": 6.0}]}}),
+                      outdoor=True)
+        ds = house.doorways({"quay": quay, "square": square})
+        self.assertEqual(len(ds), 1)
+        self.assertTrue(ds[0]["live"] and ds[0]["passage"])
+        self.assertEqual((ds[0]["a"], ds[0]["b"]), ("quay", "square"))
+
     def test_a_street_shares_no_walls(self):   # the street outside the front: the house keeps its whole wall
         specs = three()
         specs["street"] = dict(room("street", (-4.3, 6.3), (8, 6), {}), outdoor=True)

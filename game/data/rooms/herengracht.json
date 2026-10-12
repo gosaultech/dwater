@@ -20,13 +20,16 @@
           2.0
         ],
         "y": 0.0,
+        "kerb": true,
         "material": {
-          "ph": "t_brick_floor_002",
+          "ph": "square_concrete_pavers",
           "tint": [
-            0.42,
-            0.37,
-            0.33
-          ]
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.25
         }
       },
       {
@@ -39,14 +42,16 @@
           100.0,
           6.4
         ],
-        "y": -0.08,
+        "y": -0.1,
         "material": {
-          "ph": "cobblestone_02",
+          "ph": "herringbone_brick",
           "tint": [
-            0.42,
-            0.42,
-            0.44
-          ]
+            0.8,
+            0.72,
+            0.66
+          ],
+          "wet": 0.8,
+          "puddles": 0.3
         }
       },
       {
@@ -61,12 +66,14 @@
         ],
         "y": 0.0,
         "material": {
-          "ph": "t_brick_floor_002",
+          "ph": "brick_pavement_02",
           "tint": [
-            0.36,
-            0.32,
-            0.29
-          ]
+            0.72,
+            0.68,
+            0.64
+          ],
+          "wet": 0.7,
+          "puddles": 0.3
         }
       }
     ],
@@ -79,7 +86,7 @@
         100.0
       ],
       "far_quay": 6.0,
-      "lit": 0.14,
+      "lit": 0.25,
       "gaps": [
         [
           16.4,
@@ -89,7 +96,18 @@
           19.5,
           20.5
         ]
-      ]
+      ],
+      "far_lamp_power": 420.0,
+      "far_ground": {
+        "ph": "herringbone_brick",
+        "tint": [
+          0.75,
+          0.68,
+          0.62
+        ],
+        "wet": 0.7,
+        "puddles": 0.5
+      }
     },
     "facades": [
       {
@@ -109,7 +127,7 @@
         "gable_h": 3.6,
         "door_bay": 1,
         "stoop": 0.5,
-        "lit": 0.2
+        "lit": 0.25
       },
       {
         "x0": -6.0,
@@ -128,7 +146,12 @@
         "seed": 11,
         "door_bay": 2,
         "stoop": 0.75,
-        "lit": 0.2
+        "lit": 0.25,
+        "street_sign": {
+          "text": "HERENGRACHT",
+          "u": 8.4,
+          "v": 3.05
+        }
       },
       {
         "x0": 3.45,
@@ -147,7 +170,7 @@
         "gable_h": 4.0,
         "door_bay": 0,
         "stoop": 0.75,
-        "lit": 0.2
+        "lit": 0.25
       },
       {
         "x0": 12.72,
@@ -165,11 +188,6 @@
         "seed": 13,
         "skin_below": 3.9,
         "lit": 0.0,
-        "tint": [
-          0.24,
-          0.19,
-          0.17
-        ],
         "holes": [
           {
             "u0": 0.87,
@@ -204,6 +222,12 @@
             "v0": 2.72,
             "v1": 3.34
           }
+        ],
+        "brick": "medieval_red_brick",
+        "tint": [
+          0.82,
+          0.76,
+          0.72
         ]
       },
       {
@@ -222,8 +246,39 @@
         "seed": 14,
         "gable_h": 3.6,
         "door_bay": 2,
-        "stoop": 0.5,
-        "lit": 0.2
+        "stoop": 0.0,
+        "lit": 0.25,
+        "shop": {
+          "name": "EETCAF\u00c9 HET ANKER",
+          "kind": "restaurant",
+          "room": "warm_restaurant_night",
+          "frame": [
+            0.04,
+            0.09,
+            0.06
+          ],
+          "sign": [
+            1.0,
+            0.86,
+            0.62
+          ],
+          "awning": [
+            [
+              0.45,
+              0.06,
+              0.05
+            ],
+            [
+              0.78,
+              0.74,
+              0.66
+            ]
+          ],
+          "blade": "HET ANKER",
+          "door_bay": 1,
+          "power": 70.0,
+          "glow": 0.5
+        }
       },
       {
         "x0": 30.05,
@@ -243,7 +298,7 @@
         "gable_h": 3.8,
         "door_bay": 0,
         "stoop": 0.75,
-        "lit": 0.2
+        "lit": 0.25
       },
       {
         "x0": 37.95,
@@ -257,11 +312,37 @@
           2.9
         ],
         "bays": 4,
-        "gable": "cornice",
+        "gable": "neck",
         "seed": 16,
         "door_bay": 1,
-        "stoop": 0.5,
-        "lit": 0.2
+        "stoop": 0.0,
+        "lit": 0.25,
+        "gable_h": 3.8,
+        "shop": {
+          "name": "CAF\u00c9 DE BRUG",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "frame": [
+            0.2,
+            0.045,
+            0.035
+          ],
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "blade": "CAF\u00c9",
+          "door_bay": 0,
+          "power": 95.0,
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.5
+        },
+        "street_sign": {
+          "text": "HERENGRACHT",
+          "u": 1.2,
+          "v": 3.15
+        }
       },
       {
         "x0": 46.05,
@@ -280,7 +361,7 @@
         "gable_h": 3.8,
         "door_bay": 2,
         "stoop": 0.5,
-        "lit": 0.2
+        "lit": 0.25
       }
     ],
     "bridges": [
@@ -317,7 +398,31 @@
           ]
         ]
       }
-    ]
+    ],
+    "window_rooms": [
+      "warm_bar",
+      "fireplace",
+      "small_empty_room_2",
+      "christmas_photo_studio_04",
+      "warm_restaurant_night",
+      "unfinished_office_night"
+    ],
+    "lamps": [
+      [
+        8.0,
+        8.15
+      ],
+      [
+        17.0,
+        8.15
+      ],
+      [
+        30.6,
+        8.15
+      ]
+    ],
+    "lamp_power": 380.0,
+    "lamp_energy": 1.1
   },
   "bounds": {
     "min": [
@@ -392,7 +497,8 @@
         13.0,
         0.55
       ],
-      "seed": 21
+      "seed": 21,
+      "depth": 7
     },
     {
       "type": "elm",
@@ -406,7 +512,14 @@
         13.0,
         0.55
       ],
-      "seed": 22
+      "seed": 22,
+      "leaves": 3,
+      "leaf_color": [
+        0.45,
+        0.32,
+        0.07
+      ],
+      "depth": 7
     },
     {
       "type": "elm",
@@ -420,7 +533,8 @@
         13.0,
         0.55
       ],
-      "seed": 23
+      "seed": 23,
+      "depth": 7
     },
     {
       "type": "elm",
@@ -434,7 +548,14 @@
         13.0,
         0.55
       ],
-      "seed": 24
+      "seed": 24,
+      "leaves": 3,
+      "leaf_color": [
+        0.45,
+        0.32,
+        0.07
+      ],
+      "depth": 7
     },
     {
       "type": "bollard",
@@ -752,7 +873,7 @@
       "type": "model",
       "model": "ph:covered_car",
       "pos": [
-        6.4,
+        14.3,
         0.0,
         6.95
       ],
@@ -778,12 +899,17 @@
         4.4,
         1.4,
         1.8
+      ],
+      "tint": [
+        0.55,
+        0.6,
+        0.7
       ]
     },
     {
       "type": "railing",
       "pos": [
-        26.5,
+        23.5,
         0.0,
         8.55
       ],
@@ -795,25 +921,11 @@
       "collide": false
     },
     {
-      "type": "railing",
-      "pos": [
-        37.0,
-        0.0,
-        8.55
-      ],
-      "size": [
-        6.0,
-        0.9,
-        0.05
-      ],
-      "collide": false
-    },
-    {
       "type": "bike",
       "pos": [
-        35.2,
+        21.6,
         0.0,
-        7.9
+        8.05
       ],
       "yaw": 90,
       "size": [
@@ -821,14 +933,15 @@
         1.1,
         0.5
       ],
-      "collide": false
+      "collide": false,
+      "seed": 1
     },
     {
       "type": "bike",
       "pos": [
-        35.9,
+        22.4,
         0.0,
-        7.95
+        8.1
       ],
       "yaw": 84,
       "size": [
@@ -836,30 +949,15 @@
         1.1,
         0.5
       ],
-      "collide": false
+      "collide": false,
+      "seed": 2
     },
     {
       "type": "bike",
       "pos": [
-        36.8,
-        0.05,
-        7.7
-      ],
-      "yaw": 70,
-      "roll": 88,
-      "size": [
-        1.8,
-        1.1,
-        0.5
-      ],
-      "collide": false
-    },
-    {
-      "type": "bike",
-      "pos": [
-        38.3,
+        23.3,
         0.0,
-        7.95
+        8.05
       ],
       "yaw": 95,
       "size": [
@@ -867,14 +965,15 @@
         1.1,
         0.5
       ],
-      "collide": false
+      "collide": false,
+      "seed": 3
     },
     {
       "type": "bike",
       "pos": [
-        24.0,
+        25.6,
         0.05,
-        6.9
+        7.3
       ],
       "yaw": 20,
       "roll": -86,
@@ -883,7 +982,8 @@
         1.1,
         0.5
       ],
-      "collide": false
+      "collide": false,
+      "seed": 4
     },
     {
       "type": "bike",
@@ -898,7 +998,8 @@
         1.1,
         0.5
       ],
-      "collide": false
+      "collide": false,
+      "seed": 5
     },
     {
       "type": "houseboat",
@@ -914,43 +1015,21 @@
         4.2
       ],
       "seed": 4,
-      "lit_window": 2,
       "plank": 3.0,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:street_lamp_01",
-      "pos": [
-        8.0,
-        0.0,
-        8.15
-      ],
-      "yaw": 180,
-      "scale": 1.0,
       "collide": false,
-      "shadow": false
-    },
-    {
-      "type": "model",
-      "model": "ph:street_lamp_01",
-      "pos": [
-        30.6,
-        0.0,
-        8.15
-      ],
-      "yaw": 180,
-      "scale": 1.0,
-      "collide": false,
-      "shadow": false
+      "lit_windows": [
+        1,
+        2,
+        4
+      ]
     },
     {
       "type": "model",
       "model": "ph:trashbag",
       "pos": [
-        23.4,
+        21.9,
         0.0,
-        0.6
+        0.55
       ],
       "yaw": 30,
       "scale": 1.0,
@@ -960,9 +1039,9 @@
       "type": "model",
       "model": "ph:trashbag",
       "pos": [
-        24.0,
+        22.25,
         0.0,
-        0.45
+        0.4
       ],
       "yaw": 160,
       "scale": 0.85,
@@ -994,16 +1073,287 @@
     },
     {
       "type": "model",
-      "model": "ph:street_lamp_01",
+      "model": "ph:outdoor_table_chair_set_01",
       "pos": [
-        17.0,
+        24.2,
         0.0,
-        8.15
+        0.95
       ],
-      "yaw": 180,
+      "yaw": 90,
       "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        26.9,
+        0.0,
+        0.95
+      ],
+      "yaw": 80,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:standing_chalkboard_01",
+      "pos": [
+        28.9,
+        0.0,
+        1.4
+      ],
+      "yaw": -30,
+      "scale": 0.8,
+      "collide": false
+    },
+    {
+      "type": "heater",
+      "pos": [
+        25.6,
+        0.0,
+        0.6
+      ],
+      "size": [
+        0.5,
+        2.2,
+        0.5
+      ],
+      "power": 45.0
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        35.4,
+        0.0,
+        7.35
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        37.2,
+        0.0,
+        7.6
+      ],
+      "yaw": 15,
+      "scale": 1.0,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:outdoor_table_chair_set_01",
+      "pos": [
+        38.9,
+        0.0,
+        7.3
+      ],
+      "yaw": -10,
+      "scale": 1.0,
+      "pitch": 0,
+      "roll": 82,
+      "size": [
+        1.0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        34.6,
+        0.0,
+        8.35
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        36.6,
+        0.0,
+        8.35
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        38.6,
+        0.0,
+        8.35
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "heater",
+      "pos": [
+        36.3,
+        0.0,
+        6.9
+      ],
+      "size": [
+        0.5,
+        2.2,
+        0.5
+      ],
+      "power": 55.0
+    },
+    {
+      "type": "heater",
+      "pos": [
+        39.5,
+        0.0,
+        6.9
+      ],
+      "size": [
+        0.5,
+        2.2,
+        0.5
+      ],
+      "power": 55.0
+    },
+    {
+      "type": "model",
+      "model": "ph:standing_chalkboard_01",
+      "pos": [
+        39.6,
+        0.0,
+        1.5
+      ],
+      "yaw": -60,
+      "scale": 0.8,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        31.2,
+        0.0,
+        8.05
+      ],
+      "yaw": 96,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
       "collide": false,
-      "shadow": false
+      "seed": 10
+    },
+    {
+      "type": "bike",
+      "pos": [
+        31.82,
+        0.0,
+        8.05
+      ],
+      "yaw": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 11
+    },
+    {
+      "type": "bike",
+      "pos": [
+        32.44,
+        0.0,
+        8.05
+      ],
+      "yaw": 96,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 12
+    },
+    {
+      "type": "bike",
+      "pos": [
+        33.06,
+        0.0,
+        8.05
+      ],
+      "yaw": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 13
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_02",
+      "pos": [
+        4.25,
+        0.75,
+        0.2
+      ],
+      "yaw": 0,
+      "scale": 0.85,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_01",
+      "pos": [
+        5.75,
+        0.75,
+        0.2
+      ],
+      "yaw": 40,
+      "scale": 0.85,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_02",
+      "pos": [
+        30.5,
+        0.75,
+        0.2
+      ],
+      "yaw": 90,
+      "scale": 0.8,
+      "collide": false
     }
   ],
   "lights": [
@@ -1019,77 +1369,57 @@
         0.66,
         1.0
       ],
-      "blender_power": 1.6,
-      "godot_energy": 0.3,
+      "blender_power": 0.12,
+      "godot_energy": 0.25,
       "angle": 2.0
     },
     {
       "kind": "point",
       "pos": [
-        8.0,
-        3.75,
-        8.4
+        26.2,
+        1.6,
+        0.8
       ],
       "color": [
         1.0,
-        0.6,
-        0.3
+        0.72,
+        0.45
       ],
-      "blender_power": 320,
-      "radius": 0.12,
-      "godot_energy": 1.0,
-      "range": 9.0
+      "blender_power": 0,
+      "godot_energy": 0.7,
+      "range": 5.0
     },
     {
       "kind": "point",
       "pos": [
-        30.6,
-        3.75,
-        8.4
+        37.4,
+        2.0,
+        7.3
       ],
       "color": [
         1.0,
-        0.6,
-        0.3
+        0.45,
+        0.15
       ],
-      "blender_power": 320,
-      "radius": 0.12,
-      "godot_energy": 1.0,
-      "range": 9.0,
+      "blender_power": 0,
+      "godot_energy": 0.6,
+      "range": 5.0,
       "flicker": true
     },
     {
       "kind": "point",
       "pos": [
-        44.5,
-        2.2,
-        6.0
+        41.3,
+        3.4,
+        9.7
       ],
       "color": [
         1.0,
-        0.62,
-        0.28
+        0.66,
+        0.36
       ],
-      "blender_power": 60,
-      "radius": 0.3,
-      "godot_energy": 0.6,
-      "range": 8.0
-    },
-    {
-      "kind": "point",
-      "pos": [
-        17.0,
-        3.75,
-        8.4
-      ],
-      "color": [
-        1.0,
-        0.6,
-        0.3
-      ],
-      "blender_power": 320,
-      "radius": 0.12,
-      "godot_energy": 1.0,
+      "blender_power": 0,
+      "godot_energy": 0.9,
       "range": 9.0
     }
   ],
@@ -1097,16 +1427,16 @@
     {
       "id": "d",
       "pos": [
-        17.5,
-        3.6,
-        1.3
+        16.5,
+        2.4,
+        1.6
       ],
       "look_at": [
-        2.0,
         1.0,
+        1.4,
         7.6
       ],
-      "fov": 58,
+      "fov": 60,
       "zone": {
         "min": [
           0.0,
@@ -1122,16 +1452,16 @@
     {
       "id": "b",
       "pos": [
-        30.0,
-        3.4,
-        1.2
+        29.5,
+        2.3,
+        2.6
       ],
       "look_at": [
         12.0,
-        0.8,
-        8.0
+        1.0,
+        7.5
       ],
-      "fov": 56,
+      "fov": 58,
       "zone": {
         "min": [
           9.0,
@@ -1147,14 +1477,14 @@
     {
       "id": "a",
       "pos": [
-        8.0,
-        3.8,
-        1.0
+        9.0,
+        2.5,
+        2.2
       ],
       "look_at": [
         30.0,
-        0.8,
-        7.5
+        1.0,
+        6.5
       ],
       "fov": 56,
       "zone": {
@@ -1172,14 +1502,14 @@
     {
       "id": "c",
       "pos": [
-        24.0,
-        2.4,
-        0.9
+        25.0,
+        1.9,
+        3.0
       ],
       "look_at": [
         44.0,
-        0.9,
-        12.0
+        1.0,
+        10.0
       ],
       "fov": 58,
       "zone": {
@@ -1230,17 +1560,6 @@
       "text": "The front door of the house you came out of. Locked from the inside."
     },
     {
-      "id": "houseboat",
-      "kind": "examine",
-      "pos": [
-        8.0,
-        1.0,
-        8.4
-      ],
-      "radius": 1.2,
-      "text": "A houseboat, lamp still burning in one window. Nobody answers."
-    },
-    {
       "id": "bridge",
       "kind": "examine",
       "pos": [
@@ -1262,6 +1581,39 @@
         5.6
       ],
       "radius": 0.9
+    },
+    {
+      "id": "houseboat",
+      "kind": "examine",
+      "pos": [
+        8.0,
+        1.0,
+        8.4
+      ],
+      "radius": 1.2,
+      "text": "A houseboat, lamp still burning in one window. Nobody answers."
+    },
+    {
+      "id": "het_anker",
+      "kind": "examine",
+      "pos": [
+        26.0,
+        1.0,
+        1.0
+      ],
+      "radius": 1.2,
+      "text": "Het Anker. Through the glass: tables laid for twelve, the candles burned down into their holders."
+    },
+    {
+      "id": "de_brug",
+      "kind": "examine",
+      "pos": [
+        37.0,
+        1.0,
+        7.3
+      ],
+      "radius": 1.3,
+      "text": "Caf\u00e9 De Brug's terrace. The heaters are still burning. Half-finished beers on the tables; someone left in a hurry."
     }
   ],
   "enemies": [
@@ -1287,6 +1639,22 @@
     }
   ],
   "render": {
-    "exposure": 1.3
+    "exposure": 1.1,
+    "bloom": {
+      "threshold": 0.9,
+      "strength": 0.35,
+      "size": 0.55
+    }
+  },
+  "sky": {
+    "hdri": "kloppenheim_07_puresky",
+    "strength": 0.045,
+    "camera": 0.1,
+    "tint": [
+      1.0,
+      0.76,
+      0.55
+    ],
+    "rotation": 0
   }
 }

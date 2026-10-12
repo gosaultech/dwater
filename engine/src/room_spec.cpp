@@ -68,6 +68,17 @@ RoomSpec RoomSpec::load(const std::string& path) {
         L.flicker = l.value("flicker", false);
         r.lights.push_back(L);
     }
+    // A street's lamps (the set builder plants the lamp posts; the game lights him by them).
+    const json outdoor = d.value("outdoor", json::object());
+    for (const auto& l : outdoor.value("lamps", json::array())) {
+        Light L;
+        L.kind = "point";
+        L.pos = {l[0].get<float>(), LAMP_HEAD, l[1].get<float>()};
+        L.color = {1.0f, 0.66f, 0.36f};
+        L.energy = outdoor.value("lamp_energy", 1.1f);
+        L.range = 11.0f;
+        r.lights.push_back(L);
+    }
     for (const auto& e : d.value("enemies", json::array()))
         r.enemies.push_back({e["id"], e.value("kind", "verdronkene"), e.value("requires_flag", ""), v3(e["pos"]),
                              e.value("yaw", 0.0f) * DEG, e.value("emerge", false)});
@@ -98,7 +109,7 @@ RoomSpec RoomSpec::load(const std::string& path) {
         const float lo = (along_x ? b.x0 : b.z0) - t, hi = (along_x ? b.x1 : b.z1) + t;
         std::vector<std::pair<float, float>> gaps;
         for (const auto& o : r.openings)
-            if (o.side == side && o.kind == "door") {
+            if (o.side == side && (o.kind == "door" || o.kind == "passage")) {
                 const float base = along_x ? b.x0 : b.z0;
                 gaps.push_back({base + o.center - o.width / 2, base + o.center + o.width / 2});
             }

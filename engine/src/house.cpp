@@ -52,7 +52,7 @@ std::vector<Doorway> doorways(const std::vector<RoomSpec>& rooms) {
         const RoomSpec& A = rooms[r];
         for (size_t k = 0; k < A.openings.size(); ++k) {
             const Opening& o = A.openings[k];
-            if (o.kind != "door" || used[r][k]) continue;
+            if ((o.kind != "door" && o.kind != "passage") || used[r][k]) continue;
             used[r][k] = true;
             Doorway d;
             d.a = int(r);
@@ -67,7 +67,7 @@ std::vector<Doorway> doorways(const std::vector<RoomSpec>& rooms) {
                 const RoomSpec& B = rooms[s];
                 for (size_t m = 0; m < B.openings.size(); ++m) {
                     const Opening& p = B.openings[m];
-                    if (p.kind != "door" || used[s][m]) continue;
+                    if ((p.kind != "door" && p.kind != "passage") || used[s][m]) continue;
                     float px0, pz0, px1, pz1;
                     B.opening_ends(p, px0, pz0, px1, pz1);
                     if (std::hypot(px0 - d.ax, pz0 - d.az) < PAIR_TOL && std::hypot(px1 - d.bx, pz1 - d.bz) < PAIR_TOL) {
@@ -82,6 +82,8 @@ std::vector<Doorway> doorways(const std::vector<RoomSpec>& rooms) {
             const Interactable* da = d.door_a.empty() ? nullptr : find(A, d.door_a);
             d.live = d.b >= 0 || (da && !da->target_room.empty());
             d.grate = o.style == "grate" || (d.b >= 0 && rooms[size_t(d.b)].openings[size_t(d.open_b)].style == "grate");
+            d.passage = o.kind == "passage";
+            d.live = d.live || (d.passage && d.b >= 0);
             out.push_back(d);
         }
     }

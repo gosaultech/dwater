@@ -17,6 +17,7 @@ struct V3 { float x = 0, y = 0, z = 0; };
 struct Shot { std::string id; V3 pos, look_at; float fov = 55; Rect2 zone{}; int priority = 0; };
 struct Spawn { V3 pos; float yaw = 0; };
 struct Light { std::string kind; V3 pos, look_at, dir_from; V3 color{1, 1, 1}; float energy = 1, range = 6, spot_angle = 60; bool flicker = false; };
+constexpr float LAMP_HEAD = 3.27f;   // m: a street lamp's lantern ("outdoor": {"lamps": [[x, z], ...]}; tools/blender/street.py)
 struct EnemySpawn { std::string id, kind, requires_flag; V3 pos; float yaw = 0; bool emerge = false; };
 // Something to walk up to and press Interact at. kind: "pickup" (item, count), "note" (title,
 // text), "examine" (text), "door" (target_room, target_spawn; lock: the key it needs), "save",

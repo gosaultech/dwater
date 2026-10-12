@@ -69,7 +69,10 @@ float ecg(float u) {
     if (u > 0.38f && u < 0.48f) return 0.3f * std::sin((u - 0.38f) / 0.10f * PI);
     return 0;
 }
-std::string storey_name(int s) { return s == 0 ? "GROUND FLOOR" : s < 0 ? (s == -1 ? "CELLAR" : "BELOW") : s == 1 ? "FIRST FLOOR" : "UPSTAIRS"; }
+// (storey 10 and up: the city outside, its streets and squares, one map of its own)
+std::string storey_name(int s) {
+    return s >= 10 ? "THE CITY" : s == 0 ? "GROUND FLOOR" : s < 0 ? (s == -1 ? "CELLAR" : "BELOW") : s == 1 ? "FIRST FLOOR" : "UPSTAIRS";
+}
 constexpr int PREVIEW_W = 900, PREVIEW_H = 640, ICON = 160;
 enum Glyph { G_CONFIRM, G_BACK, G_COMBINE, G_EXAMINE, G_TAB_L, G_TAB_R, G_STICK, G_DPAD };
 }  // namespace
@@ -563,8 +566,9 @@ void Game::draw_status_ui() {
         if (known) shown.push_back(&r);
     }
     if (shown.empty()) {
-        text(f_italic_, storey > 0 ? "You haven't found the way up here." : "You haven't found the way down here.", 640, 360, 24,
-             C_FAINT, 1);
+        text(f_italic_, storey >= 10 ? "You haven't been out there yet." : storey > 0 ? "You haven't found the way up here."
+                                                                                    : "You haven't found the way down here.",
+             640, 360, 24, C_FAINT, 1);
     } else {
         float x0 = 1e9f, z0 = 1e9f, x1 = -1e9f, z1 = -1e9f;
         for (const auto* r : shown) {

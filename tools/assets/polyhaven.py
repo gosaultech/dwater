@@ -30,8 +30,17 @@ API = "https://api.polyhaven.com"
 UA = {"User-Agent": "damned-waters-set-builder/1.0"}
 # Texture maps the set builder reads, by Poly Haven's map names.
 MAPS = {"diff": "Diffuse", "rough": "Rough", "nor_gl": "nor_gl", "arm": "arm", "disp": "Displacement"}
-# What the set kit (tools/blender/kit.py) falls back on when a prop names no material.
-KIT_DEFAULTS = {"marble_01": "texture", "dark_wood": "texture"}
+# What the set kits fall back on when a RoomSpec names nothing: kit.py's materials, and street.py's
+# house fronts, quay, trees, boats and street lamps.
+KIT_DEFAULTS = {"marble_01": "texture", "dark_wood": "texture",
+                "medieval_red_brick": "texture", "red_bricks_04": "texture", "brick_wall_09": "texture",
+                "brick_wall_10": "texture", "dark_brick_wall": "texture", "distressed_painted_planks": "texture",
+                "large_sandstone_blocks": "texture", "grey_roof_tiles": "texture", "mossy_brick": "texture",
+                "bark_platanus": "texture", "rusty_painted_metal": "texture", "wood_peeling_paint_weathered": "texture",
+                "herringbone_brick": "texture", "street_lamp_01": "model"}
+# HDRIs: a set's sky is fetched sharp (it fills the background); the rooms seen through lit windows
+# across the street are small, so a light version does.
+HDRI_RES = {"sky": "4k", "hdri": "1k"}
 
 
 # ── Pure: what a RoomSpec asks for, and which files serve it ─────────────────────
@@ -67,6 +76,11 @@ def references(spec: dict) -> dict[str, str]:
     for key in ("exterior", "roof", "ceiling_beams", "outdoor"):   # the outside world, an attic's roof, beams, a street
         if isinstance(spec.get(key), dict):
             walk(spec[key], "texture")
+    sky = spec.get("sky")
+    if isinstance(sky, dict) and sky.get("hdri"):   # the set's sky (an HDRI panorama)
+        out[sky["hdri"]] = "sky"
+    for room in (spec.get("outdoor") or {}).get("window_rooms", []):   # real rooms behind lit windows
+        out.setdefault(room, "hdri")
     return out
 
 
@@ -79,6 +93,14 @@ def pick_texture(files: dict, res: str, fmt: str = "jpg") -> dict[str, dict]:
         if f:
             picked[ours] = {"url": f["url"], "md5": f.get("md5", "")}
     return picked
+
+
+def pick_hdri(files: dict, res: str) -> dict:
+    """From the API's file list for an HDRI: the Radiance .hdr at that resolution."""
+    f = files.get("hdri", {}).get(res, {}).get("hdr")
+    if not f:
+        raise KeyError(f"no .hdr at {res}")
+    return {"url": f["url"], "md5": f.get("md5", "")}
 
 
 def pick_model(files: dict, res: str) -> dict:
@@ -126,6 +148,7 @@ def fetch(url: str, dest: Path, md5: str = "") -> Path:
 
 def ensure(asset_id: str, kind: str, res: str = "1k", cache: Path = CACHE) -> dict:
     """Fetch one asset into the cache; returns (and writes) its asset.json for Blender."""
+    res = HDRI_RES.get(kind, res)
     base = cache / asset_id / res
     meta_path = base / "asset.json"
     if meta_path.exists():
@@ -135,7 +158,10 @@ def ensure(asset_id: str, kind: str, res: str = "1k", cache: Path = CACHE) -> di
     meta = {"id": asset_id, "kind": kind, "res": res, "name": info.get("name", asset_id),
             "authors": sorted(info.get("authors", {})), "license": "CC0",
             "dimensions_mm": info.get("dimensions"), "source": f"https://polyhaven.com/a/{asset_id}"}
-    if kind == "model":
+    if kind in HDRI_RES:
+        h = pick_hdri(files, res)
+        meta["hdr"] = str(fetch(h["url"], base / local_name(h["url"]), h["md5"]).relative_to(base))
+    elif kind == "model":
         m = pick_model(files, res)
         for rel, f in m["include"].items():
             fetch(f["url"], base / rel, f["md5"])

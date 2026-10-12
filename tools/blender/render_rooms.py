@@ -85,12 +85,70 @@ def new_scene(spec, q, res):
     bg.inputs["Strength"].default_value = wc["strength"]
     out = world.node_tree.nodes.get("World Output") or world.node_tree.nodes.new("ShaderNodeOutputWorld")
     world.node_tree.links.new(bg.outputs[0], out.inputs["Surface"])
+    if spec.get("sky"):
+        sky_world(world.node_tree, spec["sky"], out)
     if q["volume"] > 0:
         vs = world.node_tree.nodes.new("ShaderNodeVolumeScatter")
         vs.inputs["Density"].default_value = q["volume"]
         world.node_tree.links.new(vs.outputs[0], out.inputs["Volume"])
     s.world = world
     return s
+
+
+def sky_world(nt, sky, out):
+    """The sky: a CC0 HDRI panorama ("sky": {"hdri": id, "strength": light it gives, "camera": how
+    bright it looks, "tint": [r, g, b], "rotation": degrees}). What the sky looks like and how much
+    it lights the set are set apart (the light path's camera ray), like a backdrop lit for the lens."""
+    import surfaces
+    a = surfaces.asset(sky["hdri"])
+    env = nt.nodes.new("ShaderNodeTexEnvironment")
+    env.image = bpy.data.images.load(str(Path(a["_dir"]) / a["hdr"]), check_existing=True)
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    mp = nt.nodes.new("ShaderNodeMapping")
+    mp.inputs["Rotation"].default_value = (0.0, 0.0, math.radians(sky.get("rotation", 0.0)))
+    nt.links.new(tc.outputs["Generated"], mp.inputs["Vector"])
+    nt.links.new(mp.outputs["Vector"], env.inputs["Vector"])
+    col = env.outputs["Color"]
+    if sky.get("tint"):
+        mx = nt.nodes.new("ShaderNodeMix")
+        mx.data_type = "RGBA"
+        mx.blend_type = "MULTIPLY"
+        mx.inputs["Factor"].default_value = 1.0
+        mx.inputs["B"].default_value = (*sky["tint"], 1.0)
+        nt.links.new(col, mx.inputs["A"])
+        col = mx.outputs["Result"]
+    lit, seen = nt.nodes.new("ShaderNodeBackground"), nt.nodes.new("ShaderNodeBackground")
+    lit.inputs["Strength"].default_value = sky.get("strength", 1.0)
+    seen.inputs["Strength"].default_value = sky.get("camera", sky.get("strength", 1.0))
+    nt.links.new(col, lit.inputs["Color"])
+    nt.links.new(col, seen.inputs["Color"])
+    lp = nt.nodes.new("ShaderNodeLightPath")
+    ms = nt.nodes.new("ShaderNodeMixShader")
+    nt.links.new(lp.outputs["Is Camera Ray"], ms.inputs[0])
+    nt.links.new(lit.outputs[0], ms.inputs[1])
+    nt.links.new(seen.outputs[0], ms.inputs[2])
+    nt.links.new(ms.outputs[0], out.inputs["Surface"])
+
+
+def bloom(s, cfg):
+    """Lamps and lit signs bloom, as they do in a photograph at night (the compositor's glare);
+    cfg: {"threshold", "strength", "size"} or None to switch it off (the depth pass must not bloom)."""
+    if not cfg:
+        s.use_nodes = False
+        return
+    s.use_nodes = True
+    t = s.node_tree
+    t.nodes.clear()
+    rl = t.nodes.new("CompositorNodeRLayers")
+    comp = t.nodes.new("CompositorNodeComposite")
+    gl = t.nodes.new("CompositorNodeGlare")
+    gl.glare_type = "BLOOM"
+    for name, val in (("Threshold", cfg.get("threshold", 1.0)), ("Strength", cfg.get("strength", 0.6)),
+                      ("Size", cfg.get("size", 0.6)), ("Saturation", cfg.get("saturation", 1.0))):
+        if name in gl.inputs:
+            gl.inputs[name].default_value = val
+    t.links.new(rl.outputs["Image"], gl.inputs["Image"])
+    t.links.new(gl.outputs["Image"], comp.inputs["Image"])
 
 
 def add_light(spec_light, i):
@@ -155,8 +213,9 @@ def depth_material():
     return m
 
 
-def render_beauty(s, q, path, exposure=0.6):
+def render_beauty(s, q, path, exposure=0.6, glow=None):
     s.view_layers[0].material_override = None
+    bloom(s, glow)
     s.cycles.samples = q["samples"]
     s.cycles.use_denoising = True
     s.cycles.denoiser = "OPENIMAGEDENOISE"
@@ -178,6 +237,7 @@ def render_beauty(s, q, path, exposure=0.6):
 
 
 def render_depth(s, path, depth_mat, world_white):
+    bloom(s, None)
     keep_world = s.world
     s.world = world_white
     s.view_layers[0].material_override = depth_mat
@@ -281,7 +341,8 @@ def main():
                 continue
             s.camera = add_camera(shot)
             t0 = time.time()
-            render_beauty(s, q, out_dir / f"{shot['id']}_color.png", spec.get("render", {}).get("exposure", 0.6))
+            render_beauty(s, q, out_dir / f"{shot['id']}_color.png", spec.get("render", {}).get("exposure", 0.6),
+                          spec.get("render", {}).get("bloom"))
             render_depth(s, out_dir / f"{shot['id']}_depth16.png", dmat, wworld)
             print(f"[render] {room_id}/{shot['id']} {a.quality} {res[0]}x{res[1]} in {time.time() - t0:.1f}s")
 

@@ -9,6 +9,8 @@
 #   * two hand-made patterns: {"pattern": "persian", "width": 0.8} (a woven runner) and
 #     {"pattern": "folk", "color": [...]} (Hindeloopen painting on a cupboard's panels)
 #   * a scan laid as a two-colour checkerboard: {"ph": "marble_01", "checker": 2.5, "tint_a": .., "tint_b": ..}
+#   * any scan rained on: {"ph": "herringbone_brick", "wet": 0.8, "puddles": 0.5}: darker and glossier
+#     all over, with still puddles (mirror-smooth, flat) where the ground dips
 # Box UVs in builders.py are in metres, so a texture's real size (from Poly Haven's metadata) maps
 # straight on: a 3.4 m parquet scan covers 3.4 m of floor.
 #
@@ -93,6 +95,31 @@ def pbr(nt, out, ref):
         nt.links.new(col, mix.inputs["A"])
         nt.links.new(ck.outputs["Color"], mix.inputs["B"])
         col = mix.outputs["Result"]
+    wet, mask = ref.get("wet", 0.0), None
+    if wet > 0:   # rain: the whole surface darker, and a puddle mask from noise in metres
+        nz = nt.nodes.new("ShaderNodeTexNoise")
+        nz.inputs["Scale"].default_value = ref.get("puddle_scale", 0.45)
+        nz.inputs["Detail"].default_value = 5.0
+        nz.inputs["Roughness"].default_value = 0.6
+        nt.links.new(tc.outputs["UV"], nz.inputs["Vector"])
+        rp = nt.nodes.new("ShaderNodeValToRGB")
+        lo = 0.66 - 0.22 * ref.get("puddles", 0.4)
+        rp.color_ramp.elements[0].position, rp.color_ramp.elements[1].position = lo, lo + 0.05
+        nt.links.new(nz.outputs["Fac"], rp.inputs["Fac"])
+        mask = rp.outputs["Color"]
+        dk = nt.nodes.new("ShaderNodeMix")
+        dk.data_type = "RGBA"
+        dk.blend_type = "MULTIPLY"
+        dk.inputs["Factor"].default_value = 1.0
+        dk.inputs["B"].default_value = (1 - 0.35 * wet, 1 - 0.35 * wet, 1 - 0.35 * wet, 1.0)
+        nt.links.new(col, dk.inputs["A"])
+        pd = nt.nodes.new("ShaderNodeMix")   # under a puddle: darker still
+        pd.data_type = "RGBA"
+        pd.blend_type = "MULTIPLY"
+        nt.links.new(mask, pd.inputs["Factor"])
+        nt.links.new(dk.outputs["Result"], pd.inputs["A"])
+        pd.inputs["B"].default_value = (0.8, 0.8, 0.8, 1.0)
+        col = pd.outputs["Result"]
     nt.links.new(col, b.inputs["Base Color"])
     rough_src = None
     if "rough" in maps:
@@ -105,14 +132,29 @@ def pbr(nt, out, ref):
         mul = nt.nodes.new("ShaderNodeMath")
         mul.operation = "MULTIPLY"
         mul.use_clamp = True
-        mul.inputs[1].default_value = ref.get("rough", 1.0)
+        mul.inputs[1].default_value = ref.get("rough", 1.0) * (1 - 0.55 * wet)
         nt.links.new(rough_src, mul.inputs[0])
-        nt.links.new(mul.outputs[0], b.inputs["Roughness"])
+        r_out = mul.outputs[0]
+        if mask is not None:   # a puddle is a mirror
+            mr = nt.nodes.new("ShaderNodeMix")
+            mr.data_type = "FLOAT"
+            nt.links.new(mask, mr.inputs["Factor"])
+            nt.links.new(r_out, mr.inputs["A"])
+            mr.inputs["B"].default_value = 0.03
+            r_out = mr.outputs["Result"]
+        nt.links.new(r_out, b.inputs["Roughness"])
     else:
         b.inputs["Roughness"].default_value = ref.get("rough", 0.6)
     if "nor_gl" in maps:
         nm = nt.nodes.new("ShaderNodeNormalMap")
         nm.inputs["Strength"].default_value = ref.get("bump", 1.0)
+        if mask is not None:   # and flat: the water fills the joints
+            fl = nt.nodes.new("ShaderNodeMath")
+            fl.operation = "MULTIPLY_ADD"
+            nt.links.new(mask, fl.inputs[0])
+            fl.inputs[1].default_value = -ref.get("bump", 1.0) * 0.9
+            fl.inputs[2].default_value = ref.get("bump", 1.0)
+            nt.links.new(fl.outputs[0], nm.inputs["Strength"])
         nt.links.new(_tex(nt, vec, _image(d / maps["nor_gl"], False)).outputs["Color"], nm.inputs["Color"])
         nt.links.new(nm.outputs["Normal"], b.inputs["Normal"])
     b.inputs["Metallic"].default_value = ref.get("metal", 0.0)
@@ -266,9 +308,67 @@ def is_ref(key):
     return isinstance(key, dict) or (isinstance(key, str) and key.startswith("ph:"))
 
 
+def room_card(nt, out, ref):
+    """A real room behind a lit window ({"room": hdri id, "strength": s}): a patch of a CC0 interior
+    panorama, at its own light levels. Which patch is the card object's own "room_u"/"room_v"
+    (custom properties), so one material serves every window that shows that room."""
+    a = asset(ref["room"])
+    img = bpy.data.images.load(str(Path(a["_dir"]) / a["hdr"]), check_existing=True)
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    sep = nt.nodes.new("ShaderNodeSeparateXYZ")
+    nt.links.new(tc.outputs["UV"], sep.inputs["Vector"])
+    comb = nt.nodes.new("ShaderNodeCombineXYZ")
+    for axis, prop, span in (("X", "room_u", ref.get("span_u", 0.14)), ("Y", "room_v", ref.get("span_v", 0.3))):
+        at = nt.nodes.new("ShaderNodeAttribute")
+        at.attribute_type = "OBJECT"
+        at.attribute_name = prop
+        ma = nt.nodes.new("ShaderNodeMath")
+        ma.operation = "MULTIPLY_ADD"
+        nt.links.new(sep.outputs[axis], ma.inputs[0])
+        ma.inputs[1].default_value = span
+        nt.links.new(at.outputs["Fac"], ma.inputs[2])
+        nt.links.new(ma.outputs[0], comb.inputs[axis])
+    tex = nt.nodes.new("ShaderNodeTexImage")
+    tex.image = img
+    tex.extension = "REPEAT"
+    nt.links.new(comb.outputs["Vector"], tex.inputs["Vector"])
+    e = nt.nodes.new("ShaderNodeEmission")
+    e.inputs["Strength"].default_value = ref.get("strength", 1.0)
+    nt.links.new(tex.outputs["Color"], e.inputs["Color"])
+    nt.links.new(e.outputs[0], out.inputs["Surface"])
+    return e
+
+
+def stripes(nt, out, ref):
+    """Awning canvas: two colours in stripes ref["width"] wide, across the UV's x (metres)."""
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    wv = nt.nodes.new("ShaderNodeTexWave")
+    wv.wave_type = "BANDS"
+    wv.bands_direction = "X"
+    wv.inputs["Scale"].default_value = 1.0 / (2 * ref.get("width", 0.25))
+    wv.inputs["Distortion"].default_value = 0.0
+    nt.links.new(tc.outputs["UV"], wv.inputs["Vector"])
+    r = nt.nodes.new("ShaderNodeValToRGB")
+    r.color_ramp.interpolation = "CONSTANT"
+    a, b = ref["colors"]
+    r.color_ramp.elements[0].color = (*a, 1)
+    r.color_ramp.elements[1].position = 0.5
+    r.color_ramp.elements[1].color = (*b, 1)
+    nt.links.new(wv.outputs["Color"], r.inputs["Fac"])
+    bs = nt.nodes.new("ShaderNodeBsdfPrincipled")
+    bs.inputs["Roughness"].default_value = 0.85
+    nt.links.new(r.outputs["Color"], bs.inputs["Base Color"])
+    nt.links.new(bs.outputs[0], out.inputs["Surface"])
+    return bs
+
+
 def build(nt, out, key):
     if isinstance(key, str) or "ph" in key:
         return pbr(nt, out, key)
+    if "room" in key:
+        return room_card(nt, out, key)
+    if key.get("pattern") == "stripes":
+        return stripes(nt, out, key)
     if "emit" in key:   # a lit sign, a pilot light: light of its own
         e = nt.nodes.new("ShaderNodeEmission")
         e.inputs["Color"].default_value = (*key["emit"], 1)

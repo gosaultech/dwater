@@ -435,7 +435,7 @@ void Game::update(float dt) {
     solid_.assign(statics_.begin(), statics_.end());
     shut_.clear();
     for (size_t i = 0; i < leaves_.size(); ++i) {
-        if (rooms_[size_t(doorways_[i].a)].floor != storey_) continue;
+        if (rooms_[size_t(doorways_[i].a)].floor != storey_ || doorways_[i].passage) continue;
         solid_.push_back(leaves_[i].collider());
         if (!leaves_[i].passable() && !doorways_[i].grate) shut_.push_back(leaves_[i].collider());   // (bars: seen through)
     }

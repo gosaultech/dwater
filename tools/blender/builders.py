@@ -231,6 +231,14 @@ def material(key):
         n = _noise(nt, _uv(nt), 3.0, 2)
         b = _bsdf(nt, out, color=(0.01, 0.018, 0.012), rough=0.03, bump_socket=n, bump=0.04)
         b.inputs["IOR"].default_value = 1.33
+    elif key == "canal_water":   # a canal at night: near black, a mirror broken by small ripples
+        tc = nt.nodes.new("ShaderNodeTexCoord")
+        mp = nt.nodes.new("ShaderNodeMapping")
+        mp.inputs["Scale"].default_value = (1.0, 2.2, 1.0)
+        nt.links.new(tc.outputs["UV"], mp.inputs["Vector"])
+        n = _noise(nt, mp.outputs["Vector"], 2.4, 7, 0.62)
+        b = _bsdf(nt, out, color=(0.005, 0.008, 0.007), rough=0.008, bump_socket=n, bump=0.1)
+        b.inputs["IOR"].default_value = 1.33
     elif key == "glass":
         g = nt.nodes.new("ShaderNodeBsdfPrincipled")
         g.inputs["Base Color"].default_value = (0.6, 0.65, 0.7, 1)
@@ -312,7 +320,7 @@ def build_shell(spec):
         street.outdoor(spec)
         for side, wall in wall_segments(spec).items():
             for k, op in enumerate(wall["openings"]):
-                if (side, k) in spec.get("_stairs", set()):
+                if (side, k) in spec.get("_stairs", set()) and op.get("kind") == "door":
                     kit.stair_stub(spec, side, op)
         return
     mats = spec["materials"]
@@ -397,7 +405,7 @@ def _build_opening(spec, side, op, live=False):
         return
     u0, u1, v0, v1 = _opening_span(op)
     wood, dark = material("dark_wood"), material("soot")
-    if op["kind"] == "portal":   # a plain hole through the wall (the tunnel's mouth): nothing in it
+    if op["kind"] in ("portal", "passage"):   # a plain hole (the tunnel's mouth, a street running on): nothing in it
         return
     if op.get("style") == "grate":   # an iron gate the game hangs: a stone surround, no wood
         _wall_box(spec, side, u0 - 0.1, u1 + 0.1, v1, v1 + 0.3, -0.05, 0.3, material("stone_floor"), "gate_arch")
