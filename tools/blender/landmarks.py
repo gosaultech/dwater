@@ -966,8 +966,12 @@ def beurs(root, p, w, h, d):
         flat.box((u - 0.35, 1.2, 0.0), (u + 0.35, h - 0.6, 0.25))
     flat.build("beurs_piers", brick, root, smooth=False)
     lbox(root, "beurs_eaves", (-0.2, h - 0.6, -0.8), (w - 12.0 + 0.2, h, 0.5), stone)
-    street.fan_prism(root, "beurs_roof", [(-d / 2 - 0.3, 0.0), (d / 2 + 0.3, 0.0), (0.0, d * 0.45)], (0.0, 0.5), -(w - 12.0),
+    street.fan_prism(root, "beurs_roof", [(-d / 2 - 0.3, 0.0), (d / 2 + 0.3, 0.0), (0.0, d * 0.45)], (0.0, 0.5), w - 12.0,
                      M({"color": [0.14, 0.15, 0.16], "rough": 0.5, "metal": 0.4}), ((0.0, h, -d / 2), (0, 0, 1), (0, 1, 0), (1, 0, 0)))
+    lbox(root, "beurs_end", (0.0, 0.0, -d), (0.8, h, -0.8), brick)               # the block closed: its far end, its back,
+    lbox(root, "beurs_back", (0.0, 0.0, -d), (w - 12.0, h, -d + 0.8), brick)     # behind the tower
+    lbox(root, "beurs_end", (w - 12.8, 0.0, -d), (w - 12.0, h, -12.0), brick)
+    lbox(root, "beurs_end_base", (-0.15, 0.0, -d), (0.0, 1.2, -0.8), stone)
     # the tower at the +x end: 12 m square, twice the eaves' height, a clock on its front
     tx0, tx1 = w - 12.0, w
     th = h * 2.1
@@ -992,48 +996,141 @@ def beurs(root, p, w, h, d):
 
 
 
+def _arch_head(acc, x0, x1, ys, z0, z1, n=10):
+    """The round head of an opening x0..x1 springing at ys: the wall between the arc and the
+    opening's square top, and the arc's soffit from z0 to z1."""
+    r, cx = (x1 - x0) / 2, (x0 + x1) / 2
+    top = ys + r
+    for k in range(n):
+        a0, a1 = math.pi * k / n, math.pi * (k + 1) / n
+        p0 = (cx - r * math.cos(a0), ys + r * math.sin(a0))
+        p1 = (cx - r * math.cos(a1), ys + r * math.sin(a1))
+        for z in (z0, z1):
+            acc.quad((p0[0], p0[1], z), (p1[0], p1[1], z), (p1[0], top, z), (p0[0], top, z))
+        acc.quad((p0[0], p0[1], z0), (p1[0], p1[1], z0), (p1[0], p1[1], z1), (p0[0], p0[1], z1))
+
+
+def _arch_ring(acc, x0, x1, ys, z, t=0.3, n=12):
+    """A sandstone ring round an arched head, proud of the wall at z; its jambs down to the sill."""
+    r, cx = (x1 - x0) / 2, (x0 + x1) / 2
+    for k in range(n):
+        a0, a1 = math.pi * k / n, math.pi * (k + 1) / n
+        c0, s0, c1, s1 = math.cos(a0), math.sin(a0), math.cos(a1), math.sin(a1)
+        acc.quad((cx - r * c0, ys + r * s0, z), (cx - r * c1, ys + r * s1, z),
+                 (cx - (r + t) * c1, ys + (r + t) * s1, z), (cx - (r + t) * c0, ys + (r + t) * s0, z))
+
+
+def _glazed(root, x0, x1, y0, y1, z, inside, bars=3, pane=0.9):
+    """An arched opening's glazing at depth z: the glass, its bars, the room behind (lit or dark)."""
+    lbox(root, "station_inside", (x0, y0, z - 0.3), (x1, y1, z - 0.28), inside)
+    lbox(root, "station_glass", (x0, y0, z - 0.01), (x1, y1, z + 0.01), M("glass"))
+    a = Acc()
+    for k in range(1, bars):
+        x = x0 + (x1 - x0) * k / bars
+        a.box((x - 0.03, y0, z + 0.01), (x + 0.03, y1, z + 0.05))
+    y = y0 + pane
+    while y < y1 - 0.2:
+        a.box((x0, y - 0.03, z + 0.01), (x1, y + 0.03, z + 0.05))
+        y += pane
+    a.build("station_bars", M({"color": [0.05, 0.06, 0.06], "rough": 0.4, "metal": 0.6}), root, smooth=False)
+
+
 def station(root, p, w, h, d):
     """Amsterdam Centraal's front (Cuypers, 1889) along local x facing +z, w wide: red brick banded
-    with sandstone, two storeys of round-arched windows, long wings either side of the middle, where
-    two towers stand by the entrance (a clock on the west one, a wind dial on the east), the middle
-    under a gable with the city's arms, the doors lit; behind it the great arched roof of the train
-    shed. Floodlit, as at night."""
+    with sandstone, two storeys of round-arched windows between brick pilasters, a stone cornice,
+    dormers in the slate roof; in the middle a projecting front with three great arched doorways
+    ("arch_open": the middle one a way into the hall), a tall arched window over them under a gable
+    with the city's arms, and the two towers by it (a clock on the west one, a wind dial on the
+    east); behind it all the train shed's arched roof. Floodlit, as at night, a few windows lit."""
     brick = M(p.get("brick", {"ph": "red_bricks_04", "tint": [0.8, 0.52, 0.42], "scale": 1.0}))
     stone = M({"ph": "large_sandstone_blocks", "tint": [0.86, 0.8, 0.68], "scale": 0.8})
-    dark = M({"color": [0.02, 0.02, 0.025], "rough": 0.15, "metal": 0.3})
-    lit = emit((1.0, 0.78, 0.5), 0.8, "station_lit")
+    slate = M({"color": [0.13, 0.13, 0.14], "rough": 0.45, "metal": 0.2, "noise": 0.2, "grime": 1.0})
+    dark = M({"color": [0.012, 0.012, 0.014], "rough": 0.6})
+    lit = [emit((1.0, 0.76, 0.48), s, "station_room_%d" % k) for k, s in enumerate((0.1, 0.18, 0.28))]
     rng = __import__("random").Random(p.get("seed", 9))
     bay = 4.2
     n = int(w / bay)
+    mid0, mid1 = w / 2 - 14.0, w / 2 + 14.0
+    rows = ((1.6, 5.9), (7.8, h - 2.6))
     holes = []
     for i in range(n):
         u = bay * (i + 0.5)
-        for v0, v1 in ((1.4, 5.8), (7.6, h - 2.6)):
-            holes.append((u - 1.1, u + 1.1, v0, v1))
-    mid0, mid1 = w / 2 - 14.0, w / 2 + 14.0
-    holes = [hh for hh in holes if hh[1] < mid0 or hh[0] > mid1]   # (the middle has its own front)
-    way = [(w / 2 - 2.6, w / 2 + 2.6, 0.0, 8.5)] if p.get("arch_open") else []   # the middle arch a way into the hall
+        if u + 1.2 < mid0 or u - 1.2 > mid1:
+            for v0, v1 in rows:
+                holes.append((u - 1.0, u + 1.0, v0, v1))
+    way = [(w / 2 - 2.6, w / 2 + 2.6, 0.0, 8.5)] if p.get("arch_open") else []
     for a, b, c, e in layout.cut_rects(w, h, holes + way):
         lbox(root, "station_wall", (a, c, -1.0), (b, e, 0.0), brick)
+    heads, rings = Acc(), Acc()
     for a, b, c, e in holes:
-        lbox(root, "station_window", (a, c, -0.9), (b, e, -0.85), lit if rng.random() < 0.45 else dark)
+        ys = e - (b - a) / 2
+        _arch_head(heads, a, b, ys, -1.0, 0.0)
+        _arch_ring(rings, a, b, ys, 0.06)
+        for x in (a - 0.22, b):
+            rings.box((x, c, 0.0), (x + 0.22, ys, 0.06))
+        lbox(root, "station_sill", (a - 0.3, c - 0.18, -0.2), (b + 0.3, c, 0.16), stone)
+        r = rng.random()
+        _glazed(root, a, b, c, e, -0.55, lit[rng.randrange(3)] if r < 0.3 else dark, bars=3, pane=1.0)
+    heads.build("station_heads", brick, root, smooth=False)
+    rings.build("station_rings", stone, root, smooth=False)
+    piers = Acc()
+    for i in range(n + 1):
+        u = bay * i
+        if u < mid0 - 0.4 or u > mid1 + 0.4:
+            piers.box((u - 0.32, 1.2, 0.0), (u + 0.32, h - 0.7, 0.22))
+    piers.build("station_piers", brick, root, smooth=False)
     bands = Acc()
-    for y in (1.2, 6.6, h - 1.4):   # sandstone bands across the brick
-        for a, b in ([(0.0, w / 2 - 2.6), (w / 2 + 2.6, w)] if way and y < 8.5 else [(0.0, w)]):
-            bands.box((a, y, 0.0), (b, y + 0.45, 0.12))
+    for y, t in ((0.0, 1.2), (6.5, 0.4)):   # the plinth, the string course between the floors
+        for a, b in ([(0.0, w / 2 - 2.6), (w / 2 + 2.6, w)] if way else [(0.0, w)]):
+            bands.box((a, y, 0.0), (b, y + t, 0.18 if y == 0.0 else 0.26))
+    bands.box((0.0, h - 0.7, -1.0), (w, h, 0.5))           # the cornice
+    bands.box((0.0, h, -1.0), (w, h + 0.3, 0.25))
     bands.build("station_bands", stone, root, smooth=False)
-    lbox(root, "station_roof", (0.0, h, -d), (w, h + 0.6, 0.2), M({"color": [0.14, 0.12, 0.11], "rough": 0.5, "metal": 0.3}))
-    street.fan_prism(root, "station_roof_ridge", [(-d / 2, 0.0), (d / 2, 0.0), (0.0, 6.0)], (0.0, 0.5), -w,
-                     M({"color": [0.18, 0.2, 0.2], "rough": 0.5, "metal": 0.4}), ((0.0, h + 0.6, -d / 2), (0, 0, 1), (0, 1, 0), (1, 0, 0)))
-    # the middle: a projecting front, three great arches to the hall, a gable with the arms
+    lbox(root, "station_roof", (0.0, h + 0.3, -d), (w, h + 0.6, -0.2), slate)
+    street.fan_prism(root, "station_roof_ridge", [(-d / 2, 0.0), (d / 2, 0.0), (0.0, 6.0)], (0.0, 0.5), w,
+                     slate, ((0.0, h + 0.6, -d / 2), (0, 0, 1), (0, 1, 0), (1, 0, 0)))
+    for i in range(1, n, 2):   # dormers on the roof's front slope
+        u = bay * (i + 0.5)
+        if mid0 - 2.0 < u < mid1 + 2.0:
+            continue
+        lbox(root, "dormer", (u - 0.9, h + 0.5, -2.6), (u + 0.9, h + 2.7, -1.2), brick)
+        street.fan_prism(root, "dormer_cap", [(-1.1, 0.0), (1.1, 0.0), (0.0, 0.9)], (0.0, 0.5), 1.6, slate,
+                         ((u, h + 2.7, -2.7), (1, 0, 0), (0, 1, 0), (0, 0, 1)))
+        _glazed(root, u - 0.5, u + 0.5, h + 0.9, h + 2.3, -1.15, lit[0] if rng.random() < 0.25 else dark, bars=2, pane=0.7)
+    # the middle: a projecting front, its three great arches (the middle one open), a tall window
+    # over them, a gable with the arms
     mh = h + 8.0
-    for a, b, c, e in layout.cut_rects(mid1 - mid0, mh, [(u0 - mid0, u1 - mid0, v0, v1) for u0, u1, v0, v1 in way]):
-        lbox(root, "station_mid", (mid0 + a, c, -1.0), (mid0 + b, e, 1.5), brick)
-    for k in range(3):
-        u = mid0 + 6.0 + 8.0 * k
-        if not (way and k == 1):
-            lbox(root, "station_arch", (u - 2.6, 0.0, 1.5), (u + 2.6, 8.5, 1.6), emit((1.0, 0.82, 0.55), 1.1, "station_arch"))
-        lbox(root, "station_arch_frame", (u - 3.0, 8.5, 1.5), (u + 3.0, 9.2, 1.8), stone)
+    doors = [(mid0 + 6.0 + 8.0 * k - 2.6, mid0 + 6.0 + 8.0 * k + 2.6, 0.0, 8.5) for k in range(3)]
+    big = [(w / 2 - 3.0, w / 2 + 3.0, 10.5, 20.5), (w / 2 - 10.7, w / 2 - 8.3, 11.0, 18.0), (w / 2 + 8.3, w / 2 + 10.7, 11.0, 18.0)]
+    loc = lambda rects: [(a - mid0, b - mid0, c, e) for a, b, c, e in rects]
+    for a, b, c, e in layout.cut_rects(mid1 - mid0, mh, loc(doors + big)):
+        lbox(root, "station_mid", (mid0 + a, c, 0.3), (mid0 + b, e, 1.5), brick)
+    for a, b, c, e in layout.cut_rects(mid1 - mid0, mh, loc(way)):
+        lbox(root, "station_mid", (mid0 + a, c, -1.0), (mid0 + b, e, 0.3), brick)
+    heads, rings = Acc(), Acc()
+    for k, (a, b, c, e) in enumerate(doors + big):
+        ys = e - (b - a) / 2
+        _arch_head(heads, a, b, ys, 0.3 if not (way and k == 1) else -1.0, 1.5)
+        _arch_ring(rings, a, b, ys, 1.56, t=0.5 if k < 3 else 0.35)
+        for x in (a - (0.5 if k < 3 else 0.35), b):
+            rings.box((x, c, 1.5), (x + (0.5 if k < 3 else 0.35), ys, 1.56))
+    heads.build("station_mid_heads", brick, root, smooth=False)
+    rings.build("station_mid_rings", stone, root, smooth=False)
+    for k, (a, b, c, e) in enumerate(doors):
+        if way and k == 1:
+            continue
+        lbox(root, "door_glow", (a, 0.0, 0.31), (b, e, 0.33), emit((1.0, 0.8, 0.55), 0.3, "station_door_glow"))
+        lbox(root, "door_frame", (a, 0.0, 0.33), (b, 0.15, 0.45), dark)
+        lbox(root, "door_transom", (a, 3.4, 0.33), (b, 3.6, 0.45), dark)
+        for x in (a, (a + b) / 2 - 0.06, b - 0.12):
+            lbox(root, "door_post", (x, 0.0, 0.33), (x + 0.12, e, 0.45), dark)
+        lbox(root, "door_glass", (a, 0.0, 0.38), (b, e, 0.4), M("glass"))
+    for a, b, c, e in big:
+        _glazed(root, a, b, c, e, 0.6, lit[2], bars=4 if b - a > 4 else 2, pane=1.2)
+    bands = Acc()
+    for y, t in ((8.9, 0.45), (mh - 0.8, 0.8)):
+        bands.box((mid0, y, 1.5), (mid1, y + t, 1.75))
+    bands.build("station_mid_bands", stone, root, smooth=False)
     street.fan_prism(root, "station_gable", [(-14.0, 0.0), (14.0, 0.0), (0.0, 9.0)], (0.0, 0.5), 2.5, brick,
                      ((w / 2, mh, -1.0), (1, 0, 0), (0, 1, 0), (0, 0, 1)))
     kit.soft(root, "station_arms", (w / 2, mh + 3.0, 1.6), (4.0, 3.2, 0.3), M({"color": [0.75, 0.08, 0.06], "rough": 0.4}), 0.1, 2)
@@ -1043,14 +1140,26 @@ def station(root, p, w, h, d):
         tw = 6.0
         th = mh + 14.0
         lbox(root, "station_tower", (tx - tw / 2, 0.0, -1.0), (tx + tw / 2, th, 2.0), brick)
-        lbox(root, "station_tower_band", (tx - tw / 2 - 0.1, th - 6.0, -1.1), (tx + tw / 2 + 0.1, th - 5.5, 2.1), stone)
-        rod(root, "station_dial", (tx, th - 3.2, 2.0), (tx, th - 3.2, 2.12), 2.0, 2.0, emit((1.0, 0.94, 0.78), 1.2, "station_dial") if dial == "clock" else
+        q = Acc()
+        for x0 in (tx - tw / 2 - 0.06, tx + tw / 2 - 0.34):   # stone quoins up its corners
+            for y in range(0, int(th), 2):
+                q.box((x0, float(y), 1.95), (x0 + 0.4, y + 1.0, 2.06))
+        for y in (1.2, 9.0, th - 6.0):
+            q.box((tx - tw / 2 - 0.1, y, -1.1), (tx + tw / 2 + 0.1, y + 0.45, 2.12))
+        q.build("station_quoins", stone, root, smooth=False)
+        masks, tr = Acc(), Acc()
+        for y0, y1 in ((11.0, 15.5), (17.5, 22.0), (th - 13.5, th - 8.0)):
+            lbox(root, "tower_window", (tx - 0.8, y0, 2.0), (tx + 0.8, y1, 2.02), dark)
+            _arch_head(masks, tx - 0.8, tx + 0.8, y1 - 0.8, 2.02, 2.05)
+            _arch_ring(tr, tx - 0.8, tx + 0.8, y1 - 0.8, 2.07, t=0.25)
+        masks.build("tower_heads", brick, root, smooth=False)
+        tr.build("tower_rings", stone, root, smooth=False)
+        rod(root, "station_dial", (tx, th - 3.2, 2.0), (tx, th - 3.2, 2.12), 2.0, 2.0, emit((1.0, 0.94, 0.78), 0.9, "station_dial") if dial == "clock" else
             M({"color": [0.85, 0.65, 0.22], "rough": 0.3, "metal": 0.9}), seg=32)
         kit.lathe(root, "station_tower_cap", [(4.4, 0.0), (3.0, 2.0), (0.6, 7.5), (0.0, 7.6)], M({"color": [0.2, 0.3, 0.27], "rough": 0.4, "metal": 0.4}),
                   at=(tx, th, 0.5), segments=8, smooth=False)
         ball(root, "station_finial", (tx, th + 8.0, 0.5), 0.4, M(GOLD), seg=12)
-    # the train shed's arch rising behind
-    seg = 18
+    seg = 18   # the train shed's arch rising behind
     shed = Acc()
     R = p.get("shed", 22.0)
     for k in range(seg):

@@ -1,0 +1,1699 @@
+{
+  "_file": "damned_waters/game/data/rooms/centraal_hal.json \u2014 RoomSpec for Centraal Station \u00b7 Hal (the city, district 7: Centraal): the front hall of Centraal behind the middle arch: brick and sandstone, a dark timber ceiling, lanterns; the shops along the walls shuttered, the boards still lit with trains that won't run, the gate line shut on red but for the gap the army cut in it, and beyond it the escalators down to line 52. Its front wall is the street's shopfront (\"facade\": the street builds it); its door is the street's. Every business name is made up. Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "centraal_hal",
+  "display_name": "Centraal Station \u00b7 Hal",
+  "storey": 16,
+  "origin": [
+    910.0,
+    -555.6999999999999
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      24.0,
+      36.0
+    ]
+  },
+  "height": 11.0,
+  "materials": {
+    "floor": {
+      "ph": "terrazzo_tiles",
+      "tint": [
+        0.62,
+        0.6,
+        0.57
+      ],
+      "rough": 0.3
+    },
+    "wall": {
+      "ph": "red_bricks_04",
+      "tint": [
+        0.75,
+        0.52,
+        0.42
+      ],
+      "scale": 1.0
+    },
+    "ceiling": {
+      "ph": "dark_wood",
+      "tint": [
+        0.46,
+        0.34,
+        0.25
+      ],
+      "scale": 0.5
+    },
+    "wainscot": {
+      "ph": "large_sandstone_blocks",
+      "tint": [
+        0.86,
+        0.8,
+        0.68
+      ],
+      "scale": 0.8
+    },
+    "wainscot_height": 1.4,
+    "pit": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ],
+      "rough": 0.7
+    },
+    "skirting": null
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.01,
+      0.012,
+      0.016
+    ],
+    "strength": 0.5
+  },
+  "render": {
+    "exposure": 0.82,
+    "bloom": {
+      "threshold": 0.95,
+      "strength": 0.25,
+      "size": 0.5
+    }
+  },
+  "walls": {
+    "south": {
+      "openings": [
+        {
+          "kind": "window",
+          "center": 4.5,
+          "width": 3.0,
+          "sill": 3.2,
+          "height": 5.0
+        },
+        {
+          "kind": "passage",
+          "center": 12.0,
+          "width": 5.2,
+          "height": 8.5
+        },
+        {
+          "kind": "window",
+          "center": 19.5,
+          "width": 3.0,
+          "sill": 3.2,
+          "height": 5.0
+        }
+      ]
+    },
+    "north": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 12.0,
+          "width": 4.4,
+          "height": 4.0
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "shop_unit",
+      "pos": [
+        0.5,
+        0.0,
+        3.4
+      ],
+      "yaw": 90,
+      "size": [
+        4.4,
+        3.4,
+        1.0
+      ],
+      "name": "KRANTEN \u00b7 TIJDSCHRIFTEN",
+      "open": 0.0
+    },
+    {
+      "type": "shop_unit",
+      "pos": [
+        0.5,
+        0.0,
+        8.2
+      ],
+      "yaw": 90,
+      "size": [
+        4.4,
+        3.4,
+        1.0
+      ],
+      "name": "BROODJES \u00b7 KOFFIE",
+      "open": 0.35
+    },
+    {
+      "type": "shop_unit",
+      "pos": [
+        0.5,
+        0.0,
+        13.0
+      ],
+      "yaw": 90,
+      "size": [
+        4.4,
+        3.4,
+        1.0
+      ],
+      "name": "BLOEMEN",
+      "open": 0.0
+    },
+    {
+      "type": "shop_unit",
+      "pos": [
+        23.5,
+        0.0,
+        3.4
+      ],
+      "yaw": -90,
+      "size": [
+        4.4,
+        3.4,
+        1.0
+      ],
+      "name": "STROOPWAFELS",
+      "open": 0.0
+    },
+    {
+      "type": "shop_unit",
+      "pos": [
+        23.5,
+        0.0,
+        8.2
+      ],
+      "yaw": -90,
+      "size": [
+        4.4,
+        3.4,
+        1.0
+      ],
+      "name": "BOEKHANDEL",
+      "open": 0.0
+    },
+    {
+      "type": "shop_unit",
+      "pos": [
+        23.5,
+        0.0,
+        13.0
+      ],
+      "yaw": -90,
+      "size": [
+        4.4,
+        3.4,
+        1.0
+      ],
+      "name": "DROGISTERIJ",
+      "open": 0.6
+    },
+    {
+      "type": "shop_unit",
+      "pos": [
+        4.0,
+        0.0,
+        0.5
+      ],
+      "yaw": 0,
+      "size": [
+        5.0,
+        4.2,
+        1.0
+      ],
+      "name": "PERRONS 1 \u2013 7",
+      "sign": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "type": "shop_unit",
+      "pos": [
+        20.0,
+        0.0,
+        0.5
+      ],
+      "yaw": 0,
+      "size": [
+        5.0,
+        4.2,
+        1.0
+      ],
+      "name": "PERRONS 8 \u2013 15",
+      "sign": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "type": "broken_glass",
+      "pos": [
+        21.6,
+        0.0,
+        13.0
+      ],
+      "size": [
+        1.6,
+        0.0,
+        3.2
+      ],
+      "seed": 831,
+      "collide": false
+    },
+    {
+      "type": "escalator",
+      "pos": [
+        11.2,
+        0.0,
+        -0.3
+      ],
+      "yaw": 0,
+      "size": [
+        1.4,
+        5.5,
+        9.0
+      ],
+      "collide": false
+    },
+    {
+      "type": "escalator",
+      "pos": [
+        12.8,
+        0.0,
+        -0.3
+      ],
+      "yaw": 0,
+      "size": [
+        1.4,
+        5.5,
+        9.0
+      ],
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        9.65,
+        -6.5,
+        -5.0
+      ],
+      "size": [
+        0.3,
+        11.5,
+        9.4
+      ],
+      "material": {
+        "color": [
+          0.2,
+          0.2,
+          0.2
+        ],
+        "rough": 0.7
+      },
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        14.35,
+        -6.5,
+        -5.0
+      ],
+      "size": [
+        0.3,
+        11.5,
+        9.4
+      ],
+      "material": {
+        "color": [
+          0.2,
+          0.2,
+          0.2
+        ],
+        "rough": 0.7
+      },
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        12.0,
+        4.0,
+        -5.0
+      ],
+      "size": [
+        5.0,
+        0.3,
+        9.4
+      ],
+      "material": {
+        "color": [
+          0.2,
+          0.2,
+          0.2
+        ],
+        "rough": 0.7
+      },
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        12.0,
+        -6.5,
+        -9.85
+      ],
+      "size": [
+        5.0,
+        10.8,
+        0.3
+      ],
+      "material": {
+        "color": [
+          0.2,
+          0.2,
+          0.2
+        ],
+        "rough": 0.7
+      },
+      "collide": false
+    },
+    {
+      "type": "departure_board",
+      "pos": [
+        12.0,
+        4.4,
+        0.6
+      ],
+      "yaw": 0,
+      "size": [
+        4.0,
+        1.0,
+        0.2
+      ],
+      "hang": 5.6,
+      "title": "METRO 52",
+      "rows": [
+        [
+          "00:30",
+          "NOORD",
+          "1",
+          "STAAT KLAAR"
+        ]
+      ],
+      "collide": false
+    },
+    {
+      "type": "departure_board",
+      "pos": [
+        12.0,
+        5.6,
+        21.5
+      ],
+      "yaw": 0,
+      "size": [
+        7.0,
+        1.9,
+        0.3
+      ],
+      "hang": 3.5,
+      "both": true,
+      "collide": false,
+      "rows": [
+        [
+          "23:31",
+          "SCHIPHOL",
+          "4",
+          "RIJDT NIET"
+        ],
+        [
+          "23:38",
+          "UTRECHT CENTRAAL",
+          "7",
+          "RIJDT NIET"
+        ],
+        [
+          "23:44",
+          "ZANDVOORT",
+          "2",
+          "RIJDT NIET"
+        ],
+        [
+          "23:52",
+          "HAARLEM",
+          "1",
+          "RIJDT NIET"
+        ],
+        [
+          "00:02",
+          "ALKMAAR",
+          "8",
+          "RIJDT NIET"
+        ],
+        [
+          "00:13",
+          "ROTTERDAM",
+          "5",
+          "RIJDT NIET"
+        ]
+      ]
+    },
+    {
+      "type": "ticket_gates",
+      "pos": [
+        5.15,
+        0.0,
+        18.0
+      ],
+      "yaw": 0,
+      "size": [
+        9.7,
+        1.1,
+        0.3
+      ]
+    },
+    {
+      "type": "ticket_gates",
+      "pos": [
+        18.85,
+        0.0,
+        18.0
+      ],
+      "yaw": 0,
+      "size": [
+        9.7,
+        1.1,
+        0.3
+      ]
+    },
+    {
+      "type": "evac_board",
+      "pos": [
+        12.0,
+        0.0,
+        19.4
+      ],
+      "yaw": 0,
+      "size": [
+        1.8,
+        1.9,
+        0.6
+      ],
+      "text": "DOORGANG",
+      "to": "METRO 52",
+      "arrow": "up",
+      "collide": false
+    },
+    {
+      "type": "stanchions",
+      "pos": [
+        10.0,
+        0.0,
+        26.0
+      ],
+      "yaw": 90,
+      "size": [
+        8.0,
+        0.95,
+        0.1
+      ]
+    },
+    {
+      "type": "stanchions",
+      "pos": [
+        14.0,
+        0.0,
+        26.0
+      ],
+      "yaw": 90,
+      "size": [
+        8.0,
+        0.95,
+        0.1
+      ]
+    },
+    {
+      "type": "lockers",
+      "pos": [
+        0.35,
+        0.0,
+        29.0
+      ],
+      "yaw": 90,
+      "size": [
+        8.0,
+        2.0,
+        0.6
+      ],
+      "seed": 832,
+      "open": 0.35
+    },
+    {
+      "type": "trestle_table",
+      "pos": [
+        6.0,
+        0.0,
+        30.5
+      ],
+      "yaw": 0,
+      "size": [
+        2.4,
+        0.76,
+        0.8
+      ],
+      "laptops": 1,
+      "seed": 833
+    },
+    {
+      "type": "model",
+      "model": "ph:clipboard",
+      "pos": [
+        6.6,
+        0.78,
+        30.4
+      ],
+      "yaw": 15,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        4.0,
+        0.0,
+        21.5
+      ],
+      "size": [
+        3.0,
+        0.0,
+        2.5
+      ],
+      "seed": 834,
+      "cases": 3,
+      "bags": 3,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        20.0,
+        0.0,
+        22.0
+      ],
+      "size": [
+        3.0,
+        0.0,
+        2.5
+      ],
+      "seed": 835,
+      "cases": 2,
+      "bags": 4,
+      "pushchair": true,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        6.0,
+        0.0,
+        10.0
+      ],
+      "size": [
+        2.4,
+        0.0,
+        2.4
+      ],
+      "seed": 836,
+      "cases": 2,
+      "bags": 2,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        12.0,
+        0.0,
+        28.0
+      ],
+      "size": [
+        10.0,
+        0.0,
+        12.0
+      ],
+      "seed": 837,
+      "count": 60,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        12.0,
+        0.0,
+        15.0
+      ],
+      "size": [
+        14.0,
+        0.0,
+        6.0
+      ],
+      "seed": 838,
+      "count": 30,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wall_clock",
+      "pos": [
+        12.0,
+        7.4,
+        0.04
+      ],
+      "yaw": 0,
+      "scale": 3.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:lantern_chandelier_01",
+      "pos": [
+        12.0,
+        9.0,
+        8.0
+      ],
+      "yaw": 0,
+      "fit": [
+        1.2,
+        2.0,
+        1.2
+      ],
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:lantern_chandelier_01",
+      "pos": [
+        12.0,
+        9.0,
+        28.5
+      ],
+      "yaw": 0,
+      "fit": [
+        1.2,
+        2.0,
+        1.2
+      ],
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        0.06,
+        4.4,
+        18.0
+      ],
+      "size": [
+        0.12,
+        0.35,
+        36.0
+      ],
+      "material": {
+        "ph": "large_sandstone_blocks",
+        "tint": [
+          0.86,
+          0.8,
+          0.68
+        ],
+        "scale": 0.8
+      },
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        23.94,
+        4.4,
+        18.0
+      ],
+      "size": [
+        0.12,
+        0.35,
+        36.0
+      ],
+      "material": {
+        "ph": "large_sandstone_blocks",
+        "tint": [
+          0.86,
+          0.8,
+          0.68
+        ],
+        "scale": 0.8
+      },
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        12.0,
+        4.4,
+        0.06
+      ],
+      "size": [
+        24.0,
+        0.35,
+        0.12
+      ],
+      "material": {
+        "ph": "large_sandstone_blocks",
+        "tint": [
+          0.86,
+          0.8,
+          0.68
+        ],
+        "scale": 0.8
+      },
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        0.06,
+        8.4,
+        18.0
+      ],
+      "size": [
+        0.12,
+        0.35,
+        36.0
+      ],
+      "material": {
+        "ph": "large_sandstone_blocks",
+        "tint": [
+          0.86,
+          0.8,
+          0.68
+        ],
+        "scale": 0.8
+      },
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        23.94,
+        8.4,
+        18.0
+      ],
+      "size": [
+        0.12,
+        0.35,
+        36.0
+      ],
+      "material": {
+        "ph": "large_sandstone_blocks",
+        "tint": [
+          0.86,
+          0.8,
+          0.68
+        ],
+        "scale": 0.8
+      },
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        12.0,
+        8.4,
+        0.06
+      ],
+      "size": [
+        24.0,
+        0.35,
+        0.12
+      ],
+      "material": {
+        "ph": "large_sandstone_blocks",
+        "tint": [
+          0.86,
+          0.8,
+          0.68
+        ],
+        "scale": 0.8
+      },
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        2.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        5.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        8.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        11.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        14.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        17.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        20.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        23.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        26.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        29.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        32.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        35.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        16.6,
+        0.0,
+        32.6
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 840
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        17.6,
+        0.0,
+        32.6
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 841
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        18.6,
+        0.0,
+        32.6
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 842
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        19.6,
+        0.0,
+        32.6
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": true,
+      "seed": 843
+    },
+    {
+      "type": "camp_bed",
+      "pos": [
+        20.6,
+        0.0,
+        32.6
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        0.42,
+        1.9
+      ],
+      "occupied": false,
+      "seed": 844
+    },
+    {
+      "type": "ticket_machine",
+      "pos": [
+        23.7,
+        0.0,
+        25.2
+      ],
+      "yaw": -90,
+      "size": [
+        0.8,
+        1.7,
+        0.5
+      ]
+    },
+    {
+      "type": "ticket_machine",
+      "pos": [
+        23.7,
+        0.0,
+        26.2
+      ],
+      "yaw": -90,
+      "size": [
+        0.8,
+        1.7,
+        0.5
+      ]
+    },
+    {
+      "type": "ticket_machine",
+      "pos": [
+        23.7,
+        0.0,
+        27.2
+      ],
+      "yaw": -90,
+      "size": [
+        0.8,
+        1.7,
+        0.5
+      ]
+    },
+    {
+      "type": "ticket_machine",
+      "pos": [
+        23.7,
+        0.0,
+        28.2
+      ],
+      "yaw": -90,
+      "size": [
+        0.8,
+        1.7,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        8.48,
+        0.0,
+        35.58
+      ],
+      "yaw": 189,
+      "scale": 0.81,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        16.74,
+        0.0,
+        35.58
+      ],
+      "yaw": 161,
+      "scale": 0.97,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        21.31,
+        0.0,
+        35.58
+      ],
+      "yaw": 150,
+      "scale": 0.82,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        22.15,
+        0.0,
+        35.58
+      ],
+      "yaw": 171,
+      "scale": 0.94,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        14.65,
+        0.0,
+        35.58
+      ],
+      "yaw": 207,
+      "scale": 0.96,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        12.0,
+        8.68,
+        35.92
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 180,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        12.0,
+        4.18,
+        0.08
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        23.8,
+        10.5,
+        35.8
+      ],
+      "yaw": -135,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        0.2,
+        10.5,
+        35.8
+      ],
+      "yaw": 135,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        14.12,
+        0.0,
+        24.97
+      ],
+      "size": [
+        4.0,
+        0.01,
+        3.0
+      ],
+      "seed": 266,
+      "count": 6,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        7.79,
+        0.0,
+        14.52
+      ],
+      "size": [
+        4.0,
+        0.01,
+        3.0
+      ],
+      "seed": 224,
+      "count": 6,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    }
+  ],
+  "lights": [
+    {
+      "kind": "area",
+      "pos": [
+        12.0,
+        10.0,
+        8.0
+      ],
+      "look_at": [
+        12.0,
+        0.0,
+        8.0
+      ],
+      "size": 2.2,
+      "color": [
+        1.0,
+        0.86,
+        0.68
+      ],
+      "blender_power": 1500,
+      "godot_energy": 0.8,
+      "range": 14.0
+    },
+    {
+      "kind": "area",
+      "pos": [
+        12.0,
+        10.0,
+        20.0
+      ],
+      "look_at": [
+        12.0,
+        0.0,
+        20.0
+      ],
+      "size": 2.2,
+      "color": [
+        1.0,
+        0.86,
+        0.68
+      ],
+      "blender_power": 1400,
+      "godot_energy": 0.8,
+      "range": 14.0,
+      "flicker": true
+    },
+    {
+      "kind": "area",
+      "pos": [
+        12.0,
+        10.0,
+        30.0
+      ],
+      "look_at": [
+        12.0,
+        0.0,
+        30.0
+      ],
+      "size": 2.2,
+      "color": [
+        1.0,
+        0.86,
+        0.68
+      ],
+      "blender_power": 1300,
+      "godot_energy": 0.7,
+      "range": 14.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        12.0,
+        9.6,
+        8.0
+      ],
+      "color": [
+        1.0,
+        0.72,
+        0.42
+      ],
+      "blender_power": 160,
+      "godot_energy": 0.3,
+      "range": 8.0,
+      "radius": 0.4
+    },
+    {
+      "kind": "point",
+      "pos": [
+        12.0,
+        9.6,
+        28.5
+      ],
+      "color": [
+        1.0,
+        0.72,
+        0.42
+      ],
+      "blender_power": 160,
+      "godot_energy": 0.3,
+      "range": 8.0,
+      "radius": 0.4
+    },
+    {
+      "kind": "area",
+      "pos": [
+        3.0,
+        4.2,
+        8.2
+      ],
+      "look_at": [
+        3.0,
+        0.0,
+        8.2
+      ],
+      "size": 1.1,
+      "color": [
+        1.0,
+        0.9,
+        0.75
+      ],
+      "blender_power": 220,
+      "godot_energy": 0.3,
+      "range": 7.0
+    },
+    {
+      "kind": "area",
+      "pos": [
+        21.0,
+        4.2,
+        8.2
+      ],
+      "look_at": [
+        21.0,
+        0.0,
+        8.2
+      ],
+      "size": 1.1,
+      "color": [
+        1.0,
+        0.9,
+        0.75
+      ],
+      "blender_power": 220,
+      "godot_energy": 0.3,
+      "range": 7.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        12.0,
+        -4.4,
+        -8.6
+      ],
+      "color": [
+        0.75,
+        0.85,
+        1.0
+      ],
+      "blender_power": 80,
+      "godot_energy": 0.2,
+      "range": 6.0,
+      "radius": 0.3
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        21.8,
+        5.2,
+        22.5
+      ],
+      "look_at": [
+        7.0,
+        1.2,
+        34.5
+      ],
+      "fov": 64,
+      "zone": {
+        "min": [
+          0.0,
+          24.0
+        ],
+        "max": [
+          24.0,
+          36.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        2.2,
+        4.6,
+        35.0
+      ],
+      "look_at": [
+        13.5,
+        0.8,
+        12.0
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          0.0,
+          12.0
+        ],
+        "max": [
+          24.0,
+          24.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "c",
+      "pos": [
+        20.5,
+        4.2,
+        14.5
+      ],
+      "look_at": [
+        9.0,
+        0.6,
+        0.0
+      ],
+      "fov": 64,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          24.0,
+          12.0
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_square": {
+      "pos": [
+        12.0,
+        0.0,
+        34.6
+      ],
+      "yaw": 0
+    },
+    "from_metro": {
+      "pos": [
+        12.0,
+        0.0,
+        1.4
+      ],
+      "yaw": 180
+    }
+  },
+  "interactables": [
+    {
+      "id": "escalator_down",
+      "kind": "door",
+      "pos": [
+        12.0,
+        1.0,
+        0.2
+      ],
+      "radius": 1.6,
+      "target_room": "metro_centraal",
+      "target_spawn": "from_hal"
+    },
+    {
+      "id": "board",
+      "kind": "examine",
+      "pos": [
+        8.4,
+        1.0,
+        19.4
+      ],
+      "radius": 1.2,
+      "text": "Every train on the board: RIJDT NIET. Over the escalators one line is still lit. METRO 52, NOORD, 00:30. STAAT KLAAR."
+    },
+    {
+      "id": "perrons",
+      "kind": "examine",
+      "pos": [
+        4.0,
+        1.0,
+        1.6
+      ],
+      "radius": 1.2,
+      "text": "The way through to the platforms, shuttered and padlocked. Sprayed across it: TREINEN RIJDEN NIET."
+    },
+    {
+      "id": "registration",
+      "kind": "note",
+      "pos": [
+        6.0,
+        0.8,
+        31.2
+      ],
+      "radius": 1.0,
+      "title": "The registration list",
+      "text": "Names on a clipboard, sheet after sheet, a time by each: 23:10, 23:11, 23:11, 23:14...\n\nThe last sheet stops at 00:19, halfway down."
+    },
+    {
+      "id": "rounds_locker",
+      "kind": "pickup",
+      "item": "handgun_ammo",
+      "count": 12,
+      "pos": [
+        1.0,
+        0.9,
+        27.4
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "shells_hall",
+      "kind": "pickup",
+      "item": "shotgun_shells",
+      "count": 4,
+      "pos": [
+        20.6,
+        0.0,
+        21.0
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "first_aid_desk",
+      "kind": "pickup",
+      "item": "first_aid",
+      "count": 1,
+      "pos": [
+        5.2,
+        0.8,
+        30.5
+      ],
+      "radius": 0.9
+    }
+  ],
+  "enemies": [
+    {
+      "id": "bij_de_kiosk",
+      "kind": "verdronkene",
+      "pos": [
+        4.5,
+        0.0,
+        12.5
+      ],
+      "yaw": 120
+    },
+    {
+      "id": "bij_de_poortjes",
+      "kind": "verdronkene",
+      "pos": [
+        17.0,
+        0.0,
+        15.6
+      ],
+      "yaw": 200
+    },
+    {
+      "id": "op_het_veldbed",
+      "kind": "verdronkene",
+      "pos": [
+        15.2,
+        0.0,
+        30.4
+      ],
+      "yaw": 90,
+      "lying": true
+    }
+  ]
+}

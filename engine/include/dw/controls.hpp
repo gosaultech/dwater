@@ -296,5 +296,15 @@ inline Vector2 stick_in_his_frame(Vector2 stick, Vector2 cam, Vector2 ahead) {
 // Type A that button quick-turns on its own already.
 inline bool back_turn_shares_dodge(Scheme s) { return pad_button(s, ACT_DODGE) == pad_button(s, ACT_BACK_TURN); }
 
+// The camera basis (forward on the ground, x and z) that turns `stick` into `dir`: what a held stick
+// keeps across a beat to another storey, so pushing on walks him on the way he faces, not back the way
+// he came because the new camera looks the other way. Its right is (-forward.z, forward.x).
+inline Vector2 basis_for(Vector2 stick, Vector2 dir) {
+    const float l = std::hypot(stick.x, stick.y);
+    if (l < 1e-4f) return dir;
+    const float sx = stick.x / l, sy = stick.y / l;
+    return {dir.x * sy + dir.y * sx, -dir.x * sx + dir.y * sy};
+}
+
 }  // namespace dw
 #endif

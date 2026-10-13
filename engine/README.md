@@ -35,8 +35,14 @@ barriers. Damrak (`damrak_zuid`, `damrak_noord`) runs on to the station: the Beu
 hall the army's mortuary (`beurs_zaal`), the basin with its tour boats (one to board,
 `rondvaartboot`) and the old houses leaning over the water, a currency exchange (`wisselkantoor`), a
 souvenir shop and its stockroom (`souvenirwinkel`, `magazijn`) and a hotel's bar (`hotel_bar`) to
-search; Centraal floodlit at its end. The attic bathroom (`badkamer`) is built and rendered, waiting
-for its stairs. And:
+search. Two barriers dragged apart at its top let out onto the Stationsplein (`stationsplein`): the
+army's checkpoint funnelling the crowd to the station's middle arch, the last tram, the buses left
+where they stood. Through the arch is the station's hall (`centraal_hal`): the shops shuttered, every
+train on the board RIJDT NIET but one, and the escalators down to line 52 (`metro_centraal`), where
+the last train north waits with its doors open. It runs under the IJ to Station Noord
+(`station_noord`), the end of the line and, for now, of the game: a title card comes up out of the
+dark. (Like a play's last scene: the lights go down before the curtain.) The attic bathroom
+(`badkamer`) is built and rendered, waiting for its stairs. And:
 
 - **Backgrounds and depth.** Pre-rendered Cycles backgrounds, each with a painted depth map.
   Characters are hidden correctly behind painted furniture, like RE (1998).
@@ -680,8 +686,8 @@ status screen (items, files, map, pickups), the death screen. Still to come, in 
    and tour boats, the Wilhelmina statue, the flooded metro), the Dam (the Palace, the Nieuwe Kerk,
    the National Monument, the funfair, the evacuation point) and the Kalverstraat beside it, and
    Damrak (the Beurs's hall made a mortuary, the basin and its boats, the leaning houses), two to
-   five places to search in each. Next, the station and the metro north under the IJ to Station
-   Noord. All pre-rendered backgrounds
+   five places to search in each, then the station, its hall and line 52 under the IJ to Station
+   Noord, where the route ends. Next, what lies past Noord. All pre-rendered backgrounds
    from RoomSpecs (`docs/handoff/areas_session_prompt.md` is the brief).
 2. **Polish pass over the shop interiors** (once every area is built): each one modelled to match
    one or two reference photos (the camera matched to the photo, the room and its fixtures built

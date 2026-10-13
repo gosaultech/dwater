@@ -1,0 +1,1418 @@
+{
+  "_file": "damned_waters/game/data/rooms/stationsplein.json \u2014 RoomSpec for Stationsplein (the city, district 7: Centraal): the square before Centraal Station: the Prins Hendrikkade across its south side where Damrak runs in, the trams' terminus, buses left where they stood, bikes by the hundred, the army's checkpoint funnelling the crowd to the station's middle arch, and over it all the station's long front, floodlit. Modelled after openly licensed photographs; every business name is made up, the landmarks keep theirs. The power is still on; nobody is there. Outdoor (street.py, city.py and landmarks.py build it). Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "stationsplein",
+  "display_name": "Stationsplein",
+  "storey": 16,
+  "origin": [
+    887.0,
+    -519.4
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      70.0,
+      63.6
+    ]
+  },
+  "height": 14.0,
+  "materials": {
+    "floor": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "wall": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "ceiling": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    }
+  },
+  "footsteps": "marble",
+  "ambience": "amb_street_rain",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.014,
+      0.019,
+      0.036
+    ],
+    "strength": 1.0
+  },
+  "sky": {
+    "hdri": "kloppenheim_07_puresky",
+    "strength": 0.045,
+    "camera": 0.1,
+    "tint": [
+      1.0,
+      0.76,
+      0.55
+    ]
+  },
+  "render": {
+    "exposure": 0.85,
+    "bloom": {
+      "threshold": 0.9,
+      "strength": 0.4,
+      "size": 0.55,
+      "haze": {
+        "color": [
+          0.045,
+          0.052,
+          0.068
+        ],
+        "start": 12.0,
+        "depth": 85.0,
+        "strength": 0.5
+      }
+    }
+  },
+  "outdoor": {
+    "window_rooms": [
+      "warm_bar",
+      "fireplace",
+      "small_empty_room_2",
+      "christmas_photo_studio_04",
+      "warm_restaurant_night",
+      "unfinished_office_night"
+    ],
+    "lamp_power": 420.0,
+    "lamp_energy": 1.0,
+    "ground": [
+      {
+        "name": "plein",
+        "min": [
+          -45.0,
+          0.0
+        ],
+        "max": [
+          115.0,
+          40.0
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        },
+        "kerb": true
+      },
+      {
+        "name": "plein_w",
+        "min": [
+          -45.0,
+          -1.6
+        ],
+        "max": [
+          22.9,
+          0.0
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "plein_e",
+        "min": [
+          47.1,
+          -1.6
+        ],
+        "max": [
+          115.0,
+          0.0
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "hendrikkade",
+        "min": [
+          -45.0,
+          40.0
+        ],
+        "max": [
+          115.0,
+          63.6
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "herringbone_brick",
+          "tint": [
+            0.8,
+            0.72,
+            0.66
+          ],
+          "wet": 0.8,
+          "puddles": 0.27,
+          "puddle_scale": 0.9
+        }
+      }
+    ],
+    "tracks": [
+      {
+        "from": [
+          33.5,
+          63.6
+        ],
+        "to": [
+          33.5,
+          32.0
+        ],
+        "y": 0.0
+      },
+      {
+        "from": [
+          33.5,
+          32.0
+        ],
+        "to": [
+          24.0,
+          24.0
+        ],
+        "y": 0.0
+      },
+      {
+        "from": [
+          24.0,
+          24.0
+        ],
+        "to": [
+          -30.0,
+          24.0
+        ],
+        "y": 0.0
+      },
+      {
+        "from": [
+          36.5,
+          63.6
+        ],
+        "to": [
+          36.5,
+          30.0
+        ],
+        "y": 0.0
+      },
+      {
+        "from": [
+          36.5,
+          30.0
+        ],
+        "to": [
+          26.0,
+          21.0
+        ],
+        "y": 0.0
+      },
+      {
+        "from": [
+          26.0,
+          21.0
+        ],
+        "to": [
+          -30.0,
+          21.0
+        ],
+        "y": 0.0
+      }
+    ],
+    "rows": [
+      {
+        "from": -40.0,
+        "to": 24.7,
+        "line": 63.6,
+        "facing": "north",
+        "lit": 0.35,
+        "shops": 0.5,
+        "row_ends": "end"
+      },
+      {
+        "from": 6.0,
+        "to": 39.0,
+        "line": -2.0,
+        "facing": "east",
+        "lit": 0.3,
+        "shops": 0.4,
+        "row_ends": "both"
+      },
+      {
+        "from": 6.0,
+        "to": 39.0,
+        "line": 72.0,
+        "facing": "west",
+        "lit": 0.3,
+        "shops": 0.4,
+        "row_ends": "both"
+      }
+    ],
+    "lamps": [
+      [
+        6.0,
+        38.0
+      ],
+      [
+        20.0,
+        38.0
+      ],
+      [
+        50.0,
+        38.0
+      ],
+      [
+        64.0,
+        38.0
+      ],
+      [
+        6.0,
+        14.0
+      ],
+      [
+        64.0,
+        14.0
+      ],
+      [
+        22.0,
+        4.0
+      ],
+      [
+        48.0,
+        4.0
+      ]
+    ]
+  },
+  "props": [
+    {
+      "type": "station",
+      "pos": [
+        -20.0,
+        0.0,
+        -1.5
+      ],
+      "yaw": 0,
+      "size": [
+        110.0,
+        18.0,
+        40.0
+      ],
+      "arch_open": true,
+      "encloses": [
+        "centraal_hal"
+      ],
+      "collide": false
+    },
+    {
+      "type": "collider",
+      "pos": [
+        18.5,
+        0.0,
+        0.25
+      ],
+      "size": [
+        6.0,
+        1.0,
+        0.5
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        51.5,
+        0.0,
+        0.25
+      ],
+      "size": [
+        6.0,
+        1.0,
+        0.5
+      ]
+    },
+    {
+      "type": "tram",
+      "pos": [
+        10.0,
+        0.0,
+        24.0
+      ],
+      "yaw": 0,
+      "size": [
+        30.0,
+        3.4,
+        2.4
+      ],
+      "board": "NIET INSTAPPEN",
+      "power": 240.0
+    },
+    {
+      "type": "tram_stop",
+      "pos": [
+        10.0,
+        0.0,
+        26.5
+      ],
+      "yaw": 180,
+      "size": [
+        26.0,
+        0.25,
+        2.6
+      ],
+      "collide": false
+    },
+    {
+      "type": "bus",
+      "pos": [
+        17.0,
+        0.0,
+        51.9
+      ],
+      "yaw": 0,
+      "size": [
+        12.0,
+        3.2,
+        2.6
+      ],
+      "seed": 82
+    },
+    {
+      "type": "bus",
+      "pos": [
+        55.0,
+        0.0,
+        49.9
+      ],
+      "yaw": 180,
+      "size": [
+        12.0,
+        3.2,
+        2.6
+      ],
+      "seed": 83
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        27.3,
+        0.0,
+        8.8
+      ],
+      "yaw": 49.5,
+      "size": [
+        16.313,
+        1.1,
+        0.7
+      ],
+      "seed": 801
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        42.7,
+        0.0,
+        8.8
+      ],
+      "yaw": 130.5,
+      "size": [
+        16.313,
+        1.1,
+        0.7
+      ],
+      "seed": 802
+    },
+    {
+      "type": "sandbags",
+      "pos": [
+        29.0,
+        0.0,
+        1.3
+      ],
+      "size": [
+        4.4,
+        0.7,
+        0.7
+      ],
+      "seed": 803
+    },
+    {
+      "type": "sandbags",
+      "pos": [
+        41.0,
+        0.0,
+        1.3
+      ],
+      "size": [
+        4.4,
+        0.7,
+        0.7
+      ],
+      "seed": 804
+    },
+    {
+      "type": "vehicle",
+      "pos": [
+        15.0,
+        0.0,
+        10.0
+      ],
+      "yaw": 75,
+      "size": [
+        7.0,
+        3.0,
+        2.4
+      ],
+      "livery": "army",
+      "van": true,
+      "door_open": "left"
+    },
+    {
+      "type": "light_tower",
+      "pos": [
+        52.0,
+        0.0,
+        10.0
+      ],
+      "yaw": -120.5,
+      "size": [
+        2.2,
+        8.5,
+        1.4
+      ],
+      "aim": [
+        0.0,
+        0.0,
+        19.0
+      ]
+    },
+    {
+      "type": "light_tower",
+      "pos": [
+        18.0,
+        0.0,
+        34.0
+      ],
+      "yaw": 144.7,
+      "size": [
+        2.2,
+        8.5,
+        1.4
+      ],
+      "aim": [
+        0.0,
+        0.0,
+        28.0
+      ]
+    },
+    {
+      "type": "aid_post",
+      "pos": [
+        60.0,
+        0.0,
+        27.0
+      ],
+      "yaw": -90,
+      "size": [
+        6.0,
+        3.4,
+        6.0
+      ],
+      "military": true,
+      "covered": 2,
+      "stretchers": 2,
+      "seed": 805,
+      "collide": false
+    },
+    {
+      "type": "trestle_table",
+      "pos": [
+        26.0,
+        0.0,
+        17.0
+      ],
+      "yaw": 20,
+      "size": [
+        2.0,
+        0.76,
+        0.8
+      ],
+      "laptops": 1,
+      "seed": 806
+    },
+    {
+      "type": "evac_board",
+      "pos": [
+        35.0,
+        0.0,
+        18.0
+      ],
+      "yaw": 0,
+      "size": [
+        2.0,
+        1.9,
+        0.6
+      ],
+      "text": "METRO 52 \u00b7 NOORD",
+      "to": "LAATSTE TREIN 00:30",
+      "arrow": "up"
+    },
+    {
+      "type": "evac_board",
+      "pos": [
+        44.0,
+        0.0,
+        44.0
+      ],
+      "yaw": 20,
+      "size": [
+        1.8,
+        1.9,
+        0.6
+      ],
+      "text": "TREINEN",
+      "to": "RIJDEN NIET",
+      "arrow": "up"
+    },
+    {
+      "type": "model",
+      "model": "ph:portable_searchlight",
+      "pos": [
+        41.5,
+        0.7,
+        1.2
+      ],
+      "yaw": 200,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:Megaphone_01",
+      "pos": [
+        33.4,
+        0.0,
+        6.8
+      ],
+      "yaw": 70,
+      "tip": 90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wheelchair_01",
+      "pos": [
+        39.0,
+        0.0,
+        9.5
+      ],
+      "yaw": 140,
+      "scale": 1.0,
+      "size": [
+        0.7,
+        0.9,
+        1.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:portable_generator",
+      "pos": [
+        54.0,
+        0.0,
+        12.5
+      ],
+      "yaw": 30,
+      "scale": 1.0,
+      "size": [
+        0.7,
+        0.6,
+        0.5
+      ]
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        30.0,
+        0.0,
+        9.0
+      ],
+      "size": [
+        5.0,
+        0.0,
+        6.0
+      ],
+      "seed": 807,
+      "cases": 6,
+      "bags": 8,
+      "pushchair": true,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        40.0,
+        0.0,
+        26.0
+      ],
+      "size": [
+        6.0,
+        0.0,
+        5.0
+      ],
+      "seed": 808,
+      "cases": 4,
+      "bags": 5,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        28.0,
+        0.0,
+        44.0
+      ],
+      "size": [
+        5.0,
+        0.0,
+        4.0
+      ],
+      "seed": 809,
+      "cases": 3,
+      "bags": 4,
+      "chair": true,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        48.0,
+        0.0,
+        56.0
+      ],
+      "size": [
+        4.0,
+        0.0,
+        4.0
+      ],
+      "seed": 810,
+      "cases": 2,
+      "bags": 3,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        35.0,
+        0.0,
+        30.0
+      ],
+      "size": [
+        60.0,
+        0.0,
+        56.0
+      ],
+      "seed": 811,
+      "count": 520,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        3.0,
+        0.0,
+        30.0
+      ],
+      "yaw": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "seed": 820,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        3.4,
+        0.0,
+        30.7
+      ],
+      "yaw": 98,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "seed": 821,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        3.0,
+        0.0,
+        31.4
+      ],
+      "yaw": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "seed": 822,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        3.0,
+        0.0,
+        32.1
+      ],
+      "yaw": 98,
+      "roll": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "seed": 823,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        3.4,
+        0.0,
+        32.8
+      ],
+      "yaw": 84,
+      "roll": -82,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "seed": 824,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        3.0,
+        0.0,
+        33.5
+      ],
+      "yaw": 98,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "seed": 825,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        3.0,
+        0.0,
+        34.2
+      ],
+      "yaw": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "seed": 826,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        3.4,
+        0.0,
+        34.9
+      ],
+      "yaw": 98,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "seed": 827,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        3.0,
+        0.0,
+        35.6
+      ],
+      "yaw": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "seed": 828,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        3.0,
+        0.0,
+        36.3
+      ],
+      "yaw": 98,
+      "roll": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "seed": 829,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        3.4,
+        0.0,
+        37.0
+      ],
+      "yaw": 84,
+      "roll": -82,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "seed": 830,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        3.0,
+        0.0,
+        37.7
+      ],
+      "yaw": 98,
+      "roll": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "seed": 831,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        3.0,
+        0.0,
+        38.4
+      ],
+      "yaw": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "seed": 832,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        3.4,
+        0.0,
+        39.1
+      ],
+      "yaw": 98,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "seed": 833,
+      "collide": false
+    },
+    {
+      "type": "collider",
+      "pos": [
+        3.2,
+        0.0,
+        34.5
+      ],
+      "size": [
+        2.4,
+        1.0,
+        10.4
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        62.35,
+        0.0,
+        27.0
+      ],
+      "yaw": -90,
+      "size": [
+        1.8,
+        1.0,
+        0.7
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        60.0,
+        0.0,
+        25.1
+      ],
+      "yaw": -90,
+      "size": [
+        1.6,
+        1.0,
+        2.2
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        59.8,
+        0.0,
+        28.85
+      ],
+      "yaw": -90,
+      "size": [
+        1.5,
+        1.0,
+        1.9
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        57.6,
+        0.0,
+        22.8
+      ],
+      "yaw": -90,
+      "size": [
+        0.7,
+        1.0,
+        0.5
+      ]
+    }
+  ],
+  "walls": {
+    "south": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 35.0,
+          "width": 20.0,
+          "height": 12.0
+        }
+      ]
+    },
+    "north": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 35.0,
+          "width": 5.2,
+          "height": 8.5
+        }
+      ]
+    }
+  },
+  "lights": [
+    {
+      "kind": "sun",
+      "dir_from": [
+        -0.35,
+        0.55,
+        1.0
+      ],
+      "color": [
+        0.55,
+        0.66,
+        1.0
+      ],
+      "blender_power": 0.12,
+      "godot_energy": 0.25,
+      "angle": 2.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        35.0,
+        4.4,
+        63.2
+      ],
+      "look_at": [
+        35.0,
+        7.0,
+        0.0
+      ],
+      "fov": 58,
+      "zone": {
+        "min": [
+          20.0,
+          40.0
+        ],
+        "max": [
+          50.0,
+          63.6
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "aw",
+      "pos": [
+        36.0,
+        4.4,
+        62.0
+      ],
+      "look_at": [
+        6.0,
+        1.5,
+        44.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          40.0
+        ],
+        "max": [
+          20.0,
+          63.6
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "ae",
+      "pos": [
+        34.0,
+        4.4,
+        62.0
+      ],
+      "look_at": [
+        64.0,
+        1.5,
+        44.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          50.0,
+          40.0
+        ],
+        "max": [
+          70.0,
+          63.6
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "bw",
+      "pos": [
+        44.0,
+        4.6,
+        44.0
+      ],
+      "look_at": [
+        14.0,
+        3.0,
+        14.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          16.0
+        ],
+        "max": [
+          35.0,
+          40.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "be",
+      "pos": [
+        26.0,
+        4.6,
+        44.0
+      ],
+      "look_at": [
+        56.0,
+        3.0,
+        14.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          35.0,
+          16.0
+        ],
+        "max": [
+          70.0,
+          40.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "c",
+      "pos": [
+        50.0,
+        3.4,
+        24.0
+      ],
+      "look_at": [
+        33.0,
+        3.5,
+        0.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          22.0,
+          0.0
+        ],
+        "max": [
+          48.0,
+          16.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "dw",
+      "pos": [
+        30.0,
+        3.6,
+        22.0
+      ],
+      "look_at": [
+        8.0,
+        2.0,
+        4.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          22.0,
+          16.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "de",
+      "pos": [
+        40.0,
+        3.6,
+        22.0
+      ],
+      "look_at": [
+        62.0,
+        2.0,
+        4.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          48.0,
+          0.0
+        ],
+        "max": [
+          70.0,
+          16.0
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_damrak": {
+      "pos": [
+        35.0,
+        0.0,
+        61.800000000000004
+      ],
+      "yaw": 0
+    },
+    "from_hal": {
+      "pos": [
+        35.0,
+        0.0,
+        1.6
+      ],
+      "yaw": 180
+    }
+  },
+  "interactables": [
+    {
+      "id": "to_damrak",
+      "kind": "door",
+      "pos": [
+        35.0,
+        1.0,
+        63.4
+      ],
+      "radius": 1.6,
+      "target_room": "damrak_noord",
+      "target_spawn": "from_stationsplein"
+    },
+    {
+      "id": "station",
+      "kind": "examine",
+      "pos": [
+        35.0,
+        1.0,
+        3.2
+      ],
+      "radius": 2.0,
+      "text": "Centraal. The army chained the side doors and left the middle arch open. The lights are still on inside."
+    },
+    {
+      "id": "notice",
+      "kind": "note",
+      "pos": [
+        26.0,
+        0.8,
+        17.6
+      ],
+      "radius": 1.2,
+      "title": "Notice, taped to the table",
+      "text": "MUNICIPALITY OF AMSTERDAM - EVACUATION\n\nNo trains will run from Centraal. Metro 52 runs north to Noord until 00:30, then the line is closed.\n\nTake only what you can carry. Do not go back for anyone. Do not go near the water."
+    },
+    {
+      "id": "shells_truck",
+      "kind": "pickup",
+      "item": "shotgun_shells",
+      "count": 6,
+      "pos": [
+        17.6,
+        0.0,
+        12.6
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "first_aid_tent",
+      "kind": "pickup",
+      "item": "first_aid",
+      "count": 1,
+      "pos": [
+        57.6,
+        0.0,
+        27.0
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "rounds_bus",
+      "kind": "pickup",
+      "item": "handgun_ammo",
+      "count": 10,
+      "pos": [
+        24.0,
+        0.0,
+        52.6
+      ],
+      "radius": 0.9
+    }
+  ],
+  "enemies": [
+    {
+      "id": "bij_de_tram",
+      "kind": "verdronkene",
+      "pos": [
+        12.0,
+        0.0,
+        29.2
+      ],
+      "yaw": 160
+    },
+    {
+      "id": "op_het_plein",
+      "kind": "verdronkene",
+      "pos": [
+        45.0,
+        0.0,
+        32.0
+      ],
+      "yaw": 200
+    },
+    {
+      "id": "bij_de_poort",
+      "kind": "verdronkene",
+      "pos": [
+        42.0,
+        0.0,
+        6.0
+      ],
+      "yaw": 220,
+      "lying": true
+    }
+  ]
+}

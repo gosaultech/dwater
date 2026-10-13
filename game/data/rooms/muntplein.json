@@ -42,7 +42,7 @@
     }
   },
   "footsteps": "marble",
-  "ambience": "amb_cellar",
+  "ambience": "amb_street_rain",
   "move_scale": 1.0,
   "world": {
     "color": [
@@ -577,6 +577,71 @@
       ]
     },
     {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        43.58,
+        0.0,
+        7.47
+      ],
+      "yaw": 59,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        43.72,
+        0.0,
+        7.49
+      ],
+      "yaw": 326,
+      "scale": 0.96,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_crate_01",
+      "pos": [
+        43.7,
+        0.0,
+        7.27
+      ],
+      "yaw": 101,
+      "scale": 0.96,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        43.66,
+        0.0,
+        32.09
+      ],
+      "yaw": 84,
+      "scale": 0.88,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        43.67,
+        0.0,
+        32.33
+      ],
+      "yaw": 29,
+      "scale": 0.99,
+      "collide": false,
+      "junk": true
+    },
+    {
       "type": "crowd_barrier",
       "pos": [
         23.75,
@@ -621,6 +686,55 @@
       "yaw": 35,
       "seed": 5,
       "roll": 80,
+      "collide": false
+    },
+    {
+      "type": "vehicle",
+      "pos": [
+        35.0,
+        0.0,
+        9.5
+      ],
+      "size": [
+        5.6,
+        2.6,
+        2.1
+      ],
+      "yaw": 20,
+      "livery": "police",
+      "van": true,
+      "door_open": "right",
+      "after": true
+    },
+    {
+      "type": "model",
+      "model": "ph:Megaphone_01",
+      "pos": [
+        27.8,
+        0.0,
+        4.4
+      ],
+      "yaw": 70,
+      "tip": 90,
+      "scale": 1.0,
+      "collide": false,
+      "after": true
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        22.0,
+        0.0,
+        12.0
+      ],
+      "size": [
+        16.0,
+        0.0,
+        12.0
+      ],
+      "seed": 141,
+      "count": 40,
+      "after": true,
       "collide": false
     }
   ],

@@ -42,7 +42,7 @@
     }
   },
   "footsteps": "marble",
-  "ambience": "amb_cellar",
+  "ambience": "amb_street_rain",
   "move_scale": 1.0,
   "world": {
     "color": [
@@ -867,6 +867,282 @@
       ],
       "seed": 5,
       "tape": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        2.45,
+        0.0,
+        11.44
+      ],
+      "yaw": 243,
+      "scale": 0.89,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        2.1,
+        0.0,
+        11.53
+      ],
+      "yaw": 146,
+      "scale": 0.92,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        2.2,
+        0.0,
+        11.45
+      ],
+      "yaw": 51,
+      "scale": 1.0,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        6.77,
+        0.0,
+        11.6
+      ],
+      "yaw": 360,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        11.42,
+        0.0,
+        11.63
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 180,
+      "seed": 619,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        25.62,
+        0.0,
+        11.48
+      ],
+      "yaw": 0,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        29.7,
+        0.0,
+        11.7
+      ],
+      "yaw": 192,
+      "scale": 0.91,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        29.99,
+        0.0,
+        11.71
+      ],
+      "yaw": 321,
+      "scale": 1.0,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        35.0,
+        0.0,
+        11.67
+      ],
+      "yaw": 360,
+      "scale": 1.0,
+      "size": [
+        0.92,
+        1.0,
+        0.42
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        42.97,
+        0.0,
+        11.64
+      ],
+      "yaw": 255,
+      "scale": 0.87,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        43.36,
+        0.0,
+        11.74
+      ],
+      "yaw": 95,
+      "scale": 0.93,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        43.57,
+        0.0,
+        11.59
+      ],
+      "yaw": 329,
+      "scale": 0.97,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        51.45,
+        0.0,
+        11.6
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        60.52,
+        0.0,
+        11.65
+      ],
+      "yaw": 170,
+      "scale": 0.93,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        60.61,
+        0.0,
+        11.57
+      ],
+      "yaw": 165,
+      "scale": 0.89,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "sandbags",
+      "pos": [
+        20.5,
+        0.0,
+        11.2
+      ],
+      "size": [
+        2.4,
+        0.6,
+        0.6
+      ],
+      "seed": 151,
+      "after": true
+    },
+    {
+      "type": "sandbags",
+      "pos": [
+        53.5,
+        0.0,
+        11.2
+      ],
+      "size": [
+        2.4,
+        0.6,
+        0.6
+      ],
+      "seed": 152,
+      "after": true
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        40.0,
+        0.04,
+        7.0
+      ],
+      "size": [
+        3.0,
+        0.0,
+        2.0
+      ],
+      "seed": 153,
+      "cases": 2,
+      "bags": 3,
+      "umbrella": true,
+      "after": true,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        35.0,
+        0.0,
+        6.0
+      ],
+      "size": [
+        50.0,
+        0.0,
+        6.0
+      ],
+      "seed": 154,
+      "count": 50,
+      "after": true,
+      "collide": false
     }
   ],
   "walls": {
