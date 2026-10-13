@@ -436,14 +436,23 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   sold by the metre: each texture is hung at its true size. The furniture kit
   (`tools/blender/kit.py`) builds bevelled sofas, panelled kasten, a carved marble mantel, arched
   steel windows and the like from the props' sizes.
-- **Photographed stock.** Where modelling can't compete (a shelf of shampoo, a wall of wine, tulips
-  in their buckets, clothes on a rail), the shops show photographs of the real thing: a prop names
+- **Photographed stock.** Where modelling can't compete (a shelf of shampoo, a wall of wine,
+  clothes on a rail), the shops show photographs of the real thing: a prop names
   one (`"photo": "wine_rows"` on a shelving unit, a `photo_layer`, a `clothes_rail`) and Blender puts
   each shelf's row of it on a card just behind the shelf's edge, so the real edge throws its shadow
   on it. Like a stage set's painted backdrop behind real furniture: from the stalls you can't tell.
   The photos are CC0, CC BY or public domain only (`tools/assets/photos.json` keeps each one's author
   and licence; `tools/assets/photos.py fetch` downloads them, `credits` writes
   `docs/photo_credits.md`). `tools/citygen/interiors.py` is the pass that dresses the shops with them.
+- **Tulips, modelled.** Flowers on a card looked like what they were, so the flower stalls' tulips
+  are built (`tools/blender/flowers.py`): each bloom six petals in two layers, green where it meets
+  the stem, a little light through it; stems bending out of the bucket into a domed bunch; broad
+  leaves over the rim. One mesh per colour, so a stall of a thousand blooms builds in a blink.
+- **Night colours.** The brick, road and paving scans were photographed under sunnier skies and
+  all sat orange or tan. `GRADE` in `tools/blender/surfaces.py` turns and drains each one (`"hue"`,
+  `"sat"`, which any RoomSpec material can also set): the brick red-brown, the clinker road a dark
+  purple-brown, the pavement and cobbles grey. Like a photographer's colour profile per camera: the
+  same scene, its colours as they really are. The moon does the rest: a cool sky, warm-white lamps.
 - **The whole floor at once.** To render a room, Blender builds every room on its storey at its
   origin (`tools/pipeline/house.py` agrees with the engine on the floor plan), so an open doorway
   shows the real room beyond. A shared wall is built half by each room; a door the game swings is

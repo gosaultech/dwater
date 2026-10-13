@@ -86,9 +86,10 @@ def hotel_bar(s):
 
 
 def bloemenkraam(s):
-    stock(s, "tulip_buckets")
+    s["props"] = [p for p in s["props"] if p["type"] != "shelving"]   # the west wall's stock real buckets too, not a photo of them
     for p in s["props"]:
         p.pop("photo", None) if p["type"] == "flower_buckets" else None
+    put(s, {"type": "flower_buckets", "pos": [0.5, 0.0, 2.2], "yaw": 90, "size": [3.6, 0.6, 0.9], "seed": 78, "collide": True})
 
 
 def juwelier(s):

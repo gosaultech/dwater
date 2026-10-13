@@ -114,25 +114,6 @@
       "yaw": -90
     },
     {
-      "type": "shelving",
-      "pos": [
-        0.3,
-        0.0,
-        2.2
-      ],
-      "size": [
-        3.6,
-        2.0,
-        0.45
-      ],
-      "yaw": 90,
-      "palette": "souvenir",
-      "empty": 0.3,
-      "seed": 7,
-      "shelves": 4,
-      "photo": "tulip_buckets"
-    },
-    {
       "type": "model",
       "model": "ph:seeding_tray_01",
       "pos": [
@@ -153,18 +134,6 @@
         0.5
       ],
       "yaw": 220,
-      "scale": 1.0,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:watering_can_metal_01",
-      "pos": [
-        1.2,
-        0.0,
-        3.9
-      ],
-      "yaw": 70,
       "scale": 1.0,
       "collide": false
     },
@@ -288,6 +257,23 @@
       "rough": 0.7,
       "lift": 0.5,
       "collide": false
+    },
+    {
+      "type": "flower_buckets",
+      "pos": [
+        0.5,
+        0.0,
+        2.2
+      ],
+      "yaw": 90,
+      "size": [
+        3.6,
+        0.6,
+        0.9
+      ],
+      "seed": 78,
+      "collide": true,
+      "interior": true
     }
   ],
   "lights": [

@@ -1,7 +1,7 @@
 # damned_waters/tools/blender/photos.py
 # The sets' photographs (tools/assets/photos.py): a cropped photo on a flat card, lit by the scene. Set
 # just behind a shelf's edge it reads as the stock on it (shops.shelving's "photo"); on its own it's
-# a "photo_layer" prop (a wall of bottles, tulips in their buckets seen from above).
+# a "photo_layer" prop (a wall of bottles, a shop window's display).
 import json
 import math
 from pathlib import Path

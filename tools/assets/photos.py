@@ -1,6 +1,6 @@
 # damned_waters/tools/assets/photos.py
 # Purpose: the photographs that go into the sets where modelling can't compete (packed shelves,
-# bottles, flowers in their buckets). Each is CC0, CC-BY or public domain (Openverse), listed with
+# bottles, clothes on a rail). Each is CC0, CC-BY or public domain (Openverse), listed with
 # its author and licence in tools/assets/photos.json, cached outside git (pipeline_out/assets/photos/)
 # and credited in docs/photo_credits.md. A RoomSpec prop names one by its id ("photo": "wine_rows").
 # Blender reads only the cache, so fetch before rendering.
