@@ -1165,6 +1165,20 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/rough_linen"
   },
+  "round_wooden_table_01": {
+   "kind": "model",
+   "name": "Round Wooden Table 01",
+   "authors": [
+    "Ulan Cabanilla"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/round_wooden_table_01",
+   "dimensions_mm": [
+    1399,
+    1399,
+    1005
+   ]
+  },
   "rusty_metal_shutter": {
    "kind": "texture",
    "name": "Rusty Metal Shutter",

@@ -147,7 +147,7 @@ Bz = shop_room("beurs_zaal", "Beurs van Berlage", BZ, (BW, BD), BH,
                "and glass of the roof, night through it. The army made it a mortuary: body bags in rows down the floor, some on "
                "trestles, the registration's tables by the gate, work lights on tripods. Not all of the bags are full.",
                {"floor": {"ph": "large_floor_tiles_02", "tint": [0.62, 0.58, 0.52], "rough": 0.45}, "wall": {"ph": "red_bricks_04", "tint": [0.78, 0.56, 0.44], "scale": 1.0},
-                "ceiling": {"color": [0.004, 0.005, 0.009], "rough": 1.0}, "skirting": None}, exposure=0.95)
+                "ceiling": {"color": [0.004, 0.005, 0.009], "rough": 1.0}, "skirting": None}, exposure=1.25)
 Bz["walls"] = {"west": {"openings": [{"kind": "passage", "center": GZ, "width": 4.0, "height": 5.5}]}}
 bags = []
 cells_w = {"rows": 9, "cols": 5}
@@ -187,7 +187,7 @@ Bz["props"] = bags + [
 Bz["lights"] = [{"kind": "spot", "pos": [2.4, 2.6, 4.0], "look_at": [8.0, 0.0, 12.0], "color": [0.9, 0.95, 1.0], "blender_power": 0, "godot_energy": 1.0, "range": 16.0},
                 {"kind": "spot", "pos": [BW - 2.4, 2.6, 4.0], "look_at": [14.0, 0.0, 12.0], "color": [0.9, 0.95, 1.0], "blender_power": 0, "godot_energy": 1.0, "range": 16.0},
                 {"kind": "spot", "pos": [11.0, 2.6, 34.5], "look_at": [11.0, 0.0, 22.0], "color": [0.9, 0.95, 1.0], "blender_power": 0, "godot_energy": 1.0, "range": 16.0},
-                {"kind": "area", "pos": [BW / 2, 12.0, BD / 2], "look_at": [BW / 2, 0.0, BD / 2], "size": 8.0, "color": [0.55, 0.65, 0.85], "blender_power": 300,
+                {"kind": "area", "pos": [BW / 2, 12.0, BD / 2], "look_at": [BW / 2, 0.0, BD / 2], "size": 12.0, "color": [0.55, 0.65, 0.85], "blender_power": 1100,
                  "godot_energy": 0.25, "range": 30.0}]   # the night through the glass, faint
 Bz["shots"] = [
     {"id": "a", "pos": [4.2, 5.4, 42.6], "look_at": [15.0, 0.4, 8.0], "fov": 62, "zone": {"min": [0.0, 22.0], "max": [BW, BD]}, "priority": 1},
@@ -456,7 +456,16 @@ Hb["props"] = [
     {"type": "strip_light", "pos": [5.5, 2.5, 0.5], "size": [6.8, 0.06, 0.1], "collide": False}]
 for k, x in enumerate((3.0, 4.2, 5.4, 6.6, 7.8)):   # the stools along the bar, one knocked over
     Hb["props"].append({"type": "model", "model": "ph:wooden_stool_01", "pos": [x, 0.0, 2.4 + (0.3 if k == 3 else 0.0)], "yaw": 15 * k,
-                        "roll": 88 if k == 3 else 0, "scale": 1.0, "collide": False})
+                        "tip": 90 if k == 3 else 0, "scale": 1.0, "collide": False})
+for k, (x, z) in enumerate(((2.6, 5.2), (5.8, 6.1), (8.6, 4.9))):   # the tables in the middle, left as they were
+    Hb["props"].append({"type": "model", "model": "ph:round_wooden_table_01", "pos": [x, 0.0, z], "yaw": 20 * k, "fit": [1.05, 0.75, 1.05],
+                        "size": [1.05, 0.75, 1.05]})
+    for j, (dx, dz, yaw) in enumerate(((0.0, -0.85, 0), (0.0, 0.85, 180), (0.85, 0.0, -90))):
+        if j == 2 and k != 1:
+            continue
+        down = k == 2 and j == 1
+        Hb["props"].append({"type": "model", "model": "ph:dining_chair_02", "pos": [round(x + dx, 2), 0.0, round(z + dz + (0.35 if down else 0.0), 2)],
+                            "yaw": yaw + 12 * (j - 1), "scale": 1.0, "size": [0.45, 0.9, 0.5], **({"tip": 90} if down else {})})
 Hb["lights"] = [{"kind": "area", "pos": [6.0, 3.5, 5.0], "look_at": [6.0, 0.0, 5.0], "size": 2.0, "color": [1.0, 0.8, 0.55], "blender_power": 110,
                  "godot_energy": 0.5, "range": 8.0},
                 {"kind": "point", "pos": [5.5, 1.8, 0.7], "color": [1.0, 0.7, 0.4], "blender_power": 30, "godot_energy": 0.3, "range": 4.0, "radius": 0.3}]
