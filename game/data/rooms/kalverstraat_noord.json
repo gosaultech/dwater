@@ -42,7 +42,7 @@
     }
   },
   "footsteps": "marble",
-  "ambience": "amb_cellar",
+  "ambience": "amb_street_rain",
   "move_scale": 1.0,
   "world": {
     "color": [
@@ -67,7 +67,17 @@
     "bloom": {
       "threshold": 0.9,
       "strength": 0.4,
-      "size": 0.55
+      "size": 0.55,
+      "haze": {
+        "color": [
+          0.045,
+          0.052,
+          0.068
+        ],
+        "start": 12.0,
+        "depth": 85.0,
+        "strength": 0.5
+      }
     }
   },
   "outdoor": {
@@ -479,6 +489,207 @@
       ],
       "collide": false,
       "seed": 170
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        1.19,
+        0.0,
+        0.27
+      ],
+      "yaw": 296,
+      "scale": 0.94,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        1.24,
+        0.0,
+        0.48
+      ],
+      "yaw": 278,
+      "scale": 0.87,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        1.46,
+        0.0,
+        0.52
+      ],
+      "yaw": 198,
+      "scale": 0.87,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.3,
+        0.0,
+        11.09
+      ],
+      "yaw": 261,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.48,
+        0.0,
+        10.74
+      ],
+      "yaw": 33,
+      "scale": 0.93,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.48,
+        0.0,
+        17.59
+      ],
+      "yaw": 326,
+      "scale": 0.95,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.48,
+        0.0,
+        17.41
+      ],
+      "yaw": 248,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.33,
+        0.0,
+        17.04
+      ],
+      "yaw": 271,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        21.47,
+        0.0,
+        7.19
+      ],
+      "yaw": 210,
+      "scale": 0.88,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        21.61,
+        0.0,
+        6.83
+      ],
+      "yaw": 217,
+      "scale": 0.97,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        21.35,
+        0.0,
+        6.74
+      ],
+      "yaw": 37,
+      "scale": 0.95,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        21.63,
+        0.0,
+        14.62
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 270,
+      "seed": 790,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        21.36,
+        0.0,
+        20.41
+      ],
+      "yaw": 87,
+      "scale": 0.99,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        15.55,
+        0.0,
+        24.09
+      ],
+      "yaw": 115,
+      "scale": 0.89,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        19.76,
+        0.0,
+        24.23
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 180,
+      "seed": 44,
+      "junk": true
     }
   ],
   "walls": {
