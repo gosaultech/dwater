@@ -42,7 +42,7 @@
     }
   },
   "footsteps": "marble",
-  "ambience": "amb_cellar",
+  "ambience": "amb_street_rain",
   "move_scale": 1.0,
   "world": {
     "color": [

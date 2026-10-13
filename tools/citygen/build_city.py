@@ -24,6 +24,8 @@ def main(argv=None):
         f = Path(common.R) / f"{rid}.json"
         spec = json.loads(f.read_text())
         common.dress_street(spec)
+        if spec.get("outdoor"):
+            spec["ambience"] = "amb_street_rain"
         f.write_text(json.dumps(spec, indent=2, ensure_ascii=True) + "\n")
 
 

@@ -91,7 +91,7 @@ def street_room(rid, name, origin, size, height, desc):
             "id": rid, "display_name": name, "storey": STOREY, "origin": origin,
             "bounds": {"min": [0.0, 0.0], "max": list(size)}, "height": height,
             "materials": {"floor": {"color": [0.2, 0.2, 0.2]}, "wall": {"color": [0.2, 0.2, 0.2]}, "ceiling": {"color": [0.2, 0.2, 0.2]}},
-            "footsteps": "marble", "ambience": "amb_cellar", "move_scale": 1.0, "world": {"color": [0.014, 0.019, 0.036], "strength": 1.0},
+            "footsteps": "marble", "ambience": "amb_street_rain", "move_scale": 1.0, "world": {"color": [0.014, 0.019, 0.036], "strength": 1.0},
             "sky": SKY, "render": {"exposure": 0.85, "bloom": {"threshold": 0.9, "strength": 0.4, "size": 0.55,
                                                             "haze": {"color": [0.045, 0.052, 0.068], "start": 12.0, "depth": 85.0, "strength": 0.5}}}}
 
