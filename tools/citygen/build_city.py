@@ -10,7 +10,7 @@ HERE = Path(__file__).resolve().parent
 ORDER = ["area3", "area4", "area5", "area6", "area7"]
 
 
-KEPT = ["thorbeckeplein", "rembrandtplein"]   # area2's rooms: dressed in place (it keeps to itself)
+KEPT = ["thorbeckeplein", "rembrandtplein", "herengracht"]   # rooms made before the generators: dressed in place
 
 
 def main(argv=None):
