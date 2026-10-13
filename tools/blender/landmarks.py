@@ -781,7 +781,8 @@ def gothic_front(root, p, w, h, d):
     brick = M(p.get("brick", {"ph": "medieval_red_brick", "tint": [0.7, 0.55, 0.46], "scale": 1.0}))
     stone = M({"ph": "large_sandstone_blocks", "tint": [0.8, 0.74, 0.62], "scale": 0.8})
     lead = M(LEAD)
-    glass = emit((1.0, 0.7, 0.38), p.get("glow", 0.55), "church_window")
+    import church
+    glass = church.leaded_glass((1.0, 0.72, 0.42), p.get("glow", 0.55) * 1.4)   # lit from inside: the lead shows dark against it
     gh = w * 0.75                          # the gable's height over the eaves
     span = w * 0.56                        # the window's width
     sill = h * 0.18
