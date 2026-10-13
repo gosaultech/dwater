@@ -1116,7 +1116,7 @@ std::string Game::stage(int i) {
             if (i == 61) {
                 at("rokin_noord", 12.6f, 5.0f, 0.0f);   // in the gap in the barriers, facing north
                 staged_in_ = stick_toward(0, -1, 0.5f);
-                run(4.0f);
+                run(6.0f);                               // (through the beat and out on the Dam)
                 name = "onto_the_dam";
             } else if (i == 62) {
                 at("dam", 34.0f, 44.0f, 0.9f);   // among the stalls, the wheel ahead
