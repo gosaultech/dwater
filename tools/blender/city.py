@@ -109,10 +109,11 @@ def tram(root, p, w, h, d):
     lit inside, the headlights and the destination board (it says it isn't in service), a door open
     on the platform side (+z), the pantograph up to the wire."""
     body = M(p.get("material", {"color": [0.3, 0.31, 0.31], "rough": 0.45, "noise": 0.1, "noise_scale": 1.5, "coat": 1.0, "grime": 1.0}))
-    band = M({"color": [0.05, 0.12, 0.35], "rough": 0.35, "noise": 0.05})
+    band = M(p.get("band", {"color": [0.05, 0.12, 0.35], "rough": 0.35, "noise": 0.05}))
     dark = M({"color": [0.015, 0.015, 0.018], "rough": 0.4})
     glass = M("glass")
-    inside = emit((1.0, 0.86, 0.68), 0.16, "tram_inside")   # the far wall of the saloon, lit
+    inside = emit((1.0, 0.86, 0.68), p.get("inside", 0.16), "tram_inside_%d" % int(p.get("inside", 0.16) * 100))
+    every = p.get("doors_open") == "all"   # the far wall of the saloon, lit
     strip = emit((1.0, 0.95, 0.85), 6.0, "tram_strip")      # the ceiling lights
     seat = M({"color": [0.05, 0.09, 0.2], "rough": 0.8, "noise": 0.1})
     pole = M({"color": [0.85, 0.65, 0.05], "rough": 0.3, "metal": 0.4})
@@ -157,14 +158,16 @@ def tram(root, p, w, h, d):
         kit.soft(root, "tram_roof_unit", ((x0 + x1) / 2 + (0.6 if i == 1 else 0.0), h + 0.15, 0.0), (min(2.4, seg * 0.5), 0.3, d * 0.6), unit, 0.04, 2)
         for sz in (-1, 1):   # a pair of sliding doors each side, dark frames round their glass
             xd = x0 + seg * (0.55 if i % 2 else 0.4)
-            if sz > 0 and i == 0:
+            if sz > 0 and (i == 0 or every):
+                if every:
+                    lbox(root, "door_open", (xd - 0.66, 0.35, d / 2 - 0.02), (xd + 0.66, 2.42, d / 2 + 0.01), inside)
                 continue   # (the platform side's first door stands open)
             for xa, xb in ((xd - 0.66, xd - 0.02), (xd + 0.02, xd + 0.66)):
                 lbox(root, "tram_door", (xa, 0.38, sz * d / 2 - 0.016), (xb, 2.42, sz * d / 2 + 0.016), dark)
                 lbox(root, "tram_door_glass", (xa + 0.07, 1.0, sz * d / 2 - 0.02), (xb - 0.07, 2.3, sz * d / 2 + 0.02), glass)
         if i < n - 1:   # the bellows between sections
             lbox(root, "tram_bellows", (x1, 0.4, -d / 2 + 0.12), (x1 + gap, h - 0.15, d / 2 - 0.12), dark)
-        if i == 1:   # the pantograph
+        if i == 1 and p.get("pantograph", True):   # the pantograph
             pa = Acc()
             for sx in (-0.5, 0.5):
                 pa.rod(((x0 + x1) / 2 + sx, h + 0.1, -0.4), ((x0 + x1) / 2, h + 1.0, 0.0), 0.02, 0.02, 4)
@@ -173,7 +176,10 @@ def tram(root, p, w, h, d):
             pa.build("pantograph", M(STEEL), root)
     seats.build("tram_seats", seat, root, smooth=False)
     poles.build("tram_poles_inside", pole, root)
-    lbox(root, "door_open", (-w / 2 + seg * 0.4, 0.35, d / 2 - 0.02), (-w / 2 + seg * 0.4 + 1.3, h - 0.5, d / 2 + 0.01), inside)
+    if not every:
+        lbox(root, "door_open", (-w / 2 + seg * 0.4, 0.35, d / 2 - 0.02), (-w / 2 + seg * 0.4 + 1.3, h - 0.5, d / 2 + 0.01), inside)
+    if p.get("underframe"):
+        lbox(root, "underframe", (-w / 2 + 0.6, -p["underframe"], -d / 2 + 0.25), (w / 2 - 0.6, 0.3, d / 2 - 0.25), dark)
     for sx in (-1, 1):   # the cabs: windscreen, headlights, the board over it
         xe = sx * (w / 2 - 0.02)
         lbox(root, "windscreen", (xe - 0.03, 1.05, -d / 2 + 0.15), (xe + 0.03, 2.5, d / 2 - 0.15), glass)

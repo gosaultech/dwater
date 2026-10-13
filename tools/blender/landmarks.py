@@ -1012,23 +1012,27 @@ def station(root, p, w, h, d):
             holes.append((u - 1.1, u + 1.1, v0, v1))
     mid0, mid1 = w / 2 - 14.0, w / 2 + 14.0
     holes = [hh for hh in holes if hh[1] < mid0 or hh[0] > mid1]   # (the middle has its own front)
-    for a, b, c, e in layout.cut_rects(w, h, holes):
+    way = [(w / 2 - 2.6, w / 2 + 2.6, 0.0, 8.5)] if p.get("arch_open") else []   # the middle arch a way into the hall
+    for a, b, c, e in layout.cut_rects(w, h, holes + way):
         lbox(root, "station_wall", (a, c, -1.0), (b, e, 0.0), brick)
     for a, b, c, e in holes:
         lbox(root, "station_window", (a, c, -0.9), (b, e, -0.85), lit if rng.random() < 0.45 else dark)
     bands = Acc()
     for y in (1.2, 6.6, h - 1.4):   # sandstone bands across the brick
-        bands.box((0.0, y, 0.0), (w, y + 0.45, 0.12))
+        for a, b in ([(0.0, w / 2 - 2.6), (w / 2 + 2.6, w)] if way and y < 8.5 else [(0.0, w)]):
+            bands.box((a, y, 0.0), (b, y + 0.45, 0.12))
     bands.build("station_bands", stone, root, smooth=False)
     lbox(root, "station_roof", (0.0, h, -d), (w, h + 0.6, 0.2), M({"color": [0.14, 0.12, 0.11], "rough": 0.5, "metal": 0.3}))
     street.fan_prism(root, "station_roof_ridge", [(-d / 2, 0.0), (d / 2, 0.0), (0.0, 6.0)], (0.0, 0.5), -w,
                      M({"color": [0.18, 0.2, 0.2], "rough": 0.5, "metal": 0.4}), ((0.0, h + 0.6, -d / 2), (0, 0, 1), (0, 1, 0), (1, 0, 0)))
     # the middle: a projecting front, three great arches to the hall, a gable with the arms
     mh = h + 8.0
-    lbox(root, "station_mid", (mid0, 0.0, -1.0), (mid1, mh, 1.5), brick)
+    for a, b, c, e in layout.cut_rects(mid1 - mid0, mh, [(u0 - mid0, u1 - mid0, v0, v1) for u0, u1, v0, v1 in way]):
+        lbox(root, "station_mid", (mid0 + a, c, -1.0), (mid0 + b, e, 1.5), brick)
     for k in range(3):
         u = mid0 + 6.0 + 8.0 * k
-        lbox(root, "station_arch", (u - 2.6, 0.0, 1.5), (u + 2.6, 8.5, 1.6), emit((1.0, 0.82, 0.55), 1.1, "station_arch"))
+        if not (way and k == 1):
+            lbox(root, "station_arch", (u - 2.6, 0.0, 1.5), (u + 2.6, 8.5, 1.6), emit((1.0, 0.82, 0.55), 1.1, "station_arch"))
         lbox(root, "station_arch_frame", (u - 3.0, 8.5, 1.5), (u + 3.0, 9.2, 1.8), stone)
     street.fan_prism(root, "station_gable", [(-14.0, 0.0), (14.0, 0.0), (0.0, 9.0)], (0.0, 0.5), 2.5, brick,
                      ((w / 2, mh, -1.0), (1, 0, 0), (0, 1, 0), (0, 0, 1)))
