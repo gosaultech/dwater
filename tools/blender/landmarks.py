@@ -968,6 +968,10 @@ def beurs(root, p, w, h, d):
     lbox(root, "beurs_eaves", (-0.2, h - 0.6, -0.8), (w - 12.0 + 0.2, h, 0.5), stone)
     street.fan_prism(root, "beurs_roof", [(-d / 2 - 0.3, 0.0), (d / 2 + 0.3, 0.0), (0.0, d * 0.45)], (0.0, 0.5), w - 12.0,
                      M({"color": [0.14, 0.15, 0.16], "rough": 0.5, "metal": 0.4}), ((0.0, h, -d / 2), (0, 0, 1), (0, 1, 0), (1, 0, 0)))
+    lbox(root, "beurs_end", (0.0, 0.0, -d), (0.8, h, -0.8), brick)               # the block closed: its far end, its back,
+    lbox(root, "beurs_back", (0.0, 0.0, -d), (w - 12.0, h, -d + 0.8), brick)     # behind the tower
+    lbox(root, "beurs_end", (w - 12.8, 0.0, -d), (w - 12.0, h, -12.0), brick)
+    lbox(root, "beurs_end_base", (-0.15, 0.0, -d), (0.0, 1.2, -0.8), stone)
     # the tower at the +x end: 12 m square, twice the eaves' height, a clock on its front
     tx0, tx1 = w - 12.0, w
     th = h * 2.1
