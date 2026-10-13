@@ -232,12 +232,60 @@ def _profile(w, h, van):
             (-w / 2 + 0.85, h), (-w / 2 + 0.2, 0.98), (-w / 2, 0.88)], (0.0, 0.62), (w / 2 - 1.05, 0.93, w / 2 - 1.7, h)
 
 
+def army_truck(root, p, w, h, d):
+    """An army truck along local x (front +x): a squared cab, a ladder chassis on big tyres (twin at
+    the back), a cargo bed under a canvas tilt on its hoops, the tailgate down."""
+    olive = M({"color": [0.13, 0.15, 0.09], "rough": 0.7, "noise": 0.25, "grime": 1.2})
+    canvas = M({"ph": "rough_linen", "mono": 1.5, "tint": [0.32, 0.33, 0.22], "scale": 0.7})
+    dark = M({"color": [0.02, 0.02, 0.02], "rough": 0.6})
+    glass = M({"color": [0.015, 0.02, 0.025], "rough": 0.05, "metal": 0.6})
+    R = 0.52
+    cab0 = w / 2 - 2.1
+    lbox(root, "truck_chassis", (-w / 2, R + 0.05, -0.55), (w / 2 - 0.1, R + 0.3, 0.55), dark)
+    for x, twin in ((w / 2 - 1.15, False), (-w / 2 + 1.6, True)):
+        for sz in (-1, 1):
+            for k in ((0, 1) if twin else (0,)):
+                t = kit.lathe(root, "truck_tyre", [(0.0, -0.18), (R - 0.03, -0.18), (R, -0.14), (R, 0.14), (R - 0.03, 0.18), (0.0, 0.18)], dark, segments=24)
+                t.rotation_euler[0] = math.radians(90)
+                t.location = g2b((x, R, sz * (d / 2 - 0.2 - k * 0.38)))
+            arch = Acc()
+            for i in range(12):
+                a0, a1 = math.pi * i / 12, math.pi * (i + 1) / 12
+                arch.quad((x + (R + 0.08) * math.cos(a0), R + (R + 0.08) * math.sin(a0), sz * (d / 2 - 0.02)),
+                          (x + (R + 0.08) * math.cos(a1), R + (R + 0.08) * math.sin(a1), sz * (d / 2 - 0.02)),
+                          (x + (R + 0.08) * math.cos(a1), R + (R + 0.08) * math.sin(a1), sz * (d / 2 - 0.45)),
+                          (x + (R + 0.08) * math.cos(a0), R + (R + 0.08) * math.sin(a0), sz * (d / 2 - 0.45)))
+            arch.build("truck_mudguard", olive, root, smooth=False)
+    kit.soft(root, "truck_cab", (cab0 + 1.0, R + 1.25, 0.0), (2.0, 1.9, d), olive, 0.08, 2)
+    lbox(root, "truck_windscreen", (w / 2 + 0.005, R + 1.35, -d / 2 + 0.12), (w / 2 + 0.02, R + 2.05, d / 2 - 0.12), glass)
+    for sz in (-1, 1):
+        lbox(root, "truck_window", (cab0 + 1.05, R + 1.35, sz * d / 2 - 0.01), (w / 2 - 0.15, R + 2.0, sz * d / 2 + 0.01), glass)
+        lbox(root, "truck_headlight", (w / 2 + 0.005, R + 0.6, sz * (d / 2 - 0.3) - 0.11), (w / 2 + 0.03, R + 0.78, sz * (d / 2 - 0.3) + 0.11),
+             builders.emissive("headlight", (1.0, 0.95, 0.85), 8.0))
+    lbox(root, "truck_bumper", (w / 2 - 0.05, R + 0.15, -d / 2), (w / 2 + 0.12, R + 0.4, d / 2), dark)
+    lbox(root, "truck_grille", (w / 2 + 0.005, R + 0.45, -0.55), (w / 2 + 0.02, R + 1.15, 0.55), dark)
+    b0, b1, y0 = -w / 2, cab0 - 0.12, R + 0.32
+    lbox(root, "truck_bed", (b0, y0, -d / 2), (b1, y0 + 0.08, d / 2), olive)
+    for sz in (-1, 1):
+        lbox(root, "truck_dropside", (b0, y0 + 0.08, sz * d / 2 - 0.04), (b1, y0 + 0.6, sz * d / 2 + 0.04), olive)
+    kit.soft(root, "truck_tilt", ((b0 + b1) / 2, y0 + 0.6 + (h - y0 - 0.6) / 2, 0.0), (b1 - b0, h - y0 - 0.6, d + 0.04), canvas, 0.12, 3)
+    hoops = Acc()
+    for i in range(5):   # the hoops under the canvas, showing as ridges
+        x = b0 + 0.15 + (b1 - b0 - 0.3) * i / 4
+        hoops.box((x - 0.04, h - 0.04, -d / 2 - 0.03), (x + 0.04, h + 0.02, d / 2 + 0.03))
+    hoops.build("truck_hoops", canvas, root, smooth=False)
+    lbox(root, "truck_tailgate", (b0 - 0.55, y0 - 0.05, -d / 2 + 0.05), (b0 - 0.02, y0, d / 2 - 0.05), olive)
+    lbox(root, "truck_plate", (b0 - 0.03, R + 0.1, -0.26), (b0 - 0.02, R + 0.22, 0.26), M({"color": [0.85, 0.65, 0.05], "rough": 0.4}))
+
+
 def vehicle(root, p, w, h, d):
     """A car or van left where it stopped, along local x (front +x), w long: a body swept from its
     side's shape (bonnet, windscreen, roof; a van's tall box) with its edges rounded, glass in its
     windows, tyres on rims in their arches, its headlights on, a door ("door_open": "left" |
     "right") swung wide, a livery ("livery": car | taxi | police | ambulance | army) with its
     stripes and roof lights lit."""
+    if p.get("livery") == "army" and h > 2.5:
+        return army_truck(root, p, w, h, d)
     body_c, sa, sb, word, roof = LIVERY[p.get("livery", "car")]
     body = M({"color": [c * 0.85 for c in body_c], "rough": 0.45, "noise": 0.1, "noise_scale": 1.5, "coat": 1.0, "grime": 1.0})
     glass = M({"color": [0.015, 0.02, 0.025], "rough": 0.03, "metal": 0.8})
@@ -416,9 +464,17 @@ def bus(root, p, w, h, d):
 def light_tower(root, p, w, h, d):
     """A mobile lighting mast on its trailer: a telescopic mast h high, four floodlights at the top
     blazing down on the square, the generator box humming. (Its light is a real light.)"""
-    yellow = M({"color": [0.85, 0.65, 0.05], "rough": 0.4, "metal": 0.3})
+    yellow = M({"color": [0.78, 0.58, 0.05], "rough": 0.45, "noise": 0.15, "coat": 0.5, "grime": 1.0})
     steel = M(STEEL)
-    lbox(root, "lt_trailer", (-1.1, 0.35, -0.7), (1.1, 1.5, 0.7), yellow)
+    dark = M({"color": [0.03, 0.03, 0.03], "rough": 0.6, "metal": 0.4})
+    kit.soft(root, "lt_trailer", (0.0, 0.95, 0.0), (2.2, 1.15, 1.4), yellow, 0.06, 2)
+    lbox(root, "lt_chassis", (-1.15, 0.3, -0.45), (1.15, 0.4, 0.45), dark)
+    for sx in (-1, 1):   # louvred vents on the generator's flanks, the stabiliser legs wound down
+        for sz in (-1, 1):
+            lbox(root, "lt_vent", (sx * 0.55 - 0.3, 0.75, sz * 0.7 - 0.01), (sx * 0.55 + 0.3, 1.25, sz * 0.7 + 0.01), dark)
+            rod(root, "lt_leg", (sx * 1.0, 0.45, sz * 0.5), (sx * 1.45, 0.0, sz * 0.95), 0.035, 0.035, steel)
+    rod(root, "lt_drawbar", (1.1, 0.42, 0.0), (2.1, 0.42, 0.0), 0.045, 0.045, dark)
+    lbox(root, "lt_panel", (-0.3, 0.8, 0.705), (0.3, 1.2, 0.71), M({"color": [0.85, 0.85, 0.82], "rough": 0.5}))
     for sz in (-1, 1):
         t = kit.lathe(root, "lt_wheel", [(0.0, -0.1), (0.33, -0.1), (0.33, 0.1), (0.0, 0.1)], M({"color": [0.02, 0.02, 0.02], "rough": 0.5}), segments=12)
         t.rotation_euler[0] = math.radians(90)
