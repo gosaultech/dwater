@@ -153,6 +153,15 @@ def tram(root, p, w, h, d):
             for k in range(int(seg / 1.2) + 1):   # the posts between the windows
                 xx = x0 + 0.25 + (seg - 0.5) * k / int(seg / 1.2)
                 lbox(root, "tram_pillar", (xx - 0.04, 1.05, sz * d / 2 - 0.012), (xx + 0.04, 2.4, sz * d / 2 + 0.012), dark)
+        unit = M({"color": [0.55, 0.56, 0.56], "rough": 0.5, "metal": 0.3, "noise": 0.2, "grime": 1.2})
+        kit.soft(root, "tram_roof_unit", ((x0 + x1) / 2 + (0.6 if i == 1 else 0.0), h + 0.15, 0.0), (min(2.4, seg * 0.5), 0.3, d * 0.6), unit, 0.04, 2)
+        for sz in (-1, 1):   # a pair of sliding doors each side, dark frames round their glass
+            xd = x0 + seg * (0.55 if i % 2 else 0.4)
+            if sz > 0 and i == 0:
+                continue   # (the platform side's first door stands open)
+            for xa, xb in ((xd - 0.66, xd - 0.02), (xd + 0.02, xd + 0.66)):
+                lbox(root, "tram_door", (xa, 0.38, sz * d / 2 - 0.016), (xb, 2.42, sz * d / 2 + 0.016), dark)
+                lbox(root, "tram_door_glass", (xa + 0.07, 1.0, sz * d / 2 - 0.02), (xb - 0.07, 2.3, sz * d / 2 + 0.02), glass)
         if i < n - 1:   # the bellows between sections
             lbox(root, "tram_bellows", (x1, 0.4, -d / 2 + 0.12), (x1 + gap, h - 0.15, d / 2 - 0.12), dark)
         if i == 1:   # the pantograph
