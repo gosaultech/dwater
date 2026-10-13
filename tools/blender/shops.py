@@ -28,6 +28,7 @@ PALETTES = {   # what a shop's packets look like from across the room
     "ammo": [(0.24, 0.28, 0.16), (0.62, 0.1, 0.07), (0.82, 0.66, 0.14), (0.12, 0.18, 0.36), (0.1, 0.1, 0.1), (0.8, 0.78, 0.72)],   # cartridge boxes
     "guns": [(0.06, 0.06, 0.065), (0.12, 0.12, 0.13), (0.3, 0.2, 0.12), (0.05, 0.05, 0.05), (0.4, 0.4, 0.42), (0.16, 0.12, 0.08)],  # pistols, scopes, knives
     "bar": [(0.45, 0.22, 0.05), (0.1, 0.25, 0.1), (0.75, 0.72, 0.6), (0.3, 0.12, 0.05), (0.55, 0.05, 0.08), (0.2, 0.2, 0.22)],     # bottles
+    "jewel": [(0.85, 0.64, 0.22), (0.82, 0.82, 0.84), (0.08, 0.1, 0.3), (0.35, 0.04, 0.06), (0.95, 0.93, 0.88), (0.04, 0.04, 0.05)],  # gold, silver, velvet, pearls
 }
 METAL = {"color": [0.55, 0.56, 0.57], "rough": 0.35, "metal": 0.85, "noise": 0.1}
 BRASS = {"color": [0.72, 0.52, 0.2], "rough": 0.25, "metal": 1.0, "noise": 0.08}
@@ -103,7 +104,13 @@ def shelving(root, p, w, h, d):
         zs = ((-d / 2, -0.03), (0.03, d / 2)) if double else ((-d / 2 + 0.04, d / 2),)
         for za, zb in zs:
             lbox(root, "shelf", (-w / 2 + 0.03, y - 0.02, za), (w / 2 - 0.03, y, zb), frame)
-            if k < shelves - 1:   # (nothing on the very top)
+            if k < shelves - 1 and p.get("photo"):   # the stock a photo of real stock, behind the shelf's edge
+                import photos
+                y1 = 0.12 + (h - 0.3) * (k + 1) / (shelves - 1) - 0.03
+                front = zb > 0
+                photos.row_card(root, p["photo"], k + p.get("seed", 0), -w / 2 + 0.04, w / 2 - 0.04, y + 0.005, y1,
+                                zb - 0.07 if front else za + 0.07, facing=1 if front else -1)
+            elif k < shelves - 1:   # (nothing on the very top)
                 stock(accs, -w / 2 + 0.04, w / 2 - 0.04, y, za + 0.02, zb - 0.02, rng, p.get("empty", 0.15), p.get("bottles", 0.3),
                       root, SCANS.get(p.get("palette", "grocery")), p.get("scans", 0.3))
         lbox(root, "price_rail", (-w / 2 + 0.03, y - 0.06, d / 2 - 0.01), (w / 2 - 0.03, y, d / 2 + 0.005), M({"color": [0.9, 0.9, 0.88], "rough": 0.5}))

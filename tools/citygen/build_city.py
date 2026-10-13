@@ -7,9 +7,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ORDER = ["area3", "area4", "area5", "area6", "area7"]
-PENDING = ["area8"]   # rooms with no plates yet: run with their renders (build_city.py area8), which also opens Damrak to them
-# (build_city.py also re-dresses thorbeckeplein, rembrandtplein, reguliersbreestraat, muntplein and bloemenmarkt: render those after)
+ORDER = ["area3", "area4", "area5", "area6", "area7", "area8"]
 
 
 KEPT = ["thorbeckeplein", "rembrandtplein", "herengracht"]   # rooms made before the generators: dressed in place
@@ -34,6 +32,12 @@ def main(argv=None):
         common.dress_street(spec)
         if spec.get("outdoor"):
             spec["ambience"] = "amb_street_rain"
+        f.write_text(json.dumps(spec, indent=2, ensure_ascii=True) + "\n")
+    import interiors
+    for rid in interiors.ROOMS:   # the interior pass: the shops' stock, fixtures and signs
+        f = Path(common.R) / f"{rid}.json"
+        spec = json.loads(f.read_text())
+        interiors.apply(spec)
         f.write_text(json.dumps(spec, indent=2, ensure_ascii=True) + "\n")
 
 

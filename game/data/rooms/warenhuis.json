@@ -265,7 +265,8 @@
       "palette": "souvenir",
       "empty": 0.35,
       "seed": 2,
-      "fallen": 3
+      "fallen": 3,
+      "photo": "health_wall"
     },
     {
       "type": "shelving",
@@ -283,7 +284,8 @@
       "palette": "souvenir",
       "empty": 0.35,
       "seed": 10,
-      "fallen": 3
+      "fallen": 3,
+      "photo": "health_wall"
     },
     {
       "type": "shelving",
@@ -301,7 +303,8 @@
       "palette": "souvenir",
       "empty": 0.35,
       "seed": 18,
-      "fallen": 3
+      "fallen": 3,
+      "photo": "health_wall"
     },
     {
       "type": "escalator",
@@ -961,6 +964,166 @@
       ],
       "yaw": -90,
       "collide": false
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        2.6,
+        0.0,
+        16.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_closet",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        4.6,
+        0.0,
+        16.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_hangers",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        2.6,
+        0.0,
+        18.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "tshirts_rack",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        4.6,
+        0.0,
+        18.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_closet",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        8.0,
+        0.0,
+        17.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_hangers",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        14.0,
+        0.0,
+        16.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "tshirts_rack",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        14.0,
+        0.0,
+        18.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_closet",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        19.0,
+        0.0,
+        16.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_hangers",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        19.0,
+        0.0,
+        18.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "tshirts_rack",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        21.0,
+        0.0,
+        17.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_closet",
+      "interior": true
     }
   ],
   "lights": [
