@@ -633,6 +633,19 @@ def bollard(root, p, w, h, d):
     a.build("crosses", white, root)
 
 
+def torus(acc, c, R, r, a0, a1, n, m=10, flat=1.0):
+    """A ring (or an arc of one) round c in the local xy plane: a tyre, a rim, a mudguard ("flat"
+    squashes its section toward the ring's own plane, as a mudguard's is)."""
+    def pt(t, u):
+        cr = R + r * flat * math.cos(u)
+        return (c[0] + cr * math.cos(t), c[1] + cr * math.sin(t), c[2] + r * math.sin(u))
+    for i in range(n):
+        t0, t1 = a0 + (a1 - a0) * i / n, a0 + (a1 - a0) * (i + 1) / n
+        for j in range(m):
+            u0, u1 = 2 * math.pi * j / m, 2 * math.pi * (j + 1) / m
+            acc.quad(pt(t0, u0), pt(t1, u0), pt(t1, u1), pt(t0, u1))
+
+
 def bike(root, p, w, h, d):
     """A black Dutch upright bike (an omafiets): two wheels, the frame, a rear rack, mudguards, a
     saddle and swept-back bars. Its length runs along local x."""
@@ -645,17 +658,12 @@ def bike(root, p, w, h, d):
     rear, front = (-wb / 2, R, 0.0), (wb / 2, R, 0.0)
     tyres, spokes, frame = Acc(), Acc(), Acc()
     for c in (rear, front):
-        ring = 24
-        for i in range(ring):
-            a0, a1 = 2 * math.pi * i / ring, 2 * math.pi * (i + 1) / ring
-            tyres.rod((c[0] + R * math.cos(a0), c[1] + R * math.sin(a0), 0.0), (c[0] + R * math.cos(a1), c[1] + R * math.sin(a1), 0.0), 0.022, 0.022, 6)
-            spokes.rod((c[0] + 0.3 * math.cos(a0), c[1] + 0.3 * math.sin(a0), 0.0), (c[0] + 0.3 * math.cos(a1), c[1] + 0.3 * math.sin(a1), 0.0), 0.008, 0.008, 4)
+        torus(tyres, c, R, 0.022, 0.0, 2 * math.pi, 40)
+        torus(spokes, c, 0.3, 0.008, 0.0, 2 * math.pi, 40, 6)
         for i in range(9):
             a = math.pi * i / 9
             spokes.rod((c[0] - 0.29 * math.cos(a), c[1] - 0.29 * math.sin(a), 0.0), (c[0] + 0.29 * math.cos(a), c[1] + 0.29 * math.sin(a), 0.0), 0.0015, 0.0015, 3)
-        for i in range(9):   # the mudguard: half a ring over the wheel
-            a0, a1 = math.pi * (0.1 + 0.8 * i / 9), math.pi * (0.1 + 0.8 * (i + 1) / 9)
-            frame.rod((c[0] + 0.39 * math.cos(a0), c[1] + 0.39 * math.sin(a0), 0.0), (c[0] + 0.39 * math.cos(a1), c[1] + 0.39 * math.sin(a1), 0.0), 0.03, 0.03, 4)
+        torus(frame, c, 0.39, 0.03, math.pi * 0.1, math.pi * 0.9, 16, 6, flat=0.35)   # the mudguard over it
     crank, seat, head = (-0.05, R - 0.02, 0.0), (-0.2, 0.95, 0.0), (0.4, 0.98, 0.0)
     for a, b in ((rear, crank), (crank, seat), (seat, rear), (crank, head), (head, front), (seat, (0.38, 0.86, 0.0)),
                  (seat, (seat[0] - 0.03, 1.05, 0.0)), (head, (0.36, 1.12, 0.0))):

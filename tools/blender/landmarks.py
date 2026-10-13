@@ -287,24 +287,33 @@ FLOWERS = [(0.75, 0.04, 0.05), (0.95, 0.75, 0.05), (0.92, 0.9, 0.85), (0.9, 0.35
 
 def buckets(root, rows, rng):
     """Galvanised buckets of tulips, roses and the like on stepped staging: rows [(x0, x1, y, z), ...]."""
-    tin, stems = Acc(), Acc()
+    tin, stems, leaves = Acc(), Acc(), Acc()
     heads = [Acc() for _ in FLOWERS]
     for x0, x1, y, z in rows:
         x = x0 + 0.17
         while x < x1 - 0.17:
             tin.rod((x, y, z), (x, y + 0.32, z), 0.15, 0.17, 10)
             k = rng.randrange(len(FLOWERS))
-            for _ in range(rng.randint(7, 12)):   # a bunch: stems up out of the water, a head on each
+            for _ in range(rng.randint(7, 12)):   # a bunch: stems up out of the water, a cupped head on each
                 hx, hz = x + rng.uniform(-0.11, 0.11), z + rng.uniform(-0.11, 0.11)
                 hy = y + rng.uniform(0.55, 0.8)
-                stems.rod((x + (hx - x) * 0.3, y + 0.3, z + (hz - z) * 0.3), (hx, hy, hz), 0.006, 0.006, 3)
-                b = rng.uniform(0.035, 0.05)
-                heads[k].box((hx - b, hy, hz - b), (hx + b, hy + b * 2.2, hz + b))
+                stems.rod((x + (hx - x) * 0.3, y + 0.3, z + (hz - z) * 0.3), (hx, hy, hz), 0.005, 0.005, 4)
+                r = rng.uniform(0.022, 0.03)
+                heads[k].rod((hx, hy - 0.005, hz), (hx, hy + r * 1.2, hz), r * 0.45, r, 8)
+                heads[k].rod((hx, hy + r * 1.2, hz), (hx, hy + r * 2.4, hz), r, r * 0.6, 8)
+            for _ in range(4):   # leaves: long blades out over the rim
+                a = rng.uniform(0, 6.283)
+                ca, sa = math.cos(a), math.sin(a)
+                L = rng.uniform(0.18, 0.28)
+                b0, b1 = (x + ca * 0.08, y + 0.3, z + sa * 0.08), (x + ca * 0.08 - sa * 0.03, y + 0.3, z + sa * 0.08 + ca * 0.03)
+                tip = (x + ca * (0.08 + L * 0.6), y + 0.3 + L * 0.8, z + sa * (0.08 + L * 0.6))
+                leaves.quad(b0, b1, tip, tip)
             x += 0.36
     tin.build("buckets", M({"color": [0.5, 0.52, 0.52], "rough": 0.35, "metal": 0.9, "noise": 0.25}), root)
     stems.build("stems", M({"color": [0.08, 0.22, 0.05], "rough": 0.6}), root)
+    leaves.build("leaves", M({"color": [0.1, 0.24, 0.07], "rough": 0.45, "noise": 0.2, "bevel": 0}), root, smooth=False)
     for acc, col in zip(heads, FLOWERS):
-        acc.build("blooms", M({"color": list(col), "rough": 0.55}), root, smooth=False)
+        acc.build("blooms", M({"color": [c * 0.85 for c in col], "rough": 0.45, "noise": 0.15, "bevel": 0}), root, smooth=True)
 
 
 def bulb_packets(root, x0, x1, y0, y1, z, rng, facing=1):

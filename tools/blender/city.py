@@ -184,6 +184,36 @@ def tram(root, p, w, h, d):
     street.hide_panel(ob)
 
 
+ADS = [("MUSEUMNACHT", "ZATERDAG 7 NOV", (0.08, 0.1, 0.25), (1.0, 0.8, 0.2)),
+       ("EVACUATIE", "VOLG DE BORDEN", (0.75, 0.42, 0.02), (0.05, 0.05, 0.05)),
+       ("ZOMERFESTIVAL", "VONDELPARK", (0.6, 0.08, 0.3), (1.0, 1.0, 0.9)),
+       ("BLIJF BINNEN", "LUISTER NAAR DE RADIO", (0.85, 0.85, 0.82), (0.7, 0.05, 0.03)),
+       ("DE STORM", "NU IN DE BIOSCOOP", (0.02, 0.03, 0.04), (0.85, 0.9, 1.0))]
+
+
+def ad_face(root, u0, u1, v0, v1, at_w, axis="z", glow=0.9, k=None):
+    """A backlit poster: a printed sheet (a colour, a title, a line under it, a band), all made up.
+    axis "z" / "-z": the sheet faces +z / -z at z = at_w; "x" / "-x": +x / -x at x = at_w (u along z)."""
+    title, line, bg, ink = ADS[k % len(ADS)] if k is not None else ADS[0]
+    yaw = {"x": 90.0, "-x": -90.0, "-z": 180.0}.get(axis, 0.0)
+    sg = -1.0 if axis in ("-x", "-z") else 1.0
+    w, h = u1 - u0, v1 - v0
+    uc = (u0 + u1) / 2
+
+    def P(u, v, e=0.0):
+        return (at_w + e * sg, v, u) if axis in ("x", "-x") else (u, v, at_w + e * sg)
+    a = Acc()
+    lo, hi = P(u0, v0), P(u1, v1)
+    a.quad(lo, P(u1, v0), hi, P(u0, v1))
+    a.build("ad_sheet", emit(bg, glow, "ad_%s" % title[:6]), root, smooth=False)
+    b = Acc()
+    b.quad(P(u0, v0 + h * 0.08, 0.002), P(u1, v0 + h * 0.08, 0.002), P(u1, v0 + h * 0.16, 0.002), P(u0, v0 + h * 0.16, 0.002))
+    b.build("ad_band", emit(ink, glow * 1.2, "ad_band_%s" % title[:6]), root, smooth=False)
+    ink_m = emit(ink, glow * 1.4, "ad_ink_%s" % title[:6])
+    text(root, title, P(uc, v0 + h * 0.72, 0.003), min(0.2, 1.3 * w / len(title)), ink_m, font="DejaVuSans-Bold.ttf", depth=0.0, yaw=yaw)
+    text(root, line, P(uc, v0 + h * 0.3, 0.003), min(0.07, 1.4 * w / len(line)), ink_m, font="DejaVuSans.ttf", depth=0.0, yaw=yaw)
+
+
 def tram_stop(root, p, w, h, d):
     """A tram stop: a raised platform kerb, a glass shelter with a lit timetable panel, a bench."""
     stone = M(street.STONE)
@@ -195,7 +225,9 @@ def tram_stop(root, p, w, h, d):
         lbox(root, "shelter_post", (x - 0.04, 0.25, -d / 2 + 0.1), (x + 0.04, 2.7, -d / 2 + 0.18), frame)
     lbox(root, "shelter_roof", (sx0 - 0.2, 2.7, -d / 2 + 0.05), (sx1 + 0.2, 2.8, d / 2 - 0.2), frame)
     lbox(root, "shelter_back", (sx0, 0.5, -d / 2 + 0.12), (sx1, 2.6, -d / 2 + 0.13), glass)
-    lbox(root, "timetable", (sx1 - 0.05, 0.8, -d / 2 + 0.2), (sx1 + 0.03, 2.2, -d / 2 + 1.0), emit((0.9, 0.95, 1.0), 1.2, "timetable"))
+    lbox(root, "ad_box", (sx1 - 0.05, 0.8, -d / 2 + 0.2), (sx1 + 0.03, 2.2, -d / 2 + 1.0), frame)
+    for sgn, k in ((1, p.get("ad", 0)), (-1, p.get("ad", 0) + 1)):
+        ad_face(root, -d / 2 + 0.25, -d / 2 + 0.95, 0.85, 2.15, sx1 + (0.031 if sgn > 0 else -0.051), "x" if sgn > 0 else "-x", 0.8, k)
     bench(root, {"material": STEEL}, 1.8, 0.45, 0.4, at=(-0.6, 0.25, -d / 2 + 0.5))
 
 
@@ -243,8 +275,21 @@ def kiosk(root, p, w, h, d):
     green = M({"color": [0.05, 0.14, 0.09], "rough": 0.45, "noise": 0.15})
     r = w / 2
     prof = [(0.0, 0.0), (r, 0.0), (r, h * 0.8), (r * 1.15, h * 0.82), (r * 0.2, h), (0.0, h)]
-    kit.lathe(root, "kiosk", prof, green, segments=8, smooth=False)
-    lbox(root, "hatch", (-0.6, 1.0, r * 0.92 - 0.02), (0.6, 1.9, r * 0.92 + 0.01), emit((1.0, 0.82, 0.55), 3.0, "kiosk_hatch"))
+    kit.lathe(root, "kiosk", prof, green, segments=8, smooth=False).rotation_euler[2] = math.radians(22.5)   # a face to the front
+    z = r * math.cos(math.pi / 8) + 0.012
+    lbox(root, "hatch", (-0.6, 1.0, z - 0.012), (0.6, 1.9, z - 0.006), emit((1.0, 0.82, 0.55), 1.2, "kiosk_hatch"))
+    lbox(root, "hatch_ledge", (-0.62, 0.98, z - 0.02), (0.62, 1.02, z + 0.12), green)
+    rng = random.Random(p.get("seed", 4))
+    mags = [Acc() for _ in ADS]
+    for row, y in enumerate((1.08, 1.4)):   # the papers and magazines racked in the hatch
+        x = -0.56
+        while x < 0.5:
+            mw = rng.uniform(0.13, 0.2)
+            mags[rng.randrange(len(ADS))].box((x, y, z - 0.005), (x + mw, y + rng.uniform(0.2, 0.27), z + 0.012 - row * 0.004))
+            x += mw + 0.015
+    for acc, (_, _, bg, ink) in zip(mags, ADS):
+        acc.build("magazines", M({"color": [c * 0.8 + 0.08 for c in bg], "rough": 0.35}), root, smooth=False)
+    ad_face(root, -0.55, 0.55, 1.0, 2.1, -z, "-z", 0.6, p.get("ad", 2))
     neon_text(root, p.get("name", "KIOSK"), (0.0, h * 0.74, r + 0.02), 0.28, (1.0, 0.85, 0.5), 10.0, font="DejaVuSerif-Bold.ttf")
 
 
