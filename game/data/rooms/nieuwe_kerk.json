@@ -29,19 +29,20 @@
       "rough": 0.55
     },
     "wall": {
-      "color": [
-        0.78,
-        0.76,
-        0.7
+      "ph": "beige_wall_001",
+      "tint": [
+        1.0,
+        0.974,
+        0.897
       ],
-      "rough": 0.9,
-      "noise": 0.12
+      "rough": 0.9
     },
     "ceiling": {
-      "color": [
-        0.12,
-        0.09,
-        0.07
+      "ph": "ceiling_interior",
+      "tint": [
+        0.154,
+        0.115,
+        0.09
       ],
       "rough": 0.8
     },
@@ -59,7 +60,7 @@
     "strength": 0.5
   },
   "render": {
-    "exposure": 1.0,
+    "exposure": 0.82,
     "bloom": {
       "threshold": 0.95,
       "strength": 0.25,
@@ -1107,6 +1108,198 @@
       ],
       "occupied": false,
       "seed": 1792
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        3.02,
+        0.0,
+        0.42
+      ],
+      "yaw": 11,
+      "scale": 0.98,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        19.58,
+        0.0,
+        34.81
+      ],
+      "yaw": -110,
+      "scale": 0.97,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        19.58,
+        0.0,
+        17.62
+      ],
+      "yaw": -82,
+      "scale": 0.84,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        1.05,
+        0.0,
+        0.42
+      ],
+      "yaw": -24,
+      "scale": 0.88,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        0.42,
+        0.0,
+        12.89
+      ],
+      "yaw": 88,
+      "scale": 0.96,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        0.42,
+        0.0,
+        12.01
+      ],
+      "yaw": 83,
+      "scale": 0.85,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.42,
+        0.0,
+        6.04
+      ],
+      "yaw": 62,
+      "scale": 0.94,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.42,
+        0.0,
+        6.89
+      ],
+      "yaw": 87,
+      "scale": 0.98,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.42,
+        0.0,
+        5.27
+      ],
+      "yaw": 99,
+      "scale": 0.93,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        19.58,
+        0.0,
+        23.19
+      ],
+      "yaw": -104,
+      "scale": 0.85,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        17.66,
+        0.0,
+        0.42
+      ],
+      "yaw": 17,
+      "scale": 0.83,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        19.58,
+        0.0,
+        7.14
+      ],
+      "yaw": -119,
+      "scale": 0.89,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        19.58,
+        0.0,
+        29.93
+      ],
+      "yaw": -74,
+      "scale": 0.98,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        19.58,
+        0.0,
+        29.03
+      ],
+      "yaw": -118,
+      "scale": 0.9,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        19.58,
+        0.0,
+        30.76
+      ],
+      "yaw": -119,
+      "scale": 0.82,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.42,
+        0.0,
+        11.31
+      ],
+      "yaw": 111,
+      "scale": 0.84,
+      "collide": false
     }
   ],
   "lights": [
@@ -1122,7 +1315,7 @@
         0.0,
         10.0
       ],
-      "size": 4.0,
+      "size": 2.2,
       "color": [
         1.0,
         0.82,
@@ -1144,7 +1337,7 @@
         0.0,
         26.0
       ],
-      "size": 4.0,
+      "size": 2.2,
       "color": [
         1.0,
         0.82,
