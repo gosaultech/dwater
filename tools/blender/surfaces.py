@@ -52,6 +52,13 @@ def _tex(nt, vec, img):
     return t
 
 
+def _grey(nt, col, gain=1.0):
+    """A photo's light and shade without its dye (a blue linen's weave, made any cloth's)."""
+    bw = nt.nodes.new("ShaderNodeRGBToBW")
+    nt.links.new(col, bw.inputs["Color"])
+    return _math(nt, "MULTIPLY", bw.outputs["Val"], gain, clamp=True)
+
+
 def pbr(nt, out, ref):
     """Wire a Poly Haven texture set into a Principled BSDF."""
     if isinstance(ref, str):
@@ -71,6 +78,8 @@ def pbr(nt, out, ref):
     b = nt.nodes.new("ShaderNodeBsdfPrincipled")
     maps = a["maps"]
     col = _tex(nt, vec, _image(d / maps["diff"], True)).outputs["Color"]
+    if ref.get("mono"):
+        col = _grey(nt, col, ref["mono"] if not isinstance(ref["mono"], bool) else 1.0)
     tint = ref.get("tint")
     value = ref.get("value", 1.0)
     if tint or value != 1.0:
@@ -376,7 +385,7 @@ def stripes(nt, out, ref):
         mul.blend_type = "MULTIPLY"
         mul.inputs["Factor"].default_value = 0.85
         nt.links.new(col, mul.inputs["A"])
-        nt.links.new(weave.outputs["Color"], mul.inputs["B"])
+        nt.links.new(_grey(nt, weave.outputs["Color"], 1.9), mul.inputs["B"])
         lift = nt.nodes.new("ShaderNodeMix")   # (the photo is a pale linen: lift it back to the stripe's colour)
         lift.data_type = "RGBA"
         lift.blend_type = "MIX"

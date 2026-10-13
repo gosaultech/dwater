@@ -318,15 +318,18 @@ def vehicle(root, p, w, h, d):
 def sandbags(root, p, w, h, d):
     """A wall of sandbags along local x, `h` high (courses of 0.14 m), laid stretcher bond."""
     rng = random.Random(p.get("seed", 23))
-    bag = M({"color": [0.42, 0.36, 0.25], "rough": 0.95, "noise": 0.35})
+    bags = [M({"ph": "rough_linen", "mono": 1.6, "tint": t, "scale": 0.5}) for t in ([0.5, 0.42, 0.29], [0.42, 0.37, 0.28], [0.58, 0.5, 0.36])]
     y, k = 0.0, 0
     while y < h - 0.05:
         x = -w / 2 + (0.3 if k % 2 else 0.0)
         while x < w / 2 - 0.2:
-            L = min(0.6, w / 2 - x)
-            kit.soft(root, "sandbag", (x + L / 2, y + 0.07, rng.uniform(-0.03, 0.03)), (L - 0.02, 0.15, d), bag, 0.06, 2)
-            x += 0.6
-        y += 0.14
+            L = min(rng.uniform(0.52, 0.62), w / 2 - x)
+            t = rng.uniform(0.12, 0.16)
+            ob = kit.soft(root, "sandbag", (x + L / 2, y + t / 2, rng.uniform(-0.04, 0.04)), (L - 0.02, t, d * rng.uniform(0.85, 1.0)),
+                          rng.choice(bags), 0.07, 3)
+            ob.rotation_euler = (math.radians(rng.uniform(-4, 4)), math.radians(rng.uniform(-3, 3)), math.radians(rng.uniform(-7, 7)))
+            x += L + rng.uniform(-0.03, 0.01)
+        y += 0.13
         k += 1
 
 
