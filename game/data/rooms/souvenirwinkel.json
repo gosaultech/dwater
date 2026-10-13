@@ -459,6 +459,39 @@
       "interior": true
     },
     {
+      "type": "clothes_rail",
+      "pos": [
+        6.0,
+        0.0,
+        1.4
+      ],
+      "yaw": 90,
+      "size": [
+        1.4,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_hangers",
+      "interior": true
+    },
+    {
+      "type": "photo_layer",
+      "photo": "souvenir_window",
+      "pos": [
+        8.97,
+        0.95,
+        2.4
+      ],
+      "yaw": -90,
+      "size": [
+        2.6,
+        1.6,
+        0.01
+      ],
+      "collide": false,
+      "interior": true
+    },
+    {
       "type": "shelving",
       "pos": [
         0.3,

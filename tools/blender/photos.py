@@ -3,6 +3,7 @@
 # just behind a shelf's edge it reads as the stock on it (shops.shelving's "photo"); on its own it's
 # a "photo_layer" prop (a wall of bottles, tulips in their buckets seen from above).
 import json
+import math
 from pathlib import Path
 
 import bpy
@@ -59,7 +60,7 @@ def material(pid, rough=0.55, emit=0.0, bump=0.15):
     return m
 
 
-def card(root, name, x0, y0, x1, y1, z, pid, crop, tiles=1, facing=1, lie=False, **kw):
+def card(root, name, x0, y0, x1, y1, z, pid, crop, tiles=1, facing=1, lie=False, tilt=0.0, **kw):
     """A photo card from (x0, y0) to (x1, y1) at depth z in the parent's frame, facing +z (facing=-1:
     -z; lie: lying face up at height z, y0..y1 then running back to front), the crop (u0, v0, u1, v1
     from the photo's top-left) repeated `tiles` times across it."""
@@ -73,8 +74,9 @@ def card(root, name, x0, y0, x1, y1, z, pid, crop, tiles=1, facing=1, lie=False,
         i = len(verts)
         if lie:
             verts += [(a, z, y1), (b, z, y1), (b, z, y0), (a, z, y0)]
-        else:
-            verts += [(a, y0, z), (b, y0, z), (b, y1, z), (a, y1, z)]
+        else:   # (tilt: leaning back from its foot, in radians)
+            yt, zt = y0 + (y1 - y0) * math.cos(tilt), z - facing * (y1 - y0) * math.sin(tilt)
+            verts += [(a, y0, z), (b, y0, z), (b, yt, zt), (a, yt, zt)]
         faces.append((i, i + 1, i + 2, i + 3))
         uvs += [(u0, 1 - v1), (u1, 1 - v1), (u1, 1 - v0), (u0, 1 - v0)]
     ob = kit.mesh(name, verts, faces, material(pid, **kw), root)
@@ -122,14 +124,20 @@ def clothes_rail(root, p, w, h, d):
         card(root, "clothes", -w / 2 + 0.06, max(0.2, h - 1.2), w / 2 - 0.06, h - 0.03, 0.05 * f, pid, crop, facing=f, rough=0.85, bump=0.3)
 
 
-def heads(root, x, y, z, rng, photos=("tulips_a", "tulips_b"), r=0.2):
-    """A bunch's heads seen from above: a patch of a tulip photo, lying at the height they open."""
-    pid = rng.choice(photos)
-    u, v = rng.uniform(0.0, 0.7), rng.uniform(0.0, 0.6)
-    e = manifest()[pid]["panel"]
-    cu, cv = e[0] + (e[2] - e[0]) * u, e[1] + (e[3] - e[1]) * v
-    crop = [cu, cv, cu + (e[2] - e[0]) * 0.3, cv + (e[3] - e[1]) * 0.4]
-    card(root, "bunch", x - r, z - r, x + r, z + r, y, pid, crop, lie=True, rough=0.6, bump=0.4)
+def bank(root, x0, x1, y, z, rng, photos=("tulips_a", "tulips_b")):
+    """A tier of buckets' blooms seen from the front: bands of a packed photo of tulip heads, a pair of
+    buckets' worth each, leaning back toward the room the way a stall's tiers are banked."""
+    x = x0
+    while x < x1 - 0.1:
+        xb = min(x1, x + rng.uniform(0.6, 0.8))
+        pid = rng.choice(photos)
+        e = manifest()[pid]["panel"]
+        u, v = rng.uniform(0.0, 0.6), rng.uniform(0.0, 0.55)
+        cu, cv = e[0] + (e[2] - e[0]) * u, e[1] + (e[3] - e[1]) * v
+        crop = [cu, cv, cu + (e[2] - e[0]) * 0.4, cv + (e[3] - e[1]) * 0.45]
+        card(root, "blooms", x, y + 0.5, xb, y + 0.5 + rng.uniform(0.3, 0.38), z + 0.12, pid, crop, tilt=math.radians(rng.uniform(48, 60)),
+             rough=0.6, bump=0.4)
+        x = xb
 
 
 kit.PROPS["photo_layer"] = photo_layer

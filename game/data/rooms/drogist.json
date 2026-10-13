@@ -385,6 +385,26 @@
       "interior": true
     },
     {
+      "type": "shelving",
+      "pos": [
+        4.6,
+        0.0,
+        6.8
+      ],
+      "yaw": 90,
+      "size": [
+        1.6,
+        1.5,
+        0.9
+      ],
+      "double": true,
+      "palette": "pharmacy",
+      "shelves": 4,
+      "photo": "health_wall",
+      "seed": 7,
+      "interior": true
+    },
+    {
       "type": "wall_sign",
       "pos": [
         4.5,

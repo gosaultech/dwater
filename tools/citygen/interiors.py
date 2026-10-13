@@ -67,6 +67,8 @@ def drogist(s):
     put(s, {"type": "shelving", "pos": [7.2, 0.0, 2.8], "yaw": 90, "size": [3.6, 1.7, 0.9], "double": True, "palette": "pharmacy", "shelves": 4,
             "photo": "health_wall", "seed": 4},
         {"type": "shelving", "pos": [0.3, 0.0, 4.5], "yaw": 90, "size": [4.0, 2.0, 0.45], "palette": "candy", "photo": "candy_jars"},
+        {"type": "shelving", "pos": [4.6, 0.0, 6.8], "yaw": 90, "size": [1.6, 1.5, 0.9], "double": True, "palette": "pharmacy", "shelves": 4,
+         "photo": "health_wall", "seed": 7},
         sign(4.5, 2.65, 0.05, 0, "2E HALVE PRIJS", 2.6, (0.8, 0.05, 0.05)),
         sign(3.4, 2.65, 8.95, 180, "ACTIE", 1.6, (0.8, 0.05, 0.05)))
 
@@ -74,6 +76,8 @@ def drogist(s):
 def souvenirwinkel(s):
     stock(s)
     put(s, {"type": "clothes_rail", "pos": [6.0, 0.0, 3.4], "yaw": 90, "size": [1.5, 1.55, 0.5], "photo": "tshirts_rack"},
+        {"type": "clothes_rail", "pos": [6.0, 0.0, 1.4], "yaw": 90, "size": [1.4, 1.55, 0.5], "photo": "clothes_hangers"},
+        {"type": "photo_layer", "photo": "souvenir_window", "pos": [8.97, 0.95, 2.4], "yaw": -90, "size": [2.6, 1.6, 0.01], "collide": False},
         {"type": "shelving", "pos": [0.3, 0.0, 4.6], "yaw": 90, "size": [2.6, 2.0, 0.45], "palette": "candy", "photo": "candy_jars"})
 
 
@@ -94,6 +98,7 @@ def juwelier(s):
             p["palette"] = "jewel"
     put(s, {"type": "display_case", "pos": [2.0, 0.0, 0.3], "size": [1.6, 2.0, 0.5], "palette": "jewel", "seed": 11},
         {"type": "display_case", "pos": [4.4, 0.0, 0.3], "size": [1.6, 2.0, 0.5], "palette": "jewel", "seed": 12},
+        {"type": "display_case", "pos": [6.4, 0.0, 8.2], "yaw": 180, "size": [1.6, 2.0, 0.5], "palette": "jewel", "seed": 13},
         {"type": "safe", "pos": [7.45, 0.0, 0.6], "yaw": -90, "size": [0.8, 1.2, 0.7], "open": True},
         {"type": "runner", "pos": [3.0, 0.0, 4.25], "yaw": 90, "size": [0.9, 0.012, 4.6], "collide": False},
         {"type": "model", "model": "ph:modern_arm_chair_01", "pos": [1.2, 0.0, 7.6], "yaw": 160, "scale": 1.0, "size": [0.7, 0.8, 0.7]},
@@ -112,7 +117,9 @@ def warenhuis(s):
     stock(s, "health_wall")
     looks = ["clothes_closet", "clothes_hangers", "tshirts_rack"]
     spots = [(2.6, 16.6), (4.6, 16.6), (2.6, 18.6), (4.6, 18.6), (8.0, 17.6), (14.0, 16.6), (14.0, 18.6), (19.0, 16.6), (19.0, 18.6), (21.0, 17.6)]
-    put(s, *[{"type": "clothes_rail", "pos": [x, 0.0, z], "yaw": 0, "size": [1.5, 1.55, 0.5], "photo": looks[k % 3]} for k, (x, z) in enumerate(spots)])
+    put(s, *[{"type": "clothes_rail", "pos": [x, 0.0, z], "yaw": 0, "size": [1.5, 1.55, 0.5], "photo": looks[k % 3]} for k, (x, z) in enumerate(spots)],
+        {"type": "shelving", "pos": [9.0, 0.0, 0.3], "yaw": 0, "size": [15.0, 2.4, 0.45], "palette": "pharmacy", "photo": "health_wall", "seed": 3},
+        sign(9.0, 3.1, 0.05, 0, "PARFUMERIE · COSMETICA", 4.2, (0.08, 0.06, 0.05), (0.95, 0.85, 0.6), 1.5))
 
 
 def bioscoop(s):

@@ -295,9 +295,6 @@ def buckets(root, rows, rng, photo=False):
         while x < x1 - 0.17:
             tin.rod((x, y, z), (x, y + 0.32, z), 0.15, 0.17, 10)
             k = rng.randrange(len(FLOWERS))
-            if photo:
-                import photos
-                photos.heads(root, x, y + 0.66, z, rng)
             for _ in range(rng.randint(7, 12)):   # a bunch: stems up out of the water, a cupped head on each
                 hx, hz = x + rng.uniform(-0.11, 0.11), z + rng.uniform(-0.11, 0.11)
                 hy = y + (0.65 if photo else rng.uniform(0.55, 0.8))
@@ -315,6 +312,10 @@ def buckets(root, rows, rng, photo=False):
                 tip = (x + ca * (0.08 + L * 0.6), y + 0.3 + L * 0.8, z + sa * (0.08 + L * 0.6))
                 leaves.quad(b0, b1, tip, tip)
             x += 0.36
+    if photo:   # the heads a photo of real ones, banked along each tier
+        import photos
+        for x0, x1, y, z in rows:
+            photos.bank(root, x0, x1, y, z, rng)
     tin.build("buckets", M({"color": [0.5, 0.52, 0.52], "rough": 0.35, "metal": 0.9, "noise": 0.25}), root)
     stems.build("stems", M({"color": [0.08, 0.22, 0.05], "rough": 0.6}), root)
     leaves.build("leaves", M({"color": [0.1, 0.24, 0.07], "rough": 0.45, "noise": 0.2, "bevel": 0}), root, smooth=False)
