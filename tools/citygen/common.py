@@ -15,7 +15,7 @@ ROOMS = ["warm_bar", "fireplace", "small_empty_room_2", "christmas_photo_studio_
 SUN = {"kind": "sun", "dir_from": [-0.35, 0.55, 1.0], "color": [0.55, 0.66, 1.0], "blender_power": 0.12, "godot_energy": 0.25, "angle": 2.0}
 WET = lambda ph, tint, wet=0.7, pud=0.3: {"ph": ph, "tint": tint, "wet": wet, "puddles": pud * 0.6, "puddle_scale": 0.9}
 PAVERS = WET("square_concrete_pavers", [0.75, 0.74, 0.72], 0.55, 0.2)
-BRICKS = WET("herringbone_brick", [0.8, 0.72, 0.66], 0.8, 0.45)
+BRICKS = WET("herringbone_brick", [0.72, 0.7, 0.72], 0.8, 0.45)
 LOOK = {   # sign, frame, font, awning
     "cafe": ([1.0, 0.8, 0.5], [0.2, 0.05, 0.035], "DejaVuSerif-BoldItalic.ttf", None),
     "coffeeshop": ([0.35, 1.0, 0.4], [0.03, 0.12, 0.05], "DejaVuSans-Bold.ttf", [[0.05, 0.3, 0.08], [0.85, 0.75, 0.1]]),

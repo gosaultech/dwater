@@ -11,6 +11,8 @@
 #   * a scan laid as a two-colour checkerboard: {"ph": "marble_01", "checker": 2.5, "tint_a": .., "tint_b": ..}
 #   * any scan rained on: {"ph": "herringbone_brick", "wet": 0.8, "puddles": 0.5}: darker and glossier
 #     all over, with still puddles (mirror-smooth, flat) where the ground dips
+#   * any scan's colour turned ("hue", in turns) and drained or deepened ("sat", times): GRADE does
+#     this for the scans shot under sunnier skies, so Amsterdam's brick is red-brown, its pavement grey
 # Box UVs in builders.py are in metres, so a texture's real size (from Poly Haven's metadata) maps
 # straight on: a 3.4 m parquet scan covers 3.4 m of floor.
 #
@@ -24,6 +26,12 @@ import bpy
 
 REPO = Path(__file__).resolve().parents[2]
 CACHE = REPO / "pipeline_out" / "assets" / "polyhaven"
+GRADE = {   # (orange and tan out of the brick, the paving grey)
+    "medieval_red_brick": {"hue": -0.028}, "red_bricks_04": {"hue": -0.04, "sat": 0.65}, "brick_wall_09": {"hue": -0.03, "sat": 0.8},
+    "brick_wall_003": {"hue": -0.035, "sat": 0.8}, "dark_brick_wall": {"hue": -0.045, "sat": 0.9}, "herringbone_brick": {"hue": -0.045, "sat": 0.75},
+    "square_concrete_pavers": {"sat": 0.25}, "cobblestone_floor_04": {"sat": 0.35}, "cobblestone_02": {"sat": 0.35}, "gravel_floor": {"sat": 0.6},
+    "grey_roof_tiles": {"sat": 0.4},
+}
 
 
 def asset(asset_id):
@@ -78,6 +86,13 @@ def pbr(nt, out, ref):
     b = nt.nodes.new("ShaderNodeBsdfPrincipled")
     maps = a["maps"]
     col = _tex(nt, vec, _image(d / maps["diff"], True)).outputs["Color"]
+    g = {**GRADE.get(ref["ph"], {}), **ref}
+    if g.get("hue", 0.0) or g.get("sat", 1.0) != 1.0:
+        hs = nt.nodes.new("ShaderNodeHueSaturation")
+        hs.inputs["Hue"].default_value = 0.5 + g.get("hue", 0.0)
+        hs.inputs["Saturation"].default_value = g.get("sat", 1.0)
+        nt.links.new(col, hs.inputs["Color"])
+        col = hs.outputs["Color"]
     if ref.get("mono"):
         col = _grey(nt, col, ref["mono"] if not isinstance(ref["mono"], bool) else 1.0)
     tint = ref.get("tint")

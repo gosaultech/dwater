@@ -57,9 +57,9 @@ T = {"_file": "damned_waters/game/data/rooms/thorbeckeplein.json — RoomSpec fo
      "sky": SKY, "render": {"exposure": 0.85, "bloom": {"threshold": 0.9, "strength": 0.4, "size": 0.55}}}
 o = {"window_rooms": ROOMS, "lamp_power": 360.0, "lamp_energy": 1.0,
      "ground": [{"name": "pavement_w", "min": [-40.0, 0.0], "max": [3.0, 64.0], "y": 0.0, "material": WET("square_concrete_pavers", [0.75, 0.74, 0.72], 0.55, 0.2)},
-                {"name": "road_w", "min": [3.0, 0.0], "max": [7.5, 64.0], "y": -0.1, "material": WET("herringbone_brick", [0.8, 0.72, 0.66], 0.8, 0.45)},
+                {"name": "road_w", "min": [3.0, 0.0], "max": [7.5, 64.0], "y": -0.1, "material": WET("herringbone_brick", [0.72, 0.7, 0.72], 0.8, 0.45)},
                 {"name": "strip", "min": [7.5, 0.0], "max": [16.5, 64.0], "y": 0.05, "material": WET("brick_pavement_02", [0.72, 0.68, 0.64], 0.65, 0.3)},
-                {"name": "road_e", "min": [16.5, 0.0], "max": [21.0, 64.0], "y": -0.1, "material": WET("herringbone_brick", [0.8, 0.72, 0.66], 0.8, 0.45)},
+                {"name": "road_e", "min": [16.5, 0.0], "max": [21.0, 64.0], "y": -0.1, "material": WET("herringbone_brick", [0.72, 0.7, 0.72], 0.8, 0.45)},
                 {"name": "pavement_e", "min": [21.0, 0.0], "max": [60.0, 64.0], "y": 0.0, "material": WET("square_concrete_pavers", [0.75, 0.74, 0.72], 0.55, 0.2)},
                 {"name": "quay", "min": [-40.0, 64.0], "max": [60.0, 66.0], "y": 0.0, "material": WET("brick_pavement_02", [0.72, 0.68, 0.64], 0.7, 0.4)}],
      "canal": {"z": 66.0, "width": 25.0, "water": -1.6, "x": [-60.0, 90.0], "far_quay": 6.0, "lit": 0.25},
@@ -149,7 +149,7 @@ P = {"_file": "damned_waters/game/data/rooms/rembrandtplein.json — RoomSpec fo
      "footsteps": "marble", "ambience": "amb_cellar", "move_scale": 1.0, "world": {"color": [0.014, 0.019, 0.036], "strength": 1.0},
      "sky": SKY, "render": {"exposure": 0.85, "bloom": {"threshold": 0.85, "strength": 0.45, "size": 0.6}}}
 o = {"window_rooms": ROOMS, "lamp_power": 380.0, "lamp_energy": 1.0,
-     "ground": [{"name": "square", "min": [0.0, -30.0], "max": [90.0, 50.3], "y": 0.0, "material": WET("herringbone_brick", [0.8, 0.72, 0.66], 0.75, 0.4)},
+     "ground": [{"name": "square", "min": [0.0, -30.0], "max": [90.0, 50.3], "y": 0.0, "material": WET("herringbone_brick", [0.72, 0.7, 0.72], 0.75, 0.4)},
                 {"name": "pavement_w", "min": [0.0, -30.0], "max": [5.0, 50.3], "y": 0.06, "material": WET("square_concrete_pavers", [0.75, 0.74, 0.72], 0.55, 0.2)},
                 {"name": "pavement_e", "min": [55.0, -30.0], "max": [90.0, 50.3], "y": 0.06, "material": WET("square_concrete_pavers", [0.75, 0.74, 0.72], 0.55, 0.2)},
                 {"name": "pavement_n", "min": [5.0, -30.0], "max": [55.0, 3.5], "y": 0.06, "material": WET("square_concrete_pavers", [0.75, 0.74, 0.72], 0.55, 0.2)}],

@@ -29,7 +29,7 @@ import kit
 from roomspec import g2b
 
 FONTS = Path("/usr/share/fonts/truetype/dejavu")   # DejaVu (free licence): the shop signs' lettering
-BRICKS = ["medieval_red_brick", "red_bricks_04", "brick_wall_09", "brick_wall_10", "dark_brick_wall"]
+BRICKS = ["medieval_red_brick", "red_bricks_04", "red_brick_03", "brick_wall_10", "dark_brick_wall"]
 TRIM = {"ph": "distressed_painted_planks", "tint": [0.95, 0.94, 0.9], "scale": 0.4}
 FRONTS = [[0.84, 0.81, 0.74], [0.9, 0.9, 0.88], [0.07, 0.16, 0.11], [0.05, 0.05, 0.06], [0.06, 0.09, 0.2], [0.3, 0.06, 0.05],
           [0.36, 0.42, 0.48], [0.6, 0.46, 0.22]]   # painted fronts: cream, white, canal green, black, navy, oxblood, grey-blue, ochre
@@ -227,7 +227,7 @@ def facade(f, rng):
     tint = f.get("tint", [k, k * rng.uniform(0.97, 1.02), k * rng.uniform(0.97, 1.03)])
     brick_spec = f["paint"] if f.get("paint") else {"ph": f.get("brick") or rng.choice(BRICKS), "tint": tint, "scale": 1.0}
     pr = random.Random("paint %s" % f.get("seed", 1))
-    if not f.get("paint") and not f.get("brick") and pr.random() < 0.22:   # a quarter of the fronts painted, Amsterdam's colours
+    if not f.get("paint") and not f.get("brick") and pr.random() < 0.3:   # near a third of the fronts painted, Amsterdam's colours
         brick_spec = {"color": pr.choice(FRONTS), "rough": 0.75, "noise": 0.15, "noise_scale": 3.0}
     brick = M(brick_spec)
     tide = f.get("tide", TIDE)

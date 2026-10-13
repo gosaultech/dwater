@@ -34,6 +34,9 @@ def main(argv=None):
             spec["ambience"] = "amb_street_rain"
         if "sky" in spec:
             spec["sky"] = dict(common.SKY)
+        for g in spec.get("outdoor", {}).get("ground", []):
+            if isinstance(g.get("material"), dict) and g["material"].get("ph") == "herringbone_brick":
+                g["material"]["tint"] = list(common.BRICKS["tint"])   # the road the same clinker as the generated streets'
         f.write_text(json.dumps(spec, indent=2, ensure_ascii=True) + "\n")
     import interiors
     for rid in interiors.ROOMS:   # the interior pass: the shops' stock, fixtures and signs

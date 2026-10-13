@@ -96,9 +96,9 @@
         "material": {
           "ph": "herringbone_brick",
           "tint": [
-            0.8,
             0.72,
-            0.66
+            0.7,
+            0.72
           ],
           "wet": 0.75,
           "puddles": 0.24,
