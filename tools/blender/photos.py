@@ -124,21 +124,5 @@ def clothes_rail(root, p, w, h, d):
         card(root, "clothes", -w / 2 + 0.06, max(0.2, h - 1.2), w / 2 - 0.06, h - 0.03, 0.05 * f, pid, crop, facing=f, rough=0.85, bump=0.3)
 
 
-def bank(root, x0, x1, y, z, rng, photos=("tulips_a", "tulips_b")):
-    """A tier of buckets' blooms seen from the front: bands of a packed photo of tulip heads, a pair of
-    buckets' worth each, leaning back toward the room the way a stall's tiers are banked."""
-    x = x0
-    while x < x1 - 0.1:
-        xb = min(x1, x + rng.uniform(0.6, 0.8))
-        pid = rng.choice(photos)
-        e = manifest()[pid]["panel"]
-        u, v = rng.uniform(0.0, 0.6), rng.uniform(0.0, 0.55)
-        cu, cv = e[0] + (e[2] - e[0]) * u, e[1] + (e[3] - e[1]) * v
-        crop = [cu, cv, cu + (e[2] - e[0]) * 0.4, cv + (e[3] - e[1]) * 0.45]
-        card(root, "blooms", x, y + 0.5, xb, y + 0.5 + rng.uniform(0.3, 0.38), z + 0.12, pid, crop, tilt=math.radians(rng.uniform(48, 60)),
-             rough=0.6, bump=0.4)
-        x = xb
-
-
 kit.PROPS["photo_layer"] = photo_layer
 kit.PROPS["clothes_rail"] = clothes_rail

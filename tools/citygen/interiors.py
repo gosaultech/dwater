@@ -88,8 +88,7 @@ def hotel_bar(s):
 def bloemenkraam(s):
     stock(s, "tulip_buckets")
     for p in s["props"]:
-        if p["type"] == "flower_buckets":
-            p["photo"] = True
+        p.pop("photo", None) if p["type"] == "flower_buckets" else None
 
 
 def juwelier(s):
