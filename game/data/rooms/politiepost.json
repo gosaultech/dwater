@@ -621,6 +621,121 @@
       "yaw": 161,
       "scale": 1.0,
       "collide": false
+    },
+    {
+      "type": "poster",
+      "pos": [
+        0.03,
+        1.15,
+        4.3
+      ],
+      "size": [
+        0.55,
+        0.75,
+        0.05
+      ],
+      "yaw": 90,
+      "title": "VERMIST",
+      "line": "SANNE (7)",
+      "color": [
+        0.9,
+        0.88,
+        0.8
+      ],
+      "collide": false,
+      "interior": true
+    },
+    {
+      "type": "poster",
+      "pos": [
+        0.03,
+        1.15,
+        5.05
+      ],
+      "size": [
+        0.55,
+        0.75,
+        0.05
+      ],
+      "yaw": 90,
+      "title": "VERMIST",
+      "line": "DHR. DE VRIES (81)",
+      "color": [
+        0.88,
+        0.86,
+        0.78
+      ],
+      "collide": false,
+      "interior": true
+    },
+    {
+      "type": "poster",
+      "pos": [
+        0.03,
+        2.0,
+        4.3
+      ],
+      "size": [
+        0.55,
+        0.75,
+        0.05
+      ],
+      "yaw": 90,
+      "title": "VERMIST",
+      "line": "AHMED (12)",
+      "color": [
+        0.9,
+        0.9,
+        0.85
+      ],
+      "collide": false,
+      "interior": true
+    },
+    {
+      "type": "poster",
+      "pos": [
+        0.03,
+        2.0,
+        5.05
+      ],
+      "size": [
+        0.55,
+        0.75,
+        0.05
+      ],
+      "yaw": 90,
+      "title": "VERMIST",
+      "line": "LOTTE EN BRAM",
+      "color": [
+        0.86,
+        0.85,
+        0.8
+      ],
+      "collide": false,
+      "interior": true
+    },
+    {
+      "type": "poster",
+      "pos": [
+        3.0,
+        0.9,
+        0.03
+      ],
+      "size": [
+        1.0,
+        1.4,
+        0.05
+      ],
+      "yaw": 0,
+      "title": "EVACUATIE",
+      "line": "VERZAMELPUNT: DE DAM",
+      "color": [
+        0.85,
+        0.45,
+        0.05
+      ],
+      "collide": false,
+      "interior": true
     }
   ],
   "lights": [

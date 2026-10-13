@@ -115,8 +115,34 @@ def warenhuis(s):
     put(s, *[{"type": "clothes_rail", "pos": [x, 0.0, z], "yaw": 0, "size": [1.5, 1.55, 0.5], "photo": looks[k % 3]} for k, (x, z) in enumerate(spots)])
 
 
+def bioscoop(s):
+    put(s, {"type": "shelving", "pos": [15.65, 0.0, 9.6], "yaw": -90, "size": [2.6, 2.0, 0.45], "palette": "candy", "photo": "candy_jars"},
+        poster(15.92, 0.9, 3.4, -90, "DE DIEPTE", "VANAF DONDERDAG", [0.05, 0.12, 0.2]),
+        poster(15.92, 0.9, 1.6, -90, "ZOMERNACHT", "UITVERKOCHT", [0.55, 0.1, 0.15]))
+
+
+def politiepost(s):
+    missing = [("SANNE (7)", [0.9, 0.88, 0.8]), ("DHR. DE VRIES (81)", [0.88, 0.86, 0.78]), ("AHMED (12)", [0.9, 0.9, 0.85]),
+               ("LOTTE EN BRAM", [0.86, 0.85, 0.8])]
+    put(s, *[poster(0.03, 1.15 + 0.85 * (k // 2), 4.3 + 0.75 * (k % 2), 90, "VERMIST", name, col, w=0.55, h=0.75) for k, (name, col) in enumerate(missing)],
+        poster(3.0, 0.9, 0.03, 0, "EVACUATIE", "VERZAMELPUNT: DE DAM", [0.85, 0.45, 0.05]))
+
+
+def hotel_lobby(s):
+    for p in s["props"]:
+        if p["type"] == "shelving":   # behind the desk: the guests' pigeonholes
+            p["photo"] = "pharmacy_drawers"
+
+
+def centraal_hal(s):
+    for p in s["props"]:
+        if p["type"] == "shop_unit" and p.get("open", 0) > 0:
+            p["photo"] = "candy_jars" if "BROODJES" in p.get("name", "") else "health_wall"
+
+
 ROOMS = {"apotheek": apotheek, "drogist": drogist, "souvenirwinkel": souvenirwinkel, "hotel_bar": hotel_bar, "bloemenkraam": bloemenkraam,
-         "juwelier": juwelier, "wisselkantoor": wisselkantoor, "warenhuis": warenhuis}
+         "juwelier": juwelier, "wisselkantoor": wisselkantoor, "warenhuis": warenhuis, "bioscoop": bioscoop, "politiepost": politiepost,
+         "hotel_lobby": hotel_lobby, "centraal_hal": centraal_hal}
 
 
 def apply(spec):
