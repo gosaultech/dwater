@@ -449,10 +449,10 @@ Hb["props"] = [
     {"type": "shelving", "pos": [5.5, 0.0, 0.3], "yaw": 0, "size": [7.0, 2.4, 0.4], "palette": "bar", "bottles": 0.95, "empty": 0.3, "seed": 81, "fallen": 2,
      "frame": {"ph": "dark_wood", "tint": [0.4, 0.28, 0.2], "scale": 0.5}},
     {"type": "model", "model": "ph:Chandelier_03", "pos": [6.0, 2.8, 5.0], "yaw": 0, "fit": [1.2, 0.8, 1.2], "collide": False},
-    {"type": "sofa", "pos": [3.0, 0.0, Hd - 0.5], "yaw": 180, "size": [2.2, 0.9, 0.85]},
-    {"type": "sofa", "pos": [7.0, 0.0, Hd - 0.5], "yaw": 180, "size": [2.2, 0.9, 0.85]},
-    {"type": "table", "pos": [3.0, 0.0, Hd - 1.6], "size": [1.2, 0.72, 0.7]},
-    {"type": "table", "pos": [7.0, 0.0, Hd - 1.6], "size": [1.2, 0.72, 0.7]},
+    {"type": "model", "model": "ph:sofa_02", "pos": [3.0, 0.0, Hd - 0.5], "yaw": 180, "scale": 1.0, "size": [1.8, 0.8, 0.7]},
+    {"type": "model", "model": "ph:Sofa_01", "pos": [7.0, 0.0, Hd - 0.5], "yaw": 180, "scale": 1.0, "size": [1.6, 0.8, 0.7]},
+    {"type": "model", "model": "ph:CoffeeTable_01", "pos": [3.0, 0.0, Hd - 1.6], "yaw": 4, "scale": 0.8, "size": [1.25, 0.45, 0.6]},
+    {"type": "model", "model": "ph:coffee_table_round_01", "pos": [7.0, 0.0, Hd - 1.6], "yaw": 0, "scale": 0.7, "size": [0.9, 0.35, 0.9]},
     {"type": "strip_light", "pos": [5.5, 2.5, 0.5], "size": [6.8, 0.06, 0.1], "collide": False}]
 for k, x in enumerate((3.0, 4.2, 5.4, 6.6, 7.8)):   # the stools along the bar, one knocked over
     Hb["props"].append({"type": "model", "model": "ph:wooden_stool_01", "pos": [x, 0.0, 2.4 + (0.3 if k == 3 else 0.0)], "yaw": 15 * k,
