@@ -13,7 +13,7 @@ import facade as fz  # noqa: E402
 
 R = os.environ.get("DW_ROOMS", str(Path(__file__).resolve().parents[2] / "game" / "data" / "rooms") + "/")
 STOREY = 11
-SKY = {"hdri": "kloppenheim_07_puresky", "strength": 0.045, "camera": 0.1, "tint": [1.0, 0.76, 0.55]}
+SKY = {"hdri": "kloppenheim_07_puresky", "strength": 0.05, "camera": 0.1, "tint": [0.6, 0.7, 1.0]}   # (moonlit; as common.SKY)
 ROOMS = ["warm_bar", "fireplace", "small_empty_room_2", "christmas_photo_studio_04", "warm_restaurant_night", "unfinished_office_night"]
 SUN = {"kind": "sun", "dir_from": [-0.35, 0.55, 1.0], "color": [0.55, 0.66, 1.0], "blender_power": 0.12, "godot_energy": 0.25, "angle": 2.0}
 WET = lambda ph, tint, wet=0.7, pud=0.3: {"ph": ph, "tint": tint, "wet": wet, "puddles": pud * 0.6, "puddle_scale": 0.9}

@@ -41,8 +41,8 @@
       "ph": "ceiling_interior",
       "tint": [
         0.005,
-        0.006,
-        0.012
+        0.007,
+        0.014
       ],
       "rough": 1.0
     },
@@ -775,6 +775,23 @@
       "blender_power": 1100,
       "godot_energy": 0.25,
       "range": 30.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        0.35,
+        5.53,
+        41.25
+      ],
+      "color": [
+        0.25,
+        1.0,
+        0.42
+      ],
+      "blender_power": 7,
+      "godot_energy": 0.06,
+      "range": 3.0,
+      "radius": 0.08
     }
   ],
   "shots": [

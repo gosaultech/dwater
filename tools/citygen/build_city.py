@@ -32,6 +32,8 @@ def main(argv=None):
         common.dress_street(spec)
         if spec.get("outdoor"):
             spec["ambience"] = "amb_street_rain"
+        if "sky" in spec:
+            spec["sky"] = dict(common.SKY)
         f.write_text(json.dumps(spec, indent=2, ensure_ascii=True) + "\n")
     import interiors
     for rid in interiors.ROOMS:   # the interior pass: the shops' stock, fixtures and signs

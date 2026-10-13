@@ -31,6 +31,8 @@ from roomspec import g2b
 FONTS = Path("/usr/share/fonts/truetype/dejavu")   # DejaVu (free licence): the shop signs' lettering
 BRICKS = ["medieval_red_brick", "red_bricks_04", "brick_wall_09", "brick_wall_10", "dark_brick_wall"]
 TRIM = {"ph": "distressed_painted_planks", "tint": [0.95, 0.94, 0.9], "scale": 0.4}
+FRONTS = [[0.84, 0.81, 0.74], [0.9, 0.9, 0.88], [0.07, 0.16, 0.11], [0.05, 0.05, 0.06], [0.06, 0.09, 0.2], [0.3, 0.06, 0.05],
+          [0.36, 0.42, 0.48], [0.6, 0.46, 0.22]]   # painted fronts: cream, white, canal green, black, navy, oxblood, grey-blue, ochre
 STONE = {"ph": "large_sandstone_blocks", "tint": [0.5, 0.52, 0.55], "scale": 0.5}
 ROOF = {"ph": "grey_roof_tiles", "tint": [0.5, 0.5, 0.53]}
 IRON = {"color": [0.02, 0.02, 0.022], "rough": 0.45, "metal": 0.7, "noise": 0.1}
@@ -222,8 +224,11 @@ def facade(f, rng):
     root.rotation_euler[1] = math.radians(f.get("tilt", 0.0))   # and some on their neighbours, sideways
     T = 0.3
     k = rng.uniform(0.78, 1.0)
-    tint = f.get("tint", [k, k * rng.uniform(0.94, 1.0), k * rng.uniform(0.9, 1.0)])
+    tint = f.get("tint", [k, k * rng.uniform(0.97, 1.02), k * rng.uniform(0.97, 1.03)])
     brick_spec = f["paint"] if f.get("paint") else {"ph": f.get("brick") or rng.choice(BRICKS), "tint": tint, "scale": 1.0}
+    pr = random.Random("paint %s" % f.get("seed", 1))
+    if not f.get("paint") and not f.get("brick") and pr.random() < 0.22:   # a quarter of the fronts painted, Amsterdam's colours
+        brick_spec = {"color": pr.choice(FRONTS), "rough": 0.75, "noise": 0.15, "noise_scale": 3.0}
     brick = M(brick_spec)
     tide = f.get("tide", TIDE)
     if tide > 0:   # below the tide line the brick is dark and still wet, the way the water left it
@@ -577,7 +582,7 @@ def facade_row(x_from, x_to, z, facing, rng, row=None, y=0.0):
                 f["shop"]["shutter"] = r2.choice([1.0, 1.0, 0.85, 0.6])
                 f["shop"]["shutter_look"] = r2.choice(["painted_metal_shutter", "rusty_metal_shutter"])
         if rng.random() < 0.12:
-            f["paint"] = {"color": rng.choice([[0.6, 0.58, 0.54], [0.18, 0.2, 0.21], [0.42, 0.4, 0.34]]), "rough": 0.8, "noise": 0.15}
+            f["paint"] = {"color": rng.choice(FRONTS), "rough": 0.8, "noise": 0.15}
         if (x == x_from and ends in ("start", "both")) or (last and ends in ("end", "both")):
             f["sides"] = True
         if row.get("lean"):   # a row that has settled every way: forward ([lo, hi] degrees) and sideways (+/- tilt)
@@ -843,7 +848,7 @@ def houseboat(root, p, w, h, d):
 LAMP_HEAD = 3.27   # the lantern's bulb on the CC0 street lamp (street_lamp_01), metres up
 
 
-def lamp(x, z, y=0.0, power=380.0, color=(1.0, 0.66, 0.36), light=True):
+def lamp(x, z, y=0.0, power=380.0, color=(1.0, 0.8, 0.58), light=True):
     """A street lamp on its post, its lantern alight (the bulb and glass glow), and its light."""
     root = builders.build_prop({"type": "model", "model": "ph:street_lamp_01", "pos": [x, y, z], "scale": 1.0, "shadow": False,
                                 "emit": [{"match": "bulb", "color": color, "strength": 60.0},

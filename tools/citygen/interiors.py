@@ -151,10 +151,18 @@ ROOMS = {"apotheek": apotheek, "drogist": drogist, "souvenirwinkel": souvenirwin
          "hotel_lobby": hotel_lobby, "centraal_hal": centraal_hal}
 
 
+PAINT = {"apotheek": (0.86, 0.92, 0.89), "drogist": (0.9, 0.9, 0.93), "souvenirwinkel": (0.12, 0.22, 0.55), "wisselkantoor": (0.72, 0.78, 0.86),
+         "juwelier": (0.07, 0.09, 0.2), "hotel_bar": (0.45, 0.08, 0.06), "bioscoop": (0.4, 0.05, 0.05), "hotel_lobby": (0.1, 0.22, 0.17),
+         "warenhuis": (0.9, 0.9, 0.88), "politiepost": (0.86, 0.9, 0.95)}   # each shop's walls in its own colour
+
+
 def apply(spec):
     """The pass over one room (nothing if it isn't one of the shops); run again, the same result."""
     f = ROOMS.get(spec["id"])
     if not f:
         return
     spec["props"] = [p for p in spec["props"] if not p.get("interior")]
+    if spec["id"] in PAINT:
+        import common
+        spec["materials"]["wall"] = common.plaster(PAINT[spec["id"]])
     f(spec)

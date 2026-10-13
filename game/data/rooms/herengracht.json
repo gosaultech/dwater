@@ -1802,13 +1802,12 @@
   },
   "sky": {
     "hdri": "kloppenheim_07_puresky",
-    "strength": 0.045,
+    "strength": 0.05,
     "camera": 0.1,
     "tint": [
-      1.0,
-      0.76,
-      0.55
-    ],
-    "rotation": 0
+      0.6,
+      0.7,
+      1.0
+    ]
   }
 }

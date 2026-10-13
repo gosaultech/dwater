@@ -41,8 +41,8 @@
       "ph": "ceiling_interior",
       "tint": [
         1.0,
-        1.0,
-        1.0
+        1.108,
+        1.218
       ],
       "rough": 0.6
     },
@@ -213,8 +213,7 @@
       ],
       "yaw": 0,
       "seed": 77,
-      "collide": true,
-      "photo": true
+      "collide": true
     },
     {
       "type": "model",
@@ -313,6 +312,23 @@
       "blender_power": 140,
       "godot_energy": 0.7,
       "range": 6.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        3.5,
+        2.23,
+        4.15
+      ],
+      "color": [
+        0.25,
+        1.0,
+        0.42
+      ],
+      "blender_power": 7,
+      "godot_energy": 0.06,
+      "range": 3.0,
+      "radius": 0.08
     }
   ],
   "shots": [

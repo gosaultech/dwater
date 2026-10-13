@@ -29,20 +29,20 @@
       "rough": 0.6
     },
     "wall": {
-      "ph": "beige_wall_001",
+      "ph": "plastered_wall",
       "tint": [
-        1.0,
-        1.0,
-        1.0
+        0.154,
+        0.295,
+        0.795
       ],
-      "rough": 0.6
+      "rough": 0.8
     },
     "ceiling": {
       "ph": "ceiling_interior",
       "tint": [
         1.0,
-        1.0,
-        1.0
+        1.108,
+        1.218
       ],
       "rough": 0.8
     },
@@ -531,6 +531,40 @@
       "blender_power": 95,
       "godot_energy": 0.5,
       "range": 7.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        8.65,
+        2.28,
+        5.445
+      ],
+      "color": [
+        0.25,
+        1.0,
+        0.42
+      ],
+      "blender_power": 7,
+      "godot_energy": 0.06,
+      "range": 3.0,
+      "radius": 0.08
+    },
+    {
+      "kind": "point",
+      "pos": [
+        0.35,
+        2.13,
+        1.4
+      ],
+      "color": [
+        0.25,
+        1.0,
+        0.42
+      ],
+      "blender_power": 7,
+      "godot_energy": 0.06,
+      "range": 3.0,
+      "radius": 0.08
     }
   ],
   "shots": [

@@ -4,7 +4,7 @@ from pathlib import Path
 import os
 import json, random
 R = os.environ.get("DW_ROOMS", str(Path(__file__).resolve().parents[2] / "game" / "data" / "rooms") + "/")
-SKY = {"hdri": "kloppenheim_07_puresky", "strength": 0.045, "camera": 0.1, "tint": [1.0, 0.76, 0.55]}
+SKY = {"hdri": "kloppenheim_07_puresky", "strength": 0.05, "camera": 0.1, "tint": [0.6, 0.7, 1.0]}   # (moonlit; as common.SKY)
 ROOMS = ["warm_bar", "fireplace", "small_empty_room_2", "christmas_photo_studio_04", "warm_restaurant_night", "unfinished_office_night"]
 WET = lambda ph, tint, wet=0.7, pud=0.3: {"ph": ph, "tint": tint, "wet": wet, "puddles": pud * 0.6, "puddle_scale": 0.9}
 LOOK = {   # sign, frame, font, awning

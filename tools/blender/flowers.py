@@ -71,7 +71,7 @@ def _material(col):
     nt.links.new(v.outputs["Color"], mul.inputs["B"])
     nt.links.new(mul.outputs["Result"], bsdf.inputs["Base Color"])
     bsdf.inputs["Roughness"].default_value = 0.42
-    bsdf.inputs["Subsurface Weight"].default_value = 0.35
+    bsdf.inputs["Subsurface Weight"].default_value = 0.2
     bsdf.inputs["Subsurface Scale"].default_value = 0.006
     if "Sheen Weight" in bsdf.inputs:
         bsdf.inputs["Sheen Weight"].default_value = 0.2

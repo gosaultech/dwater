@@ -10,7 +10,7 @@ import facade as fz  # noqa: E402
 
 import os
 R = os.environ.get("DW_ROOMS", str(Path(__file__).resolve().parents[2] / "game" / "data" / "rooms") + "/")
-SKY = {"hdri": "kloppenheim_07_puresky", "strength": 0.045, "camera": 0.1, "tint": [1.0, 0.76, 0.55]}
+SKY = {"hdri": "kloppenheim_07_puresky", "strength": 0.05, "camera": 0.1, "tint": [0.6, 0.7, 1.0]}   # (moonlit, not sodium-orange)
 ROOMS = ["warm_bar", "fireplace", "small_empty_room_2", "christmas_photo_studio_04", "warm_restaurant_night", "unfinished_office_night"]
 SUN = {"kind": "sun", "dir_from": [-0.35, 0.55, 1.0], "color": [0.55, 0.66, 1.0], "blender_power": 0.12, "godot_energy": 0.25, "angle": 2.0}
 WET = lambda ph, tint, wet=0.7, pud=0.3: {"ph": ph, "tint": tint, "wet": wet, "puddles": pud * 0.6, "puddle_scale": 0.9}
@@ -134,7 +134,13 @@ def walk_in(props):
     props.extend(out)
 
 
-FINISH = {"wall": "beige_wall_001", "ceiling": "ceiling_interior"}   # real plaster, a real office ceiling (CC0 photos)
+FINISH = {"wall": "plastered_wall", "ceiling": "ceiling_interior"}   # real plaster, a real office ceiling (CC0 photos)
+NEUTRAL = {"wall": (1.0, 1.047, 1.128), "ceiling": (1.0, 1.108, 1.218)}   # (their own warm cast taken out: the paint's colour shows true)
+
+
+def plaster(color, part="wall", rough=0.8):
+    """A painted wall or ceiling: the CC0 plaster photo in the paint's own colour."""
+    return {"ph": FINISH[part], "tint": [round(min(1.0, c / 0.78) * n, 3) for c, n in zip(color, NEUTRAL[part])], "rough": rough}
 CLUTTER = ["ph:cardboard_box_01", "ph:plastic_crate_03", "ph:trashbag", "ph:cardboard_box_01", "ph:potted_plant_04", "ph:plastic_crate_02"]
 ON_WALLS = [("ph:wall_clock", 2.15), ("ph:hanging_picture_frame_02", 1.75)]
 
@@ -150,7 +156,7 @@ def finish_indoors(spec):
     for k, ph in FINISH.items():
         v = m.get(k)
         if isinstance(v, dict) and "color" in v and "ph" not in v:
-            m[k] = {"ph": ph, "tint": [round(min(1.0, c / 0.78), 3) for c in v["color"]], "rough": v.get("rough", 0.8)}
+            m[k] = plaster(v["color"], k, v.get("rough", 0.8))
     r = spec.setdefault("render", {})
     r["exposure"] = round(r.get("exposure", 1.0) * 0.82, 3)
     for L in spec.get("lights", []):
@@ -259,6 +265,9 @@ def dress(spec, rng, free, boxes, W, D, sides, fronts):
         y = min(o.get("height", 2.1) + 0.18, H - 0.3)
         x, z = wall_at(side, o["center"], 0.08)
         P.append({"type": "exit_sign", "pos": [round(x, 3), round(y, 3), round(z, 3)], "size": [0.42, 0.17, 0.07], "yaw": FACING[side], "collide": False})
+        gx, gz = wall_at(side, o["center"], 0.35)   # its green glow on the wall and the floor round the way out
+        spec.setdefault("lights", []).append({"kind": "point", "pos": [round(gx, 3), round(y - 0.15, 3), round(gz, 3)], "color": [0.25, 1.0, 0.42],
+                                              "blender_power": 7, "godot_energy": 0.06, "range": 3.0, "radius": 0.08})
     if ways:
         _, side, o = ways[0]
         for du in (o["width"] / 2 + 0.55, -o["width"] / 2 - 0.55):
