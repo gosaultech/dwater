@@ -202,7 +202,7 @@ def finish_indoors(spec):
                               "yaw": round(yaw + rng.uniform(-30, 30)), "scale": round(rng.uniform(0.8, 1.0), 2), "collide": False})
         boxes.append((x, z, 0.35, 0.35, 0.0))
         added += 1
-    for ref, y in ON_WALLS if KINDS.get(spec["id"]) != "church" else []:   # a clock, a picture, on walls with nothing against them
+    for ref, y in ON_WALLS if KINDS.get(spec["id"]) not in ("church", "station", "platform") else []:   # a clock, a picture, on walls with nothing against them
         for _ in range(20):
             side = rng.choice(sides) if sides else None
             if side is None:
@@ -220,7 +220,8 @@ def finish_indoors(spec):
 KINDS = {"apotheek": "shop", "drogist": "shop", "juwelier": "shop", "wapenhandel": "shop", "warenhuis": "shop",
          "souvenirwinkel": "shop", "wisselkantoor": "shop", "politiepost": "office", "beveiliging": "office",
          "magazijn": "store", "bioscoop": "lobby", "hotel_lobby": "lobby", "hotel_bar": "lobby", "metro_rokin": "hall",
-         "beurs_zaal": "hall", "bloemenkraam": "kiosk", "nieuwe_kerk": "church", "rondvaartboot": "boat"}
+         "beurs_zaal": "hall", "bloemenkraam": "kiosk", "nieuwe_kerk": "church", "rondvaartboot": "boat",
+         "centraal_hal": "station", "metro_centraal": "platform"}
 FACING = {"north": 0, "south": 180, "west": 90, "east": -90}
 
 
@@ -229,7 +230,7 @@ def dress(spec, rng, free, boxes, W, D, sides, fronts):
     the doors, an extinguisher by the way in, a camera in a corner, paper underfoot, a chair knocked over."""
     import math
     kind = KINDS.get(spec["id"])
-    if kind in (None, "church", "boat"):
+    if kind in (None, "church", "boat", "platform"):
         return
     H = spec["height"]
     P = spec["props"]
@@ -267,7 +268,7 @@ def dress(spec, rng, free, boxes, W, D, sides, fronts):
                           "yaw": FACING[side], "scale": 1.0, "collide": False})
                 boxes.append((x, z, 0.2, 0.2, 0.0))
                 break
-    if kind in ("shop", "office", "lobby", "hall", "store"):
+    if kind in ("shop", "office", "lobby", "hall", "store", "station"):
         corners = [((0.2, 0.2), 45), ((W - 0.2, 0.2), -45), ((0.2, D - 0.2), 135), ((W - 0.2, D - 0.2), -135)]
         rng.shuffle(corners)
         for (x, z), yaw in corners[:1 if W * D < 150 else 2]:

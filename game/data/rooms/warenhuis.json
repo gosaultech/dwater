@@ -948,6 +948,7 @@
     },
     {
       "type": "exit_sign",
+      "id": "staff_exit",
       "pos": [
         22.92,
         2.4,

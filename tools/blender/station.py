@@ -13,28 +13,30 @@ BLUE = {"color": [0.012, 0.03, 0.09], "rough": 0.35}
 
 
 def shop_unit(root, p, w, h, d):
-    """A shop in the station's arcade, its front along local x facing +z, recessed d into the wall:
-    a steel frame, its name lit on the fascia, the shutter down ("open": how far it's up, 0..1; a
-    little light left on inside under it)."""
+    """A shop in the station's arcade, its front along local x facing +z, d deep (the prop's middle
+    is the unit's): a steel frame, its name lit on the fascia, the shutter down ("open": how far it's
+    up, 0..1; a little light left on inside under it)."""
     frame = M(STEEL)
-    fh = 0.6
-    lbox(root, "unit_post", (-w / 2, 0.0, -0.05), (-w / 2 + 0.12, h, 0.05), frame)
-    lbox(root, "unit_post", (w / 2 - 0.12, 0.0, -0.05), (w / 2, h, 0.05), frame)
-    lbox(root, "unit_fascia", (-w / 2, h - fh, -0.05), (w / 2, h, 0.06), M({"color": [0.02, 0.022, 0.025], "rough": 0.4}))
+    fh, f = 0.6, d / 2
+    lbox(root, "unit_post", (-w / 2, 0.0, f - 0.1), (-w / 2 + 0.12, h, f), frame)
+    lbox(root, "unit_post", (w / 2 - 0.12, 0.0, f - 0.1), (w / 2, h, f), frame)
+    lbox(root, "unit_fascia", (-w / 2, h - fh, f - 0.1), (w / 2, h, f + 0.01), M({"color": [0.02, 0.022, 0.025], "rough": 0.4}))
     col = tuple(p.get("sign", (1.0, 0.92, 0.75)))
     name = p.get("name", "")
-    text(root, name, (0.0, h - fh / 2, 0.065), min(fh * 0.5, 1.4 * (w - 0.4) / max(len(name), 1)),
+    text(root, name, (0.0, h - fh / 2, f + 0.015), min(fh * 0.5, 1.4 * (w - 0.4) / max(len(name), 1)),
          builders.emissive("unit_sign_%d_%d" % (int(col[0] * 100), int(col[2] * 100)), col, p.get("glow", 2.5)), depth=0.0)
     top = h - fh
     lift = top * p.get("open", 0.0)
-    lbox(root, "unit_back", (-w / 2, 0.0, -d), (w / 2, top, -d + 0.05), M({"color": [0.03, 0.03, 0.032], "rough": 0.7}))
+    lbox(root, "unit_back", (-w / 2, 0.0, -f), (w / 2, top, -f + 0.05), M({"color": [0.03, 0.03, 0.032], "rough": 0.7}))
     if lift > 0.05:
-        lbox(root, "unit_glow", (-w / 2 + 0.3, top - 0.08, -d + 0.4), (w / 2 - 0.3, top - 0.05, -d + 0.6),
+        lbox(root, "unit_glow", (-w / 2 + 0.3, top - 0.08, -f + 0.4), (w / 2 - 0.3, top - 0.05, -f + 0.6),
              builders.emissive("unit_glow", (1.0, 0.85, 0.65), 2.0))
-        lbox(root, "unit_floor", (-w / 2 + 0.12, 0.0, -d), (w / 2 - 0.12, 0.01, 0.0), M({"color": [0.08, 0.08, 0.08], "rough": 0.5}))
-    lbox(root, "shutter", (-w / 2 + 0.12, lift, -0.04), (w / 2 - 0.12, top, -0.02),
+        lbox(root, "unit_floor", (-w / 2 + 0.12, 0.0, -f), (w / 2 - 0.12, 0.01, f), M({"color": [0.08, 0.08, 0.08], "rough": 0.5}))
+    lbox(root, "shutter", (-w / 2 + 0.12, lift, f - 0.09), (w / 2 - 0.12, top, f - 0.07),
          M({"ph": p.get("look", "painted_metal_shutter"), "tint": [0.75, 0.77, 0.8], "scale": 1.0}))
-    lbox(root, "shutter_bar", (-w / 2 + 0.12, lift, -0.05), (w / 2 - 0.12, lift + 0.06, -0.01), frame)
+    lbox(root, "shutter_bar", (-w / 2 + 0.12, lift, f - 0.1), (w / 2 - 0.12, lift + 0.06, f - 0.06), frame)
+    for sx in (-1, 1):   # its sides, back to the wall
+        lbox(root, "unit_side", (sx * w / 2 - (0.05 if sx > 0 else 0.0), 0.0, -f), (sx * w / 2 + (0.0 if sx > 0 else 0.05), h, f - 0.1), frame)
 
 
 def departure_board(root, p, w, h, d):

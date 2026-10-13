@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ORDER = ["area3", "area4", "area5", "area6", "area7"]
+ORDER = ["area3", "area4", "area5", "area6", "area7", "area8"]
 
 
 KEPT = ["thorbeckeplein", "rembrandtplein", "herengracht"]   # rooms made before the generators: dressed in place

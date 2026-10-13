@@ -112,7 +112,7 @@ class RealHouseTests(unittest.TestCase):
             if s.get("storey", 0) < house.CITY:
                 continue
             for it in s.get("interactables", []):
-                if it.get("kind") == "door" and it.get("target_room"):
+                if it.get("kind") == "door" and it.get("target_room") and not it.get("board"):   # ("board": Interact at a train's door)
                     self.assertIn((rid, it["id"]), owned, f"{rid}/{it['id']}: not within {house.DOOR_REACH} m of an opening")
 
     def test_a_model_s_collider_lies_along_it(self):   # not an invisible wall across the quay beside a parked car
