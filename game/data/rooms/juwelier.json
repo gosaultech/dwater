@@ -30,18 +30,20 @@
       "scale": 1.5
     },
     "wall": {
-      "color": [
-        0.36,
-        0.3,
-        0.26
+      "ph": "beige_wall_001",
+      "tint": [
+        0.462,
+        0.385,
+        0.333
       ],
       "rough": 0.6
     },
     "ceiling": {
-      "color": [
-        0.6,
-        0.57,
-        0.52
+      "ph": "ceiling_interior",
+      "tint": [
+        0.769,
+        0.731,
+        0.667
       ],
       "rough": 0.7
     },
@@ -69,7 +71,7 @@
     "strength": 0.5
   },
   "render": {
-    "exposure": 0.9,
+    "exposure": 0.738,
     "bloom": {
       "threshold": 0.95,
       "strength": 0.25,
@@ -197,6 +199,202 @@
         1.0
       ],
       "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        1.11,
+        0.0,
+        8.08
+      ],
+      "yaw": 182,
+      "scale": 0.88,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        2.05,
+        0.0,
+        0.42
+      ],
+      "yaw": -26,
+      "scale": 0.95,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        0.72,
+        0.0,
+        0.42
+      ],
+      "yaw": 5,
+      "scale": 0.92,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        3.96,
+        0.0,
+        0.42
+      ],
+      "yaw": -7,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        1.85,
+        0.0,
+        8.08
+      ],
+      "yaw": 205,
+      "scale": 0.86,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        5.34,
+        0.0,
+        8.08
+      ],
+      "yaw": 208,
+      "scale": 0.81,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        7.58,
+        0.0,
+        2.6
+      ],
+      "yaw": -88,
+      "scale": 0.99,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wall_clock",
+      "pos": [
+        7.97,
+        2.15,
+        6.54
+      ],
+      "yaw": -90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:hanging_picture_frame_02",
+      "pos": [
+        6.56,
+        1.75,
+        0.03
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "drop_ceiling",
+      "pos": [
+        4.0,
+        3.388,
+        4.25
+      ],
+      "size": [
+        8.0,
+        0.02,
+        8.5
+      ],
+      "seed": 744,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        0.08,
+        2.43,
+        2.67
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 90,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        7.8,
+        2.9,
+        0.2
+      ],
+      "yaw": -45,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        1.4,
+        0.0,
+        4.43
+      ],
+      "size": [
+        3.2,
+        0.01,
+        3.0
+      ],
+      "seed": 159,
+      "count": 4,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        2.47,
+        0.0,
+        5.6
+      ],
+      "size": [
+        3.2,
+        0.01,
+        3.0
+      ],
+      "seed": 674,
+      "count": 4,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
     }
   ],
   "lights": [
@@ -229,7 +427,7 @@
         0.0,
         2.2
       ],
-      "size": 1.0,
+      "size": 0.55,
       "color": [
         1.0,
         0.94,
@@ -251,7 +449,7 @@
         0.0,
         6.3
       ],
-      "size": 1.0,
+      "size": 0.55,
       "color": [
         1.0,
         0.94,

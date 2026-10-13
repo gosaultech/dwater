@@ -38,10 +38,11 @@
       "scale": 1.0
     },
     "ceiling": {
-      "color": [
-        0.8,
-        0.82,
-        0.78
+      "ph": "ceiling_interior",
+      "tint": [
+        1.0,
+        1.0,
+        1.0
       ],
       "rough": 0.6
     },
@@ -59,7 +60,7 @@
     "strength": 0.5
   },
   "render": {
-    "exposure": 0.95,
+    "exposure": 0.779,
     "bloom": {
       "threshold": 0.95,
       "strength": 0.25,
@@ -212,6 +213,80 @@
       "yaw": 0,
       "seed": 77,
       "collide": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        6.58,
+        0.0,
+        2.04
+      ],
+      "yaw": -93,
+      "scale": 0.99,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wall_clock",
+      "pos": [
+        6.97,
+        2.15,
+        3.22
+      ],
+      "yaw": -90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:hanging_picture_frame_02",
+      "pos": [
+        6.97,
+        1.75,
+        1.06
+      ],
+      "yaw": -90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        3.5,
+        2.38,
+        4.42
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 180,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        5.77,
+        0.0,
+        2.68
+      ],
+      "size": [
+        2.8,
+        0.01,
+        1.8
+      ],
+      "seed": 653,
+      "count": 2,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
     }
   ],
   "lights": [
@@ -227,7 +302,7 @@
         0.0,
         2.2
       ],
-      "size": 2.0,
+      "size": 1.1,
       "color": [
         1.0,
         0.92,
