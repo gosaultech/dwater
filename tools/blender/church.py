@@ -167,6 +167,47 @@ def pulpit(root, p, w, h, d):
     steps.build("pulpit_stair", oak, root, smooth=False)
 
 
+_LEADED = {}
+
+
+def leaded_glass(tone, strength):
+    """Old glass at night: diamond quarries in lead came, each pane a little different, faintly lit."""
+    k = (tuple(round(c, 3) for c in tone), round(strength, 3))
+    if k in _LEADED:
+        return _LEADED[k]
+    m, nt, out = builders._new_mat("leaded_glass")
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    mp = nt.nodes.new("ShaderNodeMapping")
+    mp.inputs["Rotation"].default_value = (0.0, 0.0, math.radians(45))
+    mp.inputs["Scale"].default_value = (5.0, 5.0, 1.0)
+    nt.links.new(tc.outputs["UV"], mp.inputs["Vector"])
+    br = nt.nodes.new("ShaderNodeTexBrick")
+    br.offset = 0.0
+    br.inputs["Scale"].default_value = 1.0
+    br.inputs["Mortar Size"].default_value = 0.035
+    br.inputs["Brick Width"].default_value = 0.85
+    br.inputs["Row Height"].default_value = 0.85
+    br.inputs["Color1"].default_value = (*tone, 1.0)
+    br.inputs["Color2"].default_value = (tone[0] * 0.7, tone[1] * 0.75, tone[2] * 0.8, 1.0)
+    br.inputs["Mortar"].default_value = (0.004, 0.004, 0.004, 1.0)
+    nt.links.new(mp.outputs["Vector"], br.inputs["Vector"])
+    nz = nt.nodes.new("ShaderNodeTexNoise")
+    nz.inputs["Scale"].default_value = 3.0
+    nt.links.new(tc.outputs["Object"], nz.inputs["Vector"])
+    mul = nt.nodes.new("ShaderNodeMix")
+    mul.data_type = "RGBA"
+    mul.blend_type = "MULTIPLY"
+    mul.inputs["Factor"].default_value = 0.6
+    nt.links.new(br.outputs["Color"], mul.inputs["A"])
+    nt.links.new(nz.outputs["Color"], mul.inputs["B"])
+    em = nt.nodes.new("ShaderNodeEmission")
+    em.inputs["Strength"].default_value = strength
+    nt.links.new(mul.outputs["Result"], em.inputs["Color"])
+    nt.links.new(em.outputs[0], out.inputs["Surface"])
+    _LEADED[k] = m
+    return m
+
+
 def gothic_window(root, p, w, h, d):
     """A tall pointed window on the wall (its inside face; facing +z): a stone frame, mullions and
     transoms of tracery, the glass dark blue with the night (a faint glow from the floodlights out
@@ -174,7 +215,7 @@ def gothic_window(root, p, w, h, d):
     stone = M(p.get("material", STONE))
     span = w
     spring = h - span * math.sin(math.radians(60))
-    glass = builders.emissive("church_glass_night", tuple(p.get("glow_colour", (0.16, 0.2, 0.36))), p.get("glow", 0.25))
+    glass = leaded_glass(tuple(p.get("glow_colour", (0.12, 0.15, 0.2))), p.get("glow", 0.3))
     y = 0.0
     course = 0.25
     while y < h - 0.01:   # the glass, in courses following the pointed head
