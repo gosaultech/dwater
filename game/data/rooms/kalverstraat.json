@@ -42,7 +42,7 @@
     }
   },
   "footsteps": "marble",
-  "ambience": "amb_cellar",
+  "ambience": "amb_street_rain",
   "move_scale": 1.0,
   "world": {
     "color": [
@@ -67,7 +67,17 @@
     "bloom": {
       "threshold": 0.9,
       "strength": 0.4,
-      "size": 0.55
+      "size": 0.55,
+      "haze": {
+        "color": [
+          0.045,
+          0.052,
+          0.068
+        ],
+        "start": 12.0,
+        "depth": 85.0,
+        "strength": 0.5
+      }
     }
   },
   "outdoor": {
@@ -2181,6 +2191,776 @@
       "to": "VIA DE DAM",
       "arrow": "up",
       "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.52,
+        0.0,
+        6.11
+      ],
+      "yaw": 12,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.5,
+        0.0,
+        9.03
+      ],
+      "yaw": 268,
+      "scale": 0.96,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        0.4,
+        0.0,
+        14.66
+      ],
+      "yaw": 270,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        0.4,
+        0.0,
+        19.03
+      ],
+      "yaw": 270,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.6,
+        0.0,
+        22.49
+      ],
+      "yaw": 106,
+      "scale": 0.99,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.61,
+        0.0,
+        26.6
+      ],
+      "yaw": 68,
+      "scale": 0.88,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.64,
+        0.0,
+        26.35
+      ],
+      "yaw": 197,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        0.4,
+        0.0,
+        31.66
+      ],
+      "yaw": 270,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.25,
+        0.0,
+        41.09
+      ],
+      "yaw": 350,
+      "scale": 0.98,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        0.4,
+        0.0,
+        50.83
+      ],
+      "yaw": 270,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.58,
+        0.0,
+        54.68
+      ],
+      "yaw": 196,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.46,
+        0.0,
+        54.2
+      ],
+      "yaw": 327,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.3,
+        0.0,
+        54.32
+      ],
+      "yaw": 322,
+      "scale": 0.87,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.32,
+        0.0,
+        71.95
+      ],
+      "yaw": 118,
+      "scale": 0.99,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.64,
+        0.0,
+        72.13
+      ],
+      "yaw": 153,
+      "scale": 0.88,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_crate_01",
+      "pos": [
+        0.55,
+        0.0,
+        72.06
+      ],
+      "yaw": 317,
+      "scale": 0.95,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.47,
+        0.0,
+        80.5
+      ],
+      "yaw": 340,
+      "scale": 0.91,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.61,
+        0.0,
+        93.68
+      ],
+      "yaw": 28,
+      "scale": 0.96,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.52,
+        0.0,
+        94.21
+      ],
+      "yaw": 95,
+      "scale": 0.98,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.58,
+        0.0,
+        94.17
+      ],
+      "yaw": 83,
+      "scale": 0.92,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.45,
+        0.0,
+        110.82
+      ],
+      "yaw": 217,
+      "scale": 0.98,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.49,
+        0.0,
+        116.96
+      ],
+      "yaw": 312,
+      "scale": 0.96,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        0.39,
+        0.0,
+        116.86
+      ],
+      "yaw": 30,
+      "scale": 0.85,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        0.37,
+        0.0,
+        121.41
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 90,
+      "seed": 551,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        0.37,
+        0.0,
+        125.59
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 90,
+      "seed": 855,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        0.4,
+        0.0,
+        129.33
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        0.4,
+        0.0,
+        135.76
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.73,
+        0.0,
+        10.37
+      ],
+      "yaw": 321,
+      "scale": 1.0,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        7.63,
+        0.0,
+        16.3
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 270,
+      "seed": 645,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        7.63,
+        0.0,
+        19.92
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 270,
+      "seed": 610,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.42,
+        0.0,
+        25.14
+      ],
+      "yaw": 332,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.52,
+        0.0,
+        24.79
+      ],
+      "yaw": 9,
+      "scale": 0.88,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        7.6,
+        0.0,
+        39.77
+      ],
+      "yaw": 450,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        7.67,
+        0.0,
+        48.94
+      ],
+      "yaw": 450,
+      "scale": 1.0,
+      "size": [
+        0.92,
+        1.0,
+        0.42
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        7.6,
+        0.0,
+        56.13
+      ],
+      "yaw": 270,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.65,
+        0.0,
+        62.3
+      ],
+      "yaw": 226,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.41,
+        0.0,
+        62.4
+      ],
+      "yaw": 70,
+      "scale": 0.93,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.58,
+        0.0,
+        66.2
+      ],
+      "yaw": 147,
+      "scale": 0.97,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.42,
+        0.0,
+        66.04
+      ],
+      "yaw": 167,
+      "scale": 0.92,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.54,
+        0.0,
+        72.81
+      ],
+      "yaw": 68,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.39,
+        0.0,
+        81.83
+      ],
+      "yaw": 353,
+      "scale": 0.98,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.52,
+        0.0,
+        81.2
+      ],
+      "yaw": 56,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.39,
+        0.0,
+        81.28
+      ],
+      "yaw": 330,
+      "scale": 0.88,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.66,
+        0.0,
+        89.77
+      ],
+      "yaw": 63,
+      "scale": 0.92,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.41,
+        0.0,
+        95.45
+      ],
+      "yaw": 352,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.39,
+        0.0,
+        95.07
+      ],
+      "yaw": 351,
+      "scale": 0.94,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.67,
+        0.0,
+        94.88
+      ],
+      "yaw": 315,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.59,
+        0.0,
+        98.43
+      ],
+      "yaw": 67,
+      "scale": 0.85,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        7.63,
+        0.0,
+        104.79
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 270,
+      "seed": 78,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.52,
+        0.0,
+        109.15
+      ],
+      "yaw": 342,
+      "scale": 0.97,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.54,
+        0.0,
+        109.2
+      ],
+      "yaw": 259,
+      "scale": 0.87,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        7.67,
+        0.0,
+        117.45
+      ],
+      "yaw": 450,
+      "scale": 1.0,
+      "size": [
+        0.92,
+        1.0,
+        0.42
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.7,
+        0.0,
+        128.66
+      ],
+      "yaw": 176,
+      "scale": 0.93,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.75,
+        0.0,
+        129.15
+      ],
+      "yaw": 24,
+      "scale": 0.92,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.58,
+        0.0,
+        128.61
+      ],
+      "yaw": 94,
+      "scale": 0.97,
+      "collide": false,
+      "junk": true
     }
   ],
   "walls": {
