@@ -70,6 +70,7 @@ RoomSpec RoomSpec::load(const std::string& path) {
     }
     // A street's lamps (the set builder plants the lamp posts; the game lights him by them).
     const json outdoor = d.value("outdoor", json::object());
+    r.rain = d.contains("outdoor") && outdoor.value("rain", true);
     for (const auto& l : outdoor.value("lamps", json::array())) {
         Light L;
         L.kind = "point";

@@ -22,6 +22,7 @@
 #include "dw/core.hpp"
 #include "dw/doors.hpp"
 #include "dw/house.hpp"
+#include "dw/rain.hpp"
 #include "dw/room_spec.hpp"
 #include "dw/settings.hpp"
 #include "dw/status.hpp"
@@ -73,7 +74,7 @@ public:
     void update(float dt);          // input, AI, animation
     void render();                  // scene -> offscreen target
     void present() const;           // post-process to the window + HUD
-    int capture_count() const { return 76; }
+    int capture_count() const { return 88; }
     std::string stage(int i);       // pose a capture setup; returns its name
     // A still of the room (--still): the survivor standing at (x, z) facing yaw (degrees), no
     // Drowned, seen from `shot` (empty: whichever shot covers him). Render and present after.
@@ -211,6 +212,7 @@ private:
     void update_emerging(Enemy& e, float dt);        // under the water until he comes near; then it rises
     void update_lying(Enemy& e);                     // still on the floor until he comes near; then it gets up
     void draw_leaves();
+    void draw_rain() const;
     void draw_panes();                           // the glass in shop doors (drawn additively, after the solids)
     void shut_doors();                           // every leaf shut, every passage open (a fresh start, trying again)
     Matrix leaf_matrix(size_t i) const;          // where leaf i hangs now (hinge at the origin, along +x)
@@ -268,6 +270,7 @@ private:
     std::vector<Enemy> enemies_;
     SoundBank sfx_;
     Effects fx_;
+    Rain rain_;                                     // over the streets (spec_.rain)
     // The survivor in a fight.
     PMode pmode_ = PMode::Normal;
     float pmode_t_ = 0, invuln_ = 0, dodge_cd_ = 0, aim_pitch_ = 0, aim_snap_ = 0, dead_t_ = 0;

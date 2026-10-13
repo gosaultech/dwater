@@ -29,18 +29,20 @@
       "rough": 0.5
     },
     "wall": {
-      "color": [
-        0.6,
-        0.62,
-        0.64
+      "ph": "beige_wall_001",
+      "tint": [
+        0.769,
+        0.795,
+        0.821
       ],
       "rough": 0.7
     },
     "ceiling": {
-      "color": [
-        0.7,
-        0.7,
-        0.7
+      "ph": "ceiling_interior",
+      "tint": [
+        0.897,
+        0.897,
+        0.897
       ],
       "rough": 0.8
     },
@@ -58,7 +60,7 @@
     "strength": 0.5
   },
   "render": {
-    "exposure": 0.9,
+    "exposure": 0.738,
     "bloom": {
       "threshold": 0.95,
       "strength": 0.25,
@@ -242,6 +244,176 @@
       ],
       "yaw": 90,
       "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        0.42,
+        0.0,
+        2.06
+      ],
+      "yaw": 77,
+      "scale": 0.96,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        4.58,
+        0.0,
+        2.95
+      ],
+      "yaw": -101,
+      "scale": 0.81,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.42,
+        0.0,
+        4.27
+      ],
+      "yaw": 113,
+      "scale": 0.85,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.42,
+        0.0,
+        6.65
+      ],
+      "yaw": 115,
+      "scale": 0.83,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wall_clock",
+      "pos": [
+        0.03,
+        2.15,
+        2.98
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:hanging_picture_frame_02",
+      "pos": [
+        1.93,
+        1.75,
+        0.03
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "drop_ceiling",
+      "pos": [
+        2.5,
+        2.988,
+        4.0
+      ],
+      "size": [
+        5.0,
+        0.02,
+        8.0
+      ],
+      "seed": 681,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        2.5,
+        2.28,
+        7.92
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 180,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        0.2,
+        2.5,
+        7.8
+      ],
+      "yaw": 135,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        3.74,
+        0.0,
+        3.11
+      ],
+      "size": [
+        2.0,
+        0.01,
+        3.0
+      ],
+      "seed": 715,
+      "count": 3,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_monobloc_chair_01",
+      "pos": [
+        2.47,
+        0.0,
+        5.76
+      ],
+      "yaw": 44,
+      "tip": 90,
+      "scale": 1.0,
+      "size": [
+        0.9,
+        0.5,
+        0.6
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:steel_frame_shelves_01",
+      "pos": [
+        4.7,
+        0.0,
+        1.61
+      ],
+      "yaw": -90,
+      "scale": 1.0,
+      "size": [
+        1.1,
+        2.14,
+        0.5
+      ]
     }
   ],
   "lights": [
@@ -249,7 +421,7 @@
       "kind": "area",
       "pos": [
         2.5,
-        2.95,
+        2.92,
         4.0
       ],
       "look_at": [
@@ -257,7 +429,7 @@
         0.0,
         4.0
       ],
-      "size": 1.2,
+      "size": 0.66,
       "color": [
         0.92,
         0.96,
@@ -366,6 +538,18 @@
       ],
       "radius": 1.2,
       "text": "Camera 3: the second floor. The floor is under water. Something is walking through it, slowly, toward the stairs."
+    },
+    {
+      "id": "staff_pass",
+      "kind": "pickup",
+      "item": "staff_pass",
+      "count": 1,
+      "pos": [
+        2.0,
+        0.76,
+        0.85
+      ],
+      "radius": 0.9
     }
   ],
   "enemies": []

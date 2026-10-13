@@ -1,0 +1,504 @@
+{
+  "_file": "damned_waters/game/data/rooms/rondvaartboot.json \u2014 RoomSpec for Rondvaart 14 (the city, district 6: Damrak): a glass-roofed tour boat tied up at its pier on the Damrak basin, the water high under it: the gangway, the saloon's rows of seats with the life jackets on them, the skipper's console at the bow. Its lights are on. It was the last trip of the night. Modelled after openly licensed photographs; every business name is made up, the landmarks keep theirs. The power is still on; nobody is there. Outdoor (street.py, city.py and landmarks.py build it). Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "rondvaartboot",
+  "display_name": "Rondvaart 14",
+  "storey": 15,
+  "origin": [
+    932.3,
+    -419.5
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      6.2,
+      18.6
+    ]
+  },
+  "height": 4.0,
+  "materials": {
+    "floor": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "wall": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "ceiling": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    }
+  },
+  "footsteps": "wood",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.014,
+      0.019,
+      0.036
+    ],
+    "strength": 1.0
+  },
+  "sky": {
+    "hdri": "kloppenheim_07_puresky",
+    "strength": 0.045,
+    "camera": 0.1,
+    "tint": [
+      1.0,
+      0.76,
+      0.55
+    ]
+  },
+  "render": {
+    "exposure": 0.85,
+    "bloom": {
+      "threshold": 0.9,
+      "strength": 0.4,
+      "size": 0.55,
+      "haze": {
+        "color": [
+          0.045,
+          0.052,
+          0.068
+        ],
+        "start": 12.0,
+        "depth": 85.0,
+        "strength": 0.5
+      }
+    }
+  },
+  "outdoor": {
+    "window_rooms": [
+      "warm_bar",
+      "fireplace",
+      "small_empty_room_2",
+      "christmas_photo_studio_04",
+      "warm_restaurant_night",
+      "unfinished_office_night"
+    ],
+    "lamp_power": 0.0,
+    "lamp_energy": 0.0,
+    "ground": [],
+    "lamps": [],
+    "rain": false
+  },
+  "walls": {
+    "west": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 10.0,
+          "width": 2.0,
+          "height": 3.0
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "pier",
+      "pos": [
+        -0.3,
+        0.0,
+        10.0
+      ],
+      "yaw": -90,
+      "size": [
+        8.0,
+        0.4,
+        2.2
+      ],
+      "sign": "RONDVAARTEN \u00b7 CANAL CRUISES",
+      "collide": false
+    },
+    {
+      "type": "canal_boat",
+      "pos": [
+        4.3,
+        -0.35,
+        10.0
+      ],
+      "yaw": -90,
+      "size": [
+        22.0,
+        3.2,
+        4.2
+      ],
+      "name": "RONDVAART 14",
+      "collide": false,
+      "door": [
+        0.0,
+        1.6
+      ],
+      "aisle": 0.45,
+      "glow": 1.4
+    },
+    {
+      "type": "model",
+      "model": "ph:lifebuoy",
+      "pos": [
+        0.4,
+        0.6,
+        6.4
+      ],
+      "yaw": -90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:life_jacket",
+      "pos": [
+        5.4,
+        0.5,
+        4.0
+      ],
+      "yaw": 40,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:life_jacket",
+      "pos": [
+        3.2,
+        0.5,
+        14.5
+      ],
+      "yaw": 160,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:life_jacket",
+      "pos": [
+        4.3,
+        0.0,
+        12.6
+      ],
+      "yaw": 80,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "counter",
+      "pos": [
+        4.3,
+        0.0,
+        18.0
+      ],
+      "yaw": 180,
+      "size": [
+        0.8,
+        1.0,
+        0.4
+      ],
+      "till": false,
+      "top": {
+        "color": [
+          0.08,
+          0.09,
+          0.1
+        ],
+        "rough": 0.3
+      },
+      "material": {
+        "color": [
+          0.82,
+          0.82,
+          0.8
+        ],
+        "rough": 0.4
+      }
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        4.3,
+        1.3,
+        17.78
+      ],
+      "size": [
+        0.7,
+        0.16,
+        0.02
+      ],
+      "yaw": 180,
+      "text": "STUURHUT",
+      "color": [
+        0.4,
+        1.0,
+        0.5
+      ],
+      "glow": 2.0,
+      "collide": false
+    },
+    {
+      "type": "collider",
+      "pos": [
+        1.15,
+        0.0,
+        3.0
+      ],
+      "size": [
+        2.3,
+        1.0,
+        6.0
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        1.15,
+        0.0,
+        16.3
+      ],
+      "size": [
+        2.3,
+        1.0,
+        4.6
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        2.3,
+        0.0,
+        4.6
+      ],
+      "size": [
+        0.2,
+        1.0,
+        9.2
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        2.3,
+        0.0,
+        14.7
+      ],
+      "size": [
+        0.2,
+        1.0,
+        7.8
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        5.4,
+        0.0,
+        9.3
+      ],
+      "size": [
+        1.3,
+        1.0,
+        17.4
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        3.2,
+        0.0,
+        4.7
+      ],
+      "size": [
+        1.3,
+        1.0,
+        8.2
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        3.2,
+        0.0,
+        14.6
+      ],
+      "size": [
+        1.3,
+        1.0,
+        6.8
+      ]
+    }
+  ],
+  "lights": [
+    {
+      "kind": "area",
+      "pos": [
+        4.3,
+        2.2,
+        6.0
+      ],
+      "look_at": [
+        4.3,
+        0.0,
+        6.0
+      ],
+      "size": 1.2,
+      "color": [
+        1.0,
+        0.88,
+        0.7
+      ],
+      "blender_power": 60,
+      "godot_energy": 0.6,
+      "range": 6.0
+    },
+    {
+      "kind": "area",
+      "pos": [
+        4.3,
+        2.2,
+        13.0
+      ],
+      "look_at": [
+        4.3,
+        0.0,
+        13.0
+      ],
+      "size": 1.2,
+      "color": [
+        1.0,
+        0.88,
+        0.7
+      ],
+      "blender_power": 60,
+      "godot_energy": 0.6,
+      "range": 6.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        0.8,
+        2.6,
+        10.0
+      ],
+      "color": [
+        1.0,
+        0.7,
+        0.4
+      ],
+      "blender_power": 40,
+      "godot_energy": 0.4,
+      "range": 5.0,
+      "radius": 0.2
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        4.3,
+        2.0,
+        0.6
+      ],
+      "look_at": [
+        4.3,
+        0.9,
+        18.0
+      ],
+      "fov": 64,
+      "zone": {
+        "min": [
+          2.4,
+          0.0
+        ],
+        "max": [
+          6.2,
+          18.6
+        ]
+      },
+      "priority": 2
+    },
+    {
+      "id": "b",
+      "pos": [
+        0.5,
+        2.8,
+        15.5
+      ],
+      "look_at": [
+        3.6,
+        0.8,
+        8.6
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          2.4,
+          18.6
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_damrak": {
+      "pos": [
+        0.6,
+        0.0,
+        10.0
+      ],
+      "yaw": 270
+    }
+  },
+  "interactables": [
+    {
+      "id": "boat",
+      "kind": "examine",
+      "pos": [
+        2.0,
+        1.0,
+        10.0
+      ],
+      "radius": 1.2,
+      "text": "RONDVAART 14. Its engine's still warm. A ticket stub on the gangway: the 00:30 trip, the last of the night."
+    },
+    {
+      "id": "first_aid_boat",
+      "kind": "pickup",
+      "item": "first_aid",
+      "count": 1,
+      "pos": [
+        4.3,
+        1.0,
+        18.0
+      ],
+      "radius": 0.9
+    }
+  ],
+  "enemies": [
+    {
+      "id": "de_schipper",
+      "kind": "verdronkene",
+      "pos": [
+        4.3,
+        0.0,
+        15.0
+      ],
+      "yaw": 0
+    }
+  ]
+}

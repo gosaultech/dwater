@@ -393,7 +393,7 @@ Rb = street_room("rondvaartboot", "Rondvaart 14", RB, (6.2, 18.6), 4.0,
                  "a glass-roofed tour boat tied up at its pier on the Damrak basin, the water high under it: the gangway, the "
                  "saloon's rows of seats with the life jackets on them, the skipper's console at the bow. Its lights are on. "
                  "It was the last trip of the night.")
-Rb["outdoor"] = {"window_rooms": ROOMS, "lamp_power": 0.0, "lamp_energy": 0.0, "ground": [], "lamps": []}
+Rb["outdoor"] = {"window_rooms": ROOMS, "lamp_power": 0.0, "lamp_energy": 0.0, "ground": [], "lamps": [], "rain": False}
 Rb["walls"] = {"west": {"openings": [{"kind": "passage", "center": 10.0, "width": 2.0, "height": 3.0}]}}   # the gap in the quay's railing
 Rb["footsteps"] = "wood"   # (the pier's planks, the boat's deck)
 Rb["props"] = [

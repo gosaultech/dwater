@@ -50,6 +50,7 @@ struct RoomSpec {
     int floor = 0;                 // which storey it's on ("storey": 0 the ground floor, -1 a cellar): for the map
     float origin_x = 0, origin_z = 0;   // where the room's corner lies in the house ("origin": [x, z])
     bool has_origin = false;
+    bool rain = false;             // out under the sky ("outdoor", unless its "rain": false)
     std::vector<Opening> openings;
     std::vector<Obb2> colliders;   // walls (with gaps at the doors) + solid props, on the floor plane
     size_t wall_count = 0;         // the first wall_count colliders are the walls (they block sight; props don't)

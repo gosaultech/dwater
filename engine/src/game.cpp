@@ -461,6 +461,7 @@ void Game::update(float dt) {
     if (wake_t_ >= 0 && (wake_t_ -= g) < 0) wake(wake_flag_);
     update_enemies(g);
     fx_.update(g);
+    if (spec_.rain) rain_.update(g, player_.x, player_.z);
     for (Vector3 at; fx_.landed(at);) sfx_.play_at("mag_drop", at, ear(), ear_right(), 0.9f, 0.08f);   // an empty magazine on the floor
     sfx_.update();
     // Through a doorway into the next room: no loading, just a cut to its camera.
@@ -1198,6 +1199,70 @@ std::string Game::stage(int i) {
             TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
             break;
         }
+        case 76: case 77: case 78: case 79: case 80: case 81: case 82: case 83: case 84: case 85: case 86: case 87: {
+            // Damrak: the guards' pass off the desk, the store's staff door opened with it (the next
+            // district: a beat, behind the army's barriers), the Beurs's gate and the mortuary inside,
+            // one of the dead getting up, the exchange, the souvenir shop and its stockroom, the basin
+            // and the leaning houses, aboard the tour boat, the hotel's bar, and the station ahead.
+            if (i == 76) {
+                at("beveiliging", 2.0f, 1.75f, 0.0f);   // at the desk, facing it (north)
+                interact();
+                run(0.6f);
+                name = "the_staff_pass";
+            } else if (i == 77) {
+                inv_.add(I_STAFF_PASS, 1);
+                at("warenhuis", 22.1f, 2.0f, -kPi / 2);   // at the staff door, facing it (east)
+                interact();                                // the card reader: green
+                text_queue_.clear();
+                interact();                                // the door swings open
+                staged_in_ = stick_toward(1, 0, 0.7f);     // and through it
+                run(3.0f);
+                name = "onto_the_damrak";
+            } else if (i == 78) {
+                at("damrak_zuid", 16.6f, 53.5f, -kPi / 2);   // before the Beurs's gate, facing it (east)
+                staged_in_ = stick_toward(1, 0, 0.7f);
+                run(4.2f);
+                name = "into_the_beurs";
+            } else if (i == 79) {
+                at("beurs_zaal", 11.0f, 30.0f, 0.0f);   // down the middle between the rows, facing north
+                run(0.6f);
+                name = "the_mortuary";
+            } else if (i == 80) {
+                at("beurs_zaal", 7.4f, 19.6f, 0.0f);   // between the bags, the open one ahead: it wakes, and gets up
+                run(2.8f);
+                name = "the_dead_rise";
+            } else if (i == 81) {
+                at("wisselkantoor", 5.0f, 3.0f, kPi / 2);   // before the cashiers' glass
+                run(0.6f);
+                name = "the_exchange";
+            } else if (i == 82) {
+                at("souvenirwinkel", 6.0f, 3.2f, kPi / 2);
+                run(0.6f);
+                name = "the_souvenir_shop";
+            } else if (i == 83) {
+                at("magazijn", 2.2f, 3.0f, kPi / 2);
+                run(0.6f);
+                name = "the_stockroom";
+            } else if (i == 84) {
+                at("damrak_noord", 15.0f, 44.0f, -kPi / 2);   // on the quay, facing the water
+                run(0.6f);
+                name = "the_basin";
+            } else if (i == 85) {
+                at("rondvaartboot", 4.3f, 8.0f, kPi);   // down the boat's gangway between the seats, facing the bow
+                run(0.6f);
+                name = "aboard";
+            } else if (i == 86) {
+                at("hotel_bar", 8.5f, 4.5f, kPi / 4);   // the bar ahead
+                run(0.6f);
+                name = "the_hotel_bar";
+            } else {
+                at("damrak_noord", 10.0f, 9.0f, 0.0f);   // the barriers at the top, the station beyond
+                run(0.6f);
+                name = "the_station_ahead";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
+            break;
+        }
         default: {   // bitten once too often: the words coming up (26), and all of it, the choice there (14)
             join(1, 1.0f, 8.3f, 0.0f, EState::Pursuit);
             player_ = {1.0f, 7.4f, kPi};
@@ -1605,12 +1670,25 @@ void Game::render() {
     if (peek_ < 0) blob(hero_, player_);
     for (const auto& e : enemies_)
         if (e.active) blob(e.body, e.a);
+    if (spec_.rain) draw_rain();
     EndBlendMode();
     rlEnableDepthMask();
     EndMode3D();
     EndTextureMode();
     status_drawn_ = false;
     if (status_.is_open()) render_status();
+}
+
+void Game::draw_rain() const {   // short streaks, behind whatever the painting puts in front of them
+    const V3 v = rain_.velocity();
+    const float k = Rain::STREAK;
+    rlBegin(RL_LINES);
+    rlColor4ub(175, 185, 200, 60);
+    for (const auto& d : rain_.drops()) {
+        rlVertex3f(d.x, d.y, d.z);
+        rlVertex3f(d.x - v.x * k, d.y - v.y * k, d.z - v.z * k);
+    }
+    rlEnd();
 }
 
 void Game::present() const {

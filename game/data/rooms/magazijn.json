@@ -1,0 +1,437 @@
+{
+  "_file": "damned_waters/game/data/rooms/magazijn.json \u2014 RoomSpec for Magazijn (the city, district 6: Damrak): the souvenir shop's stockroom: steel shelving to the ceiling, cartons of stock, a first aid box on the wall. Its front wall is the street's shopfront (\"facade\": the street builds it); its door is the street's. Every business name is made up. Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "magazijn",
+  "display_name": "Magazijn",
+  "storey": 15,
+  "origin": [
+    898.4000000000001,
+    -356.15
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      4.0,
+      7.949999999999999
+    ]
+  },
+  "height": 3.0,
+  "materials": {
+    "floor": {
+      "ph": "concrete_floor_painted",
+      "tint": [
+        0.55,
+        0.56,
+        0.58
+      ],
+      "rough": 0.7
+    },
+    "wall": {
+      "ph": "beige_wall_001",
+      "tint": [
+        0.897,
+        0.897,
+        0.872
+      ],
+      "rough": 0.8
+    },
+    "ceiling": {
+      "ph": "ceiling_interior",
+      "tint": [
+        0.897,
+        0.897,
+        0.897
+      ],
+      "rough": 0.9
+    },
+    "skirting": null
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.01,
+      0.012,
+      0.016
+    ],
+    "strength": 0.5
+  },
+  "render": {
+    "exposure": 0.738,
+    "bloom": {
+      "threshold": 0.95,
+      "strength": 0.25,
+      "size": 0.5
+    }
+  },
+  "walls": {
+    "east": {
+      "openings": [
+        {
+          "kind": "door",
+          "center": 1.4,
+          "width": 0.9,
+          "height": 2.1,
+          "hinge": "left"
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "shelving",
+      "pos": [
+        0.3,
+        0.0,
+        3.9749999999999996
+      ],
+      "yaw": 90,
+      "size": [
+        6.4,
+        2.8,
+        0.55
+      ],
+      "palette": "grocery",
+      "empty": 0.2,
+      "seed": 71,
+      "fallen": 3,
+      "frame": {
+        "color": [
+          0.3,
+          0.33,
+          0.36
+        ],
+        "rough": 0.4,
+        "metal": 0.8
+      }
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        2.2,
+        0.0,
+        7.6499999999999995
+      ],
+      "yaw": 180,
+      "size": [
+        3.0,
+        2.8,
+        0.55
+      ],
+      "palette": "souvenir",
+      "empty": 0.25,
+      "seed": 72,
+      "frame": {
+        "color": [
+          0.3,
+          0.33,
+          0.36
+        ],
+        "rough": 0.4,
+        "metal": 0.8
+      }
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        2.6,
+        0.0,
+        3.0
+      ],
+      "yaw": 20,
+      "scale": 1.0,
+      "size": [
+        0.5,
+        0.4,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        2.9,
+        0.0,
+        3.8
+      ],
+      "yaw": 70,
+      "scale": 0.8,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        3.2,
+        0.0,
+        5.6
+      ],
+      "yaw": 10,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "strip_light",
+      "pos": [
+        2.0,
+        3.0,
+        3.9749999999999996
+      ],
+      "size": [
+        3.0,
+        0.1,
+        0.2
+      ],
+      "yaw": 90,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        3.58,
+        0.0,
+        4.03
+      ],
+      "yaw": -93,
+      "scale": 0.94,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        3.58,
+        0.0,
+        3.27
+      ],
+      "yaw": -80,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        1.74,
+        0.0,
+        0.42
+      ],
+      "yaw": -26,
+      "scale": 0.96,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wall_clock",
+      "pos": [
+        3.97,
+        2.15,
+        6.86
+      ],
+      "yaw": -90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:hanging_picture_frame_02",
+      "pos": [
+        2.75,
+        1.75,
+        0.03
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "duct",
+      "pos": [
+        1.4,
+        2.55,
+        3.975
+      ],
+      "size": [
+        6.95,
+        0.32,
+        0.5
+      ],
+      "yaw": 90,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        3.92,
+        2.28,
+        1.4
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": -90,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        0.2,
+        2.5,
+        7.75
+      ],
+      "yaw": 135,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        1.9,
+        0.0,
+        2.29
+      ],
+      "size": [
+        1.6,
+        0.01,
+        3.0
+      ],
+      "seed": 989,
+      "count": 2,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_monobloc_chair_01",
+      "pos": [
+        1.6,
+        0.0,
+        4.86
+      ],
+      "yaw": 108,
+      "tip": 90,
+      "scale": 1.0,
+      "size": [
+        0.9,
+        0.5,
+        0.6
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:steel_frame_shelves_01",
+      "pos": [
+        3.7,
+        0.0,
+        5.435
+      ],
+      "yaw": -90,
+      "scale": 1.0,
+      "size": [
+        1.1,
+        2.14,
+        0.5
+      ]
+    }
+  ],
+  "lights": [
+    {
+      "kind": "area",
+      "pos": [
+        2.0,
+        2.9,
+        3.9749999999999996
+      ],
+      "look_at": [
+        2.0,
+        0.0,
+        3.9749999999999996
+      ],
+      "size": 0.55,
+      "color": [
+        0.95,
+        0.97,
+        1.0
+      ],
+      "blender_power": 45,
+      "godot_energy": 0.4,
+      "range": 5.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        3.6,
+        2.5,
+        7.549999999999999
+      ],
+      "look_at": [
+        0.6,
+        1.0,
+        1.0
+      ],
+      "fov": 68,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          4.0,
+          7.949999999999999
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_winkel": {
+      "pos": [
+        3.2,
+        0.0,
+        1.4
+      ],
+      "yaw": 90
+    }
+  },
+  "interactables": [
+    {
+      "id": "door_winkel",
+      "kind": "door",
+      "pos": [
+        3.55,
+        1.0,
+        1.4
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "first_aid_box",
+      "kind": "pickup",
+      "item": "first_aid",
+      "count": 1,
+      "pos": [
+        0.5,
+        1.1,
+        6.749999999999999
+      ],
+      "radius": 0.9
+    }
+  ],
+  "enemies": []
+}

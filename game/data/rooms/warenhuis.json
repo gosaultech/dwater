@@ -29,18 +29,20 @@
       "rough": 0.15
     },
     "wall": {
-      "color": [
-        0.9,
-        0.88,
-        0.84
+      "ph": "beige_wall_001",
+      "tint": [
+        1.0,
+        1.0,
+        1.0
       ],
       "rough": 0.5
     },
     "ceiling": {
-      "color": [
-        0.92,
-        0.9,
-        0.86
+      "ph": "ceiling_interior",
+      "tint": [
+        1.0,
+        1.0,
+        1.0
       ],
       "rough": 0.6
     },
@@ -66,7 +68,7 @@
     "strength": 0.5
   },
   "render": {
-    "exposure": 0.9,
+    "exposure": 0.738,
     "bloom": {
       "threshold": 0.95,
       "strength": 0.25,
@@ -94,6 +96,17 @@
           "center": 20.5,
           "width": 0.9,
           "height": 2.1,
+          "hinge": "left"
+        }
+      ]
+    },
+    "east": {
+      "openings": [
+        {
+          "kind": "door",
+          "center": 2.0,
+          "width": 1.0,
+          "height": 2.2,
           "hinge": "left"
         }
       ]
@@ -419,6 +432,534 @@
       "seed": 62,
       "count": 30,
       "collide": false
+    },
+    {
+      "type": "column",
+      "pos": [
+        6.5,
+        0.0,
+        3.5
+      ],
+      "size": [
+        0.6,
+        5.5,
+        0.6
+      ]
+    },
+    {
+      "type": "column",
+      "pos": [
+        11.5,
+        0.0,
+        3.5
+      ],
+      "size": [
+        0.6,
+        5.5,
+        0.6
+      ]
+    },
+    {
+      "type": "column",
+      "pos": [
+        16.5,
+        0.0,
+        3.5
+      ],
+      "size": [
+        0.6,
+        5.5,
+        0.6
+      ]
+    },
+    {
+      "type": "column",
+      "pos": [
+        6.5,
+        0.0,
+        15.5
+      ],
+      "size": [
+        0.6,
+        5.5,
+        0.6
+      ]
+    },
+    {
+      "type": "column",
+      "pos": [
+        16.5,
+        0.0,
+        15.5
+      ],
+      "size": [
+        0.6,
+        5.5,
+        0.6
+      ]
+    },
+    {
+      "type": "coat_rack",
+      "pos": [
+        21.0,
+        0.0,
+        15.5
+      ],
+      "yaw": 90,
+      "size": [
+        2.4,
+        1.6,
+        0.6
+      ],
+      "seed": 81,
+      "colors": [
+        [
+          0.04,
+          0.04,
+          0.05
+        ],
+        [
+          0.35,
+          0.28,
+          0.2
+        ],
+        [
+          0.12,
+          0.16,
+          0.22
+        ],
+        [
+          0.45,
+          0.06,
+          0.06
+        ],
+        [
+          0.5,
+          0.46,
+          0.4
+        ],
+        [
+          0.18,
+          0.22,
+          0.12
+        ]
+      ]
+    },
+    {
+      "type": "coat_rack",
+      "pos": [
+        2.6,
+        0.0,
+        15.0
+      ],
+      "yaw": 90,
+      "size": [
+        2.4,
+        1.6,
+        0.6
+      ],
+      "seed": 82,
+      "colors": [
+        [
+          0.04,
+          0.04,
+          0.05
+        ],
+        [
+          0.35,
+          0.28,
+          0.2
+        ],
+        [
+          0.12,
+          0.16,
+          0.22
+        ],
+        [
+          0.45,
+          0.06,
+          0.06
+        ],
+        [
+          0.5,
+          0.46,
+          0.4
+        ],
+        [
+          0.18,
+          0.22,
+          0.12
+        ]
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        22.58,
+        0.0,
+        11.85
+      ],
+      "yaw": -95,
+      "scale": 0.87,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        22.58,
+        0.0,
+        11.04
+      ],
+      "yaw": -104,
+      "scale": 0.9,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        14.3,
+        0.0,
+        0.42
+      ],
+      "yaw": 16,
+      "scale": 0.92,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        22.58,
+        0.0,
+        13.91
+      ],
+      "yaw": -63,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.44,
+        0.0,
+        0.42
+      ],
+      "yaw": -18,
+      "scale": 0.97,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        15.84,
+        0.0,
+        0.42
+      ],
+      "yaw": 15,
+      "scale": 0.85,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        1.77,
+        0.0,
+        0.42
+      ],
+      "yaw": -11,
+      "scale": 0.91,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        5.74,
+        0.0,
+        0.42
+      ],
+      "yaw": 13,
+      "scale": 0.93,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        5.02,
+        0.0,
+        0.42
+      ],
+      "yaw": -24,
+      "scale": 0.99,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        22.58,
+        0.0,
+        9.35
+      ],
+      "yaw": -110,
+      "scale": 0.99,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        22.58,
+        0.0,
+        10.1
+      ],
+      "yaw": -92,
+      "scale": 0.85,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        22.58,
+        0.0,
+        7.58
+      ],
+      "yaw": -110,
+      "scale": 0.93,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        22.58,
+        0.0,
+        6.7
+      ],
+      "yaw": -72,
+      "scale": 0.85,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        6.53,
+        0.0,
+        0.42
+      ],
+      "yaw": -25,
+      "scale": 0.92,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        22.58,
+        0.0,
+        15.38
+      ],
+      "yaw": -69,
+      "scale": 0.83,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        22.58,
+        0.0,
+        16.25
+      ],
+      "yaw": -118,
+      "scale": 0.9,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wall_clock",
+      "pos": [
+        13.37,
+        2.15,
+        0.03
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:hanging_picture_frame_02",
+      "pos": [
+        22.97,
+        1.75,
+        18.7
+      ],
+      "yaw": -90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "drop_ceiling",
+      "pos": [
+        11.5,
+        5.488,
+        10.0
+      ],
+      "size": [
+        23.0,
+        0.02,
+        20.0
+      ],
+      "seed": 32,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        10.8,
+        2.43,
+        19.92
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 180,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        20.5,
+        2.28,
+        0.08
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        0.2,
+        5.0,
+        19.8
+      ],
+      "yaw": 135,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        22.8,
+        5.0,
+        19.8
+      ],
+      "yaw": -135,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        15.59,
+        0.0,
+        10.26
+      ],
+      "size": [
+        4.0,
+        0.01,
+        3.0
+      ],
+      "seed": 997,
+      "count": 6,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        11.4,
+        0.0,
+        15.65
+      ],
+      "size": [
+        4.0,
+        0.01,
+        3.0
+      ],
+      "seed": 731,
+      "count": 6,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "wall_sign",
+      "id": "staff_sign",
+      "pos": [
+        22.96,
+        2.75,
+        2.0
+      ],
+      "size": [
+        1.0,
+        0.2,
+        0.03
+      ],
+      "yaw": -90,
+      "text": "PERSONEEL",
+      "color": [
+        0.9,
+        0.95,
+        1.0
+      ],
+      "glow": 1.2,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        22.92,
+        2.4,
+        2.0
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": -90,
+      "collide": false
     }
   ],
   "lights": [
@@ -434,7 +975,7 @@
         0.0,
         9.5
       ],
-      "size": 3.0,
+      "size": 1.65,
       "color": [
         1.0,
         0.92,
@@ -456,7 +997,7 @@
         0.0,
         9.5
       ],
-      "size": 3.0,
+      "size": 1.65,
       "color": [
         1.0,
         0.92,
@@ -535,6 +1076,14 @@
         0.9
       ],
       "yaw": 180
+    },
+    "from_damrak": {
+      "pos": [
+        22.1,
+        0.0,
+        2.0
+      ],
+      "yaw": 90
     }
   },
   "interactables": [
@@ -579,6 +1128,21 @@
       ],
       "radius": 1.2,
       "text": "The testers are still out. The whole floor smells of roses and canal."
+    },
+    {
+      "id": "door_damrak",
+      "kind": "door",
+      "pos": [
+        22.55,
+        1.0,
+        2.0
+      ],
+      "radius": 1.0,
+      "target_room": "damrak_zuid",
+      "target_spawn": "from_warenhuis",
+      "lock": "staff_pass",
+      "locked_text": "A steel door: PERSONEEL. The card reader by it shows red.",
+      "unlock_text": "You hold the pass to the reader. It beeps, green; the lock clacks back."
     }
   ],
   "enemies": [

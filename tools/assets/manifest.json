@@ -399,6 +399,16 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/dirty_carpet"
   },
+  "dirty_tiles": {
+   "kind": "texture",
+   "name": "Dirty Tiles",
+   "authors": [
+    "Jenelle van Heerden",
+    "Matterfield"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/dirty_tiles"
+  },
   "distressed_painted_planks": {
    "kind": "texture",
    "name": "Distressed Painted Planks",

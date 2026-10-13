@@ -1,0 +1,583 @@
+{
+  "_file": "damned_waters/game/data/rooms/souvenirwinkel.json \u2014 RoomSpec for Souvenirs \u00b7 Klompen (the city, district 6: Damrak): a souvenir shop on Damrak: clogs in racks, wheels of cheese, tulip bulbs in packets, Delft blue, T-shirts, the till by the door; the stockroom at the back. Its front wall is the street's shopfront (\"facade\": the street builds it); its door is the street's. Every business name is made up. Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "souvenirwinkel",
+  "display_name": "Souvenirs \u00b7 Klompen",
+  "storey": 15,
+  "origin": [
+    902.7,
+    -356.15
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      9.0,
+      7.949999999999999
+    ]
+  },
+  "height": 3.4,
+  "materials": {
+    "floor": {
+      "ph": "wood_floor_worn",
+      "tint": [
+        0.62,
+        0.52,
+        0.42
+      ],
+      "rough": 0.6
+    },
+    "wall": {
+      "ph": "beige_wall_001",
+      "tint": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rough": 0.6
+    },
+    "ceiling": {
+      "ph": "ceiling_interior",
+      "tint": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rough": 0.8
+    },
+    "skirting": {
+      "color": [
+        0.15,
+        0.2,
+        0.45
+      ],
+      "rough": 0.4
+    },
+    "skirting_height": 0.12
+  },
+  "footsteps": "wood",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.01,
+      0.012,
+      0.016
+    ],
+    "strength": 0.5
+  },
+  "render": {
+    "exposure": 0.738,
+    "bloom": {
+      "threshold": 0.95,
+      "strength": 0.25,
+      "size": 0.5
+    }
+  },
+  "walls": {
+    "east": {
+      "facade": true,
+      "openings": [
+        {
+          "kind": "door",
+          "style": "glass",
+          "center": 5.445,
+          "width": 1.37,
+          "height": 2.25,
+          "hinge": "left"
+        }
+      ]
+    },
+    "west": {
+      "openings": [
+        {
+          "kind": "door",
+          "center": 1.4,
+          "width": 0.9,
+          "height": 2.1,
+          "hinge": "right"
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "clogs",
+      "pos": [
+        4.0,
+        0.0,
+        0.45
+      ],
+      "yaw": 0,
+      "size": [
+        4.0,
+        1.8,
+        0.7
+      ],
+      "seed": 61,
+      "empty": 0.25
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        4.6,
+        0.0,
+        7.6499999999999995
+      ],
+      "yaw": 180,
+      "size": [
+        6.0,
+        2.2,
+        0.45
+      ],
+      "palette": "souvenir",
+      "empty": 0.3,
+      "seed": 62,
+      "fallen": 6
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        3.4,
+        0.0,
+        3.9749999999999996
+      ],
+      "yaw": 90,
+      "size": [
+        3.2,
+        1.5,
+        0.9
+      ],
+      "double": true,
+      "palette": "souvenir",
+      "empty": 0.35,
+      "seed": 63,
+      "shelves": 4
+    },
+    {
+      "type": "cheeses",
+      "pos": [
+        6.6,
+        0.0,
+        1.0
+      ],
+      "size": [
+        0.5,
+        0.9,
+        0.5
+      ],
+      "seed": 64
+    },
+    {
+      "type": "cheeses",
+      "pos": [
+        7.2,
+        0.0,
+        1.1
+      ],
+      "size": [
+        0.45,
+        0.6,
+        0.45
+      ],
+      "seed": 65
+    },
+    {
+      "type": "coat_rack",
+      "pos": [
+        1.0,
+        0.0,
+        5.749999999999999
+      ],
+      "yaw": 90,
+      "size": [
+        2.0,
+        1.7,
+        0.6
+      ],
+      "seed": 66,
+      "colors": [
+        [
+          0.85,
+          0.1,
+          0.1
+        ],
+        [
+          0.95,
+          0.5,
+          0.05
+        ],
+        [
+          0.95,
+          0.95,
+          0.92
+        ],
+        [
+          0.1,
+          0.2,
+          0.6
+        ],
+        [
+          0.1,
+          0.1,
+          0.1
+        ]
+      ]
+    },
+    {
+      "type": "counter",
+      "pos": [
+        7.4,
+        0.0,
+        6.35
+      ],
+      "yaw": -90,
+      "size": [
+        2.0,
+        1.0,
+        0.6
+      ],
+      "till": true
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        0.04,
+        2.6,
+        4.975
+      ],
+      "size": [
+        2.4,
+        0.4,
+        0.03
+      ],
+      "yaw": 90,
+      "text": "I \u2665 AMSTERDAM",
+      "color": [
+        1.0,
+        0.3,
+        0.3
+      ],
+      "glow": 2.0,
+      "collide": false
+    },
+    {
+      "type": "strip_light",
+      "pos": [
+        4.5,
+        3.4,
+        3.9749999999999996
+      ],
+      "size": [
+        5.0,
+        0.1,
+        0.2
+      ],
+      "yaw": 90,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        7.77,
+        0.0,
+        0.42
+      ],
+      "yaw": -15,
+      "scale": 0.87,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        8.06,
+        0.0,
+        7.53
+      ],
+      "yaw": 183,
+      "scale": 0.97,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.42,
+        0.0,
+        3.13
+      ],
+      "yaw": 69,
+      "scale": 0.99,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.42,
+        0.0,
+        4.36
+      ],
+      "yaw": 91,
+      "scale": 0.89,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.42,
+        0.0,
+        7.13
+      ],
+      "yaw": 119,
+      "scale": 0.92,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wall_clock",
+      "pos": [
+        6.91,
+        2.15,
+        0.03
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:hanging_picture_frame_02",
+      "pos": [
+        0.03,
+        1.75,
+        5.49
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "drop_ceiling",
+      "pos": [
+        4.5,
+        3.388,
+        3.975
+      ],
+      "size": [
+        9.0,
+        0.02,
+        7.95
+      ],
+      "seed": 910,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        8.92,
+        2.43,
+        5.445
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": -90,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        0.08,
+        2.28,
+        1.4
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 90,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        0.2,
+        2.9,
+        0.2
+      ],
+      "yaw": 45,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        2.37,
+        0.0,
+        5.04
+      ],
+      "size": [
+        3.6,
+        0.01,
+        3.0
+      ],
+      "seed": 989,
+      "count": 5,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        2.75,
+        0.0,
+        5.8
+      ],
+      "size": [
+        3.6,
+        0.01,
+        3.0
+      ],
+      "seed": 759,
+      "count": 5,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    }
+  ],
+  "lights": [
+    {
+      "kind": "area",
+      "pos": [
+        4.5,
+        3.3,
+        3.9749999999999996
+      ],
+      "look_at": [
+        4.5,
+        0.0,
+        3.9749999999999996
+      ],
+      "size": 0.88,
+      "color": [
+        1.0,
+        0.95,
+        0.85
+      ],
+      "blender_power": 95,
+      "godot_energy": 0.5,
+      "range": 7.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        8.4,
+        2.7,
+        7.449999999999999
+      ],
+      "look_at": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "fov": 66,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          9.0,
+          7.949999999999999
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_street": {
+      "pos": [
+        8.2,
+        0.0,
+        5.445
+      ],
+      "yaw": 90
+    },
+    "from_magazijn": {
+      "pos": [
+        0.8,
+        0.0,
+        1.4
+      ],
+      "yaw": 270
+    }
+  },
+  "interactables": [
+    {
+      "id": "door_street",
+      "kind": "door",
+      "pos": [
+        8.55,
+        1.0,
+        5.445
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "door_magazijn",
+      "kind": "door",
+      "pos": [
+        0.45,
+        1.0,
+        1.4
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "clogs",
+      "kind": "examine",
+      "pos": [
+        4.0,
+        1.0,
+        1.4
+      ],
+      "radius": 1.4,
+      "text": "Clogs, in every size, painted with windmills. A child's pair is missing from the end."
+    },
+    {
+      "id": "dressing_till",
+      "kind": "pickup",
+      "item": "med_small",
+      "count": 1,
+      "pos": [
+        7.2,
+        1.0,
+        6.35
+      ],
+      "radius": 0.9
+    }
+  ],
+  "enemies": []
+}

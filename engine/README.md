@@ -18,8 +18,8 @@ apotheek), Muntplein (`muntplein`, the Munttoren, the way north up Rokin barred 
 floating flower market (`bloemenmarkt`); three of its shops he can walk into and search: the
 apotheek (`apotheek`), the cinema's lobby (`bioscoop`) and a flower stall (`bloemenkraam`). North
 from the Munt runs Rokin (`rokin_zuid`, `rokin_noord`), the main road to Centraal: the basin with
-its tour boats, Queen Wilhelmina on her horse, an aid post with an ambulance and a police van left by
-it, an army checkpoint at the Dam; with a hotel's lobby (`hotel_lobby`), the police post and its
+its tour boats, Queen Wilhelmina on her horse, an aid post with an ambulance and a police van left
+by it, an army checkpoint at the Dam; with a hotel's lobby (`hotel_lobby`), the police post and its
 armoury (`politiepost`) and the flooded metro's ticket hall (`metro_rokin`) to search. Rokin ends at
 the Dam (`dam`): the Royal Palace floodlit gold, the Nieuwe Kerk, the National Monument, and the
 November funfair still lit and stopped (the Ferris wheel, a drop tower, the carousel, the stalls) in
@@ -27,9 +27,15 @@ the middle of the evacuation point the army made of the square (buses with their
 trucks, a field hospital, the luggage of thousands where the queues were). Inside, the Nieuwe Kerk
 was the shelter (`nieuwe_kerk`: camp beds down the nave, the first aid post, the organ), and the
 department store (`warenhuis`) has its security office (`beveiliging`). Parallel to Rokin runs the
-Kalverstraat (`kalverstraat_noord`, `kalverstraat`, `kalversteeg`), shutters down under its garlands,
-with a gun shop (`wapenhandel`), a chemist's (`drogist`) and a looted jeweller's (`juwelier`) to
-search, from Muntplein up to the Dam. The attic bathroom (`badkamer`) is built and rendered, waiting
+Kalverstraat (`kalverstraat_noord`, `kalverstraat`, `kalversteeg`), shutters down under its
+garlands, with a gun shop (`wapenhandel`), a chemist's (`drogist`) and a looted jeweller's
+(`juwelier`) to search, from Muntplein up to the Dam. The army closed Damrak at the Dam; the store's
+staff door, opened with the guards' pass from the security office, lets out on it behind their
+barriers. Damrak (`damrak_zuid`, `damrak_noord`) runs on to the station: the Beurs van Berlage, its
+hall the army's mortuary (`beurs_zaal`), the basin with its tour boats (one to board,
+`rondvaartboot`) and the old houses leaning over the water, a currency exchange (`wisselkantoor`), a
+souvenir shop and its stockroom (`souvenirwinkel`, `magazijn`) and a hotel's bar (`hotel_bar`) to
+search; Centraal floodlit at its end. The attic bathroom (`badkamer`) is built and rendered, waiting
 for its stairs. And:
 
 - **Backgrounds and depth.** Pre-rendered Cycles backgrounds, each with a painted depth map.
@@ -43,7 +49,14 @@ for its stairs. And:
   swept tubes regenerated every frame through the joints, so elbows, knees and the waist bend
   without seams.
 - **A horror lighting model.** Procedural surface detail, bump detail, wet-versus-dry
-  specular, room lights, a cold rim, and fog. Grain and vignette are added in post.
+  specular, room lights, a cold rim, and fog. In post, one film grade over painting and people
+  alike (a little less colour, cold shadows and warm lights, a gentle S-curve, a hint of lens
+  fringe at the corners), then grain and vignette.
+- **Rain over the streets** (`dw/rain.hpp`): out under the sky (a room with `"outdoor"`, unless
+  it says `"rain": false`), 1,400 drops fall through a box 18 m across that follows him, slanted by
+  the wind, each drawn as a short streak tested against the painting's depth, so it falls behind
+  the houses and in front of him. A fixed pool: nothing is allocated per frame. ELI5: a stage hand
+  with a watering can who always stands over the actor, never over the whole theatre.
 
 **Not ported yet:** saves (the typewriter only talks so far), the cellar's boss and the crawling
 Kelderkind.
@@ -388,9 +401,8 @@ flat: the camera crew moves room to room, nobody has to change the scenery.
   instant; rooms out of reach are let go. A stage crew setting up the next backdrops in the wings.
 - **The dead lie still** (`"lying"` on one of the Drowned in a room file): laid out among the
   bodies, it stays down until he comes within 4 m and it can see him, or a shot goes off, or it's
-  hit; then it gets up the way a knocked-down one does. A mannequin in a shop window that turns its
-  head as you pass. **Keys** (the cellar key, the store's staff pass) are used at their doors and
-  never thrown away (`is_key`).
+  hit; then it gets up the way a knocked-down one does. **Keys** (the cellar key, the store's staff
+  pass) are used at their doors and never thrown away (`is_key`).
 - **What the house remembers** (`status::WorldState`, keyed `"room/id"`): what he took, read and
   unlocked, which rooms he's been in, which Drowned are dead (they stay dead), and what has happened
   (flags). Taking the cellar key sets `heard_thud`: a bang at the front door, and the two Drowned
@@ -504,6 +516,16 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   church inside (`tools/blender/church.py`: clustered piers, pointed arcades, the wooden vault, the
   organ, a pulpit, gothic windows, brass chandeliers); buses, mobile light towers and camp beds for
   the evacuation (`aftermath.py`).
+- **Lived in, then left** (`builders.weather`; the dressing itself is in the room files): every
+  built surface renders with its edges rounded (a bevel at render time) and dirt worked into its
+  creases (ambient occlusion), so nothing keeps a toy's clean sharp edges. Shops and offices get a
+  suspended ceiling of 600 mm tiles (`drop_ceiling`: some water-stained, a few fallen open onto the
+  dark above), a lit NOODUITGANG over the doors, an extinguisher by the way in, a camera in a
+  corner, paper on the floor (and in offices and lobbies a chair knocked over); stockrooms and halls
+  get galvanised ducts and a sprinkler main (`duct`). Streets get bin bags, wheelie bins, boxes,
+  planters and bikes along their house fronts, and a third of their shops have the shutter down (a
+  photo-scanned one). A scan lying on its side is `"tip"`. ELI5: a film's art department "breaking
+  down" a brand-new set: scuffing, staining and cluttering it until it looks used.
 - **The great hall** (`tools/blender/halls.py`): the Beurs's brick arcades with the gallery over
   them, steel trusses and the glass roof; and the mortuary the army made of it: body bags in rows
   (some on trestles, one unzipped and empty), an ammunition crate, work lights on tripods, hospital
@@ -629,7 +651,7 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 1. The background is drawn, writing `gl_FragDepth` from its painted depth.
 2. Characters are drawn depth-tested against the painting.
 3. Blob shadows are drawn.
-4. The post pass (grain and vignette) goes to the window.
+4. The post pass (the film grade, grain and vignette) goes to the window.
 
 **Pose convention (character axes):**
 
@@ -655,9 +677,10 @@ status screen (items, files, map, pickups), the death screen. Still to come, in 
    waits for its stairs), and out of it the Herengracht, Thorbeckeplein and Rembrandtplein, the
    Munt (Reguliersbreestraat, Muntplein, the Bloemenmarkt), Rokin, the main road north (its water
    and tour boats, the Wilhelmina statue, the flooded metro), the Dam (the Palace, the Nieuwe Kerk,
-   the National Monument, the funfair, the evacuation point) and the Kalverstraat beside it, two or
-   three shops to search in each. Next, the Damrak (the Beurs, the leaning houses on the water);
-   then the station and the metro north under the IJ to Station Noord. All pre-rendered backgrounds
+   the National Monument, the funfair, the evacuation point) and the Kalverstraat beside it, and
+   Damrak (the Beurs's hall made a mortuary, the basin and its boats, the leaning houses), two to
+   five places to search in each. Next, the station and the metro north under the IJ to Station
+   Noord. All pre-rendered backgrounds
    from RoomSpecs (`docs/handoff/areas_session_prompt.md` is the brief).
 2. **Polish pass over the shop interiors** (once every area is built): each one modelled to match
    one or two reference photos (the camera matched to the photo, the room and its fixtures built
