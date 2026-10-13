@@ -318,10 +318,12 @@ HOTEL = front("east", 26.05, 36.0, 0.0, [4.6, 3.6, 3.4, 3.2, 3.0], 4, "cornice",
 o = {"window_rooms": ROOMS, "lamp_power": 400.0, "lamp_energy": 1.0, "tide": 0.6,
      "ground": [{"name": "pavement_w", "min": [0.0, 0.0], "max": [4.0, L], "y": 0.06, "material": PAVERS},
                 {"name": "road", "min": [4.0, 0.0], "max": [14.0, L], "y": 0.0, "material": BRICKS},
-                {"name": "quay", "min": [14.0, 0.0], "max": [W, L], "y": 0.06, "material": QUAY}],   # (the Hendrikkade, the square: area8.py)
+                {"name": "quay", "min": [14.0, 0.0], "max": [W, L], "y": 0.06, "material": QUAY},
+                {"name": "hendrikkade", "min": [-30.0, -24.0], "max": [70.0, 0.0], "y": 0.0, "material": BRICKS},
+                {"name": "stationsplein", "min": [-40.0, -70.0], "max": [80.0, -24.0], "y": 0.06, "material": PAVERS}],
      "canals": [{"axis": "z", "x": W, "side": 1, "width": 26.0, "water": WATER, "along": [-24.0, L + 0.3], "ends": "b", "far_quay": 0.4,
                  "far_furniture": False, "lit": 0.5, "shops": 0.15, "far_span": [-24.0, L + 0.3], "lean": [1.2, 3.2], "tilt": 1.4, "row_ends": "both"}],
-     "tracks": [{"from": [8.5, L], "to": [8.5, 0.0], "y": 0.0}, {"from": [11.5, L], "to": [11.5, 0.0], "y": 0.0}],
+     "tracks": [{"from": [8.5, L], "to": [8.5, -40.0], "y": 0.0}, {"from": [11.5, L], "to": [11.5, -40.0], "y": 0.0}],
      "lamps": [[1.2, float(z)] for z in range(6, int(L), 14)] + [[15.0, float(z) + 7] for z in range(6, int(L) - 7, 14)]}
 o["facades"] = [
     front("east", 0.0, 10.0, 0.0, [5.0, 3.8, 3.6, 3.4, 3.2], 4, "cornice", 1801, shop("HOTEL CENTRAAL", "hotel", "HOTEL", awning=False), lean=0.0, lit=0.6, flags=2),
@@ -344,10 +346,12 @@ for k, z in enumerate((22.0, 70.0)):   # the other pontoons out into the basin, 
 props += [
     {"type": "railing", "pos": [W - 0.25, 0.0, 19.0], "yaw": 90, "size": [38.0, 1.0, 0.1], "collide": False},     # (a gap at the pier he boards from)
     {"type": "railing", "pos": [W - 0.25, 0.0, 70.0], "yaw": 90, "size": [40.0, 1.0, 0.1], "collide": False},
-    {"type": "crowd_barrier", "pos": [4.4, 0.0, 1.0], "yaw": 0, "size": [8.8, 1.1, 0.7], "seed": 81},    # (a gap between them: the way on)
-    {"type": "crowd_barrier", "pos": [15.6, 0.0, 1.0], "yaw": 0, "size": [8.8, 1.1, 0.7], "seed": 88},
+    {"type": "station", "pos": [-45.0, 0.0, -66.0], "yaw": 0, "size": [110.0, 18.0, 40.0], "collide": False},   # (until the station is built)
+    {"type": "crowd_barrier", "pos": [10.0, 0.0, 1.0], "yaw": 0, "size": [20.0, 1.1, 0.7], "seed": 81},
     {"type": "model", "model": "ph:concrete_road_barrier", "pos": [5.0, 0.0, 2.6], "yaw": 0, "fit": [3.0, 1.0, 0.7]},
     {"type": "model", "model": "ph:concrete_road_barrier", "pos": [15.0, 0.0, 2.6], "yaw": 0, "fit": [3.0, 1.0, 0.7]},
+    {"type": "bus", "pos": [-8.0, 0.0, -12.0], "yaw": 0, "size": [12.0, 3.2, 2.6], "seed": 82},
+    {"type": "bus", "pos": [30.0, 0.0, -14.0], "yaw": 180, "size": [12.0, 3.2, 2.6], "seed": 83},
     {"type": "evac_board", "pos": [3.0, 0.06, 8.0], "yaw": 0, "size": [1.8, 1.9, 0.6], "text": "TREINEN", "to": "CENTRAAL", "arrow": "up", "collide": False},
     {"type": "evac_board", "pos": [16.8, 0.06, BOAT_Z - 3.0], "yaw": -90, "size": [1.8, 1.9, 0.6], "text": "RONDVAART", "to": "GESLOTEN", "arrow": "right", "collide": False},
     {"type": "luggage", "pos": [10.0, 0.0, 12.0], "size": [12.0, 0.0, 10.0], "seed": 84, "cases": 6, "bags": 8, "pushchair": True, "collide": False},
@@ -361,7 +365,7 @@ props += [
     {"type": "bike", "pos": [1.6, 0.06, 51.2], "yaw": 160, "roll": -82, "size": [1.8, 1.1, 0.5], "collide": False, "seed": 189}]
 N["props"] = props
 N["walls"] = {"south": {"openings": [{"kind": "passage", "center": W / 2, "width": W, "height": 12.0}]},
-              "north": {"openings": [{"kind": "passage", "center": W / 2, "width": W, "height": 12.0}]},   # (the barriers' gap: stationsplein)
+              "north": {"openings": [{"kind": "passage", "center": W / 2, "width": W, "height": 12.0}]},   # (barred, until the station)
               "east": {"openings": [{"kind": "passage", "center": BOAT_Z, "width": 2.0, "height": 3.0}]},
               "west": {"openings": [glass_door(hc_, hw_, hh_)]}}
 N["lights"] = [SUN]
@@ -371,14 +375,13 @@ N["shots"] = shots([
     ("c", [4.0, 4.6, 41.0], [42.0, 7.0, 52.0], 58, 36.0, 54.0),      # east across the water: the leaning houses, the boats
     ("d", [16.5, 4.2, 38.5], [5.0, 1.4, 16.0], 60, 18.0, 36.0),      # north-west
     ("e", [5.0, 4.8, 21.0], [14.0, 7.0, -40.0], 60, 0.0, 18.0)])     # north: the barriers, the station floodlit beyond
-N["spawns"] = {"from_hotel": {"pos": [1.0, 0.06, hc_], "yaw": 270}, "from_stationsplein": {"pos": [W / 2, 0.0, 2.2], "yaw": 180}}
+N["spawns"] = {"from_hotel": {"pos": [1.0, 0.06, hc_], "yaw": 270}}
 N["interactables"] = [
     {"id": "door_hotel", "kind": "door", "pos": [0.45, 1.0, hc_], "radius": 1.0},
-    {"id": "to_stationsplein", "kind": "door", "pos": [W / 2, 1.0, 0.2], "radius": 1.6, "target_room": "stationsplein", "target_spawn": "from_damrak"},
     {"id": "houses", "kind": "examine", "pos": [18.8, 1.0, 30.0], "radius": 1.8,
      "text": "The old houses across the water, leaning on each other like drunks at closing time. Lights on in half the windows."},
-    {"id": "station", "kind": "examine", "pos": [4.0, 1.0, 3.2], "radius": 2.0,
-     "text": "Centraal, across the Prins Hendrikkade, floodlit. Someone has dragged two of the barriers apart."},
+    {"id": "station", "kind": "examine", "pos": [10.0, 1.0, 3.6], "radius": 2.6,
+     "text": "Centraal, across the Prins Hendrikkade. Floodlit. Buses abandoned in front of it. The barriers here are welded."},
     {"id": "shells_police", "kind": "pickup", "item": "shotgun_shells", "count": 4, "pos": [5.2, 0.0, 31.6], "radius": 0.9}]
 N["enemies"] = [{"id": "op_de_kade", "kind": "verdronkene", "pos": [16.0, 0.06, 30.0], "yaw": 200},
                 {"id": "bij_de_bagage", "kind": "verdronkene", "pos": [8.0, 0.0, 14.0], "yaw": 20}]

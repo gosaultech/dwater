@@ -7,7 +7,9 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ORDER = ["area3", "area4", "area5", "area6", "area7", "area8"]
+ORDER = ["area3", "area4", "area5", "area6", "area7"]
+PENDING = ["area8"]   # rooms with no plates yet: run with their renders (build_city.py area8), which also opens Damrak to them
+# (build_city.py also re-dresses thorbeckeplein, rembrandtplein, reguliersbreestraat, muntplein and bloemenmarkt: render those after)
 
 
 KEPT = ["thorbeckeplein", "rembrandtplein", "herengracht"]   # rooms made before the generators: dressed in place

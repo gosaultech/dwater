@@ -161,6 +161,52 @@
           "puddles": 0.27,
           "puddle_scale": 0.9
         }
+      },
+      {
+        "name": "hendrikkade",
+        "min": [
+          -30.0,
+          -24.0
+        ],
+        "max": [
+          70.0,
+          0.0
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "herringbone_brick",
+          "tint": [
+            0.8,
+            0.72,
+            0.66
+          ],
+          "wet": 0.8,
+          "puddles": 0.27,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "stationsplein",
+        "min": [
+          -40.0,
+          -70.0
+        ],
+        "max": [
+          80.0,
+          -24.0
+        ],
+        "y": 0.06,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        }
       }
     ],
     "canals": [
@@ -199,7 +245,7 @@
         ],
         "to": [
           8.5,
-          0.0
+          -40.0
         ],
         "y": 0.0
       },
@@ -210,7 +256,7 @@
         ],
         "to": [
           11.5,
-          0.0
+          -40.0
         ],
         "y": 0.0
       }
@@ -829,34 +875,34 @@
       "collide": false
     },
     {
-      "type": "crowd_barrier",
+      "type": "station",
       "pos": [
-        4.4,
+        -45.0,
         0.0,
-        1.0
+        -66.0
       ],
       "yaw": 0,
       "size": [
-        8.8,
-        1.1,
-        0.7
+        110.0,
+        18.0,
+        40.0
       ],
-      "seed": 81
+      "collide": false
     },
     {
       "type": "crowd_barrier",
       "pos": [
-        15.6,
+        10.0,
         0.0,
         1.0
       ],
       "yaw": 0,
       "size": [
-        8.8,
+        20.0,
         1.1,
         0.7
       ],
-      "seed": 88
+      "seed": 81
     },
     {
       "type": "model",
@@ -887,6 +933,36 @@
         1.0,
         0.7
       ]
+    },
+    {
+      "type": "bus",
+      "pos": [
+        -8.0,
+        0.0,
+        -12.0
+      ],
+      "yaw": 0,
+      "size": [
+        12.0,
+        3.2,
+        2.6
+      ],
+      "seed": 82
+    },
+    {
+      "type": "bus",
+      "pos": [
+        30.0,
+        0.0,
+        -14.0
+      ],
+      "yaw": 180,
+      "size": [
+        12.0,
+        3.2,
+        2.6
+      ],
+      "seed": 83
     },
     {
       "type": "evac_board",
@@ -1524,14 +1600,6 @@
         31.804166666666667
       ],
       "yaw": 270
-    },
-    "from_stationsplein": {
-      "pos": [
-        10.0,
-        0.0,
-        2.2
-      ],
-      "yaw": 180
     }
   },
   "interactables": [
@@ -1544,18 +1612,6 @@
         31.804166666666667
       ],
       "radius": 1.0
-    },
-    {
-      "id": "to_stationsplein",
-      "kind": "door",
-      "pos": [
-        10.0,
-        1.0,
-        0.2
-      ],
-      "radius": 1.6,
-      "target_room": "stationsplein",
-      "target_spawn": "from_damrak"
     },
     {
       "id": "houses",
@@ -1572,12 +1628,12 @@
       "id": "station",
       "kind": "examine",
       "pos": [
-        4.0,
+        10.0,
         1.0,
-        3.2
+        3.6
       ],
-      "radius": 2.0,
-      "text": "Centraal, across the Prins Hendrikkade, floodlit. Someone has dragged two of the barriers apart."
+      "radius": 2.6,
+      "text": "Centraal, across the Prins Hendrikkade. Floodlit. Buses abandoned in front of it. The barriers here are welded."
     },
     {
       "id": "shells_police",

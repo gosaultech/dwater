@@ -42,7 +42,7 @@
     }
   },
   "footsteps": "marble",
-  "ambience": "amb_cellar",
+  "ambience": "amb_street_rain",
   "move_scale": 1.0,
   "world": {
     "color": [
@@ -104,6 +104,68 @@
           "puddles": 0.27,
           "puddle_scale": 0.9
         }
+      },
+      {
+        "name": "rokin_road",
+        "min": [
+          18.0,
+          -62.0
+        ],
+        "max": [
+          44.0,
+          -0.0
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "herringbone_brick",
+          "tint": [
+            0.8,
+            0.72,
+            0.66
+          ],
+          "wet": 0.8,
+          "puddles": 0.27,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "rokin_pavement",
+        "min": [
+          44.0,
+          -62.0
+        ],
+        "max": [
+          50.0,
+          0.0
+        ],
+        "y": 0.06,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        }
+      }
+    ],
+    "canals": [
+      {
+        "axis": "z",
+        "x": 18.0,
+        "side": -1,
+        "width": 16.0,
+        "along": [
+          -70.0,
+          0.0
+        ],
+        "ends": true,
+        "far_quay": 5.0,
+        "lit": 0.3,
+        "shops": 0.35
       }
     ],
     "tracks": [
@@ -136,7 +198,7 @@
         ],
         "to": [
           32.0,
-          0.0
+          -60.0
         ],
         "y": 0.0
       }
@@ -169,9 +231,29 @@
       [
         43.0,
         1.0
+      ],
+      [
+        20.0,
+        -20.0
+      ],
+      [
+        20.0,
+        -40.0
+      ],
+      [
+        43.0,
+        -20.0
       ]
     ],
     "rows": [
+      {
+        "from": -62.0,
+        "to": -0.05,
+        "line": 50.0,
+        "facing": "west",
+        "lit": 0.35,
+        "shops": 0.5
+      },
       {
         "from": 0.0,
         "to": 44.0,
@@ -287,6 +369,38 @@
         7.0
       ],
       "yaw": 0
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        31.0,
+        0.0,
+        0.6
+      ],
+      "size": [
+        26.0,
+        1.1,
+        0.7
+      ],
+      "yaw": 0,
+      "seed": 3
+    },
+    {
+      "type": "tram",
+      "pos": [
+        32.0,
+        0.0,
+        -21.0
+      ],
+      "yaw": 90,
+      "size": [
+        30.0,
+        3.4,
+        2.4
+      ],
+      "board": "NIET INSTAPPEN",
+      "power": 260.0,
+      "collide": false
     },
     {
       "type": "bench",
@@ -577,51 +691,69 @@
       ]
     },
     {
-      "type": "crowd_barrier",
+      "type": "model",
+      "model": "ph:cardboard_box_01",
       "pos": [
-        23.75,
+        43.58,
         0.0,
-        0.6
+        7.47
       ],
-      "size": [
-        11.5,
-        1.1,
-        0.7
-      ],
-      "yaw": 0,
-      "seed": 3
+      "yaw": 59,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
     },
     {
-      "type": "crowd_barrier",
+      "type": "model",
+      "model": "ph:cardboard_box_01",
       "pos": [
-        38.25,
+        43.72,
         0.0,
-        0.6
+        7.49
       ],
-      "size": [
-        11.5,
-        1.1,
-        0.7
-      ],
-      "yaw": 0,
-      "seed": 4
+      "yaw": 326,
+      "scale": 0.96,
+      "collide": false,
+      "junk": true
     },
     {
-      "type": "crowd_barrier",
+      "type": "model",
+      "model": "ph:wooden_crate_01",
       "pos": [
-        31.0,
+        43.7,
         0.0,
-        2.2
+        7.27
       ],
-      "size": [
-        2.6,
-        1.1,
-        0.7
+      "yaw": 101,
+      "scale": 0.96,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        43.66,
+        0.0,
+        32.09
       ],
-      "yaw": 35,
-      "seed": 5,
-      "roll": 80,
-      "collide": false
+      "yaw": 84,
+      "scale": 0.88,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        43.67,
+        0.0,
+        32.33
+      ],
+      "yaw": 29,
+      "scale": 0.99,
+      "collide": false,
+      "junk": true
     }
   ],
   "walls": {
@@ -641,22 +773,6 @@
           "kind": "passage",
           "center": 30.0,
           "width": 12.0,
-          "height": 10.0
-        },
-        {
-          "kind": "passage",
-          "center": 2.0,
-          "width": 3.4,
-          "height": 8.0
-        }
-      ]
-    },
-    "north": {
-      "openings": [
-        {
-          "kind": "passage",
-          "center": 31.0,
-          "width": 26.0,
           "height": 10.0
         }
       ]
@@ -814,22 +930,6 @@
         30.0
       ],
       "yaw": -90
-    },
-    "from_rokin": {
-      "pos": [
-        31.0,
-        0.0,
-        1.8
-      ],
-      "yaw": 180
-    },
-    "from_kalverstraat": {
-      "pos": [
-        1.8,
-        0.0,
-        2.0
-      ],
-      "yaw": -90
     }
   },
   "interactables": [
@@ -843,6 +943,17 @@
       ],
       "radius": 1.6,
       "text": "The Munttoren. Its clock stopped at 11:47. Up in the lantern the carillon still plays a few bars every quarter hour, to nobody."
+    },
+    {
+      "id": "rokin",
+      "kind": "examine",
+      "pos": [
+        31.0,
+        1.0,
+        1.5
+      ],
+      "radius": 2.6,
+      "text": "Rokin. Crowd barriers across it, police tape snapping in the wind. Beyond them, the long road to Centraal."
     },
     {
       "id": "police_belt",
@@ -866,41 +977,6 @@
       ],
       "radius": 1.4,
       "text": "The Singel. Something under the water is moving the boats against the quay, slowly, like breathing."
-    },
-    {
-      "id": "to_rokin",
-      "kind": "door",
-      "pos": [
-        31.0,
-        1.0,
-        0.2
-      ],
-      "radius": 1.6,
-      "target_room": "rokin_zuid",
-      "target_spawn": "from_muntplein"
-    },
-    {
-      "id": "rokin",
-      "kind": "examine",
-      "pos": [
-        27.0,
-        1.0,
-        1.6
-      ],
-      "radius": 1.6,
-      "text": "Rokin. Crowd barriers across it, one pushed flat. Beyond them, the long road to Centraal."
-    },
-    {
-      "id": "to_kalverstraat",
-      "kind": "door",
-      "pos": [
-        0.2,
-        1.0,
-        2.0
-      ],
-      "radius": 1.6,
-      "target_room": "kalversteeg",
-      "target_spawn": "from_muntplein"
     }
   ],
   "enemies": [

@@ -5,12 +5,13 @@
 # train north waiting with its doors open; station_noord (storey 18), across the IJ, where the line ends.
 # Dressed as the evacuation left it (docs/city_aftermath.md).
 from pathlib import Path
+import json
 import math
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import common as C  # noqa: E402
-from common import street_room, shop_room, write, PAVERS, BRICKS, SUN, ROOMS, WET  # noqa: E402
+from common import street_room, shop_room, write, PAVERS, BRICKS, SUN, ROOMS, WET, R  # noqa: E402
 
 T = 0.3
 SO = [887.0, -519.4]                          # stationsplein: 70 x 63.6, Damrak's mouth in its south side (x 25..45)
@@ -347,4 +348,21 @@ Nd["interactables"] = [
              "horn sounds, once, and stops."}]
 Nd["enemies"] = []
 write(Nd)
+# ── Damrak's top end opened on to the square: the station, its buses and the Hendrikkade are the square's now ──
+Dn = json.load(open(R + "damrak_noord.json"))
+o = Dn["outdoor"]
+o["ground"] = [g for g in o["ground"] if g.get("name") not in ("hendrikkade", "stationsplein")]
+for t in o.get("tracks", []):
+    t["to"] = [t["to"][0], max(t["to"][1], 0.0)]
+Dn["props"] = [p for p in Dn["props"] if p["type"] not in ("station", "bus") and not (p["type"] == "crowd_barrier" and p["pos"][2] <= 1.0)] + [
+    {"type": "crowd_barrier", "pos": [4.4, 0.0, 1.0], "yaw": 0, "size": [8.8, 1.1, 0.7], "seed": 81},    # (a gap between them: the way on)
+    {"type": "crowd_barrier", "pos": [15.6, 0.0, 1.0], "yaw": 0, "size": [8.8, 1.1, 0.7], "seed": 88}]
+Dn["spawns"]["from_stationsplein"] = {"pos": [10.0, 0.0, 2.2], "yaw": 180}
+Dn["interactables"] = [i for i in Dn["interactables"] if i["id"] not in ("station", "to_stationsplein")] + [
+    {"id": "to_stationsplein", "kind": "door", "pos": [10.0, 1.0, 0.2], "radius": 1.6, "target_room": "stationsplein", "target_spawn": "from_damrak"},
+    {"id": "station", "kind": "examine", "pos": [4.0, 1.0, 3.2], "radius": 2.0,
+     "text": "Centraal, across the Prins Hendrikkade, floodlit. Someone has dragged two of the barriers apart."}]
+with open(R + "damrak_noord.json", "w") as fh:
+    json.dump(Dn, fh, indent=2, ensure_ascii=True)
+    fh.write("\n")
 print("centraal: plein", SO, "hal", HO, "metro", MO, "noord", NO_)
