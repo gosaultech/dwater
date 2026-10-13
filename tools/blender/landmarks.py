@@ -681,9 +681,18 @@ def palace(root, p, w, h, d):
     for u0, u1, v0, v1 in layout.cut_rects(w, h, holes):   # the front, cut round its windows
         zf = out if mid0 * bay <= (u0 + u1) / 2 < mid1 * bay else 0.0
         lbox(root, "palace_front", (u0, v0, zf - 1.0), (u1, v1, zf), stone)
+    bars = Acc()   # the sashes' glazing bars: small panes, as the 17th century glazed
     for u0, u1, v0, v1 in holes:
         zf = out if mid0 * bay <= (u0 + u1) / 2 < mid1 * bay else 0.0
         lbox(root, "palace_window", (u0, v0, zf - 0.85), (u1, v1, zf - 0.8), lit if rng.random() < p.get("lit", 0.18) else dark)
+        um = (u0 + u1) / 2
+        bars.box((um - 0.03, v0, zf - 0.8), (um + 0.03, v1, zf - 0.76))
+        for k in range(1, int((v1 - v0) / 0.5)):
+            v = v0 + (v1 - v0) * k / int((v1 - v0) / 0.5)
+            bars.box((u0, v - 0.025, zf - 0.8), (u1, v + 0.025, zf - 0.76))
+        for uu in (u0, u1):
+            bars.box((uu - 0.05, v0, zf - 0.8), (uu + 0.05, v1, zf - 0.74))
+    bars.build("palace_glazing_bars", M({"color": [0.06, 0.055, 0.05], "rough": 0.5}), root, smooth=False)
     for k in (mid0, mid1):   # the returns where the middle stands forward
         lbox(root, "palace_return", (k * bay - 0.5, 0.0, 0.0), (k * bay + 0.5, h, out), stone)
     order = Acc()   # rustication, the floor bands, the pilasters and their capitals
