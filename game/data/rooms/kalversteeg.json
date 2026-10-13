@@ -42,7 +42,7 @@
     }
   },
   "footsteps": "marble",
-  "ambience": "amb_cellar",
+  "ambience": "amb_street_rain",
   "move_scale": 1.0,
   "world": {
     "color": [
@@ -67,7 +67,17 @@
     "bloom": {
       "threshold": 0.9,
       "strength": 0.4,
-      "size": 0.55
+      "size": 0.55,
+      "haze": {
+        "color": [
+          0.045,
+          0.052,
+          0.068
+        ],
+        "start": 12.0,
+        "depth": 85.0,
+        "strength": 0.5
+      }
     }
   },
   "outdoor": {
