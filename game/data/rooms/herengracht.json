@@ -459,7 +459,7 @@
     }
   },
   "footsteps": "marble",
-  "ambience": "amb_cellar",
+  "ambience": "amb_street_rain",
   "move_scale": 1.0,
   "world": {
     "color": [
@@ -1363,6 +1363,130 @@
       ],
       "yaw": 90,
       "scale": 0.8,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        0.47,
+        0.0,
+        0.37
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 0,
+      "seed": 114,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        10.74,
+        0.0,
+        0.26
+      ],
+      "yaw": 297,
+      "scale": 0.87,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        11.04,
+        0.0,
+        0.38
+      ],
+      "yaw": 223,
+      "scale": 0.87,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_crate_01",
+      "pos": [
+        10.93,
+        0.0,
+        0.32
+      ],
+      "yaw": 144,
+      "scale": 0.96,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        33.02,
+        0.0,
+        0.37
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 0,
+      "seed": 734,
+      "junk": true
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        13.5,
+        0.04,
+        4.6
+      ],
+      "size": [
+        3.0,
+        0.0,
+        2.2
+      ],
+      "seed": 101,
+      "cases": 3,
+      "bags": 2,
+      "umbrella": true,
+      "after": true,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        16.0,
+        0.0,
+        4.5
+      ],
+      "size": [
+        16.0,
+        0.0,
+        4.0
+      ],
+      "seed": 102,
+      "count": 24,
+      "after": true,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        31.0,
+        0.0,
+        4.5
+      ],
+      "size": [
+        8.0,
+        0.0,
+        3.0
+      ],
+      "seed": 103,
+      "count": 10,
+      "after": true,
       "collide": false
     }
   ],
