@@ -52,11 +52,12 @@ for its stairs. And:
   specular, room lights, a cold rim, and fog. In post, one film grade over painting and people
   alike (a little less colour, cold shadows and warm lights, a gentle S-curve, a hint of lens
   fringe at the corners), then grain and vignette.
-- **Rain over the streets** (`dw/rain.hpp`): out under the sky (a room with `"outdoor"`, unless
-  it says `"rain": false`), 1,400 drops fall through a box 18 m across that follows him, slanted by
-  the wind, each drawn as a short streak tested against the painting's depth, so it falls behind
-  the houses and in front of him. A fixed pool: nothing is allocated per frame. ELI5: a stage hand
-  with a watering can who always stands over the actor, never over the whole theatre.
+- **Rain over the streets** (`dw/rain.hpp`): out under the sky (a room with `"outdoor"`, unless it
+  says `"rain": false`), 1,400 drops fall through a box 18 m across that follows him, slanted by the
+  wind, each drawn as a short streak tested against the painting's depth, so it falls behind the
+  houses and in front of him. A fixed pool: nothing is allocated per frame. It is heard too: the
+  streets' ambience is rain (`amb_street_rain`, synthesized by `tools/audio/synth_sfx.py`). ELI5: a
+  stage hand with a watering can who always stands over the actor, never over the whole theatre.
 
 **Not ported yet:** saves (the typewriter only talks so far), the cellar's boss and the crawling
 Kelderkind.
