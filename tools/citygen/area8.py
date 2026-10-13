@@ -279,7 +279,8 @@ Mp["props"] = props
 Mp["lights"] = [
     {"kind": "area", "pos": [8.0, 4.4, 12.0], "look_at": [8.0, 0.0, 12.0], "size": 2.5, "color": [0.85, 0.92, 1.0], "blender_power": 160, "godot_energy": 0.5, "range": 9.0},
     {"kind": "area", "pos": [8.0, 4.4, 30.0], "look_at": [8.0, 0.0, 30.0], "size": 2.5, "color": [0.85, 0.92, 1.0], "blender_power": 160, "godot_energy": 0.5, "range": 9.0, "flicker": True},
-    {"kind": "area", "pos": [8.0, 4.4, 48.0], "look_at": [8.0, 0.0, 48.0], "size": 2.5, "color": [0.85, 0.92, 1.0], "blender_power": 160, "godot_energy": 0.5, "range": 9.0}]
+    {"kind": "area", "pos": [8.0, 4.4, 48.0], "look_at": [8.0, 0.0, 48.0], "size": 2.5, "color": [0.85, 0.92, 1.0], "blender_power": 160, "godot_energy": 0.5, "range": 9.0},
+    {"kind": "area", "pos": [8.0, 3.9, 60.5], "look_at": [8.0, 0.0, 60.5], "size": 2.0, "color": [0.85, 0.92, 1.0], "blender_power": 150, "godot_energy": 0.5, "range": 8.0}]
 Mp["shots"] = [
     {"id": "a", "pos": [4.2, 3.4, 44.5], "look_at": [10.5, 0.8, 63.5], "fov": 62, "zone": {"min": [0.0, 46.0], "max": [16.0, 64.0]}, "priority": 1},
     {"id": "b", "pos": [11.8, 3.6, 62.0], "look_at": [4.0, 1.2, 30.0], "fov": 58, "zone": {"min": [0.0, 24.0], "max": [16.0, 46.0]}, "priority": 1},
