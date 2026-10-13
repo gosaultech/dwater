@@ -604,6 +604,7 @@ std::string Game::stage(int i) {
     inv_.add(I_SHOTGUN, 1);   // (the setups were made with both guns in the case)
     inv_.add(I_SHELLS, 4);
     paused_ = false;
+    end_t_ = -1;
     banner_t_ = 0;   // no room title over the stills
     staged_aim_ = false;
     staged_in_ = {};
@@ -1260,6 +1261,51 @@ std::string Game::stage(int i) {
                 at("damrak_noord", 10.0f, 9.0f, 0.0f);   // the barriers at the top, the station beyond
                 run(0.6f);
                 name = "the_station_ahead";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
+            break;
+        }
+        case 88: case 89: case 90: case 91: case 92: case 93: case 94: case 95: {
+            // Centraal: through the barriers' gap to the square, the army's checkpoint, in at the station's
+            // middle arch, the hall, down the escalators to line 52, the last train, aboard it, and the end.
+            if (i == 88) {
+                at("damrak_noord", 10.0f, 4.0f, 0.0f);   // before the gap, facing north
+                staged_in_ = stick_toward(0, -1, 0.6f);
+                run(5.5f);
+                name = "onto_the_stationsplein";
+            } else if (i == 89) {
+                at("stationsplein", 38.0f, 12.0f, 0.0f);
+                run(0.6f);
+                name = "the_checkpoint";
+            } else if (i == 90) {
+                at("stationsplein", 35.0f, 4.0f, 0.0f);   // at the arch, and in through it
+                staged_in_ = stick_toward(0, -1, 0.6f);
+                run(4.0f);
+                name = "into_centraal";
+            } else if (i == 91) {
+                at("centraal_hal", 12.0f, 20.0f, 0.0f);
+                run(0.6f);
+                name = "the_hall";
+            } else if (i == 92) {
+                at("centraal_hal", 12.0f, 3.0f, 0.0f);   // to the escalators, and down
+                staged_in_ = stick_toward(0, -1, 0.6f);
+                run(5.0f);
+                name = "down_to_line_52";
+            } else if (i == 93) {
+                at("metro_centraal", 8.0f, 34.0f, kPi / 2);   // facing the train
+                run(0.6f);
+                name = "the_last_train";
+            } else if (i == 94) {
+                at("metro_centraal", 4.3f, 29.21f, kPi / 2);   // at its middle door
+                interact();
+                run(2.5f);
+                name = "noord";
+            } else {
+                at("station_noord", 9.0f, 4.4f, 0.0f);   // at the gates
+                interact();
+                text_queue_.clear();
+                run(7.0f);
+                name = "the_end";
             }
             TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
             break;
