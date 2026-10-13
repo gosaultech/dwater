@@ -29,19 +29,20 @@
       "rough": 0.5
     },
     "wall": {
-      "color": [
-        0.72,
-        0.74,
-        0.76
+      "ph": "beige_wall_001",
+      "tint": [
+        0.923,
+        0.949,
+        0.974
       ],
-      "rough": 0.7,
-      "noise": 0.05
+      "rough": 0.7
     },
     "ceiling": {
-      "color": [
-        0.8,
-        0.8,
-        0.8
+      "ph": "ceiling_interior",
+      "tint": [
+        1.0,
+        1.0,
+        1.0
       ],
       "rough": 0.8
     },
@@ -76,7 +77,7 @@
     "strength": 0.5
   },
   "render": {
-    "exposure": 0.85,
+    "exposure": 0.697,
     "bloom": {
       "threshold": 0.95,
       "strength": 0.25,
@@ -328,6 +329,298 @@
       ],
       "yaw": 90,
       "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        7.19,
+        0.0,
+        0.42
+      ],
+      "yaw": 26,
+      "scale": 0.98,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        3.36,
+        0.0,
+        0.42
+      ],
+      "yaw": 14,
+      "scale": 0.84,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        2.18,
+        0.0,
+        9.53
+      ],
+      "yaw": 168,
+      "scale": 0.97,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        2.39,
+        0.0,
+        0.42
+      ],
+      "yaw": 26,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.82,
+        0.0,
+        0.42
+      ],
+      "yaw": -8,
+      "scale": 0.96,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        5.95,
+        0.0,
+        9.53
+      ],
+      "yaw": 199,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        4.76,
+        0.0,
+        0.42
+      ],
+      "yaw": 6,
+      "scale": 0.83,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        8.83,
+        0.0,
+        0.42
+      ],
+      "yaw": -16,
+      "scale": 0.95,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        4.87,
+        0.0,
+        9.53
+      ],
+      "yaw": 168,
+      "scale": 0.86,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.14,
+        0.0,
+        9.53
+      ],
+      "yaw": 164,
+      "scale": 0.93,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        1.67,
+        0.0,
+        0.42
+      ],
+      "yaw": -3,
+      "scale": 0.93,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wall_clock",
+      "pos": [
+        5.65,
+        2.15,
+        0.03
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "drop_ceiling",
+      "pos": [
+        5.0,
+        3.588,
+        4.975
+      ],
+      "size": [
+        10.0,
+        0.02,
+        9.95
+      ],
+      "seed": 901,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        0.08,
+        2.43,
+        2.638
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 90,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        9.92,
+        2.28,
+        2.0
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": -90,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        9.8,
+        3.1,
+        0.2
+      ],
+      "yaw": -45,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        6.69,
+        0.0,
+        2.79
+      ],
+      "size": [
+        4.0,
+        0.01,
+        3.0
+      ],
+      "seed": 632,
+      "count": 6,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        7.78,
+        0.0,
+        1.91
+      ],
+      "size": [
+        4.0,
+        0.01,
+        3.0
+      ],
+      "seed": 90,
+      "count": 6,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_monobloc_chair_01",
+      "pos": [
+        3.87,
+        0.0,
+        7.53
+      ],
+      "yaw": 286,
+      "tip": 90,
+      "scale": 1.0,
+      "size": [
+        0.9,
+        0.5,
+        0.6
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:steel_frame_shelves_01",
+      "pos": [
+        3.164,
+        0.0,
+        9.65
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "size": [
+        1.1,
+        2.14,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        4.014,
+        0.0,
+        9.65
+      ],
+      "yaw": 161,
+      "scale": 1.0,
+      "collide": false
     }
   ],
   "lights": [
@@ -343,7 +636,7 @@
         0.0,
         4.975
       ],
-      "size": 1.4,
+      "size": 0.77,
       "color": [
         0.92,
         0.96,
@@ -365,7 +658,7 @@
         0.0,
         4.975
       ],
-      "size": 1.4,
+      "size": 0.77,
       "color": [
         0.92,
         0.96,

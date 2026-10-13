@@ -21,19 +21,20 @@
   "materials": {
     "floor": "ph:marble_01",
     "wall": {
-      "color": [
-        0.62,
-        0.55,
-        0.44
+      "ph": "beige_wall_001",
+      "tint": [
+        0.795,
+        0.705,
+        0.564
       ],
-      "rough": 0.6,
-      "noise": 0.08
+      "rough": 0.6
     },
     "ceiling": {
-      "color": [
-        0.75,
-        0.7,
-        0.62
+      "ph": "ceiling_interior",
+      "tint": [
+        0.962,
+        0.897,
+        0.795
       ],
       "rough": 0.6
     },
@@ -59,7 +60,7 @@
     "strength": 0.5
   },
   "render": {
-    "exposure": 1.0,
+    "exposure": 0.82,
     "bloom": {
       "threshold": 0.95,
       "strength": 0.25,
@@ -304,6 +305,134 @@
       "collide": false
     },
     {
+      "type": "model",
+      "model": "ph:Sofa_01",
+      "pos": [
+        2.6,
+        0.0,
+        9.95
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "size": [
+        1.6,
+        0.8,
+        0.8
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:sofa_02",
+      "pos": [
+        5.6,
+        0.0,
+        12.549999999999999
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "size": [
+        1.8,
+        0.8,
+        0.7
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:coffee_table_round_01",
+      "pos": [
+        4.4,
+        0.0,
+        10.35
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "size": [
+        0.8,
+        0.45,
+        0.8
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:side_table_01",
+      "pos": [
+        2.6,
+        0.0,
+        12.25
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "size": [
+        0.55,
+        0.45,
+        0.55
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:modern_arm_chair_01",
+      "pos": [
+        6.4,
+        0.0,
+        9.549999999999999
+      ],
+      "yaw": -110,
+      "scale": 1.0,
+      "size": [
+        0.8,
+        0.9,
+        0.8
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_01",
+      "pos": [
+        11.3,
+        0.0,
+        14.149999999999999
+      ],
+      "yaw": 40,
+      "scale": 1.1,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:hanging_picture_frame_01",
+      "pos": [
+        4.0,
+        1.7,
+        14.92
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:hanging_picture_frame_03",
+      "pos": [
+        8.0,
+        1.7,
+        14.92
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:hanging_picture_frame_02",
+      "pos": [
+        5.0,
+        1.7,
+        0.03
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
       "type": "wall_sign",
       "pos": [
         8.0,
@@ -428,6 +557,351 @@
       },
       "lamp": true,
       "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        11.58,
+        0.0,
+        5.34
+      ],
+      "yaw": -119,
+      "scale": 0.92,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        7.33,
+        0.0,
+        14.53
+      ],
+      "yaw": 168,
+      "scale": 0.81,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        6.15,
+        0.0,
+        14.53
+      ],
+      "yaw": 198,
+      "scale": 0.86,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        1.41,
+        0.0,
+        14.53
+      ],
+      "yaw": 175,
+      "scale": 0.99,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        9.76,
+        0.0,
+        14.53
+      ],
+      "yaw": 192,
+      "scale": 0.99,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        11.27,
+        0.0,
+        14.53
+      ],
+      "yaw": 194,
+      "scale": 0.92,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        11.58,
+        0.0,
+        11.84
+      ],
+      "yaw": -91,
+      "scale": 0.93,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        11.58,
+        0.0,
+        2.08
+      ],
+      "yaw": -81,
+      "scale": 0.98,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        3.7,
+        0.0,
+        0.42
+      ],
+      "yaw": 15,
+      "scale": 0.82,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        5.08,
+        0.0,
+        0.42
+      ],
+      "yaw": 5,
+      "scale": 0.82,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        5.87,
+        0.0,
+        0.42
+      ],
+      "yaw": -29,
+      "scale": 0.93,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        1.65,
+        0.0,
+        0.42
+      ],
+      "yaw": -16,
+      "scale": 0.85,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        2.69,
+        0.0,
+        14.53
+      ],
+      "yaw": 168,
+      "scale": 0.87,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        11.58,
+        0.0,
+        12.68
+      ],
+      "yaw": -65,
+      "scale": 0.8,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        9.88,
+        0.0,
+        0.42
+      ],
+      "yaw": -6,
+      "scale": 0.82,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        11.58,
+        0.0,
+        3.49
+      ],
+      "yaw": -100,
+      "scale": 0.99,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        4.41,
+        0.0,
+        14.53
+      ],
+      "yaw": 170,
+      "scale": 0.93,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        8.03,
+        0.0,
+        14.53
+      ],
+      "yaw": 203,
+      "scale": 0.98,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        2.91,
+        0.0,
+        0.42
+      ],
+      "yaw": 26,
+      "scale": 0.91,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        0.08,
+        2.43,
+        8.193
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 90,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        8.0,
+        2.58,
+        0.08
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        0.2,
+        4.1,
+        0.2
+      ],
+      "yaw": 45,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        11.8,
+        4.1,
+        0.2
+      ],
+      "yaw": -45,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        3.63,
+        0.0,
+        8.75
+      ],
+      "size": [
+        4.0,
+        0.01,
+        3.0
+      ],
+      "seed": 151,
+      "count": 6,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        1.37,
+        0.0,
+        2.2
+      ],
+      "size": [
+        4.0,
+        0.01,
+        3.0
+      ],
+      "seed": 904,
+      "count": 6,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_monobloc_chair_01",
+      "pos": [
+        2.38,
+        0.0,
+        6.76
+      ],
+      "yaw": 211,
+      "tip": 90,
+      "scale": 1.0,
+      "size": [
+        0.9,
+        0.5,
+        0.6
+      ]
     }
   ],
   "lights": [
