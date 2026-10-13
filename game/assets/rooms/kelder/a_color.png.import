@@ -2,16 +2,10 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dctng3wvg2mo8"
-path="res://.godot/imported/a_color.png-96b49d14a5d0178320d62009d9c2b69a.ctex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://assets/rooms/kelder/a_color.png"
-dest_files=["res://.godot/imported/a_color.png-96b49d14a5d0178320d62009d9c2b69a.ctex"]
 
 [params]
 

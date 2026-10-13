@@ -1,5 +1,5 @@
 // damned_waters/engine/src/game_combat.cpp
-// Purpose: the fight in the hall.
+// Purpose: the fight, wherever it happens in the house.
 //  * The survivor's verbs, read as actions (input.hpp): move (analog, with a little weight), aim
 //    (locks on; the right stick or the mouse moves the aim over the body: head, arms, legs; a flick
 //    or the wheel switches target), fire, reload, switch guns, dodge, quick turn, and the kick:
@@ -7,7 +7,8 @@
 //    A dodge in the last moment of a lunge is perfect: it overbalances, the next shot does double.
 //  * The Drowned: senses, the brain's events, the lunge, crawling on after losing a leg.
 //  * What a shot does: wounds that stay, limbs that come off, heads that burst, blood on the floor.
-//  * The hall's script: one Drowned, then a bang at the front door and two more.
+//  * Through the house: they see him only with nothing in between, follow him by the doorways,
+//    beat on a shut door and shove it open (game_house.cpp has the doors and the routes).
 // The rules themselves (damage, magazines, when a limb comes off, the brain) are pure and
 // unit-tested in combat.hpp and core.hpp; this file is the referee that applies them to the bodies
 // in the room and makes the noise.
@@ -28,10 +29,8 @@ constexpr float VIEW_HALF = 60.0f * kPi / 180.0f;          // ... and how wide (
 constexpr float STRIKE_HALF = 55.0f * kPi / 180.0f;        // a lunge only lands in front of it
 constexpr float PLAYER_R = 0.28f, ENEMY_R = 0.32f;         // bodies on the floor plane (m)
 constexpr float LOCK_HALF = 15.0f * kPi / 180.0f;          // auto-aim holds while the gun faces this close to the target
-constexpr float WALK = 1.9f, RUN = 3.8f;                   // m/s: half a stick (or the keys) walks, all of it runs
 constexpr float ACCEL = 24.0f, DECEL = 32.0f;              // m/s^2: full run in a sixth of a second, a stop in an eighth
 constexpr float TURN = 14.0f, PIVOT = 24.0f;               // rad/s turning to the stick; a reversal pivots faster
-constexpr int VARIANTS[] = {0, 2, 1};                      // who they were: the office worker, Pieter, Sanne
 
 float ease_out(float t) { return 1.0f - (1.0f - t) * (1.0f - t); }
 Vector3 flat_forward(float yaw) { const V2 f = forward_from_yaw(yaw); return {f.x, 0, f.z}; }
@@ -65,40 +64,32 @@ float strike_damage(const Enemy& e) {
 
 // ── Setting up ──────────────────────────────────────────────────────────────────
 
+// A new game: the M92FS and two magazines' worth, at the start of the first room; nothing taken,
+// nothing read, every door shut.
 void Game::reset_fight() {
     if (pmode_ == PMode::Dead) {   // a retry: the survivor gets up clean
         hero_.unload();
         hero_ = Character::make(Kind::Survivor);
     }
-    for (auto& e : enemies_) e.body.unload();
-    enemies_.clear();
-    enemies_.reserve(MAX_ENEMIES);
-    for (const auto& s : spec_.enemies) {
-        if (s.kind != "verdronkene" || enemies_.size() >= MAX_ENEMIES) continue;
-        Enemy e;
-        e.id = s.id;
-        e.variant = VARIANTS[enemies_.size() % 3];
-        e.a = {s.pos.x, s.pos.z, s.yaw};
-        e.active = s.requires_flag.empty();   // the rest wait for the script
-        e.gurgle = 2.0f + 3.0f * frand();
-        e.body = Character::make(Kind::Drowned, e.variant);
-        enemies_.push_back(std::move(e));
-    }
     fx_.clear();
-    script_ = {};
     health_ = 100;
     inv_ = {};
     inv_.add(I_HANDGUN, 1);
-    inv_.add(I_SHOTGUN, 1);
-    inv_.add(I_HANDGUN_AMMO, 30);
-    inv_.add(I_SHELLS, 4);
-    reset_world();
+    inv_.add(I_HANDGUN_AMMO, 30);   // (the 870 lies in the parlour, to be found)
     guns_[0] = {Weapon::Pistol, weapon_spec(Weapon::Pistol).mag};
     guns_[1] = {Weapon::Shotgun, weapon_spec(Weapon::Shotgun).mag};   // 6 in the tube, 1 in the chamber
     gun_ = 0;
     hero_.set_weapon(0);
     hero_.limp = 0;
-    const Spawn& sp = spec_.spawns.count("start") ? spec_.spawns.at("start") : spec_.spawns.begin()->second;
+    reset_world();
+    shut_doors();
+    beat_ = {};
+    peek_ = -1;
+    wake_t_ = -1;
+    checkpoint_.set = false;
+    room_ = room_index(start_room_);
+    const RoomSpec& first = rooms_[size_t(room_)];
+    const Spawn& sp = first.spawns.count("start") ? first.spawns.at("start") : first.spawns.begin()->second;
     player_ = {sp.pos.x, sp.pos.z, sp.yaw};
     set_pmode(PMode::Normal);
     invuln_ = dodge_cd_ = aim_pitch_ = aim_snap_ = dead_t_ = step_accum_ = 0;
@@ -115,6 +106,8 @@ void Game::reset_fight() {
     slide_locked_ = false;
     shell_from_grip_ = true;
     holding_ = false;
+    build_storey(first.floor);
+    enter_room(room_);
 }
 
 // ── Small helpers ──────────────────────────────────────────────────────────────
@@ -133,21 +126,25 @@ void Game::say(const Enemy& e, const char* sound, float volume) {
     sfx_.play_at(sound, e.body.head_point(), ear(), ear_right(), volume, 0.07f);
 }
 
+// A sound carries its full radius through open air and doorways, half of it through a wall or a
+// shut door. The ones still under the water hear too (a shot near them brings them up).
 void Game::noise(float x, float z, float radius) {
-    for (auto& e : enemies_)
-        if (e.active && std::hypot(e.a.x - x, e.a.z - z) <= radius) e.heard = true;
+    for (auto& e : enemies_) {
+        if (!e.active && !e.submerged) continue;
+        const float d = std::hypot(e.a.x - x, e.a.z - z);
+        if (d <= radius && (d <= radius * 0.5f || sight_clear(x, z, e.a.x, e.a.z))) e.heard = true;
+    }
 }
 
-// How far a shot flies before it meets a wall, the floor or the ceiling (the hall is a box).
+// How far a shot flies before it meets the floor, the ceiling, a wall or a shut door (through an
+// open doorway it flies on into the next room).
 float Game::wall_hit(Vector3 o, Vector3 d, float range) const {
     float t = range;
-    auto slab = [&t](float o1, float d1, float lo, float hi) {
-        if (d1 > 1e-6f) t = std::min(t, (hi - o1) / d1);
-        else if (d1 < -1e-6f) t = std::min(t, (lo - o1) / d1);
-    };
-    slab(o.x, d.x, spec_.bounds.x0, spec_.bounds.x1);
-    slab(o.y, d.y, 0.0f, spec_.height);
-    slab(o.z, d.z, spec_.bounds.z0, spec_.bounds.z1);
+    if (d.y > 1e-6f) t = std::min(t, (spec_.height - o.y) / d.y);
+    else if (d.y < -1e-6f) t = std::min(t, (0.0f - o.y) / d.y);
+    const float bx = o.x + d.x * t, bz = o.z + d.z * t;
+    const float f = std::min(house::first_cross(sight_, o.x, o.z, bx, bz), house::first_cross(shut_, o.x, o.z, bx, bz));
+    if (f < 1.0f) t *= f;
     return std::max(t, 0.0f);
 }
 
@@ -170,6 +167,15 @@ void Game::update_player(float dt) {
     hero_.limp += (limp_of(cond) - hero_.limp) * smoothing(3.0f, dt);
     if (IsKeyPressed(KEY_T)) { settings_.tank = !settings_.tank; save_settings(); }   // classic tank controls (keyboard)
     const Vector2 in = in_.move;
+    // How hard he's pushed (sneak, walk, run; controls.hpp) and the stick back + the right face
+    // button, read every frame whatever he's doing so a toggled run or the turn's grace never goes stale.
+    gait_ = gaits_.update(settings_.tank && !in_.move_keys ? std::fabs(in.y) : std::min(1.0f, Vector2Length(in)), in_.move_keys,
+                          settings_.run, in_.hit(ACT_RUN) && !in_.move_keys, in_.held(ACT_RUN), in_.held(ACT_RUN_HOLD));
+    const Vector3 cam_f = Vector3Subtract(cam_.target, cam_.position);
+    const V2 ahead = forward_from_yaw(p.yaw);
+    const bool chord_on = settings_.back_turn && back_turn_shares_dodge(settings_.scheme) && pmode_ == PMode::Normal;
+    const int chord = back_turn_.update(dt, settings_.tank ? in : stick_in_his_frame(in, {cam_f.x, cam_f.z}, {ahead.x, ahead.z}),
+                                        chord_on && in_.hit(ACT_BACK_TURN), chord_on);
     work_actions(dt);
     if (pmode_ != PMode::Aim) aim_pitch_ -= aim_pitch_ * smoothing(10.0f, dt);
     if (pmode_ != PMode::Normal) vel_ = approach(vel_, {0, 0}, DECEL * dt);   // verbs stop the walk
@@ -181,7 +187,7 @@ void Game::update_player(float dt) {
                 if (in_.nav_y || in_.nav_x) { death_sel_ ^= 1; sfx_.play("ui_move", 0.5f); }
                 if (in_.hit(ACT_CONFIRM)) {
                     sfx_.play("ui_confirm", 0.6f);
-                    if (death_sel_ == 0) reset_fight();
+                    if (death_sel_ == 0) retry();   // back on the threshold of the room he last walked into
                     else quit_ = true;
                 }
             }
@@ -245,10 +251,13 @@ void Game::update_player(float dt) {
         case PMode::Normal:
             break;
     }
+    if (chord == BackTurnChord::DODGE && dodge_cd_ <= 0) { start_dodge(in_.move); return; }   // the button alone, after its grace
     if (common_actions()) return;
     if (aim_held()) { enter_aim(); return; }
     const bool run_tap = IsKeyPressed(KEY_LEFT_SHIFT) || IsKeyPressed(KEY_RIGHT_SHIFT);
-    if (in_.hit(ACT_QUICK_TURN) || (settings_.tank && in.y < -0.5f && run_tap)) {   // or back + run on tank controls (RE3)
+    // The layout's quick turn, stick back + the right face button (an option), or back + run on
+    // tank controls with the keys (RE3).
+    if (chord == BackTurnChord::TURN || in_.hit(ACT_QUICK_TURN) || (settings_.tank && in.y < -0.5f && run_tap)) {
         qt_from_ = p.yaw;
         set_pmode(PMode::QuickTurn);
         return;
@@ -256,39 +265,39 @@ void Game::update_player(float dt) {
     if (in_.hit(ACT_KICK) && try_kick()) return;
     if (in_.hit(ACT_INTERACT) && interact()) { vel_ = {}; return; }   // nothing to kick: whatever he's facing
     if (guns_[gun_].is_reloading()) {   // he stands still to reload; walking off stops the 870's shells
-        const bool moving = Vector2Length(in) > 0.2f;
+        const bool moving = gait_ != Gait::Still;
         if (!moving || !guns_[gun_].spec().single_load) { p.pose = Pose::Reload; vel_ = {}; return; }
         guns_[gun_].stop_loading();
     }
     move_player(dt, in, limp_speed(cond));
 }
 
-// Walking and running. The stick's tilt sets the speed (half walks, all the way runs); he gets up
-// to speed and stops in a few frames, and turns to the stick fast (a reversal pivots faster
-// still), so circling a Drowned is a matter of skill, not of fighting the controls.
+// Walking and running. How hard he's pushed picks the gait (update_player: a light touch sneaks,
+// half walks, all the way runs, or the run option's button); he gets up to speed and stops in a
+// few frames, and turns to the stick fast (a reversal pivots faster still), so circling a Drowned
+// is a matter of skill, not of fighting the controls.
 void Game::move_player(float dt, Vector2 in, float speed_scale) {
     Actor& p = player_;
-    const float tilt = std::min(1.0f, Vector2Length(in));
-    const float speed = stick_speed(tilt, WALK, RUN) * speed_scale;
+    const float speed = gait_speed(gait_) * speed_scale;
     Vector2 want{};
     if (settings_.tank) {   // classic: left/right turn him, forward/back move him (backing up is slower)
         p.yaw -= in.x * 2.6f * dt;
         const V2 f = forward_from_yaw(p.yaw);
-        const float k = (in.y < 0 ? -1.0f : 1.0f) * stick_speed(std::fabs(in.y), WALK, RUN) * speed_scale * (in.y < 0 ? 0.6f : 1.0f);
+        const float k = in.y > 0.02f ? speed : in.y < -0.02f ? -0.6f * speed : 0.0f;
         want = {f.x * k, f.z * k};
     } else {
         Vector3 fwd = Vector3Subtract(cam_.target, cam_.position);
         fwd.y = 0;
         fwd = Vector3Normalize(fwd);
         const Vector3 right{-fwd.z, 0, fwd.x};
-        if (tilt < 0.2f) holding_ = false;
+        if (gait_ == Gait::Still) holding_ = false;
         else if (!holding_ || std::fabs(Vector2Angle(in, held_in_)) > 35.0f * DEG2RAD) {
             holding_ = true;   // keep this camera's basis until the stick changes: no cut-induced reversals
             held_fwd_ = fwd;
             held_right_ = right;
             held_in_ = in;
         }
-        if (holding_ && tilt > 0) {
+        if (holding_) {
             const Vector3 d = Vector3Normalize(Vector3Add(Vector3Scale(held_right_, in.x), Vector3Scale(held_fwd_, in.y)));
             want = {d.x * speed, d.z * speed};
             const float to = yaw_towards(0, 0, d.x, d.z);
@@ -306,19 +315,23 @@ void Game::move_player(float dt, Vector2 in, float speed_scale) {
     if (dt > 0 && moved < Vector2Length(vel_) * dt * 0.5f) vel_ = Vector2Scale(vel_, 0.5f);   // ran into a wall: lose the momentum
     p.speed = dt > 0 ? moved / dt : 0.0f;
     p.pose = p.speed > 2.6f ? Pose::Run : p.speed > 0.1f ? Pose::Walk : Pose::Idle;
-    // Footsteps: one per stride, and the Drowned nearby hear them (running carries further).
-    const bool running = p.pose == Pose::Run;
+    // Footsteps: one a stride, as loud as the gait, and the Drowned in earshot hear them (a sneak
+    // only at arm's length; a run across the hall).
+    const Footfall ff = footfall(gait_);
     step_accum_ += moved;
-    if (p.speed > 0.1f && step_accum_ >= (running ? 0.85f : 0.62f)) {
+    if (p.speed > 0.1f && step_accum_ >= ff.stride) {
         step_accum_ = 0;
-        sfx_.play("step_" + spec_.footsteps, running ? 0.8f : 0.5f, 0.08f);
-        noise(p.x, p.z, running ? 6.0f : 2.5f);
+        sfx_.play("step_" + spec_.footsteps, ff.volume, 0.08f);
+        noise(p.x, p.z, ff.radius);
     }
 }
 
 // Dodge, reload and the weapon buttons work walking or aiming. True if a dodge took over.
 bool Game::common_actions() {
-    if (in_.hit(ACT_DODGE) && dodge_cd_ <= 0) {
+    // Where stick back + the right face button turns him (an option), update_player's chord settles
+    // what that button's press means, so it doesn't dodge here at once.
+    const bool chord_press = pmode_ == PMode::Normal && settings_.back_turn && back_turn_shares_dodge(settings_.scheme) && in_.hit(ACT_BACK_TURN);
+    if (in_.hit(ACT_DODGE) && !chord_press && dodge_cd_ <= 0) {
         start_dodge(in_.move);
         return true;
     }
@@ -358,7 +371,7 @@ bool Game::try_kick() {
     float best_d = 1e9f;
     for (size_t i = 0; i < enemies_.size(); ++i) {
         const Enemy& e = enemies_[i];
-        if (!e.active || e.brain.dead()) continue;
+        if (!e.active || e.brain.dead() || e.rise >= 0) continue;
         const float dx = e.a.x - player_.x, dz = e.a.z - player_.z, d = std::hypot(dx, dz);
         if (d > KICK_RANGE || (d > 1e-3f && (dx * f.x + dz * f.z) / d < std::cos(70.0f * kPi / 180.0f))) continue;
         const int rank = counterable(e.brain) ? 3 : e.brain.kickable() ? 2 : e.brain.state == EState::Attack ? 1 : 0;
@@ -437,7 +450,7 @@ void Game::enter_aim() {
     const int n = int(std::min(enemies_.size(), MAX_ENEMIES));
     for (int i = 0; i < n; ++i) {
         const Enemy& e = enemies_[size_t(i)];
-        c[size_t(i)] = {e.a.x, e.a.z, e.active && !e.brain.dead()};
+        c[size_t(i)] = {e.a.x, e.a.z, e.active && !e.brain.dead() && e.rise < 0 && sight_clear(player_.x, player_.z, e.a.x, e.a.z)};
     }
     aim_target_ = pick_target(player_.x, player_.z, player_.yaw, c.data(), n);
     aim_snap_ = 0.2f;
@@ -455,7 +468,8 @@ void Game::switch_target(int dir) {
     float best_dx = 1e9f;
     for (size_t i = 0; i < enemies_.size(); ++i) {
         const Enemy& e = enemies_[i];
-        if (int(i) == aim_target_ || !e.active || e.brain.dead()) continue;
+        if (int(i) == aim_target_ || !e.active || e.brain.dead() || e.rise >= 0) continue;
+        if (!sight_clear(player_.x, player_.z, e.a.x, e.a.z)) continue;
         if (std::hypot(e.a.x - player_.x, e.a.z - player_.z) > AIM_RANGE) continue;
         const float dx = (e.a.x * right.x + e.a.z * right.z - cx) * float(dir);
         if (dx > 0.05f && dx < best_dx) { best_dx = dx; best = int(i); }
@@ -789,6 +803,7 @@ void Game::switch_gun(int g) {
 // ── The Drowned ─────────────────────────────────────────────────────────────────
 
 void Game::kill_enemy(Enemy& e) {
+    world_.dead.insert(e.key);   // it stays dead, whichever room he comes back to
     e.brain.kill();
     e.dead_t = 0;
     ++stats_.kills;
@@ -812,10 +827,27 @@ void Game::become_crawler(Enemy& e) {
 
 void Game::update_enemies(float dt) {
     const bool player_alive = pmode_ != PMode::Dead;
-    int alive = 0;
     for (auto& e : enemies_) {
+        if (e.submerged) { update_emerging(e, dt); e.heard = false; continue; }   // under the water, waiting
         if (!e.active) continue;
         Actor& a = e.a;
+        if (const int r = house::room_at(rooms_, storey_, a.x, a.z, e.room); r >= 0) e.room = r;
+        if (e.rise >= 0) {   // coming up out of the water: nothing else yet
+            update_emerging(e, dt);
+            a.pose = Pose::Idle;
+            a.speed = 0;
+            e.heard = false;
+            continue;
+        }
+        if (e.lying) {   // one of the dead on the floor, till he comes near
+            update_lying(e);
+            if (e.lying) {
+                a.pose = Pose::Floored;
+                a.speed = 0;
+                e.heard = false;
+                continue;
+            }
+        }
         // Momentum from hits and kicks, sliding out.
         a.x += e.push_x * dt;
         a.z += e.push_z * dt;
@@ -837,12 +869,16 @@ void Game::update_enemies(float dt) {
             collide(a.x, a.z, ENEMY_R);
             continue;
         }
-        ++alive;
         const float dx = player_.x - a.x, dz = player_.z - a.z, dist = std::hypot(dx, dz);
         const V2 f = forward_from_yaw(a.yaw);
         const float ang = std::acos(std::clamp((f.x * dx + f.z * dz) / std::max(dist, 1e-4f), -1.0f, 1.0f));
-        const bool sees = player_alive && dist < SIGHT && (ang < VIEW_HALF || dist < 1.5f);
-        const EEvent ev = e.brain.update(dt, sees, e.heard && player_alive, player_alive ? dist : 99.0f);
+        // It sees him only with nothing between them (a wall, a shut door); a noise keeps it on his
+        // trail for a moment, so it follows him through the house rather than forgetting him at a wall.
+        const bool clear = sight_clear(a.x, a.z, player_.x, player_.z);
+        const bool sees = player_alive && clear && dist < SIGHT && (ang < VIEW_HALF || dist < 1.5f);
+        e.heard_t = e.heard ? 2.5f : std::max(0.0f, e.heard_t - dt);
+        const bool on_trail = sees || (e.heard_t > 0 && e.brain.state == EState::Pursuit);
+        const EEvent ev = e.brain.update(dt, on_trail, e.heard && player_alive, player_alive && clear ? dist : 99.0f);
         e.heard = false;
         e.stumble = std::max(0.0f, e.stumble - dt);
         switch (ev) {
@@ -851,7 +887,7 @@ void Game::update_enemies(float dt) {
             case EEvent::Strike:
                 if (player_alive && pmode_ == PMode::Dodge && perfect_dodge(pmode_t_) && dist <= e.reach + 1.2f)
                     perfect_dodge_on(e);   // it bites the air
-                else if (player_alive && dist <= e.reach && ang <= STRIKE_HALF)
+                else if (player_alive && clear && dist <= e.reach && ang <= STRIKE_HALF)
                     hurt_player(strike_damage(e), a.x, a.z);
                 break;
             default: break;
@@ -859,11 +895,17 @@ void Game::update_enemies(float dt) {
         const float want = yaw_towards(a.x, a.z, player_.x, player_.z);
         float v = 0;
         switch (e.brain.state) {
-            case EState::Pursuit:
-                a.yaw = step_yaw(a.yaw, want, e.turn * dt);
-                v = e.speed * std::clamp(std::cos(wrap_pi(want - a.yaw)), 0.2f, 1.0f);   // turning slows it
+            case EState::Pursuit: {   // after him: through the doorways if he's in another room
+                float tx, tz;
+                steer_target(e, tx, tz);
+                const float go = yaw_towards(a.x, a.z, tx, tz);
+                a.yaw = step_yaw(a.yaw, go, e.turn * dt);
+                v = e.speed * std::clamp(std::cos(wrap_pi(go - a.yaw)), 0.2f, 1.0f);   // turning slows it
                 if (!player_alive && dist < 0.9f) v = 0;   // it stands over him
+                push_on_doors(e, dt);
+                if (e.bang_t > 0) v = 0;                    // beating on a shut door
                 break;
+            }
             case EState::Attack: {
                 const bool striking = e.brain.t >= e.brain.windup;
                 if (!striking) a.yaw = step_yaw(a.yaw, want, e.turn * 0.6f * dt);
@@ -912,23 +954,6 @@ void Game::update_enemies(float dt) {
             a.a.x -= dx * k; a.a.z -= dz * k;
             b.a.x += dx * k; b.a.z += dz * k;
         }
-    // The hall's script: when the first one is down, something hits the front door; then two more.
-    switch (script_.update(dt, alive)) {
-        case HallEncounter::Event::DoorBang:
-            sfx_.play_at("door_bang", {1.05f, 1.2f, spec_.bounds.z1 - 0.1f}, ear(), ear_right(), 1.0f, 0.0f);
-            break;
-        case HallEncounter::Event::SecondWave:
-            for (auto& e : enemies_) {
-                if (e.active) continue;
-                e.active = true;
-                if (std::hypot(e.a.x - player_.x, e.a.z - player_.z) < 1.0f) { e.a.x = 1.05f; e.a.z = spec_.bounds.z1 - 0.4f; }   // don't land on him
-                e.a.yaw = yaw_towards(e.a.x, e.a.z, player_.x, player_.z);
-                e.brain.go(EState::Pursuit);   // they heard the shots: they know where he is
-                say(e, "enemy_alert");
-            }
-            break;
-        default: break;
-    }
 }
 
 }  // namespace dw

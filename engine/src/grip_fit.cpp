@@ -357,6 +357,8 @@ std::string Character::fit_grips(const std::string& out_path) {
     };
 
     // ── Bending it: the parameters to rotations, the skin to gun space ──────────
+    // (Fitting the forefinger alone: every other finger as this grip has it, this rig's angles.)
+    const Vector3* kept_fingers = nullptr;
     auto finger_rotations = [&](const float* q, bool right, Matrix* R) {
         const Vector3 pn = palm_normal(right);
         for (int f = F_INDEX; f <= F_LITTLE; ++f) {
@@ -373,6 +375,12 @@ std::string Character::fit_grips(const std::string& out_path) {
         R[t0] = ang > 1e-6f ? MatrixRotate(Vector3Scale(rv, 1.0f / ang), ang) : MatrixIdentity();
         R[t0 + 1] = MatrixMultiply(MatrixRotate(hinge_[t0 + 1], t[3]), MatrixRotate(pn, t[4]));
         R[t0 + 2] = MatrixRotate(hinge_[t0 + 2], t[5]);
+        if (kept_fingers)
+            for (int k = 0; k < 15; ++k) {
+                if (k / 3 == F_INDEX) continue;
+                const Vector3 e = kept_fingers[k];
+                R[finger_joint(right, k / 3, k % 3)] = MatrixMultiply(MatrixMultiply(MatrixRotateZ(e.z), MatrixRotateX(e.x)), MatrixRotateY(e.y));
+            }
     };
     auto hold_of = [&](const float* q, const Matrix& h0, Vector3 pivot) {
         const Vector3 c = Vector3Transform(pivot, h0), rv{q[0], q[1], q[2]};
@@ -484,6 +492,13 @@ std::string Character::fit_grips(const std::string& out_path) {
         // degrees toward the little finger (ulnar; what "camming" a support wrist down means), 15
         // toward the thumb, and bends 50 toward the palm or 45 back.
         Vector3 forearm{};
+        // Trigger discipline: a grip fitted from another (`from`, fitted first) by moving its
+        // forefinger alone: the gun stays where it sits in the hand, the other fingers as they are.
+        // `keep_out` (gun space; empty: none) is a box no part of the hand may be in (the trigger
+        // guard's opening), and `straight` weighs keeping the finger's last two joints unbent.
+        const char* from = nullptr;
+        Vector3 keep_lo{}, keep_hi{};
+        float straight = 0;
     };
     auto bit = [](int f, int k) { return 1u << unsigned(f * 3 + k); };
     const unsigned gripping = bit(F_MIDDLE, 0) | bit(F_MIDDLE, 1) | bit(F_MIDDLE, 2) | bit(F_RING, 0) | bit(F_RING, 1) | bit(F_RING, 2) |
@@ -627,6 +642,37 @@ std::string Character::fit_grips(const std::string& out_path) {
                       {INDEX_KNUCKLE, S(148, -52, -6), 12 * MM}},      // the hand under it, the palm up
                      bit(F_INDEX, 2) | bit(F_MIDDLE, 2) | bit(F_THUMB, 2), 0, (1u << F_RING) | (1u << F_LITTLE),
                      nullptr, dir(-0.6f, -0.6f, -0.5f)});
+    // Trigger discipline: until the sights are on what he means to shoot, the trigger finger lies
+    // straight along the side of the frame, above the trigger guard (indexed), never inside the
+    // guard. The hand doesn't move on the gun for it: the same grip, the forefinger lifted out of
+    // the guard and laid along the frame, its pad on the frame's side under the slide, by the
+    // takedown button.
+    {
+        Goal g{"PISTOL_RIGHT_INDEXED", "pistol, strong hand, finger off the trigger", true, &pistol_field, INDEX_KNUCKLE, {}, {}, {}, {},
+               {{INDEX_PAD, P(102, -23, 11.5f), 6 * MM},             // on the frame's right side, over the front of the guard
+                {INDEX_TIP, P(108, -22, 11.5f), 9 * MM}},            //   the finger running straight forward along it
+               bit(F_INDEX, 2), 0, 0, nullptr};
+        g.from = "PISTOL_RIGHT";
+        const auto guard = box_of(P(54, -26, -7), P(118, -60, 7));   // the guard's opening, and a little round it
+        g.keep_lo = guard.first;
+        g.keep_hi = guard.second;
+        g.straight = 10;
+        goals.push_back(g);
+    }
+    // ... and on the 870: along the right of the receiver, above the trigger group (behind the
+    // ejection port, so it never blocks it).
+    {
+        Goal g{"SHOTGUN_RIGHT_INDEXED", "870, strong hand, finger off the trigger", true, &stock_field, INDEX_KNUCKLE, {}, {}, {}, {},
+               {{INDEX_PAD, S(54, -29, 16.5f), 6 * MM},              // on the receiver's right side, above the trigger plate
+                {INDEX_TIP, S(60, -28, 16.5f), 9 * MM}},
+               bit(F_INDEX, 2), 0, 0, nullptr};
+        g.from = "SHOTGUN_RIGHT";
+        const auto guard = box_of(S(14, -43, -7), S(90, -76, 7));
+        g.keep_lo = guard.first;
+        g.keep_hi = guard.second;
+        g.straight = 10;
+        goals.push_back(g);
+    }
 
     // ── The search ──────────────────────────────────────────────────────────────
     // A hand at rest, its fingers half closed: the shape the first guess seats on the gun.
@@ -655,12 +701,15 @@ std::string Character::fit_grips(const std::string& out_path) {
     const char* only = std::getenv("DW_FIT_ONLY");
     const std::pair<const char*, const Grip*> table[] = {{"PISTOL_RIGHT", &grips::PISTOL_RIGHT}, {"PISTOL_LEFT", &grips::PISTOL_LEFT},
                                                         {"SHOTGUN_RIGHT", &grips::SHOTGUN_RIGHT}, {"SHOTGUN_LEFT", &grips::SHOTGUN_LEFT},
-                                                        {"MAG_LEFT", &grips::MAG_LEFT}, {"SHELL_LEFT", &grips::SHELL_LEFT}};
+                                                        {"MAG_LEFT", &grips::MAG_LEFT}, {"SHELL_LEFT", &grips::SHELL_LEFT},
+                                                        {"PISTOL_RIGHT_INDEXED", &grips::PISTOL_RIGHT_INDEXED},
+                                                        {"SHOTGUN_RIGHT_INDEXED", &grips::SHOTGUN_RIGHT_INDEXED}};
     for (const Goal& g : goals) {
         const Hand hd = make_hand(g.right);
         std::vector<Vector3> pts;
         Matrix R[J_COUNT];
         for (auto& m : R) m = MatrixIdentity();
+        kept_fingers = nullptr;
         if (only && (std::string(",") + only + ",").find(std::string(",") + g.id + ",") == std::string::npos) {   // kept as it was
             Result r{};
             for (const auto& [id, grip] : table)
@@ -683,10 +732,23 @@ std::string Character::fit_grips(const std::string& out_path) {
             for (int i : hd.named[nm]) c = Vector3Add(c, pts[size_t(i)]);
             return Vector3Scale(c, 1.0f / float(std::max<size_t>(1, hd.named[nm].size())));
         };
-        // The first guess: the generic hand's palm frame onto the goal's.
+        // The first guess: the generic hand's palm frame onto the goal's; or, moving the forefinger
+        // alone, the grip it comes from as it was fitted (the gun where it sits, the other fingers).
         Matrix h0 = MatrixIdentity();
         Vector3 seat[3];   // where that puts the web, the middle of the palm and the heel (gun space)
-        {
+        Result base{};
+        if (g.from) {
+            for (size_t i = 0; i < results.size(); ++i)
+                if (std::string(goals[i].id) == g.from) base = results[i];
+            h0 = base.hold;
+            kept_fingers = base.joints;
+            float q0[K]{};
+            q0[6] = 0.1f; q0[7] = 0.05f; q0[8] = 0.03f;
+            finger_rotations(q0, g.right, R);
+            skin(hd, R, h0, pts);
+            const Named nm[3] = {WEB, PALM, HEEL};
+            for (int i = 0; i < 3; ++i) seat[i] = centroid(nm[i]);
+        } else {
             finger_rotations(generic, g.right, R);
             skin(hd, R, MatrixIdentity(), pts);   // (identity hold: pts are in the wrist's frame)
             const int wrist = g.right ? J_WRI_R : J_WRI_L;
@@ -811,6 +873,7 @@ std::string Character::fit_grips(const std::string& out_path) {
             return Vector2{std::atan2(-Vector3DotProduct(f, thumb_side), along), std::atan2(Vector3DotProduct(f, palm_side), along)};
         };
         bool no_close = false;   // (debugging: show the fingers as they start)
+        const bool keep_out = Vector3Distance(g.keep_lo, g.keep_hi) > 0;
         auto terms = [&](float* q) {
             const Matrix hold = hold_of(q, h0, g.pivot), to_gun = MatrixInvert(hold);
             if (!no_close) close(q, to_gun);
@@ -831,6 +894,12 @@ std::string Character::fit_grips(const std::string& out_path) {
                 T.worst = std::max(T.worst, -sd);
                 seg_any[hv.seg] = std::min(seg_any[hv.seg], sd);
                 if (hv.palmar) seg_min[hv.seg] = std::min(seg_min[hv.seg], sd);
+                if (keep_out && hv.seg < 15) {   // in the trigger guard: as bad as sinking into the gun, and a step for being there at all
+                    const Vector3 p = pts[i];
+                    const float d = std::min({p.x - g.keep_lo.x, g.keep_hi.x - p.x, p.y - g.keep_lo.y, g.keep_hi.y - p.y, p.z - g.keep_lo.z,
+                                              g.keep_hi.z - p.z});
+                    if (d > 0) T.pen[hv.seg] += 2 * (d / MM) * (d / MM) + 5;
+                }
             }
             for (int sg = 0; sg < 16; ++sg) {
                 const float gap = (g.wrap & (1u << unsigned(sg))) ? std::max(0.0f, seg_min[sg] - 0.3f * MM) / MM : 0.0f;
@@ -861,6 +930,7 @@ std::string Character::fit_grips(const std::string& out_path) {
                 T.nature[f + 1] = (g.closing & (1u << unsigned(f + 1))) ? 0.0f : 4 * (c[2] - 0.65f * c[1]) * (c[2] - 0.65f * c[1]) + 2 * c[3] * c[3];
             }
             T.nature[0] = 0.3f * (q[22] * q[22] + q[23] * q[23] + q[24] * q[24]);
+            T.nature[F_INDEX] += g.straight * (q[7] * q[7] + q[8] * q[8]);   // (indexed: the finger laid out straight)
         };
         auto sum = [&](unsigned segs, bool aim, bool nature) {
             float c = 0;
@@ -883,6 +953,11 @@ std::string Character::fit_grips(const std::string& out_path) {
         lo[26] = -0.5f; hi[26] = 0.5f;
         lo[27] = -0.4f; hi[27] = 1.4f;
         std::copy(generic, generic + K, q);
+        if (g.from) {   // the forefinger alone, from straight out; it may swing up toward the thumb further than a gripping finger
+            std::fill(q, q + K, 0.0f);
+            q[6] = 0.1f; q[7] = 0.05f; q[8] = 0.03f;
+            lo[9] = -0.5f; hi[9] = 0.5f;
+        }
         unsigned rng = 0x9E3779B9u;
         auto rnd = [&rng]() { rng ^= rng << 13; rng ^= rng >> 17; rng ^= rng << 5; return float(rng & 0xFFFFFF) / 16777215.0f; };
         // What the search moves: the gun in the hand, and the fingers that don't close by themselves.
@@ -890,6 +965,7 @@ std::string Character::fit_grips(const std::string& out_path) {
         for (int f = F_INDEX; f <= F_LITTLE; ++f)
             if (!(g.closing & (1u << unsigned(f))))
                 for (int k = 0; k < 4; ++k) searched.push_back(6 + (f - 1) * 4 + k);
+        if (g.from) searched = {6, 7, 8, 9};
         // A run: shake the chosen parameters, keep what helps (judged on the segments in `segs`),
         // shake less and less.
         auto stage = [&](const std::vector<int>& ks, unsigned segs, bool aim, int iters, float step0) {
@@ -946,40 +1022,57 @@ std::string Character::fit_grips(const std::string& out_path) {
             have_kept = true;
         }
         show("first guess");
-        // 1. Seat the palm, the gripping fingers closing round whatever they meet. (Not the thumb or
-        //    the trigger finger: at rest the thumb lies along the forefinger, through the frame,
-        //    until it's posed in 2.)
-        unsigned closing_segs = 1u << PALM_SEG, posed_segs = 0;
-        std::vector<int> posed = {22, 23, 24, 25, 26, 27};
-        for (int f = 0; f < 5; ++f) {
-            const unsigned three = bit(f, 0) | bit(f, 1) | bit(f, 2);
-            if (f > 0 && (g.closing & (1u << unsigned(f)))) closing_segs |= three;
-            else posed_segs |= three;
-            if (f > 0 && !(g.closing & (1u << unsigned(f))))
-                for (int k = 0; k < 4; ++k) posed.push_back(6 + (f - 1) * 4 + k);
+        if (g.from) {   // the forefinger alone: a few starts, each to the targets and then clear of the gun and out of the guard
+            float best[K], best_c = 1e30f;
+            for (int restart = 0; restart < 12; ++restart) {
+                float start[K];
+                std::copy(q, q + K, start);
+                if (restart > 0)
+                    for (int k : searched) q[k] = lo[k] + (hi[k] - lo[k]) * rnd();
+                stage(searched, 0, true, N / 2, 0.25f);
+                const float c = stage(searched, all, true, N, 0.08f);
+                if (c < best_c) { best_c = c; std::copy(q, q + K, best); }
+                std::copy(start, start + K, q);
+            }
+            std::copy(best, best + K, q);
+            stage(searched, all, true, 2 * N, 0.03f);
+            show("fitted");
+        } else {
+            // 1. Seat the palm, the gripping fingers closing round whatever they meet. (Not the thumb or
+            //    the trigger finger: at rest the thumb lies along the forefinger, through the frame,
+            //    until it's posed in 2.)
+            unsigned closing_segs = 1u << PALM_SEG, posed_segs = 0;
+            std::vector<int> posed = {22, 23, 24, 25, 26, 27};
+            for (int f = 0; f < 5; ++f) {
+                const unsigned three = bit(f, 0) | bit(f, 1) | bit(f, 2);
+                if (f > 0 && (g.closing & (1u << unsigned(f)))) closing_segs |= three;
+                else posed_segs |= three;
+                if (f > 0 && !(g.closing & (1u << unsigned(f))))
+                    for (int k = 0; k < 4; ++k) posed.push_back(6 + (f - 1) * 4 + k);
+            }
+            stage({0, 1, 2, 3, 4, 5}, closing_segs, false, 2 * N, 0.06f);
+            show("seated");
+            // 2. The thumb and the trigger finger, the gun where it sits (a few starts: a thumb can go
+            //    round either way).
+            float best[K], best_c = 1e30f;
+            for (int restart = 0; restart < 20; ++restart) {
+                float start[K];
+                std::copy(q, q + K, start);
+                if (restart > 0)
+                    for (int k : posed) q[k] = lo[k] + (hi[k] - lo[k]) * rnd();
+                // First to the targets as if the gun weren't there (a thumb that must go round the back of
+                // the grip can't get there through it), then settled where it's clear of the gun.
+                stage(posed, 0, true, N / 2, 0.25f);
+                const float c = stage(posed, posed_segs, true, N, 0.08f);
+                if (c < best_c) { best_c = c; std::copy(q, q + K, best); }
+                std::copy(start, start + K, q);
+            }
+            std::copy(best, best + K, q);
+            show("thumb");
+            // 3. Everything together, in small steps.
+            stage(searched, all, true, 3 * N, 0.05f);
+            show("fitted");
         }
-        stage({0, 1, 2, 3, 4, 5}, closing_segs, false, 2 * N, 0.06f);
-        show("seated");
-        // 2. The thumb and the trigger finger, the gun where it sits (a few starts: a thumb can go
-        //    round either way).
-        float best[K], best_c = 1e30f;
-        for (int restart = 0; restart < 20; ++restart) {
-            float start[K];
-            std::copy(q, q + K, start);
-            if (restart > 0)
-                for (int k : posed) q[k] = lo[k] + (hi[k] - lo[k]) * rnd();
-            // First to the targets as if the gun weren't there (a thumb that must go round the back of
-            // the grip can't get there through it), then settled where it's clear of the gun.
-            stage(posed, 0, true, N / 2, 0.25f);
-            const float c = stage(posed, posed_segs, true, N, 0.08f);
-            if (c < best_c) { best_c = c; std::copy(q, q + K, best); }
-            std::copy(start, start + K, q);
-        }
-        std::copy(best, best + K, q);
-        show("thumb");
-        // 3. Everything together, in small steps.
-        stage(searched, all, true, 3 * N, 0.05f);
-        show("fitted");
         if (have_kept) {
             std::copy(kept, kept + K, q);
             no_close = std::string(keep_stage) == "open";
@@ -994,6 +1087,11 @@ std::string Character::fit_grips(const std::string& out_path) {
                 const Matrix& m = R[finger_joint(g.right, f, k)];   // as this rig's angles (z, then x, then y)
                 r.joints[f * 3 + k] = {std::asin(std::clamp(-m.m9, -1.0f, 1.0f)), std::atan2(m.m8, m.m10), std::atan2(m.m1, m.m5)};
             }
+        if (g.from) {   // (exactly as the grip it comes from, but the forefinger)
+            r.hold = base.hold;
+            for (int k = 0; k < 15; ++k)
+                if (k / 3 != F_INDEX) r.joints[k] = base.joints[k];
+        }
         r.cost = total;
         r.worst_mm = T.worst / MM;
         results.push_back(r);

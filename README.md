@@ -43,6 +43,8 @@ godot --headless --path game -s res://tests/visual/combat_smoke.gd -- --autostar
 godot --path game -s res://tests/visual/capture.gd -- --autostart --out=/tmp/caps
 # Python pipeline + telemetry
 python3 -m unittest discover -s tools/pipeline/tests && python3 -m unittest discover -s tools/telemetry/tests
+# The city's room generators (the dressers' rules)
+python3 -m unittest discover -s tools/citygen/tests
 ```
 
 ## Telemetry (SQLite)
@@ -55,7 +57,8 @@ python3 tools/telemetry/ingest.py ingest && python3 tools/telemetry/ingest.py re
 ```
 game/        Godot project. src/core = pure logic (brains, weapons, inventory, codecs), fully unit tested;
              src/actors = player + enemies; src/world = rooms, cameras, plate shader; src/ui; data/rooms
-tools/       blender/ (room builder, character kit, renderers), pipeline/ (depth packing), audio/, telemetry/
+tools/       blender/ (room builder, character kit, renderers), pipeline/ (depth packing), audio/, telemetry/,
+             citygen/ (the city's room files: python3 tools/citygen/build_city.py regenerates them)
 docs/        enemy_design.md, concept/ (character key art + target frames), enemy_designs/ (in-game placeholders)
 ```
 

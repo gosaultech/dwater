@@ -1,0 +1,492 @@
+{
+  "_file": "damned_waters/game/data/rooms/souterrain.json \u2014 RoomSpec for the souterrain, the renovated half-basement between the cellar stairs and the flooded kelder, modelled on reference photo 3 (concrete floor, oak stair, steel-framed window onto a light well, the bust). Single source of truth for Blender (render) and the engine. Units: metres, Y up, north = -Z; placed in the house at \"origin\".",
+  "id": "souterrain",
+  "display_name": "Souterrain",
+  "storey": -1,
+  "origin": [
+    -4.4,
+    -5.0
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      4.6,
+      7.0
+    ]
+  },
+  "height": 2.9,
+  "materials": {
+    "floor": {
+      "ph": "concrete_floor_painted",
+      "tint": [
+        0.55,
+        0.55,
+        0.56
+      ],
+      "rough": 0.45
+    },
+    "wall": {
+      "ph": "plastered_wall",
+      "tint": [
+        0.86,
+        0.86,
+        0.84
+      ],
+      "bump": 0.4
+    },
+    "ceiling": {
+      "ph": "plastered_wall",
+      "tint": [
+        0.88,
+        0.88,
+        0.86
+      ],
+      "bump": 0.3
+    },
+    "skirting": {
+      "color": [
+        0.8,
+        0.8,
+        0.78
+      ],
+      "rough": 0.4,
+      "noise": 0.02
+    },
+    "skirting_height": 0.08
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.01,
+      0.014,
+      0.02
+    ],
+    "strength": 0.6
+  },
+  "exterior": {
+    "side": "west",
+    "lightwell": true,
+    "depth": 1.6,
+    "top": 5.5,
+    "plants": [
+      "ph:potted_plant_02",
+      "ph:potted_plant_01",
+      "ph:potted_plant_02"
+    ]
+  },
+  "walls": {
+    "west": {
+      "openings": [
+        {
+          "kind": "window",
+          "steel_grid": true,
+          "grid": [
+            4,
+            3
+          ],
+          "center": 2.6,
+          "width": 2.6,
+          "sill": 0.15,
+          "height": 2.35
+        }
+      ]
+    },
+    "south": {
+      "openings": [
+        {
+          "kind": "door",
+          "center": 2.3,
+          "width": 0.9,
+          "height": 2.1,
+          "hinge": "right"
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "stair_open",
+      "pos": [
+        3.95,
+        0.0,
+        1.75
+      ],
+      "yaw": 0,
+      "size": [
+        0.95,
+        2.9,
+        3.3
+      ],
+      "rail_side": -1,
+      "solid": true,
+      "material": {
+        "ph": "dark_wood",
+        "tint": [
+          0.85,
+          0.65,
+          0.45
+        ],
+        "scale": 0.5
+      }
+    },
+    {
+      "type": "beam",
+      "pos": [
+        2.3,
+        2.6,
+        3.55
+      ],
+      "size": [
+        4.6,
+        0.3,
+        0.26
+      ],
+      "collide": false,
+      "material": {
+        "ph": "dark_wood",
+        "tint": [
+          0.55,
+          0.45,
+          0.36
+        ],
+        "scale": 0.6
+      }
+    },
+    {
+      "type": "block",
+      "pos": [
+        1.0,
+        0.0,
+        2.6
+      ],
+      "size": [
+        0.42,
+        1.0,
+        0.42
+      ],
+      "bevel": 0.01,
+      "material": {
+        "ph": "concrete_floor_painted",
+        "tint": [
+          0.62,
+          0.62,
+          0.62
+        ]
+      }
+    },
+    {
+      "type": "model",
+      "model": "ph:marble_bust_01",
+      "pos": [
+        1.0,
+        1.0,
+        2.6
+      ],
+      "yaw": 90,
+      "scale": 1.15,
+      "collide": false
+    },
+    {
+      "type": "painting",
+      "pos": [
+        4.58,
+        1.55,
+        5.25
+      ],
+      "yaw": -90,
+      "size": [
+        1.4,
+        1.0,
+        0.05
+      ],
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:industrial_wall_sconce",
+      "pos": [
+        0.04,
+        1.8,
+        5.7
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "collide": false,
+      "shadow": false
+    },
+    {
+      "type": "model",
+      "model": "ph:industrial_wall_sconce",
+      "pos": [
+        4.56,
+        1.8,
+        6.4
+      ],
+      "yaw": -90,
+      "scale": 1.0,
+      "collide": false,
+      "shadow": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        2.3,
+        2.3,
+        6.97
+      ],
+      "size": [
+        0.36,
+        0.14,
+        0.05
+      ],
+      "collide": false,
+      "material": {
+        "emit": [
+          0.2,
+          1.0,
+          0.45
+        ],
+        "strength": 6.0
+      }
+    }
+  ],
+  "lights": [
+    {
+      "kind": "area",
+      "pos": [
+        -1.05,
+        5.2,
+        2.6
+      ],
+      "look_at": [
+        -1.05,
+        0.0,
+        2.6
+      ],
+      "size": 1.4,
+      "color": [
+        0.55,
+        0.66,
+        1.0
+      ],
+      "blender_power": 650,
+      "godot_energy": 0.35,
+      "range": 7.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        2.3,
+        2.22,
+        6.8
+      ],
+      "color": [
+        0.25,
+        1.0,
+        0.5
+      ],
+      "blender_power": 2.0,
+      "godot_energy": 0.35,
+      "range": 5.0,
+      "radius": 0.05
+    },
+    {
+      "kind": "point",
+      "pos": [
+        0.2,
+        1.86,
+        5.7
+      ],
+      "color": [
+        1.0,
+        0.62,
+        0.32
+      ],
+      "blender_power": 9,
+      "radius": 0.03,
+      "godot_energy": 0.6,
+      "range": 4.0,
+      "flicker": true
+    },
+    {
+      "kind": "point",
+      "pos": [
+        4.4,
+        1.86,
+        6.4
+      ],
+      "color": [
+        1.0,
+        0.62,
+        0.32
+      ],
+      "blender_power": 7,
+      "radius": 0.03,
+      "godot_energy": 0.5,
+      "range": 4.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        2.4,
+        2.25,
+        6.6
+      ],
+      "look_at": [
+        2.3,
+        0.9,
+        1.0
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          4.6,
+          4.7
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        0.45,
+        2.45,
+        0.5
+      ],
+      "look_at": [
+        3.0,
+        0.7,
+        6.6
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          4.3
+        ],
+        "max": [
+          4.6,
+          7.0
+        ]
+      },
+      "priority": 2
+    }
+  ],
+  "spawns": {
+    "from_gang": {
+      "pos": [
+        3.4,
+        0.0,
+        3.95
+      ],
+      "yaw": 180
+    },
+    "from_kelder": {
+      "pos": [
+        2.3,
+        0.0,
+        6.4
+      ],
+      "yaw": 0
+    }
+  },
+  "interactables": [
+    {
+      "id": "stairs_up",
+      "kind": "door",
+      "pos": [
+        3.95,
+        1.0,
+        3.6
+      ],
+      "radius": 0.9,
+      "target_room": "gang",
+      "target_spawn": "from_kelder"
+    },
+    {
+      "id": "door_kelder",
+      "kind": "door",
+      "pos": [
+        2.3,
+        1.0,
+        6.85
+      ],
+      "radius": 0.9,
+      "target_room": "kelder",
+      "target_spawn": "from_souterrain",
+      "peek": {
+        "pos": [
+          2.0,
+          1.62,
+          6.65
+        ],
+        "look_at": [
+          4.6,
+          0.9,
+          9.5
+        ],
+        "fov": 42
+      }
+    },
+    {
+      "id": "bust",
+      "kind": "examine",
+      "pos": [
+        1.0,
+        1.2,
+        2.6
+      ],
+      "radius": 1.0,
+      "text": "A burgher in white marble. Someone has turned him to face the stairs."
+    },
+    {
+      "id": "lightwell",
+      "kind": "examine",
+      "pos": [
+        0.25,
+        1.2,
+        1.2
+      ],
+      "radius": 1.0,
+      "text": "The light well. Rain runs down the far wall; the drain has backed up and the water is rising."
+    },
+    {
+      "id": "shells_souterrain",
+      "kind": "pickup",
+      "item": "shotgun_shells",
+      "count": 6,
+      "pos": [
+        0.25,
+        0.02,
+        4.4
+      ],
+      "radius": 0.9
+    }
+  ],
+  "enemies": [
+    {
+      "id": "in_de_regen",
+      "kind": "verdronkene",
+      "pos": [
+        -1.05,
+        0.0,
+        3.4
+      ],
+      "yaw": 90
+    }
+  ],
+  "render": {
+    "exposure": 1.3
+  }
+}

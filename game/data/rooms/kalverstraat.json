@@ -1,0 +1,3326 @@
+{
+  "_file": "damned_waters/game/data/rooms/kalverstraat.json \u2014 RoomSpec for Kalverstraat (the city, district 5: the Kalverstraat): the Kalverstraat, the city's busiest shopping street, from the Dam south to the Singel: shop after shop, most with their shutters down, garlands of lights still strung across it; a gun shop, a chemist's, a jeweller's put in by looters; the alley through to Muntplein near its end. Modelled after openly licensed photographs; every business name is made up, the landmarks keep theirs. The power is still on; nobody is there. Outdoor (street.py, city.py and landmarks.py build it). Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "kalverstraat",
+  "display_name": "Kalverstraat",
+  "storey": 13,
+  "origin": [
+    836.0,
+    -199.7
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      8.0,
+      139.4
+    ]
+  },
+  "height": 10.0,
+  "materials": {
+    "floor": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "wall": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "ceiling": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    }
+  },
+  "footsteps": "marble",
+  "ambience": "amb_street_rain",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.014,
+      0.019,
+      0.036
+    ],
+    "strength": 1.0
+  },
+  "sky": {
+    "hdri": "kloppenheim_07_puresky",
+    "strength": 0.045,
+    "camera": 0.1,
+    "tint": [
+      1.0,
+      0.76,
+      0.55
+    ]
+  },
+  "render": {
+    "exposure": 0.85,
+    "bloom": {
+      "threshold": 0.9,
+      "strength": 0.4,
+      "size": 0.55,
+      "haze": {
+        "color": [
+          0.045,
+          0.052,
+          0.068
+        ],
+        "start": 12.0,
+        "depth": 85.0,
+        "strength": 0.5
+      }
+    }
+  },
+  "outdoor": {
+    "window_rooms": [
+      "warm_bar",
+      "fireplace",
+      "small_empty_room_2",
+      "christmas_photo_studio_04",
+      "warm_restaurant_night",
+      "unfinished_office_night"
+    ],
+    "lamp_power": 300.0,
+    "lamp_energy": 1.0,
+    "tide": 0.5,
+    "ground": [
+      {
+        "name": "street",
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          8.0,
+          139.70000000000002
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "cobblestone_floor_04",
+          "tint": [
+            0.75,
+            0.72,
+            0.68
+          ],
+          "wet": 0.65,
+          "puddles": 0.18,
+          "puddle_scale": 0.9
+        }
+      }
+    ],
+    "lamps": [
+      [
+        0.6,
+        12.0
+      ],
+      [
+        0.6,
+        36.0
+      ],
+      [
+        0.6,
+        60.0
+      ],
+      [
+        0.6,
+        84.0
+      ],
+      [
+        0.6,
+        108.0
+      ],
+      [
+        0.6,
+        132.0
+      ],
+      [
+        7.4,
+        30.0
+      ],
+      [
+        7.4,
+        54.0
+      ],
+      [
+        7.4,
+        78.0
+      ],
+      [
+        7.4,
+        102.0
+      ],
+      [
+        7.4,
+        126.0
+      ]
+    ],
+    "facades": [
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 1310,
+        "lit": 0.3,
+        "z0": 0.0,
+        "z1": 7.79,
+        "x": 0.0,
+        "shop": {
+          "name": "H&K MODE",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "MODE",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "shutter": 0.6,
+          "tag": "DICHT"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.4101807194522324
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "cornice",
+        "seed": 1311,
+        "lit": 0.3,
+        "z0": 7.84,
+        "z1": 16.79,
+        "x": 0.0,
+        "shop": {
+          "name": "SPORTZAAK DE BAL",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "BAL",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8259598307544214
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "spout",
+        "seed": 1312,
+        "lit": 0.3,
+        "z0": 16.84,
+        "z1": 24.39,
+        "x": 0.0,
+        "shop": {
+          "name": "HORLOGES",
+          "kind": "jeweller",
+          "room": "fireplace",
+          "sign": [
+            1.0,
+            0.85,
+            0.5
+          ],
+          "frame": [
+            0.05,
+            0.05,
+            0.06
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "HORLOGES",
+          "shutter": 0.6,
+          "tag": "WEG"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8490305209181455
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "spout",
+        "seed": 1313,
+        "lit": 0.3,
+        "z0": 24.44,
+        "z1": 33.81,
+        "x": 0.0,
+        "shop": {
+          "name": "SCHOENEN",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "SCHOENEN",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "shutter": 1.0,
+          "tag": "WEG"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.836001053117721
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "cornice",
+        "seed": 1314,
+        "lit": 0.3,
+        "z0": 33.86,
+        "z1": 42.82,
+        "x": 0.0,
+        "shop": {
+          "name": "TASSEN",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "TASSEN",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "shutter": 1.0,
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.838917460536508
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "spout",
+        "seed": 1315,
+        "lit": 0.3,
+        "z0": 42.87,
+        "z1": 51.79,
+        "x": 0.0,
+        "shop": {
+          "name": "DAMES MODE",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "MODE",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "shutter": 1.0,
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8658043491810163
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "cornice",
+        "seed": 1316,
+        "lit": 0.3,
+        "z0": 51.84,
+        "z1": 59.26,
+        "x": 0.0,
+        "shop": {
+          "name": "BRILLEN",
+          "kind": "hotel",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.9,
+            0.8
+          ],
+          "frame": [
+            0.12,
+            0.1,
+            0.08
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "BRILLEN",
+          "shutter": 0.85,
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8674953186883028
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "cornice",
+        "seed": 1390,
+        "lit": 0.3,
+        "z0": 60.0,
+        "z1": 69.6,
+        "x": 0.0,
+        "shop": {
+          "name": "WAPENHANDEL DE JAGER",
+          "kind": "police",
+          "room": "unfinished_office_night",
+          "sign": [
+            0.95,
+            0.97,
+            1.0
+          ],
+          "frame": [
+            0.02,
+            0.06,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 28.8,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "JAGER",
+          "enter": true
+        },
+        "stoop": 0.0,
+        "lean": 0.0
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "bell",
+        "seed": 1317,
+        "lit": 0.3,
+        "z0": 69.65,
+        "z1": 78.21,
+        "x": 0.0,
+        "shop": {
+          "name": "CAF\u00c9 KALVER",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "KALVER",
+          "tag": "WEG"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8801311195028907
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "cornice",
+        "seed": 1318,
+        "lit": 0.3,
+        "z0": 78.26,
+        "z1": 85.33,
+        "x": 0.0,
+        "shop": {
+          "name": "SPEELGOED",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "SPEELGOED",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "shutter": 0.85,
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.400769339966
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 1319,
+        "lit": 0.3,
+        "z0": 85.38,
+        "z1": 92.75,
+        "x": 0.0,
+        "shop": {
+          "name": "PARFUMERIE",
+          "kind": "hotel",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.9,
+            0.8
+          ],
+          "frame": [
+            0.12,
+            0.1,
+            0.08
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "PARFUMERIE",
+          "shutter": 0.6,
+          "tag": "NAAR CENTRAAL"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.740492541459191
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "cornice",
+        "seed": 1320,
+        "lit": 0.3,
+        "z0": 92.8,
+        "z1": 95.95,
+        "x": 0.0,
+        "shop": {
+          "name": "KAAS \u00b7 STROOPWAFELS",
+          "kind": "snack",
+          "room": "warm_restaurant_night",
+          "sign": [
+            1.0,
+            0.85,
+            0.2
+          ],
+          "frame": [
+            0.35,
+            0.04,
+            0.03
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "STROOPWAFE",
+          "awning": [
+            [
+              0.75,
+              0.05,
+              0.04
+            ],
+            [
+              0.95,
+              0.85,
+              0.2
+            ]
+          ],
+          "shutter": 0.6,
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8524295902466283
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 1391,
+        "lit": 0.3,
+        "z0": 96.0,
+        "z1": 105.0,
+        "x": 0.0,
+        "shop": {
+          "name": "DROGISTERIJ VAN DER LINDEN",
+          "kind": "pharmacy",
+          "room": "unfinished_office_night",
+          "sign": [
+            0.85,
+            1.0,
+            0.9
+          ],
+          "frame": [
+            0.02,
+            0.2,
+            0.1
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 30.400000000000002,
+          "door_bay": 1,
+          "neon": false,
+          "enter": true,
+          "cross": false
+        },
+        "stoop": 0.0,
+        "lean": 0.0,
+        "gable_h": 3.8
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "cornice",
+        "seed": 1321,
+        "lit": 0.3,
+        "z0": 105.05,
+        "z1": 114.34,
+        "x": 0.0,
+        "shop": {
+          "name": "CD \u00b7 DVD",
+          "kind": "books",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.88,
+            0.7
+          ],
+          "frame": [
+            0.06,
+            0.12,
+            0.1
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "DVD",
+          "awning": [
+            [
+              0.05,
+              0.2,
+              0.15
+            ],
+            [
+              0.8,
+              0.75,
+              0.62
+            ]
+          ],
+          "shutter": 0.6,
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.5683307706717606
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "bell",
+        "seed": 1322,
+        "lit": 0.3,
+        "z0": 114.39,
+        "z1": 123.82,
+        "x": 0.0,
+        "shop": {
+          "name": "MOBIEL",
+          "kind": "hotel",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.9,
+            0.8
+          ],
+          "frame": [
+            0.12,
+            0.1,
+            0.08
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "MOBIEL",
+          "shutter": 0.85,
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8238344775303337
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 1323,
+        "lit": 0.3,
+        "z0": 123.87,
+        "z1": 133.03,
+        "x": 0.0,
+        "shop": {
+          "name": "BAKKERIJ",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "BAKKERIJ",
+          "shutter": 1.0,
+          "tag": "DICHT"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.672040567322896
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "cornice",
+        "seed": 1324,
+        "lit": 0.3,
+        "z0": 133.08,
+        "z1": 139.35,
+        "x": 0.0,
+        "shop": {
+          "name": "HEREN MODE",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "MODE",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.7029688998227113
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "step",
+        "seed": 1350,
+        "lit": 0.3,
+        "z0": 0.0,
+        "z1": 7.15,
+        "x": 8.0,
+        "shop": {
+          "name": "KINDERKLEDING",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "KINDERKLED",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "shutter": 0.6,
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.538514821319757
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "bell",
+        "seed": 1351,
+        "lit": 0.3,
+        "z0": 7.2,
+        "z1": 14.31,
+        "x": 8.0,
+        "shop": {
+          "name": "BOEKHANDEL",
+          "kind": "books",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.88,
+            0.7
+          ],
+          "frame": [
+            0.06,
+            0.12,
+            0.1
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "BOEKHANDEL",
+          "awning": [
+            [
+              0.05,
+              0.2,
+              0.15
+            ],
+            [
+              0.8,
+              0.75,
+              0.62
+            ]
+          ],
+          "shutter": 1.0,
+          "tag": "WEG"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.622857674492681
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "spout",
+        "seed": 1352,
+        "lit": 0.3,
+        "z0": 14.36,
+        "z1": 23.23,
+        "x": 8.0,
+        "shop": {
+          "name": "ELEKTRONICA",
+          "kind": "hotel",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.9,
+            0.8
+          ],
+          "frame": [
+            0.12,
+            0.1,
+            0.08
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "ELEKTRONIC",
+          "shutter": 0.6,
+          "tag": "DICHT"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.7617508707106415
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "cornice",
+        "seed": 1353,
+        "lit": 0.3,
+        "z0": 23.28,
+        "z1": 29.95,
+        "x": 8.0,
+        "shop": {
+          "name": "IJSSALON",
+          "kind": "restaurant",
+          "room": "warm_restaurant_night",
+          "sign": [
+            1.0,
+            0.3,
+            0.18
+          ],
+          "frame": [
+            0.06,
+            0.05,
+            0.05
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "IJSSALON",
+          "awning": [
+            [
+              0.45,
+              0.06,
+              0.05
+            ],
+            [
+              0.78,
+              0.74,
+              0.66
+            ]
+          ],
+          "shutter": 1.0,
+          "tag": "DICHT"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.755558197562883
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "cornice",
+        "seed": 1392,
+        "lit": 0.3,
+        "z0": 30.0,
+        "z1": 38.5,
+        "x": 8.0,
+        "shop": {
+          "name": "JUWELIER GOUDSMIT",
+          "kind": "jeweller",
+          "room": "fireplace",
+          "sign": [
+            1.0,
+            0.85,
+            0.5
+          ],
+          "frame": [
+            0.05,
+            0.05,
+            0.06
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 25.6,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "GOUD",
+          "enter": true,
+          "smashed": [
+            0,
+            2
+          ]
+        },
+        "stoop": 0.0,
+        "lean": 0.0
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "spout",
+        "seed": 1354,
+        "lit": 0.3,
+        "z0": 38.55,
+        "z1": 46.79,
+        "x": 8.0,
+        "shop": {
+          "name": "SNACKBAR",
+          "kind": "snack",
+          "room": "warm_restaurant_night",
+          "sign": [
+            1.0,
+            0.85,
+            0.2
+          ],
+          "frame": [
+            0.35,
+            0.04,
+            0.03
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "SNACKBAR",
+          "awning": [
+            [
+              0.75,
+              0.05,
+              0.04
+            ],
+            [
+              0.95,
+              0.85,
+              0.2
+            ]
+          ],
+          "shutter": 1.0,
+          "tag": "NAAR CENTRAAL"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.5085820379091577
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "spout",
+        "seed": 1355,
+        "lit": 0.3,
+        "z0": 46.84,
+        "z1": 54.73,
+        "x": 8.0,
+        "shop": {
+          "name": "LINGERIE",
+          "kind": "hotel",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.9,
+            0.8
+          ],
+          "frame": [
+            0.12,
+            0.1,
+            0.08
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "LINGERIE",
+          "shutter": 1.0,
+          "tag": "NAAR CENTRAAL"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.7719637252611435
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "cornice",
+        "seed": 1356,
+        "lit": 0.3,
+        "z0": 54.78,
+        "z1": 63.32,
+        "x": 8.0,
+        "shop": {
+          "name": "FOTO \u00b7 CAMERA",
+          "kind": "hotel",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.9,
+            0.8
+          ],
+          "frame": [
+            0.12,
+            0.1,
+            0.08
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "CAMERA",
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.6853990594996597
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "step",
+        "seed": 1357,
+        "lit": 0.3,
+        "z0": 63.37,
+        "z1": 70.98,
+        "x": 8.0,
+        "shop": {
+          "name": "THEEHUIS",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "THEEHUIS",
+          "shutter": 1.0,
+          "tag": "NAAR CENTRAAL"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.4586637261122157
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 1358,
+        "lit": 0.3,
+        "z0": 71.03,
+        "z1": 79.35,
+        "x": 8.0,
+        "shop": {
+          "name": "SPORTSCHOENEN",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "SPORTSCHOE",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "shutter": 0.85,
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.719178351810065
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "spout",
+        "seed": 1359,
+        "lit": 0.3,
+        "z0": 79.4,
+        "z1": 87.93,
+        "x": 8.0,
+        "shop": {
+          "name": "CHOCOLATERIE",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "CHOCOLATER",
+          "shutter": 0.85,
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.517938553959849
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 1360,
+        "lit": 0.3,
+        "z0": 87.98,
+        "z1": 97.38,
+        "x": 8.0,
+        "shop": {
+          "name": "PARFUMERIE",
+          "kind": "hotel",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.9,
+            0.8
+          ],
+          "frame": [
+            0.12,
+            0.1,
+            0.08
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "PARFUMERIE",
+          "shutter": 1.0,
+          "tag": "NAAR CENTRAAL"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.7941510555437183
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "cornice",
+        "seed": 1361,
+        "lit": 0.3,
+        "z0": 97.43,
+        "z1": 106.79,
+        "x": 8.0,
+        "shop": {
+          "name": "MODE",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "MODE",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "tag": "WEG"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.5046262400954906
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "bell",
+        "seed": 1362,
+        "lit": 0.3,
+        "z0": 106.84,
+        "z1": 114.69,
+        "x": 8.0,
+        "shop": {
+          "name": "SIERADEN",
+          "kind": "jeweller",
+          "room": "fireplace",
+          "sign": [
+            1.0,
+            0.85,
+            0.5
+          ],
+          "frame": [
+            0.05,
+            0.05,
+            0.06
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "SIERADEN",
+          "shutter": 0.85,
+          "tag": "WEG"
+        },
+        "stoop": 0.0,
+        "gable_h": 3.454067981901103
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 1363,
+        "lit": 0.3,
+        "z0": 114.74,
+        "z1": 123.65,
+        "x": 8.0,
+        "shop": {
+          "name": "KLOMPEN",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "KLOMPEN",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "shutter": 0.85,
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.4714833438536306
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 1364,
+        "lit": 0.3,
+        "z0": 123.7,
+        "z1": 132.47,
+        "x": 8.0,
+        "shop": {
+          "name": "TASSEN",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "TASSEN",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "shutter": 1.0,
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.658287239684894
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "spout",
+        "seed": 1365,
+        "lit": 0.3,
+        "z0": 132.52,
+        "z1": 135.9,
+        "x": 8.0,
+        "shop": {
+          "name": "KINDERKLEDING",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "KINDERKLED",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "shutter": 1.0,
+          "tag": ""
+        },
+        "stoop": 0.0,
+        "gable_h": 3.59290976208423
+      }
+    ]
+  },
+  "props": [
+    {
+      "type": "garland",
+      "pos": [
+        4.0,
+        0.0,
+        6.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.0,
+        6.4,
+        0.1
+      ],
+      "collide": false,
+      "color": [
+        0.95,
+        0.95,
+        1.0
+      ],
+      "sag": 0.7
+    },
+    {
+      "type": "garland",
+      "pos": [
+        4.0,
+        0.0,
+        18.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.0,
+        6.4,
+        0.1
+      ],
+      "collide": false,
+      "color": [
+        1.0,
+        0.86,
+        0.6
+      ],
+      "sag": 0.7
+    },
+    {
+      "type": "garland",
+      "pos": [
+        4.0,
+        0.0,
+        30.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.0,
+        6.4,
+        0.1
+      ],
+      "collide": false,
+      "color": [
+        0.95,
+        0.95,
+        1.0
+      ],
+      "sag": 0.7
+    },
+    {
+      "type": "garland",
+      "pos": [
+        4.0,
+        0.0,
+        42.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.0,
+        6.4,
+        0.1
+      ],
+      "collide": false,
+      "color": [
+        1.0,
+        0.86,
+        0.6
+      ],
+      "sag": 0.7
+    },
+    {
+      "type": "garland",
+      "pos": [
+        4.0,
+        0.0,
+        54.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.0,
+        6.4,
+        0.1
+      ],
+      "collide": false,
+      "color": [
+        0.95,
+        0.95,
+        1.0
+      ],
+      "sag": 0.7
+    },
+    {
+      "type": "garland",
+      "pos": [
+        4.0,
+        0.0,
+        66.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.0,
+        6.4,
+        0.1
+      ],
+      "collide": false,
+      "color": [
+        1.0,
+        0.86,
+        0.6
+      ],
+      "sag": 0.7
+    },
+    {
+      "type": "garland",
+      "pos": [
+        4.0,
+        0.0,
+        78.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.0,
+        6.4,
+        0.1
+      ],
+      "collide": false,
+      "color": [
+        0.95,
+        0.95,
+        1.0
+      ],
+      "sag": 0.7
+    },
+    {
+      "type": "garland",
+      "pos": [
+        4.0,
+        0.0,
+        90.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.0,
+        6.4,
+        0.1
+      ],
+      "collide": false,
+      "color": [
+        1.0,
+        0.86,
+        0.6
+      ],
+      "sag": 0.7
+    },
+    {
+      "type": "garland",
+      "pos": [
+        4.0,
+        0.0,
+        102.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.0,
+        6.4,
+        0.1
+      ],
+      "collide": false,
+      "color": [
+        0.95,
+        0.95,
+        1.0
+      ],
+      "sag": 0.7
+    },
+    {
+      "type": "garland",
+      "pos": [
+        4.0,
+        0.0,
+        114.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.0,
+        6.4,
+        0.1
+      ],
+      "collide": false,
+      "color": [
+        1.0,
+        0.86,
+        0.6
+      ],
+      "sag": 0.7
+    },
+    {
+      "type": "garland",
+      "pos": [
+        4.0,
+        0.0,
+        126.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.0,
+        6.4,
+        0.1
+      ],
+      "collide": false,
+      "color": [
+        0.95,
+        0.95,
+        1.0
+      ],
+      "sag": 0.7
+    },
+    {
+      "type": "railing",
+      "pos": [
+        4.0,
+        0.0,
+        139.20000000000002
+      ],
+      "yaw": 0,
+      "size": [
+        8.0,
+        1.0,
+        0.1
+      ],
+      "collide": true
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        4.0,
+        0.0,
+        22.0
+      ],
+      "size": [
+        6.0,
+        0.0,
+        6.0
+      ],
+      "seed": 11,
+      "cases": 1,
+      "bags": 4,
+      "pushchair": true,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        4.0,
+        0.0,
+        80.0
+      ],
+      "size": [
+        6.0,
+        0.0,
+        8.0
+      ],
+      "seed": 12,
+      "cases": 2,
+      "bags": 5,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        4.0,
+        0.0,
+        124.0
+      ],
+      "size": [
+        6.0,
+        0.0,
+        8.0
+      ],
+      "seed": 13,
+      "cases": 1,
+      "bags": 3,
+      "umbrella": true,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        4.0,
+        0.0,
+        69.7
+      ],
+      "size": [
+        8.0,
+        0.0,
+        139.4
+      ],
+      "seed": 14,
+      "count": 300,
+      "collide": false
+    },
+    {
+      "type": "broken_glass",
+      "pos": [
+        8.0,
+        0.0,
+        34.25
+      ],
+      "yaw": -90,
+      "size": [
+        8.0,
+        0.0,
+        2.2
+      ],
+      "seed": 15,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        1.0,
+        0.0,
+        44.0
+      ],
+      "yaw": 8,
+      "roll": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 180
+    },
+    {
+      "type": "bike",
+      "pos": [
+        6.8,
+        0.0,
+        112.0
+      ],
+      "yaw": 170,
+      "roll": -84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 181
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.8,
+        0.0,
+        88.0
+      ],
+      "yaw": 30,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:WetFloorSign_01",
+      "pos": [
+        1.0,
+        0.0,
+        98.0
+      ],
+      "yaw": 60,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "evac_board",
+      "pos": [
+        4.0,
+        0.0,
+        132.0
+      ],
+      "yaw": 0,
+      "size": [
+        1.8,
+        1.9,
+        0.6
+      ],
+      "text": "EVACUATIEROUTE",
+      "to": "VIA DE DAM",
+      "arrow": "up",
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.52,
+        0.0,
+        6.11
+      ],
+      "yaw": 12,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.5,
+        0.0,
+        9.03
+      ],
+      "yaw": 268,
+      "scale": 0.96,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        0.4,
+        0.0,
+        14.66
+      ],
+      "yaw": 270,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        0.4,
+        0.0,
+        19.03
+      ],
+      "yaw": 270,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.6,
+        0.0,
+        22.49
+      ],
+      "yaw": 106,
+      "scale": 0.99,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.61,
+        0.0,
+        26.6
+      ],
+      "yaw": 68,
+      "scale": 0.88,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.64,
+        0.0,
+        26.35
+      ],
+      "yaw": 197,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        0.4,
+        0.0,
+        31.66
+      ],
+      "yaw": 270,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.25,
+        0.0,
+        41.09
+      ],
+      "yaw": 350,
+      "scale": 0.98,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        0.4,
+        0.0,
+        50.83
+      ],
+      "yaw": 270,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.58,
+        0.0,
+        54.68
+      ],
+      "yaw": 196,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.46,
+        0.0,
+        54.2
+      ],
+      "yaw": 327,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.3,
+        0.0,
+        54.32
+      ],
+      "yaw": 322,
+      "scale": 0.87,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.32,
+        0.0,
+        71.95
+      ],
+      "yaw": 118,
+      "scale": 0.99,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.64,
+        0.0,
+        72.13
+      ],
+      "yaw": 153,
+      "scale": 0.88,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_crate_01",
+      "pos": [
+        0.55,
+        0.0,
+        72.06
+      ],
+      "yaw": 317,
+      "scale": 0.95,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.47,
+        0.0,
+        80.5
+      ],
+      "yaw": 340,
+      "scale": 0.91,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.61,
+        0.0,
+        93.68
+      ],
+      "yaw": 28,
+      "scale": 0.96,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.52,
+        0.0,
+        94.21
+      ],
+      "yaw": 95,
+      "scale": 0.98,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.58,
+        0.0,
+        94.17
+      ],
+      "yaw": 83,
+      "scale": 0.92,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.45,
+        0.0,
+        110.82
+      ],
+      "yaw": 217,
+      "scale": 0.98,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.49,
+        0.0,
+        116.96
+      ],
+      "yaw": 312,
+      "scale": 0.96,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        0.39,
+        0.0,
+        116.86
+      ],
+      "yaw": 30,
+      "scale": 0.85,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        0.37,
+        0.0,
+        121.41
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 90,
+      "seed": 551,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        0.37,
+        0.0,
+        125.59
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 90,
+      "seed": 855,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        0.4,
+        0.0,
+        129.33
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        0.4,
+        0.0,
+        135.76
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.73,
+        0.0,
+        10.37
+      ],
+      "yaw": 321,
+      "scale": 1.0,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        7.63,
+        0.0,
+        16.3
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 270,
+      "seed": 645,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        7.63,
+        0.0,
+        19.92
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 270,
+      "seed": 610,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.42,
+        0.0,
+        25.14
+      ],
+      "yaw": 332,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.52,
+        0.0,
+        24.79
+      ],
+      "yaw": 9,
+      "scale": 0.88,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        7.6,
+        0.0,
+        39.77
+      ],
+      "yaw": 450,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        7.67,
+        0.0,
+        48.94
+      ],
+      "yaw": 450,
+      "scale": 1.0,
+      "size": [
+        0.92,
+        1.0,
+        0.42
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        7.6,
+        0.0,
+        56.13
+      ],
+      "yaw": 270,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.65,
+        0.0,
+        62.3
+      ],
+      "yaw": 226,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.41,
+        0.0,
+        62.4
+      ],
+      "yaw": 70,
+      "scale": 0.93,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.58,
+        0.0,
+        66.2
+      ],
+      "yaw": 147,
+      "scale": 0.97,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.42,
+        0.0,
+        66.04
+      ],
+      "yaw": 167,
+      "scale": 0.92,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.54,
+        0.0,
+        72.81
+      ],
+      "yaw": 68,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.39,
+        0.0,
+        81.83
+      ],
+      "yaw": 353,
+      "scale": 0.98,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.52,
+        0.0,
+        81.2
+      ],
+      "yaw": 56,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.39,
+        0.0,
+        81.28
+      ],
+      "yaw": 330,
+      "scale": 0.88,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.66,
+        0.0,
+        89.77
+      ],
+      "yaw": 63,
+      "scale": 0.92,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.41,
+        0.0,
+        95.45
+      ],
+      "yaw": 352,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.39,
+        0.0,
+        95.07
+      ],
+      "yaw": 351,
+      "scale": 0.94,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.67,
+        0.0,
+        94.88
+      ],
+      "yaw": 315,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.59,
+        0.0,
+        98.43
+      ],
+      "yaw": 67,
+      "scale": 0.85,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        7.63,
+        0.0,
+        104.79
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 270,
+      "seed": 78,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.52,
+        0.0,
+        109.15
+      ],
+      "yaw": 342,
+      "scale": 0.97,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.54,
+        0.0,
+        109.2
+      ],
+      "yaw": 259,
+      "scale": 0.87,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        7.67,
+        0.0,
+        117.45
+      ],
+      "yaw": 450,
+      "scale": 1.0,
+      "size": [
+        0.92,
+        1.0,
+        0.42
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.7,
+        0.0,
+        128.66
+      ],
+      "yaw": 176,
+      "scale": 0.93,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.75,
+        0.0,
+        129.15
+      ],
+      "yaw": 24,
+      "scale": 0.92,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.58,
+        0.0,
+        128.61
+      ],
+      "yaw": 94,
+      "scale": 0.97,
+      "collide": false,
+      "junk": true
+    }
+  ],
+  "walls": {
+    "north": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 4.0,
+          "width": 8.0,
+          "height": 10.0
+        }
+      ]
+    },
+    "east": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 137.7,
+          "width": 3.4,
+          "height": 8.0
+        },
+        {
+          "kind": "door",
+          "style": "glass",
+          "center": 32.67,
+          "width": 1.48,
+          "height": 2.25,
+          "hinge": "left"
+        }
+      ]
+    },
+    "west": {
+      "openings": [
+        {
+          "kind": "door",
+          "style": "glass",
+          "center": 67.05,
+          "width": 1.4,
+          "height": 2.25,
+          "hinge": "left"
+        },
+        {
+          "kind": "door",
+          "style": "glass",
+          "center": 102.18,
+          "width": 1.58,
+          "height": 2.25,
+          "hinge": "left"
+        }
+      ]
+    }
+  },
+  "lights": [
+    {
+      "kind": "sun",
+      "dir_from": [
+        -0.35,
+        0.55,
+        1.0
+      ],
+      "color": [
+        0.55,
+        0.66,
+        1.0
+      ],
+      "blender_power": 0.12,
+      "godot_energy": 0.25,
+      "angle": 2.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        5.4,
+        4.2,
+        -3.0
+      ],
+      "look_at": [
+        2.4,
+        0.6,
+        28.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          8.0,
+          24.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        2.6,
+        4.2,
+        51.0
+      ],
+      "look_at": [
+        5.6,
+        0.6,
+        20.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          24.0
+        ],
+        "max": [
+          8.0,
+          48.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "c",
+      "pos": [
+        5.4,
+        4.2,
+        45.0
+      ],
+      "look_at": [
+        2.4,
+        0.6,
+        76.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          48.0
+        ],
+        "max": [
+          8.0,
+          72.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "d",
+      "pos": [
+        2.6,
+        4.2,
+        99.0
+      ],
+      "look_at": [
+        5.6,
+        0.6,
+        68.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          72.0
+        ],
+        "max": [
+          8.0,
+          96.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "e",
+      "pos": [
+        5.4,
+        4.2,
+        93.0
+      ],
+      "look_at": [
+        2.4,
+        0.6,
+        124.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          96.0
+        ],
+        "max": [
+          8.0,
+          120.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "f",
+      "pos": [
+        2.6,
+        4.2,
+        138.8
+      ],
+      "look_at": [
+        5.6,
+        0.6,
+        116.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          120.0
+        ],
+        "max": [
+          8.0,
+          139.4
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_noord": {
+      "pos": [
+        4.0,
+        0.0,
+        1.2
+      ],
+      "yaw": 180
+    },
+    "from_steeg": {
+      "pos": [
+        7.0,
+        0.0,
+        137.7
+      ],
+      "yaw": 90
+    },
+    "from_wapenhandel": {
+      "pos": [
+        0.8,
+        0.0,
+        67.05
+      ],
+      "yaw": -90
+    },
+    "from_drogist": {
+      "pos": [
+        0.8,
+        0.0,
+        102.18
+      ],
+      "yaw": -90
+    },
+    "from_juwelier": {
+      "pos": [
+        7.2,
+        0.0,
+        32.67
+      ],
+      "yaw": 90
+    }
+  },
+  "interactables": [
+    {
+      "id": "door_wapenhandel",
+      "kind": "door",
+      "pos": [
+        0.45,
+        1.0,
+        67.05
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "door_drogist",
+      "kind": "door",
+      "pos": [
+        0.45,
+        1.0,
+        102.18
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "door_juwelier",
+      "kind": "door",
+      "pos": [
+        7.55,
+        1.0,
+        32.67
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "shutters",
+      "kind": "examine",
+      "pos": [
+        4.0,
+        1.0,
+        50.0
+      ],
+      "radius": 1.6,
+      "text": "Shutter after shutter, all the way down. On one, sprayed: NAAR CENTRAAL. On the next: TE LAAT."
+    },
+    {
+      "id": "singel",
+      "kind": "examine",
+      "pos": [
+        4.0,
+        1.0,
+        138.4
+      ],
+      "radius": 2.0,
+      "text": "The Singel, black. Across it, the flower market's stalls rock on their pontoons, their bulbs still lit."
+    },
+    {
+      "id": "shells_street",
+      "kind": "pickup",
+      "item": "shotgun_shells",
+      "count": 2,
+      "pos": [
+        6.4,
+        0.0,
+        84.0
+      ],
+      "radius": 0.9
+    }
+  ],
+  "enemies": [
+    {
+      "id": "voor_de_etalage",
+      "kind": "verdronkene",
+      "pos": [
+        6.5,
+        0.0,
+        34.0
+      ],
+      "yaw": 270
+    },
+    {
+      "id": "in_de_straat_2",
+      "kind": "verdronkene",
+      "pos": [
+        3.0,
+        0.0,
+        78.0
+      ],
+      "yaw": 10
+    },
+    {
+      "id": "bij_de_steeg",
+      "kind": "verdronkene",
+      "pos": [
+        4.5,
+        0.0,
+        132.0
+      ],
+      "yaw": 200
+    }
+  ]
+}

@@ -38,7 +38,7 @@ class RoomSpecTests(unittest.TestCase):
 
     def test_all_rooms_validate(self):
         specs = roomspec.load_all(ROOMS)
-        self.assertEqual(set(specs), {"gang", "voorkamer", "kelder"})
+        self.assertTrue({"gang", "voorkamer", "kelder"} <= set(specs))   # (and whatever rooms join them)
 
     def test_bad_opening_is_caught(self):
         spec = {"id": "x", "bounds": {"min": [0, 0], "max": [2, 2]}, "height": 3, "shots": [], "spawns": {},

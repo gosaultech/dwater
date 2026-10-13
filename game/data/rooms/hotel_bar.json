@@ -1,0 +1,895 @@
+{
+  "_file": "damned_waters/game/data/rooms/hotel_bar.json \u2014 RoomSpec for Hotel de IJ \u00b7 Bar (the city, district 6: Damrak): the bar of a hotel on Damrak: the long counter, the bottles lit along the back, stools, the booths by the window, a chandelier; glasses still on the tables. The night porter kept a gun behind the bar. It's gone. Its front wall is the street's shopfront (\"facade\": the street builds it); its door is the street's. Every business name is made up. Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "hotel_bar",
+  "display_name": "Hotel de IJ \u00b7 Bar",
+  "storey": 15,
+  "origin": [
+    899.7,
+    -429.45
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      12.0,
+      9.95
+    ]
+  },
+  "height": 3.6,
+  "materials": {
+    "floor": {
+      "ph": "wood_floor_worn",
+      "tint": [
+        0.42,
+        0.3,
+        0.22
+      ],
+      "rough": 0.5
+    },
+    "wall": {
+      "ph": "beige_wall_001",
+      "tint": [
+        0.41,
+        0.154,
+        0.128
+      ],
+      "rough": 0.6
+    },
+    "ceiling": {
+      "ph": "ceiling_interior",
+      "tint": [
+        0.641,
+        0.538,
+        0.436
+      ],
+      "rough": 0.7
+    },
+    "wainscot": {
+      "ph": "dark_wood",
+      "tint": [
+        0.5,
+        0.36,
+        0.26
+      ],
+      "scale": 0.5
+    },
+    "wainscot_height": 1.1,
+    "skirting": null
+  },
+  "footsteps": "wood",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.01,
+      0.012,
+      0.016
+    ],
+    "strength": 0.5
+  },
+  "render": {
+    "exposure": 0.779,
+    "bloom": {
+      "threshold": 0.95,
+      "strength": 0.25,
+      "size": 0.5
+    }
+  },
+  "walls": {
+    "east": {
+      "facade": true,
+      "openings": [
+        {
+          "kind": "door",
+          "style": "glass",
+          "center": 5.7542,
+          "width": 1.4583,
+          "height": 2.25,
+          "hinge": "left"
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "counter",
+      "pos": [
+        5.5,
+        0.0,
+        1.5
+      ],
+      "yaw": 0,
+      "size": [
+        7.0,
+        1.1,
+        0.7
+      ],
+      "till": true,
+      "material": {
+        "ph": "dark_wood",
+        "tint": [
+          0.45,
+          0.3,
+          0.2
+        ],
+        "scale": 0.5
+      },
+      "top": {
+        "color": [
+          0.12,
+          0.08,
+          0.06
+        ],
+        "rough": 0.25
+      }
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        5.5,
+        0.0,
+        0.3
+      ],
+      "yaw": 0,
+      "size": [
+        7.0,
+        2.4,
+        0.4
+      ],
+      "palette": "bar",
+      "bottles": 0.95,
+      "empty": 0.3,
+      "seed": 81,
+      "fallen": 2,
+      "frame": {
+        "ph": "dark_wood",
+        "tint": [
+          0.4,
+          0.28,
+          0.2
+        ],
+        "scale": 0.5
+      }
+    },
+    {
+      "type": "model",
+      "model": "ph:Chandelier_03",
+      "pos": [
+        6.0,
+        2.8,
+        5.0
+      ],
+      "yaw": 0,
+      "fit": [
+        1.2,
+        0.8,
+        1.2
+      ],
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:sofa_02",
+      "pos": [
+        3.0,
+        0.0,
+        9.45
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "size": [
+        1.8,
+        0.8,
+        0.7
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:Sofa_01",
+      "pos": [
+        7.0,
+        0.0,
+        9.45
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "size": [
+        1.6,
+        0.8,
+        0.7
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:CoffeeTable_01",
+      "pos": [
+        3.0,
+        0.0,
+        8.35
+      ],
+      "yaw": 4,
+      "scale": 0.8,
+      "size": [
+        1.25,
+        0.45,
+        0.6
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:coffee_table_round_01",
+      "pos": [
+        7.0,
+        0.0,
+        8.35
+      ],
+      "yaw": 0,
+      "scale": 0.7,
+      "size": [
+        0.9,
+        0.35,
+        0.9
+      ]
+    },
+    {
+      "type": "strip_light",
+      "pos": [
+        5.5,
+        2.5,
+        0.5
+      ],
+      "size": [
+        6.8,
+        0.06,
+        0.1
+      ],
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_stool_01",
+      "pos": [
+        3.0,
+        0.0,
+        2.4
+      ],
+      "yaw": 0,
+      "tip": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_stool_01",
+      "pos": [
+        4.2,
+        0.0,
+        2.4
+      ],
+      "yaw": 15,
+      "tip": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_stool_01",
+      "pos": [
+        5.4,
+        0.0,
+        2.4
+      ],
+      "yaw": 30,
+      "tip": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_stool_01",
+      "pos": [
+        6.6,
+        0.0,
+        2.6999999999999997
+      ],
+      "yaw": 45,
+      "tip": 90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_stool_01",
+      "pos": [
+        7.8,
+        0.0,
+        2.4
+      ],
+      "yaw": 60,
+      "tip": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:round_wooden_table_01",
+      "pos": [
+        2.6,
+        0.0,
+        5.2
+      ],
+      "yaw": 0,
+      "fit": [
+        1.05,
+        0.75,
+        1.05
+      ],
+      "size": [
+        1.05,
+        0.75,
+        1.05
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:dining_chair_02",
+      "pos": [
+        2.6,
+        0.0,
+        4.35
+      ],
+      "yaw": -12,
+      "scale": 1.0,
+      "size": [
+        0.45,
+        0.9,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:dining_chair_02",
+      "pos": [
+        2.6,
+        0.0,
+        6.05
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "size": [
+        0.45,
+        0.9,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:round_wooden_table_01",
+      "pos": [
+        5.8,
+        0.0,
+        6.1
+      ],
+      "yaw": 20,
+      "fit": [
+        1.05,
+        0.75,
+        1.05
+      ],
+      "size": [
+        1.05,
+        0.75,
+        1.05
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:dining_chair_02",
+      "pos": [
+        5.8,
+        0.0,
+        5.25
+      ],
+      "yaw": -12,
+      "scale": 1.0,
+      "size": [
+        0.45,
+        0.9,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:dining_chair_02",
+      "pos": [
+        5.8,
+        0.0,
+        6.95
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "size": [
+        0.45,
+        0.9,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:dining_chair_02",
+      "pos": [
+        6.65,
+        0.0,
+        6.1
+      ],
+      "yaw": -78,
+      "scale": 1.0,
+      "size": [
+        0.45,
+        0.9,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:round_wooden_table_01",
+      "pos": [
+        8.6,
+        0.0,
+        4.9
+      ],
+      "yaw": 40,
+      "fit": [
+        1.05,
+        0.75,
+        1.05
+      ],
+      "size": [
+        1.05,
+        0.75,
+        1.05
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:dining_chair_02",
+      "pos": [
+        8.6,
+        0.0,
+        4.05
+      ],
+      "yaw": -12,
+      "scale": 1.0,
+      "size": [
+        0.45,
+        0.9,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:dining_chair_02",
+      "pos": [
+        8.6,
+        0.0,
+        6.1
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "size": [
+        0.45,
+        0.9,
+        0.5
+      ],
+      "tip": 90
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.42,
+        0.0,
+        1.97
+      ],
+      "yaw": 73,
+      "scale": 0.95,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        10.63,
+        0.0,
+        0.42
+      ],
+      "yaw": -15,
+      "scale": 0.83,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        10.92,
+        0.0,
+        9.53
+      ],
+      "yaw": 191,
+      "scale": 0.98,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        0.42,
+        0.0,
+        8.22
+      ],
+      "yaw": 110,
+      "scale": 0.99,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        4.43,
+        0.0,
+        9.53
+      ],
+      "yaw": 157,
+      "scale": 0.94,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        5.55,
+        0.0,
+        9.53
+      ],
+      "yaw": 181,
+      "scale": 0.9,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        9.29,
+        0.0,
+        9.53
+      ],
+      "yaw": 190,
+      "scale": 0.88,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.42,
+        0.0,
+        4.08
+      ],
+      "yaw": 105,
+      "scale": 0.92,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        0.42,
+        0.0,
+        2.76
+      ],
+      "yaw": 84,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.42,
+        0.0,
+        6.07
+      ],
+      "yaw": 82,
+      "scale": 0.88,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.73,
+        0.0,
+        0.42
+      ],
+      "yaw": 19,
+      "scale": 0.99,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        0.42,
+        0.0,
+        1.18
+      ],
+      "yaw": 75,
+      "scale": 0.87,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        0.42,
+        0.0,
+        4.83
+      ],
+      "yaw": 65,
+      "scale": 0.99,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wall_clock",
+      "pos": [
+        1.28,
+        2.15,
+        9.92
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:hanging_picture_frame_02",
+      "pos": [
+        0.03,
+        1.75,
+        7.1
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        11.92,
+        2.43,
+        5.754
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": -90,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        11.8,
+        3.1,
+        9.75
+      ],
+      "yaw": -135,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        1.63,
+        0.0,
+        5.19
+      ],
+      "size": [
+        4.0,
+        0.01,
+        3.0
+      ],
+      "seed": 410,
+      "count": 6,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        2.49,
+        0.0,
+        4.28
+      ],
+      "size": [
+        4.0,
+        0.01,
+        3.0
+      ],
+      "seed": 884,
+      "count": 6,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:dining_chair_02",
+      "pos": [
+        10.47,
+        0.0,
+        7.47
+      ],
+      "yaw": 19,
+      "tip": 90,
+      "scale": 1.0,
+      "size": [
+        0.9,
+        0.5,
+        0.6
+      ]
+    }
+  ],
+  "lights": [
+    {
+      "kind": "area",
+      "pos": [
+        6.0,
+        3.5,
+        5.0
+      ],
+      "look_at": [
+        6.0,
+        0.0,
+        5.0
+      ],
+      "size": 1.1,
+      "color": [
+        1.0,
+        0.8,
+        0.55
+      ],
+      "blender_power": 110,
+      "godot_energy": 0.5,
+      "range": 8.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        5.5,
+        1.8,
+        0.7
+      ],
+      "color": [
+        1.0,
+        0.7,
+        0.4
+      ],
+      "blender_power": 30,
+      "godot_energy": 0.3,
+      "range": 4.0,
+      "radius": 0.3
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        11.4,
+        2.8,
+        9.45
+      ],
+      "look_at": [
+        2.0,
+        1.0,
+        1.2
+      ],
+      "fov": 66,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          12.0,
+          9.95
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_street": {
+      "pos": [
+        11.2,
+        0.0,
+        5.754166666666666
+      ],
+      "yaw": 90
+    }
+  },
+  "interactables": [
+    {
+      "id": "door_street",
+      "kind": "door",
+      "pos": [
+        11.55,
+        1.0,
+        5.754166666666666
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "glasses",
+      "kind": "examine",
+      "pos": [
+        3.0,
+        1.0,
+        7.549999999999999
+      ],
+      "radius": 1.2,
+      "text": "Two glasses, half full. A room key between them: 214."
+    },
+    {
+      "id": "porter",
+      "kind": "examine",
+      "pos": [
+        8.6,
+        1.0,
+        0.9
+      ],
+      "radius": 1.0,
+      "text": "Under the bar, a holster screwed to the woodwork. The night porter's gun is gone. Its rounds are still in the ice bin, of all places."
+    },
+    {
+      "id": "rounds_ice_bin",
+      "kind": "pickup",
+      "item": "handgun_ammo",
+      "count": 10,
+      "pos": [
+        8.6,
+        0.9,
+        1.0
+      ],
+      "radius": 0.9
+    }
+  ],
+  "enemies": [
+    {
+      "id": "de_barman",
+      "kind": "verdronkene",
+      "pos": [
+        4.2,
+        0.0,
+        0.9
+      ],
+      "yaw": 180
+    }
+  ]
+}

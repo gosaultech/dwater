@@ -1,0 +1,834 @@
+{
+  "_file": "damned_waters/game/data/rooms/kalverstraat_noord.json \u2014 RoomSpec for Kalverstraat (the city, district 5: the Kalverstraat): the Kalverstraat's north end, where it opens on the Dam beside the palace: a little square of shops, their shutters down, the Dam's lights and the funfair over the barrier. Modelled after openly licensed photographs; every business name is made up, the landmarks keep theirs. The power is still on; nobody is there. Outdoor (street.py, city.py and landmarks.py build it). Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "kalverstraat_noord",
+  "display_name": "Kalverstraat",
+  "storey": 13,
+  "origin": [
+    836.0,
+    -224.6
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      22.0,
+      24.6
+    ]
+  },
+  "height": 10.0,
+  "materials": {
+    "floor": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "wall": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "ceiling": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    }
+  },
+  "footsteps": "marble",
+  "ambience": "amb_street_rain",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.014,
+      0.019,
+      0.036
+    ],
+    "strength": 1.0
+  },
+  "sky": {
+    "hdri": "kloppenheim_07_puresky",
+    "strength": 0.045,
+    "camera": 0.1,
+    "tint": [
+      1.0,
+      0.76,
+      0.55
+    ]
+  },
+  "render": {
+    "exposure": 0.85,
+    "bloom": {
+      "threshold": 0.9,
+      "strength": 0.4,
+      "size": 0.55,
+      "haze": {
+        "color": [
+          0.045,
+          0.052,
+          0.068
+        ],
+        "start": 12.0,
+        "depth": 85.0,
+        "strength": 0.5
+      }
+    }
+  },
+  "outdoor": {
+    "window_rooms": [
+      "warm_bar",
+      "fireplace",
+      "small_empty_room_2",
+      "christmas_photo_studio_04",
+      "warm_restaurant_night",
+      "unfinished_office_night"
+    ],
+    "lamp_power": 320.0,
+    "lamp_energy": 1.0,
+    "tide": 0.4,
+    "ground": [
+      {
+        "name": "corner",
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          22.0,
+          24.6
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "cobblestone_floor_04",
+          "tint": [
+            0.75,
+            0.72,
+            0.68
+          ],
+          "wet": 0.65,
+          "puddles": 0.18,
+          "puddle_scale": 0.9
+        }
+      }
+    ],
+    "lamps": [
+      [
+        11.0,
+        12.0
+      ],
+      [
+        1.2,
+        6.0
+      ]
+    ],
+    "facades": [
+      {
+        "facing": "south",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 1301,
+        "lit": 0.3,
+        "x0": 0.0,
+        "x1": 13.95,
+        "z": 0.0,
+        "shop": {
+          "name": "CAF\u00c9 HET PALEIS",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "CAF\u00c9",
+          "shutter": 0.7
+        },
+        "stoop": 0.0,
+        "lean": 0.0
+      },
+      {
+        "facing": "east",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 5,
+        "gable": "cornice",
+        "seed": 1302,
+        "lit": 0.3,
+        "z0": 0.0,
+        "z1": 24.6,
+        "x": 0.0,
+        "shop": {
+          "name": "MODEHUIS VAN DAM",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "MODE",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "shutter": 1.0,
+          "tag": "DICHT"
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 1303,
+        "lit": 0.3,
+        "z0": 0.0,
+        "z1": 12.0,
+        "x": 22.0,
+        "shop": {
+          "name": "SCHOENEN",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "SCHOENEN",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ],
+          "shutter": 0.9
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "step",
+        "seed": 1304,
+        "lit": 0.3,
+        "z0": 12.05,
+        "z1": 24.6,
+        "x": 22.0,
+        "shop": {
+          "name": "PARFUMERIE",
+          "kind": "hotel",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.9,
+            0.8
+          ],
+          "frame": [
+            0.12,
+            0.1,
+            0.08
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "PARFUM",
+          "shutter": 0.5
+        },
+        "stoop": 0.0,
+        "gable_h": 3.6
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 1305,
+        "lit": 0.3,
+        "x0": 8.05,
+        "x1": 22.0,
+        "z": 24.6,
+        "shop": {
+          "name": "BOEKHANDEL",
+          "kind": "books",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.88,
+            0.7
+          ],
+          "frame": [
+            0.06,
+            0.12,
+            0.1
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "BOEKEN",
+          "awning": [
+            [
+              0.05,
+              0.2,
+              0.15
+            ],
+            [
+              0.8,
+              0.75,
+              0.62
+            ]
+          ],
+          "shutter": 1.0,
+          "tag": "WEG"
+        },
+        "stoop": 0.0
+      }
+    ]
+  },
+  "props": [
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        15.2,
+        0.0,
+        0.8
+      ],
+      "yaw": 0,
+      "size": [
+        4.4,
+        1.1,
+        0.7
+      ],
+      "seed": 1
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        20.0,
+        0.0,
+        2.2
+      ],
+      "yaw": 70,
+      "size": [
+        2.4,
+        1.1,
+        0.7
+      ],
+      "seed": 2,
+      "roll": 82,
+      "collide": false
+    },
+    {
+      "type": "garland",
+      "pos": [
+        11.0,
+        0.0,
+        8.0
+      ],
+      "yaw": 0,
+      "size": [
+        22.0,
+        6.6,
+        0.1
+      ],
+      "collide": false,
+      "color": [
+        1.0,
+        0.86,
+        0.6
+      ]
+    },
+    {
+      "type": "garland",
+      "pos": [
+        11.0,
+        0.0,
+        18.0
+      ],
+      "yaw": 0,
+      "size": [
+        22.0,
+        6.6,
+        0.1
+      ],
+      "collide": false,
+      "color": [
+        1.0,
+        0.86,
+        0.6
+      ]
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        10.0,
+        0.0,
+        14.0
+      ],
+      "size": [
+        6.0,
+        0.0,
+        6.0
+      ],
+      "seed": 3,
+      "cases": 2,
+      "bags": 4,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        11.0,
+        0.0,
+        12.0
+      ],
+      "size": [
+        22.0,
+        0.0,
+        24.0
+      ],
+      "seed": 4,
+      "count": 90,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        1.2,
+        0.0,
+        8.0
+      ],
+      "yaw": 5,
+      "roll": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 170
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        1.19,
+        0.0,
+        0.27
+      ],
+      "yaw": 296,
+      "scale": 0.94,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        1.24,
+        0.0,
+        0.48
+      ],
+      "yaw": 278,
+      "scale": 0.87,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        1.46,
+        0.0,
+        0.52
+      ],
+      "yaw": 198,
+      "scale": 0.87,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.3,
+        0.0,
+        11.09
+      ],
+      "yaw": 261,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.48,
+        0.0,
+        10.74
+      ],
+      "yaw": 33,
+      "scale": 0.93,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.48,
+        0.0,
+        17.59
+      ],
+      "yaw": 326,
+      "scale": 0.95,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.48,
+        0.0,
+        17.41
+      ],
+      "yaw": 248,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.33,
+        0.0,
+        17.04
+      ],
+      "yaw": 271,
+      "scale": 0.9,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        21.47,
+        0.0,
+        7.19
+      ],
+      "yaw": 210,
+      "scale": 0.88,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        21.61,
+        0.0,
+        6.83
+      ],
+      "yaw": 217,
+      "scale": 0.97,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        21.35,
+        0.0,
+        6.74
+      ],
+      "yaw": 37,
+      "scale": 0.95,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        21.63,
+        0.0,
+        14.62
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 270,
+      "seed": 790,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        21.36,
+        0.0,
+        20.41
+      ],
+      "yaw": 87,
+      "scale": 0.99,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        15.55,
+        0.0,
+        24.09
+      ],
+      "yaw": 115,
+      "scale": 0.89,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        19.76,
+        0.0,
+        24.23
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 180,
+      "seed": 44,
+      "junk": true
+    }
+  ],
+  "walls": {
+    "north": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 18.0,
+          "width": 8.0,
+          "height": 10.0
+        }
+      ]
+    },
+    "south": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 4.0,
+          "width": 8.0,
+          "height": 10.0
+        }
+      ]
+    }
+  },
+  "lights": [
+    {
+      "kind": "sun",
+      "dir_from": [
+        -0.35,
+        0.55,
+        1.0
+      ],
+      "color": [
+        0.55,
+        0.66,
+        1.0
+      ],
+      "blender_power": 0.12,
+      "godot_energy": 0.25,
+      "angle": 2.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        4.2,
+        4.2,
+        24.2
+      ],
+      "look_at": [
+        18.0,
+        4.5,
+        -6.0
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          0.0,
+          12.0
+        ],
+        "max": [
+          22.0,
+          24.6
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        20.6,
+        3.0,
+        1.4
+      ],
+      "look_at": [
+        3.0,
+        1.6,
+        22.0
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          22.0,
+          12.0
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_dam": {
+      "pos": [
+        18.0,
+        0.0,
+        1.6
+      ],
+      "yaw": 180
+    }
+  },
+  "interactables": [
+    {
+      "id": "to_dam",
+      "kind": "door",
+      "pos": [
+        18.0,
+        1.0,
+        0.2
+      ],
+      "radius": 1.6,
+      "target_room": "dam",
+      "target_spawn": "from_kalverstraat"
+    },
+    {
+      "id": "palace_side",
+      "kind": "examine",
+      "pos": [
+        10.0,
+        1.0,
+        2.0
+      ],
+      "radius": 1.8,
+      "text": "Over the barrier, the Dam: the wheel turning its lights, the palace lit gold. And the noise of the funfair, still playing."
+    }
+  ],
+  "enemies": [
+    {
+      "id": "op_de_hoek",
+      "kind": "verdronkene",
+      "pos": [
+        6.0,
+        0.0,
+        16.0
+      ],
+      "yaw": 40
+    }
+  ]
+}

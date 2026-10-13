@@ -1,0 +1,2585 @@
+{
+  "_file": "damned_waters/game/data/rooms/dam.json \u2014 RoomSpec for De Dam (the city, district 4: the Dam): the Dam: the Royal Palace along its west side, the Nieuwe Kerk at its north-west corner, the National Monument on the east, the department store on the north by the way into Damrak. The November funfair was up when it happened, and the army made the square the evacuation point around it: the Ferris wheel and the rides still lit and stopped, buses lined up with their doors open, army trucks, a field hospital, and the luggage of thousands left where the queues were. Modelled after openly licensed photographs; every business name is made up, the landmarks keep theirs. The power is still on; nobody is there. Outdoor (street.py, city.py and landmarks.py build it). Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "dam",
+  "display_name": "De Dam",
+  "storey": 14,
+  "origin": [
+    850.0,
+    -294.9
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      90.0,
+      70.0
+    ]
+  },
+  "height": 14.0,
+  "materials": {
+    "floor": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "wall": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "ceiling": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    }
+  },
+  "footsteps": "marble",
+  "ambience": "amb_street_rain",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.014,
+      0.019,
+      0.036
+    ],
+    "strength": 1.0
+  },
+  "sky": {
+    "hdri": "kloppenheim_07_puresky",
+    "strength": 0.045,
+    "camera": 0.1,
+    "tint": [
+      1.0,
+      0.76,
+      0.55
+    ]
+  },
+  "render": {
+    "exposure": 0.85,
+    "bloom": {
+      "threshold": 0.9,
+      "strength": 0.4,
+      "size": 0.55,
+      "haze": {
+        "color": [
+          0.045,
+          0.052,
+          0.068
+        ],
+        "start": 12.0,
+        "depth": 85.0,
+        "strength": 0.5
+      }
+    }
+  },
+  "outdoor": {
+    "window_rooms": [
+      "warm_bar",
+      "fireplace",
+      "small_empty_room_2",
+      "christmas_photo_studio_04",
+      "warm_restaurant_night",
+      "unfinished_office_night"
+    ],
+    "lamp_power": 420.0,
+    "lamp_energy": 1.0,
+    "tide": 0.5,
+    "ground": [
+      {
+        "name": "dam",
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          90.0,
+          70.0
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "cobblestone_floor_04",
+          "tint": [
+            0.78,
+            0.74,
+            0.7
+          ],
+          "wet": 0.7,
+          "puddles": 0.21,
+          "puddle_scale": 0.9
+        }
+      }
+    ],
+    "tracks": [
+      {
+        "from": [
+          46.4,
+          70.0
+        ],
+        "to": [
+          46.4,
+          40.0
+        ],
+        "y": 0.0
+      },
+      {
+        "from": [
+          46.4,
+          40.0
+        ],
+        "to": [
+          72.0,
+          12.0
+        ],
+        "y": 0.0
+      },
+      {
+        "from": [
+          72.0,
+          12.0
+        ],
+        "to": [
+          72.0,
+          0.0
+        ],
+        "y": 0.0
+      }
+    ],
+    "lamps": [
+      [
+        4.0,
+        4.0
+      ],
+      [
+        30.0,
+        2.0
+      ],
+      [
+        58.0,
+        2.0
+      ],
+      [
+        86.0,
+        4.0
+      ],
+      [
+        87.0,
+        34.0
+      ],
+      [
+        86.0,
+        66.0
+      ],
+      [
+        60.0,
+        68.0
+      ],
+      [
+        32.0,
+        68.0
+      ],
+      [
+        4.0,
+        66.0
+      ],
+      [
+        3.0,
+        35.0
+      ]
+    ],
+    "rooftop_signs": [
+      {
+        "at": [
+          44.5,
+          22.6,
+          -1.5
+        ],
+        "text": "DE ZWERM",
+        "color": [
+          1.0,
+          0.82,
+          0.4
+        ],
+        "size": 2.0,
+        "yaw": 0.0
+      }
+    ],
+    "facades": [
+      {
+        "facing": "south",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 902,
+        "lit": 0.3,
+        "x0": 26.05,
+        "x1": 32.95,
+        "z": 0.0,
+        "shop": {
+          "name": "SOUVENIRS",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "SOUVENIRS",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ]
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8
+      },
+      {
+        "facing": "south",
+        "storeys": [
+          5.0,
+          4.0,
+          3.8,
+          3.6,
+          3.4
+        ],
+        "bays": 9,
+        "gable": "cornice",
+        "seed": 901,
+        "lit": 0.7,
+        "x0": 33.0,
+        "x1": 56.0,
+        "z": 0.0,
+        "shop": {
+          "name": "WARENHUIS DE ZWERM",
+          "kind": "hotel",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.9,
+            0.8
+          ],
+          "frame": [
+            0.12,
+            0.1,
+            0.08
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 41.6,
+          "door_bay": 7,
+          "neon": false,
+          "enter": true
+        },
+        "stoop": 0.0,
+        "lean": 0.0,
+        "flags": 4
+      },
+      {
+        "facing": "south",
+        "storeys": [
+          5.0,
+          4.0,
+          3.8,
+          3.6
+        ],
+        "bays": 3,
+        "gable": "bell",
+        "seed": 903,
+        "lit": 0.3,
+        "x0": 56.05,
+        "x1": 61.95,
+        "z": 0.0,
+        "door_bay": 1,
+        "stoop": 0.0,
+        "gable_h": 3.6
+      },
+      {
+        "facing": "south",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "cornice",
+        "seed": 904,
+        "lit": 0.3,
+        "x0": 82.05,
+        "x1": 90.0,
+        "z": 0.0,
+        "shop": {
+          "name": "CAF\u00c9 DE DAM",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "CAF\u00c9"
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 2,
+        "gable": "cornice",
+        "seed": 905,
+        "lit": 0.3,
+        "z0": 0.0,
+        "z1": 3.95,
+        "x": 90.0,
+        "door_bay": 1,
+        "stoop": 0.5
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          5.4,
+          4.2,
+          4.0,
+          3.8,
+          3.6,
+          3.4
+        ],
+        "bays": 16,
+        "gable": "cornice",
+        "seed": 906,
+        "lit": 0.55,
+        "z0": 4.0,
+        "z1": 56.0,
+        "x": 90.0,
+        "shop": {
+          "name": "GRAND HOTEL DE WITTE ZWAAN",
+          "kind": "hotel",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.9,
+            0.8
+          ],
+          "frame": [
+            0.12,
+            0.1,
+            0.08
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 38.4,
+          "door_bay": 7,
+          "neon": false,
+          "blade": "HOTEL"
+        },
+        "stoop": 0.0,
+        "lean": 0.0,
+        "flags": 5
+      },
+      {
+        "facing": "west",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2
+        ],
+        "bays": 2,
+        "gable": "cornice",
+        "seed": 907,
+        "lit": 0.3,
+        "z0": 66.05,
+        "z1": 70.0,
+        "x": 90.0,
+        "door_bay": 1,
+        "stoop": 0.5
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2
+        ],
+        "bays": 3,
+        "gable": "cornice",
+        "seed": 908,
+        "lit": 0.3,
+        "x0": 8.05,
+        "x1": 15.95,
+        "z": 70.0,
+        "shop": {
+          "name": "WISSELKANTOOR",
+          "kind": "hotel",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.9,
+            0.8
+          ],
+          "frame": [
+            0.12,
+            0.1,
+            0.08
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "EXCHANGE"
+        },
+        "stoop": 0.0,
+        "sides": true
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 3,
+        "gable": "step",
+        "seed": 909,
+        "lit": 0.3,
+        "x0": 16.05,
+        "x1": 24.5,
+        "z": 70.0,
+        "shop": {
+          "name": "FRIETWINKEL",
+          "kind": "snack",
+          "room": "warm_restaurant_night",
+          "sign": [
+            1.0,
+            0.85,
+            0.2
+          ],
+          "frame": [
+            0.35,
+            0.04,
+            0.03
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "FRIET",
+          "awning": [
+            [
+              0.75,
+              0.05,
+              0.04
+            ],
+            [
+              0.95,
+              0.85,
+              0.2
+            ]
+          ]
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 910,
+        "lit": 0.3,
+        "x0": 24.55,
+        "x1": 33.1,
+        "z": 70.0,
+        "shop": {
+          "name": "SIGARENMAGAZIJN DE DAM",
+          "kind": "snack",
+          "room": "warm_restaurant_night",
+          "sign": [
+            1.0,
+            0.85,
+            0.2
+          ],
+          "frame": [
+            0.35,
+            0.04,
+            0.03
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "SIGAREN",
+          "awning": [
+            [
+              0.75,
+              0.05,
+              0.04
+            ],
+            [
+              0.95,
+              0.85,
+              0.2
+            ]
+          ]
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 911,
+        "lit": 0.3,
+        "x0": 59.7,
+        "x1": 70.0,
+        "z": 70.0,
+        "shop": {
+          "name": "BANKETBAKKERIJ",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "TAART"
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 912,
+        "lit": 0.3,
+        "x0": 70.05,
+        "x1": 80.0,
+        "z": 70.0,
+        "shop": {
+          "name": "SOUVENIRS \u00b7 KAAS",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "KAAS",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ]
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.6,
+          3.6,
+          3.4,
+          3.2,
+          3.0
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 913,
+        "lit": 0.3,
+        "x0": 80.05,
+        "x1": 90.0,
+        "z": 70.0,
+        "door_bay": 2,
+        "stoop": 0.0
+      }
+    ]
+  },
+  "props": [
+    {
+      "type": "palace",
+      "pos": [
+        0.0,
+        0.0,
+        64.0
+      ],
+      "yaw": 90,
+      "size": [
+        58.0,
+        24.0,
+        40.0
+      ],
+      "collide": false
+    },
+    {
+      "type": "gothic_front",
+      "pos": [
+        6.0,
+        0.0,
+        0.0
+      ],
+      "yaw": 0,
+      "size": [
+        20.0,
+        22.0,
+        36.0
+      ],
+      "door": [
+        10.0,
+        1.8,
+        2.6
+      ],
+      "spire": 14.0,
+      "glow": 0.32,
+      "collide": false
+    },
+    {
+      "type": "monument",
+      "pos": [
+        74.0,
+        0.0,
+        36.0
+      ],
+      "yaw": -90,
+      "size": [
+        16.0,
+        22.0,
+        16.0
+      ],
+      "collide": false
+    },
+    {
+      "type": "ferris_wheel",
+      "pos": [
+        20.0,
+        0.0,
+        22.0
+      ],
+      "yaw": 35,
+      "size": [
+        18.0,
+        32.0,
+        5.0
+      ],
+      "seed": 3,
+      "colours": [
+        "white",
+        "blue"
+      ],
+      "name": "REUZENRAD",
+      "collide": false
+    },
+    {
+      "type": "drop_tower",
+      "pos": [
+        14.0,
+        0.0,
+        55.0
+      ],
+      "yaw": 20,
+      "size": [
+        2.6,
+        46.0,
+        2.6
+      ],
+      "stopped": 0.62,
+      "name": "FREE FALL",
+      "collide": false
+    },
+    {
+      "type": "carousel",
+      "pos": [
+        40.0,
+        0.0,
+        47.0
+      ],
+      "yaw": 0,
+      "size": [
+        11.0,
+        6.4,
+        11.0
+      ],
+      "name": "DRAAIMOLEN"
+    },
+    {
+      "type": "fair_stall",
+      "pos": [
+        30.0,
+        0.0,
+        33.0
+      ],
+      "yaw": 0,
+      "size": [
+        5.0,
+        2.8,
+        2.6
+      ],
+      "kind": "oliebollen",
+      "seed": 1
+    },
+    {
+      "type": "fair_stall",
+      "pos": [
+        36.0,
+        0.0,
+        33.0
+      ],
+      "yaw": 0,
+      "size": [
+        5.0,
+        2.8,
+        2.6
+      ],
+      "kind": "schiettent",
+      "seed": 2
+    },
+    {
+      "type": "fair_stall",
+      "pos": [
+        36.0,
+        0.0,
+        61.0
+      ],
+      "yaw": -30,
+      "size": [
+        5.0,
+        2.8,
+        2.6
+      ],
+      "kind": "suikerspin",
+      "seed": 3
+    },
+    {
+      "type": "fair_stall",
+      "pos": [
+        46.0,
+        0.0,
+        22.0
+      ],
+      "yaw": -90,
+      "size": [
+        5.0,
+        2.8,
+        2.6
+      ],
+      "kind": "grijper",
+      "seed": 4
+    },
+    {
+      "type": "bus",
+      "pos": [
+        81.0,
+        0.0,
+        19.0
+      ],
+      "yaw": 90,
+      "size": [
+        18.0,
+        3.1,
+        2.55
+      ],
+      "board": "EVACUATIE \u00b7 CENTRAAL"
+    },
+    {
+      "type": "bus",
+      "pos": [
+        81.0,
+        0.0,
+        39.5
+      ],
+      "yaw": 90,
+      "size": [
+        18.0,
+        3.1,
+        2.55
+      ],
+      "board": "EVACUATIE \u00b7 CENTRAAL"
+    },
+    {
+      "type": "bus",
+      "pos": [
+        81.0,
+        0.0,
+        60.0
+      ],
+      "yaw": 95,
+      "size": [
+        18.0,
+        3.1,
+        2.55
+      ],
+      "board": "NIET INSTAPPEN"
+    },
+    {
+      "type": "vehicle",
+      "pos": [
+        66.0,
+        0.0,
+        9.0
+      ],
+      "yaw": 100,
+      "size": [
+        7.0,
+        3.0,
+        2.4
+      ],
+      "livery": "army",
+      "van": true,
+      "door_open": "left"
+    },
+    {
+      "type": "vehicle",
+      "pos": [
+        57.0,
+        0.0,
+        14.0
+      ],
+      "yaw": 70,
+      "size": [
+        7.0,
+        3.0,
+        2.4
+      ],
+      "livery": "army",
+      "van": true
+    },
+    {
+      "type": "vehicle",
+      "pos": [
+        56.0,
+        0.0,
+        24.0
+      ],
+      "yaw": 160,
+      "size": [
+        6.0,
+        2.6,
+        2.1
+      ],
+      "livery": "ambulance",
+      "van": true,
+      "door_open": "right"
+    },
+    {
+      "type": "aid_post",
+      "pos": [
+        56.0,
+        0.0,
+        34.0
+      ],
+      "yaw": 0,
+      "size": [
+        6.0,
+        3.4,
+        6.0
+      ],
+      "military": true,
+      "covered": 2,
+      "stretchers": 3,
+      "seed": 5,
+      "collide": false
+    },
+    {
+      "type": "aid_post",
+      "pos": [
+        63.5,
+        0.0,
+        34.0
+      ],
+      "yaw": 0,
+      "size": [
+        6.0,
+        3.4,
+        6.0
+      ],
+      "military": true,
+      "covered": 0,
+      "stretchers": 3,
+      "seed": 6,
+      "collide": false
+    },
+    {
+      "type": "light_tower",
+      "pos": [
+        8.0,
+        0.0,
+        64.0
+      ],
+      "yaw": 40,
+      "size": [
+        2.2,
+        8.5,
+        1.4
+      ],
+      "aim": [
+        12.0,
+        0.0,
+        20.0
+      ],
+      "collide": false
+    },
+    {
+      "type": "light_tower",
+      "pos": [
+        48.0,
+        0.0,
+        6.0
+      ],
+      "yaw": 180,
+      "size": [
+        2.2,
+        8.5,
+        1.4
+      ],
+      "aim": [
+        0.0,
+        0.0,
+        22.0
+      ],
+      "collide": false
+    },
+    {
+      "type": "light_tower",
+      "pos": [
+        76.0,
+        0.0,
+        66.0
+      ],
+      "yaw": 200,
+      "size": [
+        2.2,
+        8.5,
+        1.4
+      ],
+      "aim": [
+        0.0,
+        0.0,
+        24.0
+      ],
+      "collide": false
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        70.0,
+        0.0,
+        48.0
+      ],
+      "yaw": 0,
+      "size": [
+        12.0,
+        1.1,
+        0.7
+      ],
+      "seed": 20,
+      "tape": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        70.0,
+        0.0,
+        51.0
+      ],
+      "yaw": 0,
+      "size": [
+        12.0,
+        1.1,
+        0.7
+      ],
+      "seed": 21,
+      "tape": false
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        70.0,
+        0.0,
+        54.0
+      ],
+      "yaw": 0,
+      "size": [
+        12.0,
+        1.1,
+        0.7
+      ],
+      "seed": 22,
+      "tape": false
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        72.0,
+        0.0,
+        1.0
+      ],
+      "yaw": 0,
+      "size": [
+        20.0,
+        1.1,
+        0.7
+      ],
+      "seed": 31
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        89.0,
+        0.0,
+        61.0
+      ],
+      "yaw": 90,
+      "size": [
+        10.0,
+        1.1,
+        0.7
+      ],
+      "seed": 32
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        3.0,
+        0.0,
+        3.0
+      ],
+      "yaw": 45,
+      "size": [
+        6.0,
+        1.1,
+        0.7
+      ],
+      "seed": 33
+    },
+    {
+      "type": "evac_board",
+      "pos": [
+        74.0,
+        0.0,
+        46.0
+      ],
+      "yaw": 180,
+      "size": [
+        1.8,
+        1.9,
+        0.6
+      ],
+      "text": "EVACUATIE \u00b7 BUSSEN",
+      "to": "RIJ HIER",
+      "arrow": "right",
+      "collide": false
+    },
+    {
+      "type": "evac_board",
+      "pos": [
+        70.0,
+        0.0,
+        4.5
+      ],
+      "yaw": 180,
+      "size": [
+        1.8,
+        1.9,
+        0.6
+      ],
+      "text": "EVACUATIEROUTE",
+      "to": "CENTRAAL",
+      "arrow": "up",
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        62.0,
+        0.0,
+        46.0
+      ],
+      "size": [
+        8.0,
+        0.0,
+        6.0
+      ],
+      "seed": 41,
+      "cases": 9,
+      "bags": 7,
+      "pushchair": true,
+      "chair": true,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        76.0,
+        0.0,
+        28.0
+      ],
+      "size": [
+        6.0,
+        0.0,
+        10.0
+      ],
+      "seed": 42,
+      "cases": 7,
+      "bags": 5,
+      "crutches": true,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        47.0,
+        0.0,
+        62.0
+      ],
+      "size": [
+        6.0,
+        0.0,
+        5.0
+      ],
+      "seed": 43,
+      "cases": 4,
+      "bags": 4,
+      "collide": false
+    },
+    {
+      "type": "luggage",
+      "pos": [
+        30.0,
+        0.0,
+        44.0
+      ],
+      "size": [
+        6.0,
+        0.0,
+        5.0
+      ],
+      "seed": 44,
+      "cases": 3,
+      "bags": 4,
+      "umbrella": true,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        45.0,
+        0.0,
+        35.0
+      ],
+      "size": [
+        88.0,
+        0.0,
+        68.0
+      ],
+      "seed": 45,
+      "count": 520,
+      "collide": false
+    },
+    {
+      "type": "fire_pump",
+      "pos": [
+        20.0,
+        0.0,
+        66.0
+      ],
+      "yaw": 0,
+      "size": [
+        0.9,
+        0.8,
+        0.6
+      ],
+      "to": [
+        3.0,
+        2.0
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:portable_generator",
+      "pos": [
+        26.0,
+        0.0,
+        26.0
+      ],
+      "yaw": 20,
+      "fit": [
+        0.8,
+        0.6,
+        0.55
+      ],
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:Megaphone_01",
+      "pos": [
+        65.0,
+        0.0,
+        49.5
+      ],
+      "yaw": 70,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:old_gas_mask",
+      "pos": [
+        44.0,
+        0.0,
+        20.0
+      ],
+      "yaw": 200,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_jerrycan_green",
+      "pos": [
+        64.5,
+        0.0,
+        8.2
+      ],
+      "yaw": 30,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        5.0,
+        0.0,
+        30.0
+      ],
+      "yaw": 10,
+      "roll": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 160
+    },
+    {
+      "type": "bike",
+      "pos": [
+        6.0,
+        0.0,
+        31.4
+      ],
+      "yaw": 160,
+      "roll": -82,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 161
+    },
+    {
+      "type": "collider",
+      "pos": [
+        74.0,
+        0.0,
+        36.0
+      ],
+      "size": [
+        7.0,
+        1.0,
+        7.0
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        20.0,
+        0.0,
+        22.0
+      ],
+      "yaw": 35,
+      "size": [
+        19.2,
+        2.0,
+        10.0
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        14.0,
+        0.0,
+        55.0
+      ],
+      "yaw": 20,
+      "size": [
+        8.6,
+        1.0,
+        8.6
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        56.0,
+        0.0,
+        31.65
+      ],
+      "yaw": 0,
+      "size": [
+        1.8,
+        1.0,
+        0.7
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        54.6,
+        0.0,
+        34.0
+      ],
+      "yaw": 0,
+      "size": [
+        2.6,
+        1.0,
+        2.2
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        57.85,
+        0.0,
+        34.2
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.0,
+        1.9
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        51.8,
+        0.0,
+        36.4
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        1.0,
+        0.5
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        63.5,
+        0.0,
+        31.65
+      ],
+      "yaw": 0,
+      "size": [
+        1.8,
+        1.0,
+        0.7
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        62.1,
+        0.0,
+        34.0
+      ],
+      "yaw": 0,
+      "size": [
+        2.6,
+        1.0,
+        2.2
+      ]
+    },
+    {
+      "type": "collider",
+      "pos": [
+        59.3,
+        0.0,
+        36.4
+      ],
+      "yaw": 0,
+      "size": [
+        0.7,
+        1.0,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        28.67,
+        0.0,
+        0.58
+      ],
+      "yaw": 357,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        28.86,
+        0.0,
+        0.41
+      ],
+      "yaw": 86,
+      "scale": 1.0,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        29.02,
+        0.0,
+        0.54
+      ],
+      "yaw": 52,
+      "scale": 0.91,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        34.31,
+        0.0,
+        0.37
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 0,
+      "seed": 941,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        37.86,
+        0.0,
+        0.33
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "size": [
+        0.92,
+        1.0,
+        0.42
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        53.3,
+        0.0,
+        0.65
+      ],
+      "yaw": 51,
+      "scale": 0.94,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        53.19,
+        0.0,
+        0.5
+      ],
+      "yaw": 234,
+      "scale": 0.93,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        57.5,
+        0.0,
+        0.37
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 0,
+      "seed": 212,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        89.5,
+        0.0,
+        6.91
+      ],
+      "yaw": 330,
+      "scale": 1.0,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        89.44,
+        0.0,
+        7.1
+      ],
+      "yaw": 62,
+      "scale": 0.95,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        89.7,
+        0.0,
+        6.62
+      ],
+      "yaw": 170,
+      "scale": 0.99,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        89.63,
+        0.0,
+        13.06
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 270,
+      "seed": 528,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        89.67,
+        0.0,
+        16.67
+      ],
+      "yaw": 450,
+      "scale": 1.0,
+      "size": [
+        0.92,
+        1.0,
+        0.42
+      ],
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        89.59,
+        0.0,
+        21.93
+      ],
+      "yaw": 1,
+      "scale": 0.98,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        89.73,
+        0.0,
+        28.99
+      ],
+      "yaw": 249,
+      "scale": 0.87,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        89.7,
+        0.0,
+        29.05
+      ],
+      "yaw": 259,
+      "scale": 0.88,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        89.45,
+        0.0,
+        28.57
+      ],
+      "yaw": 135,
+      "scale": 0.96,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        89.7,
+        0.0,
+        34.35
+      ],
+      "yaw": 297,
+      "scale": 0.97,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        89.63,
+        0.0,
+        38.71
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 270,
+      "seed": 117,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        89.63,
+        0.0,
+        45.04
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 270,
+      "seed": 436,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        89.44,
+        0.0,
+        50.09
+      ],
+      "yaw": 109,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        89.47,
+        0.0,
+        50.18
+      ],
+      "yaw": 227,
+      "scale": 0.98,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_crate_01",
+      "pos": [
+        89.69,
+        0.0,
+        49.81
+      ],
+      "yaw": 250,
+      "scale": 0.86,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        13.87,
+        0.0,
+        69.63
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 180,
+      "seed": 123,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        18.55,
+        0.0,
+        69.67
+      ],
+      "yaw": 206,
+      "scale": 0.96,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        18.11,
+        0.0,
+        69.37
+      ],
+      "yaw": 277,
+      "scale": 0.97,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_crate_01",
+      "pos": [
+        18.52,
+        0.0,
+        69.4
+      ],
+      "yaw": 349,
+      "scale": 0.88,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        25.39,
+        0.0,
+        69.65
+      ],
+      "yaw": 304,
+      "scale": 0.91,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        25.66,
+        0.0,
+        69.62
+      ],
+      "yaw": 319,
+      "scale": 0.91,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        30.37,
+        0.0,
+        69.44
+      ],
+      "yaw": 48,
+      "scale": 0.98,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        30.59,
+        0.0,
+        69.48
+      ],
+      "yaw": 41,
+      "scale": 0.97,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "bike",
+      "pos": [
+        67.31,
+        0.0,
+        69.63
+      ],
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "yaw": 180,
+      "seed": 324,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        71.58,
+        0.0,
+        69.4
+      ],
+      "yaw": 38,
+      "scale": 0.96,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        71.67,
+        0.0,
+        69.55
+      ],
+      "yaw": 255,
+      "scale": 0.98,
+      "collide": false,
+      "junk": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        78.2,
+        0.0,
+        69.6
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "size": [
+        1.85,
+        1.0,
+        0.56
+      ],
+      "junk": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        2.0,
+        0.0,
+        69.0
+      ],
+      "yaw": 0,
+      "size": [
+        4.0,
+        1.1,
+        0.7
+      ],
+      "seed": 30
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        6.4,
+        0.0,
+        67.6
+      ],
+      "yaw": -60,
+      "size": [
+        2.4,
+        1.1,
+        0.7
+      ],
+      "seed": 34,
+      "roll": 82,
+      "collide": false
+    }
+  ],
+  "walls": {
+    "south": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 46.4,
+          "width": 26.0,
+          "height": 12.0
+        },
+        {
+          "kind": "passage",
+          "center": 4.0,
+          "width": 8.0,
+          "height": 10.0
+        }
+      ]
+    },
+    "north": {
+      "openings": [
+        {
+          "kind": "door",
+          "center": 16.0,
+          "width": 1.8,
+          "height": 2.6,
+          "hinge": "left"
+        },
+        {
+          "kind": "door",
+          "style": "glass",
+          "center": 43.8,
+          "width": 1.3,
+          "height": 2.25,
+          "hinge": "left"
+        },
+        {
+          "kind": "passage",
+          "center": 72.0,
+          "width": 20.0,
+          "height": 12.0
+        }
+      ]
+    },
+    "east": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 61.0,
+          "width": 10.0,
+          "height": 10.0
+        }
+      ]
+    }
+  },
+  "lights": [
+    {
+      "kind": "sun",
+      "dir_from": [
+        -0.35,
+        0.55,
+        1.0
+      ],
+      "color": [
+        0.55,
+        0.66,
+        1.0
+      ],
+      "blender_power": 0.12,
+      "godot_energy": 0.25,
+      "angle": 2.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        20.0,
+        8.0,
+        22.0
+      ],
+      "color": [
+        0.85,
+        0.9,
+        1.0
+      ],
+      "blender_power": 0,
+      "godot_energy": 0.9,
+      "range": 18.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        40.0,
+        4.0,
+        47.0
+      ],
+      "color": [
+        1.0,
+        0.8,
+        0.5
+      ],
+      "blender_power": 0,
+      "godot_energy": 0.8,
+      "range": 10.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        59.0,
+        2.6,
+        34.0
+      ],
+      "color": [
+        0.95,
+        0.97,
+        1.0
+      ],
+      "blender_power": 0,
+      "godot_energy": 0.7,
+      "range": 9.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        14.0,
+        6.0,
+        55.0
+      ],
+      "color": [
+        1.0,
+        0.4,
+        0.75
+      ],
+      "blender_power": 0,
+      "godot_energy": 0.5,
+      "range": 10.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        29.0,
+        3.6,
+        68.0
+      ],
+      "look_at": [
+        8.0,
+        10.0,
+        28.0
+      ],
+      "fov": 64,
+      "zone": {
+        "min": [
+          0.0,
+          35.0
+        ],
+        "max": [
+          30.0,
+          70.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        47.0,
+        3.6,
+        69.0
+      ],
+      "look_at": [
+        22.0,
+        10.0,
+        26.0
+      ],
+      "fov": 64,
+      "zone": {
+        "min": [
+          30.0,
+          35.0
+        ],
+        "max": [
+          60.0,
+          70.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "c",
+      "pos": [
+        61.0,
+        3.6,
+        68.5
+      ],
+      "look_at": [
+        84.0,
+        4.0,
+        26.0
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          60.0,
+          35.0
+        ],
+        "max": [
+          90.0,
+          70.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "d",
+      "pos": [
+        2.6,
+        3.8,
+        34.0
+      ],
+      "look_at": [
+        17.0,
+        5.0,
+        2.0
+      ],
+      "fov": 64,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          30.0,
+          35.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "e",
+      "pos": [
+        44.0,
+        3.4,
+        20.0
+      ],
+      "look_at": [
+        46.0,
+        6.0,
+        0.0
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          30.0,
+          0.0
+        ],
+        "max": [
+          60.0,
+          15.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "g",
+      "pos": [
+        60.0,
+        4.0,
+        27.0
+      ],
+      "look_at": [
+        0.0,
+        12.0,
+        33.0
+      ],
+      "fov": 64,
+      "zone": {
+        "min": [
+          30.0,
+          15.0
+        ],
+        "max": [
+          60.0,
+          35.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "f",
+      "pos": [
+        61.0,
+        3.6,
+        21.0
+      ],
+      "look_at": [
+        76.0,
+        9.0,
+        38.0
+      ],
+      "fov": 62,
+      "zone": {
+        "min": [
+          60.0,
+          0.0
+        ],
+        "max": [
+          90.0,
+          35.0
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_rokin": {
+      "pos": [
+        46.4,
+        0.0,
+        67.0
+      ],
+      "yaw": 0
+    },
+    "from_kerk": {
+      "pos": [
+        16.0,
+        0.0,
+        1.2
+      ],
+      "yaw": 180
+    },
+    "from_warenhuis": {
+      "pos": [
+        43.8,
+        0.0,
+        1.2
+      ],
+      "yaw": 180
+    },
+    "from_kalverstraat": {
+      "pos": [
+        6.0,
+        0.0,
+        68.0
+      ],
+      "yaw": 0
+    }
+  },
+  "interactables": [
+    {
+      "id": "to_rokin",
+      "kind": "door",
+      "pos": [
+        46.4,
+        1.0,
+        69.8
+      ],
+      "radius": 1.6,
+      "target_room": "rokin_noord",
+      "target_spawn": "from_dam"
+    },
+    {
+      "id": "door_kerk",
+      "kind": "door",
+      "pos": [
+        16.0,
+        1.0,
+        0.45
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "door_warenhuis",
+      "kind": "door",
+      "pos": [
+        43.8,
+        1.0,
+        0.45
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "palace",
+      "kind": "examine",
+      "pos": [
+        1.0,
+        1.0,
+        35.0
+      ],
+      "radius": 2.0,
+      "text": "The Royal Palace. Every window lit, every door shut. Over the balcony someone has hung a bedsheet: EVACUATIEPUNT DAM."
+    },
+    {
+      "id": "wheel",
+      "kind": "examine",
+      "pos": [
+        24.0,
+        1.0,
+        26.0
+      ],
+      "radius": 2.4,
+      "text": "The Ferris wheel, stopped, its lights still running round. High up, one gondola's door swings open in the wind."
+    },
+    {
+      "id": "carousel",
+      "kind": "examine",
+      "pos": [
+        40.0,
+        1.0,
+        53.0
+      ],
+      "radius": 2.0,
+      "text": "The carousel's organ is still playing. The horses have stopped halfway up their poles."
+    },
+    {
+      "id": "buses",
+      "kind": "examine",
+      "pos": [
+        78.5,
+        1.0,
+        39.5
+      ],
+      "radius": 2.0,
+      "text": "The buses never left. Their doors are open, their engines off, the seats full of bags."
+    },
+    {
+      "id": "monument",
+      "kind": "examine",
+      "pos": [
+        65.5,
+        1.0,
+        36.0
+      ],
+      "radius": 2.0,
+      "text": "The National Monument. On its steps, hundreds of candles, burned down. Names written in chalk round the base."
+    },
+    {
+      "id": "damrak",
+      "kind": "examine",
+      "pos": [
+        72.0,
+        1.0,
+        2.4
+      ],
+      "radius": 2.6,
+      "text": "Damrak, straight to Centraal. The barriers are chained together here; the army closed it. There has to be another way round."
+    },
+    {
+      "id": "shells_truck",
+      "kind": "pickup",
+      "item": "shotgun_shells",
+      "count": 6,
+      "pos": [
+        64.6,
+        0.0,
+        11.2
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "first_aid_field",
+      "kind": "pickup",
+      "item": "first_aid",
+      "count": 1,
+      "pos": [
+        55.4,
+        0.78,
+        31.6
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "ammo_bus",
+      "kind": "pickup",
+      "item": "handgun_ammo",
+      "count": 10,
+      "pos": [
+        79.7,
+        0.0,
+        33.0
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "to_kalverstraat",
+      "kind": "door",
+      "pos": [
+        5.4,
+        1.0,
+        69.8
+      ],
+      "radius": 1.6,
+      "target_room": "kalverstraat_noord",
+      "target_spawn": "from_dam"
+    }
+  ],
+  "enemies": [
+    {
+      "id": "bij_het_rad",
+      "kind": "verdronkene",
+      "pos": [
+        26.0,
+        0.0,
+        30.0
+      ],
+      "yaw": 120
+    },
+    {
+      "id": "in_de_rij",
+      "kind": "verdronkene",
+      "pos": [
+        66.0,
+        0.0,
+        52.5
+      ],
+      "yaw": 250
+    },
+    {
+      "id": "bij_de_bus",
+      "kind": "verdronkene",
+      "pos": [
+        78.0,
+        0.0,
+        22.0
+      ],
+      "yaw": 270
+    },
+    {
+      "id": "in_het_veldhospitaal",
+      "kind": "verdronkene",
+      "pos": [
+        60.0,
+        0.0,
+        37.0
+      ],
+      "yaw": 30
+    },
+    {
+      "id": "bij_de_draaimolen",
+      "kind": "verdronkene",
+      "pos": [
+        44.0,
+        0.0,
+        40.0
+      ],
+      "yaw": 160
+    }
+  ]
+}

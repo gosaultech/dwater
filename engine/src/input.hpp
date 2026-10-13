@@ -13,7 +13,8 @@ namespace dw {
 
 struct InputFrame {
     Vector2 move{};                          // left stick or WASD: x right, y forward; length 0..1
-                                             // (keys walk at 0.6, the walk point of the stick; Shift runs at 1)
+                                             // (the keys give the tilt of their gait: 0.6 walks, Ctrl 0.25 sneaks, Shift 1 runs)
+    bool move_keys = false;                  // ... and it's the keys moving him (no pressure: the run option doesn't apply)
     Vector2 look{};                          // right stick: x right, y up; where it's held, 0..1
     Vector2 mouse{};                         // mouse movement this frame (pixels)
     float wheel = 0;                         // mouse wheel this frame

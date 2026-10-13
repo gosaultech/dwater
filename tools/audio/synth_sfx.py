@@ -212,6 +212,19 @@ def build() -> dict[str, tuple[np.ndarray, bool]]:
     s["case_close"] = (tail(at(0.5, [(0.0, lid[::-1] * 0.7), (0.3, latch * 1.2)]), 0.3, 0.08, 200, 2500, 0.2), False)
     rustle = bp(noise(0.45), 2000, 9000) * env(round(0.45 * SR), 0.06, 0.12) * (0.6 + 0.4 * np.abs(np.sin(2 * np.pi * 9 * t(0.45))))
     s["paper"] = (rustle * 0.5, False)
+    # Rain on a city street at night: the hiss, gusts in it, drops ticking on stone and metal and
+    # plopping into puddles, a gutter running, the city's low hum gone almost silent.
+    L = 24.0
+    tt = t(L + 1.5)
+    gust = 0.75 + 0.25 * np.sin(2 * np.pi * 0.05 * tt) + 0.1 * np.sin(2 * np.pi * 0.13 * tt + 1.0)
+    hiss = bp(noise(L + 1.5), 1500, 9000) * gust * 0.18 + bp(noise(L + 1.5), 400, 1500) * gust * 0.08
+    ticks = at(L + 1.5, [(rng.uniform(0, L), bp(noise(0.02), 2500, 7000) * env(882, 0.0005, rng.uniform(0.002, 0.006)) * rng.uniform(0.05, 0.2))
+                         for _ in range(900)])
+    plops = at(L + 1.5, [(rng.uniform(0, L), np.sin(2 * np.pi * rng.uniform(300, 900) * t(0.05)) * env(2205, 0.001, 0.012) * rng.uniform(0.05, 0.15))
+                         for _ in range(260)])
+    gutter = bp(noise(L + 1.5), 500, 1400) * (0.6 + 0.4 * np.sin(2 * np.pi * 0.31 * tt)) * 0.05
+    hum = lp(noise(L + 1.5), 70) * 0.35
+    s["amb_street_rain"] = (loopable(hiss + ticks + plops + gutter + hum), True)
     return s
 
 
@@ -254,7 +267,7 @@ def main():
     import sys
     only = set(sys.argv[sys.argv.index("--only") + 1].split(",")) if "--only" in sys.argv else None
     OUT.mkdir(parents=True, exist_ok=True)
-    levels = {"boss_theme": -9.0, "crawler_skitter": -10.0, "dodge": -8.0, "amb_house": -14.0, "amb_cellar": -12.0, "title_drone": -10.0, "step_marble": -8.0,
+    levels = {"boss_theme": -9.0, "crawler_skitter": -10.0, "dodge": -8.0, "amb_house": -14.0, "amb_cellar": -12.0, "amb_street_rain": -13.0, "title_drone": -10.0, "step_marble": -8.0,
               "step_wood": -6.0, "step_water": -8.0, "ui_move": -12.0, "shell_insert": -6.0, "med_use": -6.0, "mag_out": -6.0, "mag_in": -4.0,
               "slide_release": -3.0, "mag_drop": -6.0, "ui_back": -12.0, "ui_deny": -8.0, "case_open": -6.0, "case_close": -6.0, "paper": -9.0}
     for name, (x, loop) in build().items():

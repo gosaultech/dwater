@@ -1,0 +1,547 @@
+{
+  "_file": "damned_waters/game/data/rooms/juwelier.json \u2014 RoomSpec for Juwelier Goudsmit (the city, district 5: the Kalverstraat): a jeweller's, put in by looters: the cases smashed and emptied, the glass everywhere, the trays thrown down, the safe door open. Under the counter, a box the looters missed. Its front wall is the street's shopfront (\"facade\": the street builds it); its door is the street's. Every business name is made up. Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "juwelier",
+  "display_name": "Juwelier Goudsmit",
+  "storey": 13,
+  "origin": [
+    844.3,
+    -169.7
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      8.0,
+      8.5
+    ]
+  },
+  "height": 3.4,
+  "materials": {
+    "floor": {
+      "ph": "marble_01",
+      "tint": [
+        0.85,
+        0.82,
+        0.78
+      ],
+      "rough": 0.5,
+      "scale": 1.5
+    },
+    "wall": {
+      "ph": "beige_wall_001",
+      "tint": [
+        0.462,
+        0.385,
+        0.333
+      ],
+      "rough": 0.6
+    },
+    "ceiling": {
+      "ph": "ceiling_interior",
+      "tint": [
+        0.769,
+        0.731,
+        0.667
+      ],
+      "rough": 0.7
+    },
+    "wainscot": {
+      "ph": "rosewood_veneer1",
+      "tint": [
+        0.6,
+        0.42,
+        0.32
+      ],
+      "scale": 0.6
+    },
+    "wainscot_height": 1.0,
+    "skirting": null
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.01,
+      0.012,
+      0.016
+    ],
+    "strength": 0.5
+  },
+  "render": {
+    "exposure": 0.738,
+    "bloom": {
+      "threshold": 0.95,
+      "strength": 0.25,
+      "size": 0.5
+    }
+  },
+  "walls": {
+    "west": {
+      "facade": true,
+      "openings": [
+        {
+          "kind": "door",
+          "style": "glass",
+          "center": 2.67,
+          "width": 1.48,
+          "height": 2.25,
+          "hinge": "left"
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "display_case",
+      "pos": [
+        3.2,
+        0.0,
+        2.2
+      ],
+      "size": [
+        3.0,
+        1.0,
+        0.7
+      ],
+      "yaw": 0,
+      "palette": "candy",
+      "empty": 0.95,
+      "seed": 41
+    },
+    {
+      "type": "display_case",
+      "pos": [
+        3.2,
+        0.0,
+        6.3
+      ],
+      "size": [
+        3.0,
+        1.0,
+        0.7
+      ],
+      "yaw": 180,
+      "palette": "candy",
+      "empty": 0.95,
+      "seed": 42
+    },
+    {
+      "type": "counter",
+      "pos": [
+        6.6,
+        0.0,
+        4.25
+      ],
+      "size": [
+        3.6,
+        1.0,
+        0.7
+      ],
+      "yaw": -90,
+      "till": true,
+      "material": {
+        "ph": "rosewood_veneer1",
+        "tint": [
+          0.6,
+          0.42,
+          0.32
+        ],
+        "scale": 0.6
+      }
+    },
+    {
+      "type": "broken_glass",
+      "pos": [
+        3.2,
+        0.0,
+        4.25
+      ],
+      "yaw": 0,
+      "size": [
+        5.0,
+        0.0,
+        3.0
+      ],
+      "seed": 43,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:drawer_cabinet",
+      "pos": [
+        7.6,
+        0.0,
+        1.0
+      ],
+      "yaw": -90,
+      "scale": 1.0,
+      "size": [
+        0.6,
+        1.2,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:Chandelier_02",
+      "pos": [
+        4.0,
+        2.4,
+        4.25
+      ],
+      "yaw": 0,
+      "fit": [
+        1.0,
+        0.9,
+        1.0
+      ],
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        1.11,
+        0.0,
+        8.08
+      ],
+      "yaw": 182,
+      "scale": 0.88,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        2.05,
+        0.0,
+        0.42
+      ],
+      "yaw": -26,
+      "scale": 0.95,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        0.72,
+        0.0,
+        0.42
+      ],
+      "yaw": 5,
+      "scale": 0.92,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        3.96,
+        0.0,
+        0.42
+      ],
+      "yaw": -7,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        1.85,
+        0.0,
+        8.08
+      ],
+      "yaw": 205,
+      "scale": 0.86,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        5.34,
+        0.0,
+        8.08
+      ],
+      "yaw": 208,
+      "scale": 0.81,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        7.58,
+        0.0,
+        2.6
+      ],
+      "yaw": -88,
+      "scale": 0.99,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wall_clock",
+      "pos": [
+        7.97,
+        2.15,
+        6.54
+      ],
+      "yaw": -90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:hanging_picture_frame_02",
+      "pos": [
+        6.56,
+        1.75,
+        0.03
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "drop_ceiling",
+      "pos": [
+        4.0,
+        3.388,
+        4.25
+      ],
+      "size": [
+        8.0,
+        0.02,
+        8.5
+      ],
+      "seed": 744,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        0.08,
+        2.43,
+        2.67
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 90,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        7.8,
+        2.9,
+        0.2
+      ],
+      "yaw": -45,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        1.4,
+        0.0,
+        4.43
+      ],
+      "size": [
+        3.2,
+        0.01,
+        3.0
+      ],
+      "seed": 159,
+      "count": 4,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        2.47,
+        0.0,
+        5.6
+      ],
+      "size": [
+        3.2,
+        0.01,
+        3.0
+      ],
+      "seed": 674,
+      "count": 4,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    }
+  ],
+  "lights": [
+    {
+      "kind": "point",
+      "pos": [
+        4.0,
+        2.4,
+        4.25
+      ],
+      "color": [
+        1.0,
+        0.8,
+        0.55
+      ],
+      "blender_power": 120,
+      "godot_energy": 0.6,
+      "range": 6.0,
+      "radius": 0.3
+    },
+    {
+      "kind": "area",
+      "pos": [
+        3.2,
+        3.3,
+        2.2
+      ],
+      "look_at": [
+        3.2,
+        0.0,
+        2.2
+      ],
+      "size": 0.55,
+      "color": [
+        1.0,
+        0.94,
+        0.85
+      ],
+      "blender_power": 110,
+      "godot_energy": 0.4,
+      "range": 5.0
+    },
+    {
+      "kind": "area",
+      "pos": [
+        3.2,
+        3.3,
+        6.3
+      ],
+      "look_at": [
+        3.2,
+        0.0,
+        6.3
+      ],
+      "size": 0.55,
+      "color": [
+        1.0,
+        0.94,
+        0.85
+      ],
+      "blender_power": 110,
+      "godot_energy": 0.4,
+      "range": 5.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        0.6,
+        2.7,
+        0.6
+      ],
+      "look_at": [
+        7.0,
+        0.8,
+        7.0
+      ],
+      "fov": 66,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          8.0,
+          8.5
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_street": {
+      "pos": [
+        0.8,
+        0.0,
+        2.6700000000000017
+      ],
+      "yaw": -90
+    }
+  },
+  "interactables": [
+    {
+      "id": "door_street",
+      "kind": "door",
+      "pos": [
+        0.45,
+        1.0,
+        2.6700000000000017
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "ammo_counter",
+      "kind": "pickup",
+      "item": "handgun_ammo",
+      "count": 6,
+      "pos": [
+        6.9,
+        0.3,
+        5.05
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "safe",
+      "kind": "examine",
+      "pos": [
+        7.2,
+        1.0,
+        1.2
+      ],
+      "radius": 1.2,
+      "text": "The safe stands open and empty. Whoever opened it had the code; there isn't a mark on it."
+    },
+    {
+      "id": "under_counter",
+      "kind": "examine",
+      "pos": [
+        6.0,
+        1.0,
+        4.85
+      ],
+      "radius": 1.0,
+      "text": "A holster screwed under the counter, empty. Its box of rounds is still on the shelf beside it."
+    }
+  ],
+  "enemies": []
+}

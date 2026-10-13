@@ -1,0 +1,339 @@
+{
+  "_file": "damned_waters/game/data/rooms/kalversteeg.json \u2014 RoomSpec for Kalversteeg (the city, district 5: the Kalverstraat): the narrow lane from the Kalverstraat along the Singel's quay through to Muntplein: bins, bikes chained to the drainpipes, the back door of a restaurant's kitchen, the flower market's stalls across the water. Modelled after openly licensed photographs; every business name is made up, the landmarks keep theirs. The power is still on; nobody is there. Outdoor (street.py, city.py and landmarks.py build it). Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "kalversteeg",
+  "display_name": "Kalversteeg",
+  "storey": 13,
+  "origin": [
+    844.3,
+    -63.7
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      20.8,
+      3.4
+    ]
+  },
+  "height": 8.0,
+  "materials": {
+    "floor": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "wall": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "ceiling": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    }
+  },
+  "footsteps": "marble",
+  "ambience": "amb_street_rain",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.014,
+      0.019,
+      0.036
+    ],
+    "strength": 1.0
+  },
+  "sky": {
+    "hdri": "kloppenheim_07_puresky",
+    "strength": 0.045,
+    "camera": 0.1,
+    "tint": [
+      1.0,
+      0.76,
+      0.55
+    ]
+  },
+  "render": {
+    "exposure": 0.85,
+    "bloom": {
+      "threshold": 0.9,
+      "strength": 0.4,
+      "size": 0.55,
+      "haze": {
+        "color": [
+          0.045,
+          0.052,
+          0.068
+        ],
+        "start": 12.0,
+        "depth": 85.0,
+        "strength": 0.5
+      }
+    }
+  },
+  "outdoor": {
+    "window_rooms": [
+      "warm_bar",
+      "fireplace",
+      "small_empty_room_2",
+      "christmas_photo_studio_04",
+      "warm_restaurant_night",
+      "unfinished_office_night"
+    ],
+    "lamp_power": 200.0,
+    "lamp_energy": 1.0,
+    "ground": [
+      {
+        "name": "alley",
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          20.8,
+          3.6999999999999997
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "cobblestone_floor_04",
+          "tint": [
+            0.65,
+            0.62,
+            0.58
+          ],
+          "wet": 0.9,
+          "puddles": 0.36,
+          "puddle_scale": 0.9
+        }
+      }
+    ],
+    "lamps": [
+      [
+        10.4,
+        0.5
+      ]
+    ],
+    "facades": [
+      {
+        "facing": "south",
+        "storeys": [
+          4.0,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 6,
+        "gable": "cornice",
+        "seed": 1395,
+        "lit": 0.2,
+        "x0": 0.0,
+        "x1": 20.8,
+        "z": 0.0,
+        "door_bay": 3,
+        "stoop": 0.0,
+        "lean": 0.0
+      }
+    ]
+  },
+  "props": [
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        5.0,
+        0.0,
+        0.6
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "size": [
+        0.5,
+        1.0,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        5.7,
+        0.0,
+        0.6
+      ],
+      "yaw": 20,
+      "scale": 1.0,
+      "size": [
+        0.5,
+        1.0,
+        0.5
+      ]
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        6.6,
+        0.0,
+        0.7
+      ],
+      "yaw": 50,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        14.0,
+        0.0,
+        0.5
+      ],
+      "yaw": 10,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        16.5,
+        0.0,
+        0.5
+      ],
+      "yaw": 178,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": true,
+      "seed": 191
+    },
+    {
+      "type": "railing",
+      "pos": [
+        10.4,
+        0.0,
+        3.3
+      ],
+      "yaw": 0,
+      "size": [
+        20.8,
+        1.0,
+        0.1
+      ],
+      "collide": false
+    }
+  ],
+  "walls": {
+    "west": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 1.7,
+          "width": 3.4,
+          "height": 8.0
+        }
+      ]
+    },
+    "east": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 1.7,
+          "width": 3.4,
+          "height": 8.0
+        }
+      ]
+    }
+  },
+  "lights": [
+    {
+      "kind": "sun",
+      "dir_from": [
+        -0.35,
+        0.55,
+        1.0
+      ],
+      "color": [
+        0.55,
+        0.66,
+        1.0
+      ],
+      "blender_power": 0.12,
+      "godot_energy": 0.25,
+      "angle": 2.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        1.2,
+        3.6,
+        2.4
+      ],
+      "look_at": [
+        20.8,
+        2.4,
+        5.0
+      ],
+      "fov": 60,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          20.8,
+          3.4
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_muntplein": {
+      "pos": [
+        19.6,
+        0.0,
+        1.7
+      ],
+      "yaw": 90
+    }
+  },
+  "interactables": [
+    {
+      "id": "to_muntplein",
+      "kind": "door",
+      "pos": [
+        20.6,
+        1.0,
+        1.7
+      ],
+      "radius": 1.6,
+      "target_room": "muntplein",
+      "target_spawn": "from_kalverstraat"
+    },
+    {
+      "id": "kitchen",
+      "kind": "examine",
+      "pos": [
+        9.0,
+        1.0,
+        0.6
+      ],
+      "radius": 1.2,
+      "text": "A kitchen's back door, propped open. A pan still on the flame inside, burned black. Nobody turned it off."
+    }
+  ],
+  "enemies": []
+}

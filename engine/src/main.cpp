@@ -6,6 +6,9 @@
 //                                   T tank/modern, F3 debug; Enter after dying to try again
 //   --flashlight                    start with the flashlight on (also for --capture)
 //   ./damned_waters --capture out   stage + screenshot every setup, then exit
+//   ./damned_waters --room proef --still 3.2,2.2,163 out.png [--shot c]
+//                                   the survivor standing in a room (x, z, yaw degrees), one frame, then exit;
+//                                   DW_ROOT=<dir> reads rooms, plates and audio from another tree
 //   ./damned_waters --sheet out     studio turnaround of the cast (model review), then exit
 //                                   (--only pieter,survivor: just those subjects)
 //   ./damned_waters --view survivor,25,10,0.6,0,0.9,30 out.png   one full-resolution studio shot
@@ -14,13 +17,16 @@
 //                                   or a gun, catalogue-lit: m92fs | r870 (see Game::gun_view)
 //   ./damned_waters --fitgrips      a tool: fit his hands to both guns as people hold them, write
 //                                   src/grips_fitted.inc, then exit
-//   ./damned_waters --fitpistol     a tool: fit the two-handed pistol aim (the right arm and wrist,
-//                                   the head; the left hand goes on by IK), print it, exit
+//   ./damned_waters --fitpistol     a tool: fit the pistol in both hands (aiming: the right arm and
+//                                   wrist, the head; at the low ready and running: the arms; the left
+//                                   hand goes on by IK), print it for the pose tables, exit
 //   ./damned_waters --fit870        a tool: fit the hold on the 870 (aim, low ready, reload: arms,
 //                                   wrists and the turn of his back; aiming, also his head and lean,
 //                                   the cheek down on the stock), print it for the pose tables, exit
-//   ./damned_waters --clearance     a tool: play each reload through and print, step by step, how
-//                                   deep his arms, hands and gun go into his body (and each other)
+//   ./damned_waters --clearance     a tool: play each way he carries a gun (standing, walking, running,
+//                                   raising it and lowering it) and each reload through and print, step
+//                                   by step, how deep his arms, hands and gun go into his body (and each
+//                                   other), his wrists, and where his trigger finger is
 //   ./damned_waters --fitreload     a tool: fit where the pistol is brought in to reload (least wrist
 //                                   strain, nothing through anything), print it, exit
 //   ./damned_waters --frames 600    auto-exit (smoke tests)
@@ -37,7 +43,7 @@
 #include "game.hpp"
 
 int main(int argc, char** argv) {
-    std::string capture, sheet, only, view, view_png, room = "gang";
+    std::string capture, sheet, only, view, view_png, room = "gang", still, still_png, shot;
     long max_frames = -1;
     for (int i = 1; i + 1 < argc; ++i) {
         std::string a = argv[i];
@@ -46,6 +52,8 @@ int main(int argc, char** argv) {
         else if (a == "--only") only = argv[++i];
         else if (a == "--view" && i + 2 < argc) { view = argv[++i]; view_png = argv[++i]; }
         else if (a == "--room") room = argv[++i];
+        else if (a == "--still" && i + 2 < argc) { still = argv[++i]; still_png = argv[++i]; }
+        else if (a == "--shot") shot = argv[++i];
         else if (a == "--frames") max_frames = std::stol(argv[++i]);
     }
     bool flashlight = false, fit870 = false, fitgrips = false, fitpistol = false, clear = false, fitreload = false;
@@ -79,7 +87,9 @@ int main(int argc, char** argv) {
         c.unload();
     } else if (clear) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);
-        TraceLog(LOG_INFO, "CLEARANCE%s", c.reload_clearance().c_str());
+        const char* part = std::getenv("DW_CLEAR_ONLY");   // (stance or reload: just that half)
+        if (!part || std::string(part) == "stance") TraceLog(LOG_INFO, "CLEARANCE (carrying the guns)%s", c.stance_clearance().c_str());
+        if (!part || std::string(part) == "reload") TraceLog(LOG_INFO, "CLEARANCE (the reloads)%s", c.reload_clearance().c_str());
         c.unload();
     } else if (fitgrips) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);
@@ -87,14 +97,53 @@ int main(int argc, char** argv) {
         c.unload();
     } else if (fitpistol) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);
-        TraceLog(LOG_INFO, "FIT pistol %s", c.fit_pistol().c_str());
+        dw::Character::PistolFit aim, low, run;
+        // The low ready, standing and walking: the gun low in front of him on his middle line, between
+        // his belly and the bottom of his chest, the muzzle at the floor 1.5 to 2 m ahead.
+        low.sights = false;
+        low.grip_at = {0.02f, -0.30f, -0.48f};
+        low.grip_band = {0.04f, 0.06f, 0.1f};
+        low.floor_near = 1.5f;
+        low.floor_far = 2.0f;
+        low.pose = dw::Pose::Idle;
+        // Running: the low ready still, on his running body (leaning into it), the gun pulled in a
+        // little and the muzzle at the floor a little nearer. (Pulled in close to his chest, a
+        // compressed ready, this rig's one-piece palm would bend the wrists past 55 degrees.)
+        run.sights = false;
+        run.grip_at = {0.02f, -0.30f, -0.46f};
+        run.grip_band = {0.04f, 0.06f, 0.08f};
+        run.floor_near = 1.3f;
+        run.floor_far = 1.8f;
+        run.pose = dw::Pose::Run;
+        const char* only = std::getenv("DW_FIT_ONLY");   // (aim, low or run: just that one)
+        auto want = [only](const char* id) { return !only || std::string(only) == id; };
+        if (want("aim")) TraceLog(LOG_INFO, "FIT pistol aim %s", c.fit_pistol(aim).c_str());
+        if (want("low")) TraceLog(LOG_INFO, "FIT pistol low ready %s", c.fit_pistol(low).c_str());
+        if (want("run")) TraceLog(LOG_INFO, "FIT pistol running %s", c.fit_pistol(run).c_str());
         c.unload();
     } else if (fit870) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);
         dw::Character::ShotgunFit aim, low, reload;
-        low.aim = {0, -0.64f, -0.77f};   // the low ready: still in the shoulder, the muzzle 40 degrees down
+        // Aiming: the pad in the shoulder pocket against his coat, pressing it a few millimetres,
+        // not through it (measured against the coat's own skin). The pocket is where the pad comes
+        // to rest on the coat with the cheek on the comb: just inboard of the shoulder, toward the
+        // collarbone. The wrists as cared for as at the low ready.
+        aim.pad_press = 0.008f;
+        aim.pocket = {-0.075f, 0.015f, -0.167f};
+        aim.wrist_easy = 60;
+        if (const char* e = std::getenv("DW_870_AIM"))   // (trying others: pocket xyz, the press)
+            std::sscanf(e, "%f,%f,%f,%f", &aim.pocket.x, &aim.pocket.y, &aim.pocket.z, &aim.pad_press);
+        // The low ready: the muzzle 35 degrees down, the butt dropped from the shoulder pocket to just
+        // under it, on the chest by the armpit (pinned in the pocket, the right wrist would have to
+        // turn round it, past what wrists do).
+        low.aim = {0, -0.574f, -0.819f};
+        low.pocket = {-0.03f, -0.14f, -0.17f};
         low.cheek = false;
+        low.wrist_easy = 60;               // (carried a long time: the wrists no more strained than aiming)
+        low.turn_as_aim = true;            // (bladed as he aims: raising it is the arms alone)
         low.pose = dw::Pose::Idle;          // carried like this while he stands, walks and runs
+        if (const char* e = std::getenv("DW_870_LOW"))   // (trying others: aim xyz, pocket xyz)
+            std::sscanf(e, "%f,%f,%f,%f,%f,%f", &low.aim.x, &low.aim.y, &low.aim.z, &low.pocket.x, &low.pocket.y, &low.pocket.z);
         reload.aim = {0, 0.2f, -0.98f};   // loading: under the armpit, muzzle up a little, left hand at the port
         reload.pocket = {0.0f, -0.2f, 0.02f};
         reload.left = {0, -0.2447f, -0.0068f};
@@ -108,6 +157,25 @@ int main(int argc, char** argv) {
         if (want("low")) TraceLog(LOG_INFO, "FIT low ready %s", c.fit_shotgun(low).c_str());
         if (want("reload")) TraceLog(LOG_INFO, "FIT reload %s", c.fit_shotgun(reload).c_str());
         c.unload();
+    } else if (!still.empty()) {   // the survivor standing in a room: --still x,z,yaw out.png [--shot id]
+        float x = 0, z = 0, yaw = 0;
+        if (std::sscanf(still.c_str(), "%f,%f,%f", &x, &z, &yaw) == 3) {
+            game.pose_still(x, z, yaw, shot);
+            for (int warm = 0; warm < 2; ++warm) {
+                game.render();
+                BeginDrawing();
+                game.present();
+                if (warm == 1) {
+                    rlDrawRenderBatchActive();
+                    Image img = LoadImageFromScreen();
+                    ExportImage(img, still_png.c_str());
+                    UnloadImage(img);
+                }
+                EndDrawing();
+            }
+        } else {
+            TraceLog(LOG_ERROR, "bad --still spec: %s (want x,z,yaw)", still.c_str());
+        }
     } else if (!view.empty()) {
         if (!game.studio_view(view, view_png)) TraceLog(LOG_ERROR, "bad --view spec: %s", view.c_str());
     } else if (!sheet.empty()) {

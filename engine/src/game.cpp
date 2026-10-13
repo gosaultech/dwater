@@ -30,19 +30,10 @@ const Vector3 LAMP_COLOR{2.5f, 2.35f, 2.1f};
 
 bool Game::init(const std::string& room_id) {
     const std::string root = repo_root();
-    spec_ = RoomSpec::load(root + "/game/data/rooms/" + room_id + ".json");
-    if (!spec_.ok()) {
-        for (auto& e : spec_.errors) TraceLog(LOG_ERROR, "RoomSpec: %s", e.c_str());
-        return false;
-    }
-    for (const auto& s : spec_.shots) {
-        std::string base = root + "/game/assets/rooms/" + spec_.id + "/" + s.id;
-        Texture2D c = LoadTexture((base + "_color.png").c_str()), d = LoadTexture((base + "_depth.png").c_str());
-        if (c.id == 0 || d.id == 0) { TraceLog(LOG_ERROR, "missing plate %s", base.c_str()); return false; }
-        SetTextureFilter(c, TEXTURE_FILTER_BILINEAR);
-        SetTextureFilter(d, TEXTURE_FILTER_POINT);   // depth bytes must never be blended
-        plates_[s.id] = {c, d};
-    }
+    if (!load_house(room_id)) return false;
+    spec_ = rooms_[size_t(room_)];
+    plates_.start(root + "/game/assets/rooms");
+    if (!plates_.need(spec_.id, shot_ids(spec_))) { TraceLog(LOG_ERROR, "missing plates for %s", spec_.id.c_str()); return false; }
     plate_ = LoadShaderFromMemory(nullptr, shaders::PLATE_FS);
     l_depth_ = GetShaderLocation(plate_, "u_depth");
     l_near_ = GetShaderLocation(plate_, "u_near");
@@ -82,9 +73,7 @@ bool Game::init(const std::string& room_id) {
     near_ = float(rlGetCullDistanceNear());
     far_ = float(rlGetCullDistanceFar());
     sfx_.init(root + "/game/assets/audio");   // quietly does nothing without an audio device
-    sfx_.ambience(spec_.ambience, 0.45f);
     fx_.init();
-    fx_.set_bounds(spec_.bounds.x0, spec_.bounds.z0, spec_.bounds.x1, spec_.bounds.z1);
     {   // the pistol's magazine as he holds the gun, to drop when he reloads
         Matrix turn = Character::pistol_hold();
         turn.m12 = turn.m13 = turn.m14 = 0;
@@ -94,16 +83,20 @@ bool Game::init(const std::string& room_id) {
     input_.scheme = settings_.scheme;
     hero_ = Character::make(Kind::Survivor);
     init_status();
-    reset_fight();
-    cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
-    upload_lights();
+    reset_fight();   // builds the storey and walks him into the first room
     animate(0.0f);
     return true;
 }
 
 void Game::shutdown() {
     unload_status();
-    for (auto& [id, p] : plates_) { UnloadTexture(p.first); UnloadTexture(p.second); }
+    plates_.stop();
+    for (Mesh& m : pane_meshes_)
+        if (m.vertexCount > 0) UnloadMesh(m);
+    pane_meshes_.clear();
+    for (Mesh& m : leaf_meshes_)
+        if (m.vertexCount) UnloadMesh(m);
+    leaf_meshes_.clear();
     hero_.unload();
     for (auto& e : enemies_) e.body.unload();
     enemies_.clear();
@@ -365,7 +358,7 @@ void Game::upload_lights() {
 
 void Game::collide(float& x, float& z, float r) const {
     for (int it = 0; it < 3; ++it)
-        for (const auto& b : spec_.colliders) resolve_circle_obb(x, z, r, b);
+        for (const auto& b : solid_) resolve_circle_obb(x, z, r, b);
 }
 
 void Game::animate(float dt) {
@@ -374,12 +367,15 @@ void Game::animate(float dt) {
     fx_.follow_flash(hero_.muzzle(), hero_.barrel_dir());   // the flame stays on the barrel as it kicks
     for (auto& e : enemies_) {
         if (!e.active) continue;
-        e.body.place({e.a.x, 0, e.a.z}, e.a.yaw);
+        // Rising out of the water: it comes up from under the floor (the painted water hides it).
+        const float k = e.rise >= 0 ? 1.0f - (1.0f - e.rise) * (1.0f - e.rise) : 1.0f;
+        e.body.place({e.a.x, -1.75f * (1.0f - k), e.a.z}, e.a.yaw);
         e.body.animate(e.a.pose, e.a.speed, dt);
     }
 }
 
 void Game::update(float dt) {
+    plates_.pump(2);   // the rooms next door, a couple of plates a frame
     input_.scheme = settings_.scheme;
     in_ = input_.poll();
     in_.move = {in_.move.x + staged_in_.x, in_.move.y + staged_in_.y};   // (capture setups hold the stick from code)
@@ -417,10 +413,20 @@ void Game::update(float dt) {
         update_menu();
     }
     if (paused_) { sfx_.update(); return; }   // time stands still
+    if (end_t_ >= 0) { end_t_ += dt; sfx_.update(); return; }   // the end: nothing moves now
+    if (beat_.busy()) {   // between storeys: the dark, his steps on the stairs, the other floor
+        const float before = beat_.t;
+        const Beat::Phase ph = beat_.phase;
+        if (beat_.update(dt) == Beat::Event::Swap) finish_beat();
+        if (ph == Beat::Phase::Hold && std::floor(before / 0.26f) != std::floor(beat_.t / 0.26f))
+            sfx_.play("step_wood", 0.45f, 0.1f);
+        sfx_.update();
+        return;
+    }
     if (in_.hit(ACT_STATUS) && pmode_ != PMode::Dead) {   // the case
         status_.open(status::Tab::Items);
         for (size_t i = 0; i < storeys_.size(); ++i)   // the map opens on the floor he's on
-            if (storeys_[i] == spec_.floor) status_.show_floor(int(i));
+            if (storeys_[i] == worldmap::page(spec_.floor)) status_.show_floor(int(i));
         sfx_.play("case_open", 0.7f);
         return;
     }
@@ -429,35 +435,73 @@ void Game::update(float dt) {
     slowmo_t_ = std::max(0.0f, slowmo_t_ - dt);
     time_scale_ = slowmo_t_ > 0.2f ? 0.3f : slowmo_t_ > 0 ? 1.0f - 0.7f * slowmo_t_ / 0.2f : 1.0f;
     const float g = dt * time_scale_;
+    // This storey's solids: walls, props and the door leaves where they hang now.
+    solid_.assign(statics_.begin(), statics_.end());
+    shut_.clear();
+    for (size_t i = 0; i < leaves_.size(); ++i) {
+        if (rooms_[size_t(doorways_[i].a)].floor != storey_ || doorways_[i].passage) continue;
+        solid_.push_back(leaves_[i].collider());
+        if (!leaves_[i].passable() && !doorways_[i].grate && !doorways_[i].glass) shut_.push_back(leaves_[i].collider());   // (bars, glass: seen through)
+    }
     update_player(g);
+    {   // the stick, as a way across the floor (for leaning on doors)
+        Vector2 want{};
+        const float tilt = std::min(1.0f, Vector2Length(in_.move));
+        if (settings_.tank) {
+            const V2 f = forward_from_yaw(player_.yaw);
+            want = {f.x * std::max(0.0f, in_.move.y), f.z * std::max(0.0f, in_.move.y)};
+        } else if (tilt > 0) {
+            Vector3 fwd = holding_ ? held_fwd_ : Vector3Subtract(cam_.target, cam_.position);
+            fwd.y = 0;
+            fwd = Vector3Normalize(fwd);
+            const Vector3 right = holding_ ? held_right_ : Vector3{-fwd.z, 0, fwd.x};
+            want = {right.x * in_.move.x + fwd.x * in_.move.y, right.z * in_.move.x + fwd.z * in_.move.y};
+        }
+        update_doors(g, want, tilt);
+    }
+    if (wake_t_ >= 0 && (wake_t_ -= g) < 0) wake(wake_flag_);
     update_enemies(g);
     fx_.update(g);
+    if (spec_.rain) rain_.update(g, player_.x, player_.z);
     for (Vector3 at; fx_.landed(at);) sfx_.play_at("mag_drop", at, ear(), ear_right(), 0.9f, 0.08f);   // an empty magazine on the floor
     sfx_.update();
-    std::string next = select_shot(spec_.zones(), shot_, player_.x, player_.z);
-    if (next != shot_) cut_to(next);
+    // Through a doorway into the next room: no loading, just a cut to its camera.
+    if (const int r = house::room_at(rooms_, storey_, player_.x, player_.z, room_); r >= 0 && r != room_) enter_room(r);
+    if (peek_ < 0) {
+        std::string next = select_shot(spec_.zones(), shot_, player_.x, player_.z);
+        if (next != shot_) cut_to(next);
+    }
     animate(g);
     upload_lights();   // after the pose: the flash light sits where the muzzle is now
 }
 
 // ── The pause menu ──────────────────────────────────────────────────────────────
 namespace {
-constexpr int MENU_ITEMS = 5;   // resume, controller layout, slow motion, movement, quit
+// resume, controller layout, run, quick turn on back + Circle, slow motion, movement, quit
+constexpr int MENU_ITEMS = 7;
 }
 
 void Game::update_menu() {
-    if (in_.hit(ACT_BACK)) { paused_ = false; return; }
+    // Closing the menu takes this frame's presses with it: the button that resumed (Cross, Circle)
+    // mustn't also kick, dodge or turn him as play picks up again on this same frame.
+    auto resume = [this] { paused_ = false; std::fill(std::begin(in_.pressed), std::end(in_.pressed), false); };
+    if (in_.hit(ACT_BACK)) { resume(); return; }
     if (in_.nav_y) { menu_sel_ = (menu_sel_ - in_.nav_y + MENU_ITEMS) % MENU_ITEMS; sfx_.play("ui_move", 0.6f); }
     const int change = in_.nav_x != 0 ? in_.nav_x : in_.hit(ACT_CONFIRM) ? 1 : 0;
     switch (menu_sel_) {
-        case 0: if (in_.hit(ACT_CONFIRM)) paused_ = false; return;
+        case 0: if (in_.hit(ACT_CONFIRM)) resume(); return;
         case 1:
             if (!change) return;
             settings_.scheme = Scheme((int(settings_.scheme) + change + int(Scheme::Count)) % int(Scheme::Count));
             input_.scheme = settings_.scheme;
             break;
-        case 2: if (!change) return; settings_.slowmo = !settings_.slowmo; break;
-        case 3: if (!change) return; settings_.tank = !settings_.tank; break;
+        case 2:
+            if (!change) return;
+            settings_.run = RunMode((int(settings_.run) + change + int(RunMode::Count)) % int(RunMode::Count));
+            break;
+        case 3: if (!change) return; settings_.back_turn = !settings_.back_turn; break;
+        case 4: if (!change) return; settings_.slowmo = !settings_.slowmo; break;
+        case 5: if (!change) return; settings_.tank = !settings_.tank; break;
         default: if (in_.hit(ACT_CONFIRM)) quit_ = true; return;
     }
     save_settings();
@@ -465,32 +509,65 @@ void Game::update_menu() {
 }
 
 void Game::draw_menu() const {
-    const int sw = GetScreenWidth(), sh = GetScreenHeight(), fs = std::max(14, sh / 26), x = sw / 2 - fs * 11, y0 = sh / 3;
+    const int sw = GetScreenWidth(), sh = GetScreenHeight(), fs = std::max(14, sh / 26), x = sw / 2 - fs * 11, y0 = sh / 5;
+    const int step = fs * 3 / 2, hs = std::max(12, fs * 3 / 4);
     DrawRectangle(0, 0, sw, sh, Color{0, 0, 0, 175});
     DrawText("PAUSED", x, y0 - fs * 3, fs * 2, Color{200, 190, 170, 255});
+    const Scheme s = settings_.scheme;
+    const char* circle = pad_button_name(pad_button(s, ACT_BACK_TURN));
+    const std::string run_button = pad_button_name(pad_button(s, ACT_RUN_HOLD));
+    const std::string run = settings_.run == RunMode::HoldButton ? "Hold " + run_button : run_mode_name(settings_.run);
     const std::string items[MENU_ITEMS] = {
         "Resume",
-        std::string("Controller layout:  < ") + scheme_name(settings_.scheme) + " >",
+        std::string("Controller layout:  < ") + scheme_name(s) + " >",
+        "Run:  < " + run + " >",
+        std::string("Quick turn on stick back + ") + circle + ":  < " + (settings_.back_turn ? "On" : "Off") + " >",
         std::string("Slow motion on a perfect dodge:  < ") + (settings_.slowmo ? "On" : "Off") + " >",
         std::string("Movement:  < ") + (settings_.tank ? "Tank (classic)" : "Modern") + " >",
         "Quit"};
     for (int i = 0; i < MENU_ITEMS; ++i) {
         const bool sel = i == menu_sel_;
-        DrawText(items[i].c_str(), x, y0 + i * fs * 2, fs, sel ? Color{235, 225, 200, 255} : Color{130, 122, 112, 255});
-        if (sel) DrawText(">", x - fs, y0 + i * fs * 2, fs, Color{170, 20, 16, 255});
+        DrawText(items[i].c_str(), x, y0 + i * step, fs, sel ? Color{235, 225, 200, 255} : Color{130, 122, 112, 255});
+        if (sel) DrawText(">", x - fs, y0 + i * step, fs, Color{170, 20, 16, 255});
     }
+    // What the highlighted option means, in a line (by default, how he moves under the run option).
+    std::string what;
+    if (menu_sel_ == 3)
+        what = !back_turn_shares_dodge(s) ? std::string("In this layout ") + circle + " turns him on its own; this matters in Type B and C, where it dodges."
+               : std::string("Stick back (behind him) and ") + circle + ": he turns round. " + circle + " alone, or with the stick any other way, dodges.";
+    else if (settings_.run == RunMode::Analog)
+        what = "Left stick: a light touch sneaks (he barely makes a sound), half way walks, all the way runs.";
+    else
+        what = "Left stick: a light touch sneaks, further walks; " +
+               (settings_.run == RunMode::StickHold     ? std::string("hold L3 in to run.")
+                : settings_.run == RunMode::StickToggle ? std::string("click L3 to run, until the stick comes back.")
+                                                        : "hold " + run_button + " to run (it fires only when aiming).");
+    int y = y0 + MENU_ITEMS * step + fs / 4;
+    auto line = [&](const char* t, Color c) {   // kept on screen, however long
+        DrawText(t, std::max(fs / 2, std::min(x, sw - MeasureText(t, hs) - fs / 2)), y, hs, c);
+    };
+    line(what.c_str(), Color{170, 160, 140, 235});
+    y += hs + fs / 2;
     // The chosen layout at a glance.
-    const int acts[] = {ACT_AIM, ACT_FIRE, ACT_DODGE, ACT_KICK, ACT_QUICK_TURN, ACT_RELOAD, ACT_STATUS, ACT_FLASHLIGHT, ACT_WEAPON_1, ACT_WEAPON_2};
-    int y = y0 + MENU_ITEMS * fs * 2 + fs;
-    const int hs = std::max(12, fs * 3 / 4);
-    for (size_t i = 0; i < sizeof(acts) / sizeof(acts[0]); ++i) {
-        const int col = int(i % 2), row = int(i / 2);
-        DrawText(TextFormat("%-12s %s", act_name(acts[i]), pad_button_name(pad_button(settings_.scheme, acts[i]))),
-                 x + col * fs * 12, y + row * (hs + 6), hs, Color{150, 142, 130, 230});
+    const int acts[] = {ACT_AIM, ACT_FIRE, ACT_DODGE, ACT_KICK, ACT_QUICK_TURN, ACT_RELOAD, ACT_STATUS, ACT_FLASHLIGHT, ACT_WEAPON_1, ACT_WEAPON_2,
+                        ACT_RUN};
+    const std::string turn = std::string(pad_button_name(pad_button(s, ACT_QUICK_TURN))) +
+                             (settings_.back_turn && back_turn_shares_dodge(s) ? std::string(", back + ") + circle : "");
+    const std::string run_with = settings_.run == RunMode::Analog ? "push all the way"
+                                 : settings_.run == RunMode::HoldButton ? run_button
+                                                                        : "L3";
+    const size_t n = sizeof(acts) / sizeof(acts[0]);
+    int label_w = 0;   // the buttons in a column of their own, past the longest name
+    for (int a : acts) label_w = std::max(label_w, MeasureText(act_name(a), hs));
+    label_w += hs;
+    for (size_t i = 0; i < n; ++i) {
+        const int col = int(i % 2), row = int(i / 2), cx = x + col * (label_w + fs * 10), cy = y + row * (hs + 6);
+        const char* b = acts[i] == ACT_QUICK_TURN ? turn.c_str() : acts[i] == ACT_RUN ? run_with.c_str() : pad_button_name(pad_button(s, acts[i]));
+        DrawText(act_name(acts[i]), cx, cy, hs, Color{150, 142, 130, 230});
+        DrawText(b, cx + label_w, cy, hs, Color{150, 142, 130, 230});
     }
-    y += 5 * (hs + 6) + fs / 2;
-    DrawText("Aim: the right stick moves the aim over the body (head, arms, legs); flick it to switch target.", x, y, hs,
-             Color{120, 114, 104, 220});
+    y += int((n + 1) / 2) * (hs + 6) + fs / 2;
+    line("Aim: the right stick moves the aim over the body (head, arms, legs); flick it to switch target.", Color{120, 114, 104, 220});
 }
 
 // The capture setups (--capture): the first four are posed (no AI); the rest play the fight out,
@@ -505,7 +582,27 @@ std::string Game::stage(int i) {
         e.brain.go(st);
         return e;
     };
+    // The stick pushed toward a direction on the ground (the stick is camera-relative, as the player's is).
+    auto stick_toward = [&](float wx, float wz, float tilt) {
+        Vector3 f = Vector3Subtract(cam_.target, cam_.position);
+        f.y = 0;
+        f = Vector3Normalize(f);
+        const float l = std::hypot(wx, wz);
+        return Vector2{(wx * -f.z + wz * f.x) / l * tilt, (wx * f.x + wz * f.z) / l * tilt};
+    };
+    // Put him somewhere in a room (lx, lz: from the room's own corner), its storey built round him.
+    auto at = [&](const char* room, float lx, float lz, float yaw) {
+        beat_room_ = room;
+        beat_spawn_ = "";
+        finish_beat();
+        const RoomSpec& r = rooms_[size_t(room_)];
+        player_ = {r.bounds.x0 + lx, r.bounds.z0 + lz, yaw};
+        enter_room(room_);
+        cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+    };
     reset_fight();
+    inv_.add(I_SHOTGUN, 1);   // (the setups were made with both guns in the case)
+    inv_.add(I_SHELLS, 4);
     paused_ = false;
     banner_t_ = 0;   // no room title over the stills
     staged_aim_ = false;
@@ -582,15 +679,15 @@ std::string Game::stage(int i) {
             name = "head_burst";
             break;
         }
-        case 8: {   // the first one headless by the door, a bang, and two more come in
+        case 8: {   // the first one headless by the door; the key's bang, and two more come in
             Enemy& z = join(0, 0.45f, 8.0f, 0.4f, EState::Pursuit);
             z.damage.hit(R_HEAD, 0, true);
             cut_off(z, R_HEAD, {0, 0, 1});
             kill_enemy(z);
             player_ = {1.1f, 6.95f, kPi};
             run(1.2f);
-            script_.phase = HallEncounter::Phase::Bang;   // skip the quiet: straight to the door
-            script_.t = HallEncounter::BANG_TO_ENTRY - DT;
+            set_flag("heard_thud");   // the cellar key taken in the parlour: the bang at the front door
+            wake_t_ = DT;             // (skip the wait: straight in)
             run(0.6f);
             staged_aim_ = true;
             run(0.4f);
@@ -741,6 +838,432 @@ std::string Game::stage(int i) {
             animate(DT);
             break;
         }
+        case 27: case 28: case 29: case 30: case 31: case 32: {
+            // The house: the parlour door (leaning on it and the view through the crack; pushed
+            // open; through it into the parlour), a Drowned beating the shut door open behind him,
+            // the cellar door open on the stairs down, and the cellar's Drowned rising out of the water.
+            auto stick_toward = [&](float wx, float wz, float tilt) {   // the stick that walks him that way on this camera
+                Vector3 f = Vector3Subtract(cam_.target, cam_.position);
+                f.y = 0;
+                f = Vector3Normalize(f);
+                const float l = std::hypot(wx, wz);
+                return Vector2{(wx * -f.z + wz * f.x) / l * tilt, (wx * f.x + wz * f.z) / l * tilt};
+            };
+            const int door = doorway_of(room_index("gang"), "door_voorkamer");
+            const float dz = door >= 0 ? doorways_[size_t(door)].mid_z() : 8.17f;
+            if (i == 27 || i == 28 || i == 29) {
+                player_ = {0.62f, dz, kPi / 2};   // at the parlour door, facing it (west)
+                cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+                if (i == 27) {
+                    staged_in_ = stick_toward(-1, 0, 0.5f);   // leaning on it, gently
+                    run(1.6f);
+                    name = "door_lean_peek";
+                } else {
+                    interact();   // Cross: it swings away from him
+                    run(0.7f);
+                    if (i == 29) {
+                        staged_in_ = stick_toward(-1, 0, 0.5f);
+                        run(1.6f);
+                        staged_in_ = stick_toward(-0.5f, 0.6f, 0.5f);
+                        run(0.8f);
+                    }
+                    name = i == 28 ? "door_pushed_open" : "through_to_the_parlour";
+                }
+            } else if (i == 30) {   // in the parlour, the door shut; one comes after him from the hall
+                player_ = {-1.0f, dz - 0.75f, -kPi / 2};   // in the nook by the door (the parlour's door shot)
+                build_storey(storey_);
+                enter_room(room_index("voorkamer"));
+                Enemy& e = join(0, 1.0f, dz - 0.5f, kPi / 2, EState::Pursuit);
+                e.room = room_index("gang");
+                e.heard_t = 6.0f;
+                run(2.4f);
+                name = "drowned_shoves_the_door";
+            } else if (i == 31) {   // the cellar door, unlocked and pushed open: the stairs down
+                inv_.add(I_CELLAR_KEY, 1);
+                player_ = {0.6f, 0.75f, 0.0f};
+                cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+                interact();
+                text_queue_.clear();
+                interact();
+                run(0.9f);
+                player_ = {0.95f, 1.6f, kPi * 0.9f};
+                run(0.1f);
+                name = "cellar_door_stairs";
+            } else {                // down in the cellar: two of them come up out of the water
+                beat_room_ = "kelder";
+                beat_spawn_ = "from_souterrain";
+                finish_beat();
+                const RoomSpec& k = rooms_[size_t(room_)];
+                player_ = {k.bounds.x0 + 2.2f, k.bounds.z0 + 3.4f, kPi};   // facing the water gate
+                run(1.1f);
+                name = "kelder_rising";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s peek %d door %.2f", name.c_str(), player_.x, player_.z,
+                     spec_.id.c_str(), shot_.c_str(), peek_, door >= 0 ? leaves_[size_t(door)].angle : -9.0f);
+            for (const auto& e : enemies_)
+                TraceLog(LOG_INFO, "STAGE   %s at %.2f %.2f room %d active %d rise %.2f under %d state %d bang %.2f", e.id.c_str(), e.a.x,
+                         e.a.z, e.room, int(e.active), e.rise, int(e.submerged), int(e.brain.state), e.bang_t);
+            staged_in_ = {};
+            break;
+        }
+        case 33: case 34: case 35: case 36: {
+            // The new rooms: the library door (the view through the crack; through it into the
+            // library), the stairs down into the souterrain, and the souterrain's door to the
+            // flooded kelder leant ajar.
+            int door = -1;
+            if (i == 33 || i == 34) {
+                door = doorway_of(room_index("gang"), "door_library");
+                const float dz = door >= 0 ? doorways_[size_t(door)].mid_z() : 1.2f;
+                player_ = {0.62f, dz, kPi / 2};   // at the library door, facing it (west)
+                cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+                if (i == 33) {
+                    staged_in_ = stick_toward(-1, 0, 0.5f);
+                    run(1.6f);
+                    name = "library_door_peek";
+                } else {
+                    interact();
+                    run(0.7f);
+                    staged_in_ = stick_toward(-1, 0, 0.5f);
+                    run(2.2f);
+                    name = "into_the_library";
+                }
+            } else {
+                beat_room_ = "souterrain";
+                beat_spawn_ = "from_gang";
+                finish_beat();
+                if (i == 35) {
+                    run(0.6f);
+                    name = "down_to_the_souterrain";
+                } else {
+                    door = doorway_of(room_, "door_kelder");
+                    const float dx = door >= 0 ? doorways_[size_t(door)].mid_x() : -2.1f;
+                    const float dz = door >= 0 ? doorways_[size_t(door)].mid_z() : 2.0f;
+                    player_ = {dx, dz - 0.62f, kPi};   // at the kelder door, facing it (south)
+                    enter_room(room_);
+                    cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+                    staged_in_ = stick_toward(0, 1, 0.5f);
+                    run(1.6f);
+                    name = "kelder_door_peek";
+                }
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s peek %d door %.2f", name.c_str(), player_.x, player_.z,
+                     spec_.id.c_str(), shot_.c_str(), peek_, door >= 0 ? leaves_[size_t(door)].angle : -9.0f);
+            staged_in_ = {};
+            break;
+        }
+        case 37: case 38: case 39: {
+            // Out by the water: the kelder's iron gate pushed open on the tunnel, up the steps onto
+            // the Herengracht, and along the quay to the bridge.
+            if (i == 37) {
+                beat_room_ = "kelder";
+                beat_spawn_ = "from_waterpoort";
+                finish_beat();
+                const int door = doorway_of(room_, "water_gate");
+                const float dx = door >= 0 ? doorways_[size_t(door)].mid_x() : -2.1f;
+                const float dz = door >= 0 ? doorways_[size_t(door)].mid_z() : 10.65f;
+                player_ = {dx, dz - 0.7f, kPi};   // at the gate, facing it (south)
+                interact();   // it swings away from him, out over the tunnel's water
+                run(1.0f);
+                player_ = {dx + 0.3f, dz - 4.3f, kPi};   // then back up the cellar, where its shot looks at the gate
+                enter_room(room_);
+                cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+                run(0.4f);
+                name = "through_the_water_gate";
+            } else {
+                beat_room_ = "herengracht";
+                beat_spawn_ = "from_waterpoort";
+                finish_beat();
+                if (i == 39) {
+                    const RoomSpec& h = rooms_[size_t(room_)];
+                    player_ = {h.bounds.x0 + 36.0f, h.bounds.z0 + 4.6f, -kPi / 2};   // walking east, toward the bridge
+                    enter_room(room_);
+                }
+                run(0.8f);
+                name = i == 38 ? "up_on_the_quay" : "to_the_bridge";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
+            break;
+        }
+        case 40: case 41: case 42: case 43: case 44: {
+            // The city: east past the bridge into Thorbeckeplein, down the terraces, across onto
+            // Rembrandtplein (one street running into the next, no beat), the tram, the statue.
+            if (i == 40) {
+                beat_room_ = "herengracht";
+                beat_spawn_ = "from_thorbeckeplein";
+                finish_beat();
+                player_.yaw = -kPi / 2;   // at the end of the street, facing on east
+                interact();               // a way through to the other storey: the beat, then Thorbeckeplein
+                run(2.0f);
+                name = "into_thorbeckeplein";
+            } else if (i == 41) {
+                at("thorbeckeplein", 8.0f, 42.0f, 0.0f);   // under the trees by the terraces, walking north
+                staged_in_ = stick_toward(0, -1, 0.5f);
+                run(0.8f);
+                name = "the_terraces";
+            } else if (i == 42) {
+                at("thorbeckeplein", 9.0f, 4.0f, 0.0f);   // at the top of the street, past the kiosk
+                staged_in_ = stick_toward(0, -1, 0.5f);
+                run(6.0f);   // over the line between the two: no door, no beat
+                name = "onto_rembrandtplein";
+            } else if (i == 43) {
+                at("rembrandtplein", 16.5f, 11.5f, -kPi / 2);   // short of the stop, the tram ahead
+                run(0.6f);
+                name = "the_tram";
+            } else {
+                at("rembrandtplein", 30.0f, 34.5f, 0.0f);   // on the park's path, the statue ahead
+                run(0.6f);
+                name = "the_statue";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
+            break;
+        }
+        case 45: case 46: case 47: case 48: case 49: case 50: case 51: case 52: {
+            // The Munt: west out of Rembrandtplein into Reguliersbreestraat (the next district: a
+            // beat), the picture palace, the apotheek's glass door pushed open and the shop inside,
+            // the cinema's lobby, the Munttoren, the flower market and inside a stall.
+            if (i == 45) {
+                at("rembrandtplein", 2.6f, 5.0f, kPi / 2);   // at the street's mouth, facing west
+                staged_in_ = stick_toward(-1, 0, 0.5f);
+                run(3.4f);   // through it, the dark, out in Reguliersbreestraat
+                name = "into_reguliersbreestraat";
+            } else if (i == 46) {
+                at("reguliersbreestraat", 31.0f, 6.0f, 2.4f);   // the cinema across the street
+                run(0.6f);
+                name = "the_picture_palace";
+            } else if (i == 47) {
+                const int door = doorway_of(room_index("reguliersbreestraat"), "door_apotheek");
+                at("reguliersbreestraat", 22.0f, 1.3f, 0.0f);   // at the apotheek's glass door, facing it (north)
+                if (door >= 0) player_.x = doorways_[size_t(door)].mid_x();
+                interact();   // pushed: the glass door swings wide, away from him
+                run(0.7f);
+                staged_in_ = stick_toward(0, -1, 0.5f);
+                run(2.2f);   // and he walks in
+                name = "into_the_apotheek";
+            } else if (i == 48) {
+                at("apotheek", 5.4f, 4.2f, 0.0f);   // in the aisle, the counter ahead
+                run(0.6f);
+                name = "the_dispensary";
+            } else if (i == 49) {
+                at("bioscoop", 7.2f, 2.2f, kPi);   // just in from the street, the lobby ahead
+                run(0.6f);
+                name = "the_lobby";
+            } else if (i == 50) {
+                at("muntplein", 34.0f, 18.0f, kPi / 2);   // facing west, the tower ahead
+                run(0.6f);
+                name = "the_munttoren";
+            } else if (i == 51) {
+                at("bloemenmarkt", 36.0f, 5.0f, kPi / 2);   // along the stalls, walking west
+                staged_in_ = stick_toward(-1, 0, 0.4f);
+                run(0.8f);
+                name = "the_flower_market";
+            } else {
+                at("bloemenkraam", 3.0f, 3.2f, 0.0f);   // inside stall four, among the buckets
+                run(0.6f);
+                name = "inside_the_stall";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
+            break;
+        }
+        case 53: case 54: case 55: case 56: case 57: case 58: case 59: case 60: {
+            // Rokin: through the gap in the barriers off Muntplein (the next district: a beat), the
+            // tour boats, into the hotel, the queen on her horse, the aid post, the police post's
+            // armoury, the flooded metro, the checkpoint at the Dam.
+            if (i == 53) {
+                at("muntplein", 31.0f, 3.2f, 0.0f);   // at the knocked-down barrier, facing north
+                staged_in_ = stick_toward(0, -1, 0.5f);
+                run(3.6f);
+                name = "onto_rokin";
+            } else if (i == 54) {
+                at("rokin_zuid", 4.5f, 31.0f, 0.4f);   // on the quay, the boats ahead
+                run(0.6f);
+                name = "the_tour_boats";
+            } else if (i == 55) {
+                const int door = doorway_of(room_index("rokin_zuid"), "door_hotel");
+                at("rokin_zuid", 24.8f, 27.2f, -kPi / 2);   // at the hotel's glass door, facing it (east)
+                if (door >= 0) player_.z = doorways_[size_t(door)].mid_z();
+                interact();
+                run(0.7f);
+                staged_in_ = stick_toward(1, 0, 0.5f);
+                run(2.2f);
+                name = "into_the_hotel";
+            } else if (i == 56) {
+                at("rokin_noord", 8.0f, 47.5f, 0.6f);   // the queen at the head of the basin
+                run(0.6f);
+                name = "wilhelmina";
+            } else if (i == 57) {
+                at("rokin_noord", 13.5f, 33.5f, -1.2f);   // by the tent
+                run(0.6f);
+                name = "the_aid_post";
+            } else if (i == 58) {
+                at("politiepost", 7.4f, 6.6f, -2.2f);   // behind the counter, the cage ahead
+                run(0.6f);
+                name = "the_armoury";
+            } else if (i == 59) {
+                at("metro_rokin", 4.8f, 3.4f, -kPi / 2);   // at the gates, the escalators beyond
+                run(0.6f);
+                name = "the_flooded_metro";
+            } else {
+                at("rokin_noord", 12.0f, 10.0f, 0.0f);   // the checkpoint ahead, the Dam beyond
+                run(0.6f);
+                name = "the_checkpoint";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
+            break;
+        }
+        case 61: case 62: case 63: case 64: case 65: case 66: case 67: case 68: {
+            // The Dam: through the checkpoint off Rokin (the next district: a beat), the funfair, the
+            // evacuation point, the church's door pushed open and the shelter inside, the department
+            // store and its security office, the monument.
+            if (i == 61) {
+                at("rokin_noord", 12.6f, 5.0f, 0.0f);   // in the gap in the barriers, facing north
+                staged_in_ = stick_toward(0, -1, 0.5f);
+                run(6.0f);                               // (through the beat and out on the Dam)
+                name = "onto_the_dam";
+            } else if (i == 62) {
+                at("dam", 34.0f, 44.0f, 0.9f);   // among the stalls, the wheel ahead
+                run(0.6f);
+                name = "the_funfair";
+            } else if (i == 63) {
+                at("dam", 68.0f, 44.0f, -1.3f);   // at the queue for the buses
+                run(0.6f);
+                name = "the_evacuation_point";
+            } else if (i == 64) {
+                const int door = doorway_of(room_index("dam"), "door_kerk");
+                at("dam", 16.0f, 1.3f, 0.0f);   // at the church's door, facing it (north)
+                if (door >= 0) player_.x = doorways_[size_t(door)].mid_x();
+                interact();
+                run(0.7f);
+                staged_in_ = stick_toward(0, -1, 0.5f);
+                run(2.2f);
+                name = "into_the_church";
+            } else if (i == 65) {
+                at("nieuwe_kerk", 10.0f, 22.0f, 0.0f);   // down the middle of the beds, the organ ahead
+                run(0.6f);
+                name = "the_shelter";
+            } else if (i == 66) {
+                at("warenhuis", 9.0f, 15.0f, 0.4f);
+                run(0.6f);
+                name = "the_department_store";
+            } else if (i == 67) {
+                at("beveiliging", 2.4f, 4.6f, -2.5f);   // the cabinet ahead
+                run(0.6f);
+                name = "the_security_office";
+            } else {
+                at("dam", 64.0f, 30.0f, -1.6f);   // the monument ahead (east)
+                run(0.6f);
+                name = "the_monument";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
+            break;
+        }
+        case 69: case 70: case 71: case 72: case 73: case 74: case 75: {
+            // The Kalverstraat: in from Muntplein by the lane (the next district: a beat), the shopping
+            // street under its garlands, the gun shop's glass door pushed open and the shop inside, the
+            // chemist's, the looted jeweller's, and out at the top onto the Dam.
+            if (i == 69) {
+                at("muntplein", 2.4f, 2.0f, kPi / 2);   // at the lane's mouth, facing west
+                staged_in_ = stick_toward(-1, 0, 0.5f);
+                run(3.4f);
+                name = "into_the_kalverstraat";
+            } else if (i == 70) {
+                at("kalverstraat", 4.0f, 70.0f, 0.0f);   // walking north under the garlands
+                staged_in_ = stick_toward(0, -1, 0.4f);
+                run(0.8f);
+                name = "the_shopping_street";
+            } else if (i == 71) {
+                const int door = doorway_of(room_index("kalverstraat"), "door_wapenhandel");
+                at("kalverstraat", 1.2f, 67.0f, kPi / 2);   // at the gun shop's glass door, facing it (west)
+                if (door >= 0) player_.z = doorways_[size_t(door)].mid_z();
+                interact();
+                run(0.7f);
+                staged_in_ = stick_toward(-1, 0, 0.5f);
+                run(2.0f);
+                name = "into_the_gun_shop";
+            } else if (i == 72) {
+                at("wapenhandel", 4.4f, 3.4f, kPi / 2);   // at the glass counter, the rack behind it
+                run(0.6f);
+                name = "the_gun_shop";
+            } else if (i == 73) {
+                at("drogist", 6.6f, 4.6f, kPi / 2);
+                run(0.6f);
+                name = "the_chemist";
+            } else if (i == 74) {
+                at("juwelier", 2.6f, 4.2f, -kPi / 2);   // among the smashed cases
+                run(0.6f);
+                name = "the_jeweller";
+            } else {
+                at("kalverstraat_noord", 18.0f, 4.0f, 0.0f);   // at the top of the street, the Dam ahead
+                staged_in_ = stick_toward(0, -1, 0.5f);
+                run(3.6f);
+                name = "out_onto_the_dam";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
+            break;
+        }
+        case 76: case 77: case 78: case 79: case 80: case 81: case 82: case 83: case 84: case 85: case 86: case 87: {
+            // Damrak: the guards' pass off the desk, the store's staff door opened with it (the next
+            // district: a beat, behind the army's barriers), the Beurs's gate and the mortuary inside,
+            // one of the dead getting up, the exchange, the souvenir shop and its stockroom, the basin
+            // and the leaning houses, aboard the tour boat, the hotel's bar, and the station ahead.
+            if (i == 76) {
+                at("beveiliging", 2.0f, 1.75f, 0.0f);   // at the desk, facing it (north)
+                interact();
+                run(0.6f);
+                name = "the_staff_pass";
+            } else if (i == 77) {
+                inv_.add(I_STAFF_PASS, 1);
+                at("warenhuis", 22.1f, 2.0f, -kPi / 2);   // at the staff door, facing it (east)
+                interact();                                // the card reader: green
+                text_queue_.clear();
+                interact();                                // the door swings open
+                staged_in_ = stick_toward(1, 0, 0.7f);     // and through it
+                run(3.0f);
+                name = "onto_the_damrak";
+            } else if (i == 78) {
+                at("damrak_zuid", 16.6f, 53.5f, -kPi / 2);   // before the Beurs's gate, facing it (east)
+                staged_in_ = stick_toward(1, 0, 0.7f);
+                run(4.2f);
+                name = "into_the_beurs";
+            } else if (i == 79) {
+                at("beurs_zaal", 11.0f, 30.0f, 0.0f);   // down the middle between the rows, facing north
+                run(0.6f);
+                name = "the_mortuary";
+            } else if (i == 80) {
+                at("beurs_zaal", 7.4f, 19.6f, 0.0f);   // between the bags, the open one ahead: it wakes, and gets up
+                run(2.8f);
+                name = "the_dead_rise";
+            } else if (i == 81) {
+                at("wisselkantoor", 5.0f, 3.0f, kPi / 2);   // before the cashiers' glass
+                run(0.6f);
+                name = "the_exchange";
+            } else if (i == 82) {
+                at("souvenirwinkel", 6.0f, 3.2f, kPi / 2);
+                run(0.6f);
+                name = "the_souvenir_shop";
+            } else if (i == 83) {
+                at("magazijn", 2.2f, 3.0f, kPi / 2);
+                run(0.6f);
+                name = "the_stockroom";
+            } else if (i == 84) {
+                at("damrak_noord", 15.0f, 44.0f, -kPi / 2);   // on the quay, facing the water
+                run(0.6f);
+                name = "the_basin";
+            } else if (i == 85) {
+                at("rondvaartboot", 4.3f, 8.0f, kPi);   // down the boat's gangway between the seats, facing the bow
+                run(0.6f);
+                name = "aboard";
+            } else if (i == 86) {
+                at("hotel_bar", 8.5f, 4.5f, kPi / 4);   // the bar ahead
+                run(0.6f);
+                name = "the_hotel_bar";
+            } else {
+                at("damrak_noord", 10.0f, 9.0f, 0.0f);   // the barriers at the top, the station beyond
+                run(0.6f);
+                name = "the_station_ahead";
+            }
+            TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
+            break;
+        }
         default: {   // bitten once too often: the words coming up (26), and all of it, the choice there (14)
             join(1, 1.0f, 8.3f, 0.0f, EState::Pursuit);
             player_ = {1.0f, 7.4f, kPi};
@@ -754,6 +1277,17 @@ std::string Game::stage(int i) {
     staged_aim_ = false;
     staged_in_ = {};
     return name;
+}
+
+void Game::pose_still(float x, float z, float yaw_deg, const std::string& shot) {
+    constexpr float DT = 1.0f / 60;
+    for (auto& e : enemies_) e.active = false;
+    banner_t_ = 0;
+    paused_ = false;
+    player_ = {x, z, yaw_deg * DEG2RAD};
+    cut_to(shot.empty() ? select_shot(spec_.zones(), "", x, z) : shot);
+    for (int f = 0; f < 90; ++f) { time_ += DT; animate(DT); }
+    upload_lights();
 }
 
 void Game::upload_studio_lights() {
@@ -1070,12 +1604,26 @@ bool Game::gun_view(const std::string& who, const std::string& opts, float orbit
 }
 
 void Game::render() {
-    const auto& plate = plates_.at(shot_);
+    const PlateStore::Pair* cur = current_plate();
+    if (!cur) {   // (never expected: the room he's in is always loaded)
+        BeginTextureMode(rt_);
+        ClearBackground(BLACK);
+        EndTextureMode();
+        return;
+    }
+    const auto& plate = *cur;
     casters_.clear();   // (reused: no allocation per frame)
     gun_lit_.clear();
     casters_.push_back(&hero_);
-    for (const auto& e : enemies_)
-        if (e.active) { casters_.push_back(&e.body); gun_lit_.push_back(&e.body); }
+    // A lamp's shadow is framed on the characters near him (the ones the shot is about): on a city
+    // square the Drowned can stand a hundred metres apart, and one shadow map stretched over all of
+    // them is too coarse to hold any of them, and picks a lamp out in the middle of nowhere.
+    constexpr float SHADOW_REACH = 14.0f;
+    for (const auto& e : enemies_) {
+        if (!e.active) continue;
+        gun_lit_.push_back(&e.body);
+        if (std::hypot(e.a.x - player_.x, e.a.z - player_.z) < SHADOW_REACH) casters_.push_back(&e.body);
+    }
     render_shadows(casters_, gun_lit_);
     bind_shadows();
     SetShaderValueMatrix(plate_, l_pInvView_, MatrixInvert(MatrixLookAt(cam_.position, cam_.target, cam_.up)));
@@ -1098,15 +1646,17 @@ void Game::render() {
     BeginMode3D(cam_);
     SetShaderValue(char_, l_cam_, &cam_.position, SHADER_UNIFORM_VEC3);
     rlDisableBackfaceCulling();
-    hero_.draw(char_mat_);
+    if (peek_ < 0) hero_.draw(char_mat_);   // (peeking, the camera is his eye at the crack)
     for (const auto& e : enemies_)
         if (e.active) e.body.draw(char_mat_);
     fx_.draw(char_mat_);   // blood, brass, what came off
     draw_loot();           // what's lying about to be picked up
+    draw_leaves();         // the doors, where they hang now
     rlEnableBackfaceCulling();
     rlDisableDepthMask();
     BeginBlendMode(BLEND_ADDITIVE);   // the flash glows over whatever is behind it
     fx_.draw_flash(char_mat_);
+    draw_panes();   // shop doors' glass: only what it reflects is added; the lit shop shows through
     EndBlendMode();
     BeginBlendMode(BLEND_ALPHA);
     const float strength = 0.35f;   // contact darkening under the feet; the lights cast the real shadows
@@ -1118,15 +1668,28 @@ void Game::render() {
         const float sz = down ? 1.25f : 0.85f;
         DrawMesh(blob_mesh_, blob_mat_, MatrixMultiply(MatrixScale(sz, 1, sz), MatrixTranslate(at.x, 0.012f, at.z)));
     };
-    blob(hero_, player_);
+    if (peek_ < 0) blob(hero_, player_);
     for (const auto& e : enemies_)
         if (e.active) blob(e.body, e.a);
+    if (spec_.rain) draw_rain();
     EndBlendMode();
     rlEnableDepthMask();
     EndMode3D();
     EndTextureMode();
     status_drawn_ = false;
     if (status_.is_open()) render_status();
+}
+
+void Game::draw_rain() const {   // short streaks, behind whatever the painting puts in front of them
+    const V3 v = rain_.velocity();
+    const float k = Rain::STREAK;
+    rlBegin(RL_LINES);
+    rlColor4ub(175, 185, 200, 60);
+    for (const auto& d : rain_.drops()) {
+        rlVertex3f(d.x, d.y, d.z);
+        rlVertex3f(d.x - v.x * k, d.y - v.y * k, d.z - v.z * k);
+    }
+    rlEnd();
 }
 
 void Game::present() const {
@@ -1141,6 +1704,11 @@ void Game::present() const {
         DrawTexturePro(ui_rt_.texture, {0, 0, float(W), -float(H)}, {0, 0, float(GetScreenWidth()), float(GetScreenHeight())}, {0, 0}, 0, WHITE);
         return;
     }
+    if (peek_ >= 0) {   // through the crack: the rest of the frame is the dark of the door
+        const float sw = float(GetScreenWidth()), sh = float(GetScreenHeight());
+        DrawRectangleGradientH(0, 0, int(sw * 0.3f), int(sh), Color{0, 0, 0, 235}, Color{0, 0, 0, 0});
+        DrawRectangleGradientH(int(sw * 0.7f), 0, int(sw * 0.3f) + 1, int(sh), Color{0, 0, 0, 0}, Color{0, 0, 0, 235});
+    }
     draw_glints();
     draw_text_box();
     if (banner_t_ > 0) {
@@ -1149,7 +1717,9 @@ void Game::present() const {
     }
     // No HUD: how hurt he is shows in his limp; ammo and health live on the status screen.
     // Only death gets words on the screen, as in the classic games.
+    if (beat_.busy()) DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color{0, 0, 0, static_cast<unsigned char>(255 * beat_.black())});
     if (pmode_ == PMode::Dead) draw_death();
+    if (end_t_ > 0) draw_end();
     if (paused_) draw_menu();
     if (debug) {
         std::string es;

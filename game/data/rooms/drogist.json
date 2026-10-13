@@ -1,0 +1,493 @@
+{
+  "_file": "damned_waters/game/data/rooms/drogist.json \u2014 RoomSpec for Drogisterij van der Linden (the city, district 5: the Kalverstraat): a chemist's: shelves of shampoo and plasters and cough sweets, picked over, the till open, a carved gaper's head over the counter with its tongue out, as the old Dutch chemists had. Its front wall is the street's shopfront (\"facade\": the street builds it); its door is the street's. Every business name is made up. Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "drogist",
+  "display_name": "Drogisterij van der Linden",
+  "storey": 13,
+  "origin": [
+    826.7,
+    -103.69999999999999
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      9.0,
+      9.0
+    ]
+  },
+  "height": 3.4,
+  "materials": {
+    "floor": {
+      "ph": "large_floor_tiles_02",
+      "tint": [
+        0.8,
+        0.8,
+        0.78
+      ],
+      "rough": 0.35
+    },
+    "wall": {
+      "ph": "beige_wall_001",
+      "tint": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rough": 0.6
+    },
+    "ceiling": {
+      "ph": "ceiling_interior",
+      "tint": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rough": 0.8
+    },
+    "skirting": {
+      "color": [
+        0.15,
+        0.3,
+        0.45
+      ],
+      "rough": 0.4
+    },
+    "skirting_height": 0.1
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.01,
+      0.012,
+      0.016
+    ],
+    "strength": 0.5
+  },
+  "render": {
+    "exposure": 0.697,
+    "bloom": {
+      "threshold": 0.95,
+      "strength": 0.25,
+      "size": 0.5
+    }
+  },
+  "walls": {
+    "east": {
+      "facade": true,
+      "openings": [
+        {
+          "kind": "door",
+          "style": "glass",
+          "center": 6.18,
+          "width": 1.58,
+          "height": 2.25,
+          "hinge": "left"
+        }
+      ]
+    }
+  },
+  "props": [
+    {
+      "type": "counter",
+      "pos": [
+        1.6,
+        0.0,
+        4.5
+      ],
+      "size": [
+        4.0,
+        1.0,
+        0.7
+      ],
+      "yaw": 90,
+      "till": true
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        4.6,
+        0.0,
+        2.6
+      ],
+      "size": [
+        5.0,
+        1.7,
+        0.9
+      ],
+      "yaw": 90,
+      "double": true,
+      "palette": "pharmacy",
+      "empty": 0.35,
+      "seed": 31,
+      "shelves": 4
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        4.5,
+        0.0,
+        0.3
+      ],
+      "size": [
+        7.0,
+        2.2,
+        0.45
+      ],
+      "yaw": 0,
+      "palette": "pharmacy",
+      "empty": 0.3,
+      "seed": 32
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        3.4,
+        0.0,
+        8.7
+      ],
+      "size": [
+        5.6,
+        2.2,
+        0.45
+      ],
+      "yaw": 180,
+      "palette": "pharmacy",
+      "empty": 0.45,
+      "seed": 33
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        0.04,
+        2.5,
+        4.5
+      ],
+      "size": [
+        2.4,
+        0.45,
+        0.03
+      ],
+      "yaw": 90,
+      "text": "DROGISTERIJ",
+      "color": [
+        0.9,
+        0.95,
+        1.0
+      ],
+      "glow": 2.0,
+      "collide": false
+    },
+    {
+      "type": "strip_light",
+      "pos": [
+        4.5,
+        3.4,
+        4.5
+      ],
+      "size": [
+        5.0,
+        0.1,
+        0.2
+      ],
+      "yaw": 90,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.42,
+        0.0,
+        4.7
+      ],
+      "yaw": 68,
+      "scale": 0.97,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        0.42,
+        0.0,
+        2.02
+      ],
+      "yaw": 90,
+      "scale": 0.94,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        0.42,
+        0.0,
+        0.92
+      ],
+      "yaw": 85,
+      "scale": 0.89,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.59,
+        0.0,
+        8.58
+      ],
+      "yaw": 159,
+      "scale": 0.93,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        6.83,
+        0.0,
+        8.58
+      ],
+      "yaw": 169,
+      "scale": 0.85,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        0.42,
+        0.0,
+        7.85
+      ],
+      "yaw": 69,
+      "scale": 0.99,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        0.42,
+        0.0,
+        6.32
+      ],
+      "yaw": 84,
+      "scale": 0.82,
+      "collide": false
+    },
+    {
+      "type": "drop_ceiling",
+      "pos": [
+        4.5,
+        3.388,
+        4.5
+      ],
+      "size": [
+        9.0,
+        0.02,
+        9.0
+      ],
+      "seed": 414,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        8.92,
+        2.43,
+        6.18
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": -90,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        8.8,
+        2.9,
+        8.8
+      ],
+      "yaw": -135,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        5.71,
+        0.0,
+        7.29
+      ],
+      "size": [
+        3.6,
+        0.01,
+        3.0
+      ],
+      "seed": 764,
+      "count": 5,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        4.1,
+        0.0,
+        7.05
+      ],
+      "size": [
+        3.6,
+        0.01,
+        3.0
+      ],
+      "seed": 912,
+      "count": 5,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    }
+  ],
+  "lights": [
+    {
+      "kind": "area",
+      "pos": [
+        4.5,
+        3.3,
+        4.5
+      ],
+      "look_at": [
+        4.5,
+        0.0,
+        4.5
+      ],
+      "size": 0.88,
+      "color": [
+        0.95,
+        0.98,
+        1.0
+      ],
+      "blender_power": 85,
+      "godot_energy": 0.5,
+      "range": 7.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        8.4,
+        2.7,
+        8.4
+      ],
+      "look_at": [
+        1.0,
+        1.0,
+        1.5
+      ],
+      "fov": 66,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          9.0,
+          9.0
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_street": {
+      "pos": [
+        8.2,
+        0.0,
+        6.180000000000007
+      ],
+      "yaw": 90
+    }
+  },
+  "interactables": [
+    {
+      "id": "door_street",
+      "kind": "door",
+      "pos": [
+        8.55,
+        1.0,
+        6.180000000000007
+      ],
+      "radius": 1.0
+    },
+    {
+      "id": "dressing_shelf",
+      "kind": "pickup",
+      "item": "med_small",
+      "count": 1,
+      "pos": [
+        4.6,
+        0.62,
+        3.6
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "dressing_counter",
+      "kind": "pickup",
+      "item": "med_small",
+      "count": 1,
+      "pos": [
+        1.7,
+        1.02,
+        5.7
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "first_aid_back",
+      "kind": "pickup",
+      "item": "first_aid",
+      "count": 1,
+      "pos": [
+        7.6,
+        0.0,
+        0.8
+      ],
+      "radius": 0.9
+    },
+    {
+      "id": "gaper",
+      "kind": "examine",
+      "pos": [
+        1.2,
+        1.0,
+        3.3
+      ],
+      "radius": 1.2,
+      "text": "The gaper, the chemist's carved head, tongue out, eyes rolled up. Someone has hung a rosary on it."
+    }
+  ],
+  "enemies": []
+}

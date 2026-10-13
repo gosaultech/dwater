@@ -43,8 +43,10 @@ TEST(Status, EachItemOffersWhatItCanDo) {
     EXPECT_EQ(a[0], Action::Use);
     EXPECT_EQ(a[n - 1], Action::Discard);
     EXPECT_EQ(actions_for(I_CELLAR_KEY, false, a), 1);   // a key: only examined (it's used at its door)
+    EXPECT_EQ(actions_for(I_STAFF_PASS, false, a), 1);   // the store's pass too
     EXPECT_FALSE(can_discard(I_SHOTGUN));
     EXPECT_FALSE(can_discard(I_CELLAR_KEY));
+    EXPECT_FALSE(can_discard(I_STAFF_PASS));
     EXPECT_TRUE(can_discard(I_SHELLS));
 }
 

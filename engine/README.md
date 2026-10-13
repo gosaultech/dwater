@@ -6,7 +6,37 @@ remains in `../game/`; its room data and pre-rendered backgrounds feed this engi
 
 ## Milestone 1: what it is
 
-One room (`gang`, the entrance hall) with:
+The canal house: its ground floor (`gang`, the entrance hall; `voorkamer`, the front parlour;
+`bibliotheek`, the library at the back), and below it the `souterrain` (the renovated half-basement)
+and the flooded cellar (`kelder`), walked through room to room with no loading screens. Out of the
+kelder's water gate a tunnel (`waterpoort`) runs under the street to the canal, and steps climb to
+the quay outside (`herengracht`), as far as the bridge. Past the bridge the street runs on into the
+city: Thorbeckeplein (`thorbeckeplein`, the street of bars and terraces) and on across onto
+Rembrandtplein (`rembrandtplein`, the square with its park, its statue and a tram at the stop). West
+of it lies the Munt: Reguliersbreestraat (`reguliersbreestraat`, its art-deco picture palace and its
+apotheek), Muntplein (`muntplein`, the Munttoren, the way north up Rokin barred for now) and the
+floating flower market (`bloemenmarkt`); three of its shops he can walk into and search: the
+apotheek (`apotheek`), the cinema's lobby (`bioscoop`) and a flower stall (`bloemenkraam`). North
+from the Munt runs Rokin (`rokin_zuid`, `rokin_noord`), the main road to Centraal: the basin with
+its tour boats, Queen Wilhelmina on her horse, an aid post with an ambulance and a police van left
+by it, an army checkpoint at the Dam; with a hotel's lobby (`hotel_lobby`), the police post and its
+armoury (`politiepost`) and the flooded metro's ticket hall (`metro_rokin`) to search. Rokin ends at
+the Dam (`dam`): the Royal Palace floodlit gold, the Nieuwe Kerk, the National Monument, and the
+November funfair still lit and stopped (the Ferris wheel, a drop tower, the carousel, the stalls) in
+the middle of the evacuation point the army made of the square (buses with their doors open, army
+trucks, a field hospital, the luggage of thousands where the queues were). Inside, the Nieuwe Kerk
+was the shelter (`nieuwe_kerk`: camp beds down the nave, the first aid post, the organ), and the
+department store (`warenhuis`) has its security office (`beveiliging`). Parallel to Rokin runs the
+Kalverstraat (`kalverstraat_noord`, `kalverstraat`, `kalversteeg`), shutters down under its
+garlands, with a gun shop (`wapenhandel`), a chemist's (`drogist`) and a looted jeweller's
+(`juwelier`) to search, from Muntplein up to the Dam. The army closed Damrak at the Dam; the store's
+staff door, opened with the guards' pass from the security office, lets out on it behind their
+barriers. Damrak (`damrak_zuid`, `damrak_noord`) runs on to the station: the Beurs van Berlage, its
+hall the army's mortuary (`beurs_zaal`), the basin with its tour boats (one to board,
+`rondvaartboot`) and the old houses leaning over the water, a currency exchange (`wisselkantoor`), a
+souvenir shop and its stockroom (`souvenirwinkel`, `magazijn`) and a hotel's bar (`hotel_bar`) to
+search; Centraal floodlit at its end. The attic bathroom (`badkamer`) is built and rendered, waiting
+for its stairs. And:
 
 - **Backgrounds and depth.** Pre-rendered Cycles backgrounds, each with a painted depth map.
   Characters are hidden correctly behind painted furniture, like RE (1998).
@@ -19,9 +49,18 @@ One room (`gang`, the entrance hall) with:
   swept tubes regenerated every frame through the joints, so elbows, knees and the waist bend
   without seams.
 - **A horror lighting model.** Procedural surface detail, bump detail, wet-versus-dry
-  specular, room lights, a cold rim, and fog. Grain and vignette are added in post.
+  specular, room lights, a cold rim, and fog. In post, one film grade over painting and people
+  alike (a little less colour, cold shadows and warm lights, a gentle S-curve, a hint of lens
+  fringe at the corners), then grain and vignette.
+- **Rain over the streets** (`dw/rain.hpp`): out under the sky (a room with `"outdoor"`, unless it
+  says `"rain": false`), 1,400 drops fall through a box 18 m across that follows him, slanted by the
+  wind, each drawn as a short streak tested against the painting's depth, so it falls behind the
+  houses and in front of him. A fixed pool: nothing is allocated per frame. It is heard too: the
+  streets' ambience is rain (`amb_street_rain`, synthesized by `tools/audio/synth_sfx.py`). ELI5: a
+  stage hand with a watering can who always stands over the actor, never over the whole theatre.
 
-**Not ported yet:** the other rooms (and walking between them through doors), and saves.
+**Not ported yet:** saves (the typewriter only talks so far), the cellar's boss and the crawling
+Kelderkind.
 
 ## Build and run (macOS and Windows)
 
@@ -69,15 +108,18 @@ the shaders are GLSL 3.30 core, which both platforms support.
 ../build/macos/damned_waters --view drowned1@head,0,5,0.5,0,-0.05,30 face.png     # one close-up
 ../build/macos/damned_waters --view m92fs,0,0,2.0,0,0,8.3 pistol.png              # a gun, catalogue-lit
 ../build/macos/damned_waters --view r870,30,14,1.6,0.05,0,14 shotgun.png           # the 870
+../build/macos/damned_waters --room voorkamer --still 3.2,4.5,163 still.png --shot a   # him standing in a room (x, z, yaw degrees), one frame
+DW_ROOT=/path/to/tree ../build/macos/damned_waters ...   # read rooms, plates and audio from another tree (a test room)
 ../build/macos/damned_waters --fitgrips  # fit his hands to both guns as people hold them, write src/grips_fitted.inc, exit
-../build/macos/damned_waters --fitpistol # fit the two-handed pistol aim (right arm, wrist, head), print it, exit
-../build/macos/damned_waters --fit870    # fit the hold on the 870 (arms, wrists, back; aiming, the cheek on the stock), print it, exit
+../build/macos/damned_waters --fitpistol # fit the pistol in both hands (the aim: right arm, wrist, head; the low ready, standing and running: the arms), print it, exit
+../build/macos/damned_waters --fit870    # fit the hold on the 870 (arms, wrists, back; aiming, the cheek on the stock; the low ready; the reload), print it, exit
 ```
 
 `--fitgrips` takes a few minutes. `DW_FIT_ONLY=PISTOL_LEFT` (or a comma list: `PISTOL_RIGHT`,
-`PISTOL_LEFT`, `SHOTGUN_RIGHT`, `SHOTGUN_LEFT`, `MAG_LEFT`, `SHELL_LEFT`) refits just those grips and
-keeps the rest, `DW_FIT_QUICK=1` makes a fast rough pass, and `DW_FIT_TRACE=1` reports each stage
-of the search.
+`PISTOL_LEFT`, `SHOTGUN_RIGHT`, `SHOTGUN_LEFT`, `MAG_LEFT`, `SHELL_LEFT`, `PISTOL_RIGHT_INDEXED`,
+`SHOTGUN_RIGHT_INDEXED`) refits just those grips and keeps the rest, `DW_FIT_QUICK=1` makes a fast
+rough pass, and `DW_FIT_TRACE=1` reports each stage of the search. `--fitpistol` takes
+`DW_FIT_ONLY=aim`, `low` or `run` (a few seconds each), `--fit870` `aim`, `low` or `reload`.
 
 `--view` takes `who,orbit,elevation,distance,target_x,target_y,fov`. `who` is `survivor` or
 `drowned0`..`drowned2` (the office worker, Sanne, Pieter). Add `@head`, `@chest`, `@pelvis`,
@@ -108,17 +150,56 @@ The way a shooting instructor would check it, and fitted rather than posed by ey
 
 - **The pistol, two hands, thumbs forward.** The web of the right hand high under the tang, the
   middle finger tight under the trigger guard, ring and little fingers round the front strap,
-  the pad of the trigger finger on the trigger and the rest of that finger off the frame, the
-  thumb forward along the left of the frame. The left hand's heel fills the gap the right
+  aiming, the pad of the trigger finger on the trigger and the rest of that finger off the frame
+  (otherwise it lies along the frame: below), the thumb forward along the left of the frame. The left hand's heel fills the gap the right
   fingers leave on the left grip panel, its fingers wrap over the right ones (the forefinger
   pressed up under the guard), its thumb lies forward under the right thumb, the wrist cammed
   down. The modern isosceles: both arms out but bent about 40 degrees, never locked, the elbows
   hanging down under the gun; the gun brought up to the eye rather than the head down to it.
 - **The 870.** The right hand shakes hands with the stock's wrist (thumb round it, not along
-  the top), the butt in the shoulder pocket, the cheek down on the comb, and the elbows down:
+  the top), the butt in the shoulder pocket against his coat (not through it: below), the cheek
+  down on the comb, and the elbows down:
   the right one dropped under the stock rather than winged out to make a pocket. The left hand holds the
   fore-end across the palm on a slant, fingers round its right side, thumb along its left, and
   goes back and forth with it when he racks the pump.
+
+**Ready for action, until he aims** (the pose tables in `Character::targets`,
+`include/dw/ready.hpp`). Holding a gun without aiming it (standing, walking, running, knocked back)
+he carries it at the ready: low in front of him in both hands, gripped exactly as he shoots with
+it, the muzzle at the floor a stride or two ahead, so bringing it up is one short move. Like a
+goalkeeper waiting with his knees bent and his hands up: everything is already where it needs to
+be.
+
+- **The M92FS at the low ready.** The arms lowered from the aim at the shoulders, bent about as
+  much (45 degrees) with the elbows down by his sides, the wrists no more bent than aiming; the
+  gun on his middle line between his belly and the bottom of his chest, a forearm out from his
+  coat; the muzzle 42 degrees down, at the floor 1.9 m ahead. Running, the same ready fitted on
+  his running body as it leans into the stride: 4 cm nearer him, the muzzle 45 degrees down at
+  1.6 m. (A compressed ready, the gun pulled in to the chest, would bend this rig's one-piece
+  palm past 55 degrees at the wrist.)
+- **The 870 at the low ready.** Both hands on it as to shoot, turned the way he aims, the left
+  shoulder forward (his left arm, straight, reaches the fore-end that way); the butt dropped from
+  the shoulder pocket to just under it, on his chest by the armpit, the muzzle 35 degrees down.
+  Raising it is the butt back up into the pocket and the muzzle up. (Kept in the pocket, the hand
+  on the stock's wrist would have to turn round it, further than a wrist goes.)
+- **Trigger discipline.** Off the trigger, the forefinger lies straight along the side of the
+  frame (the 870's receiver), its pad above the trigger guard, never inside it; the rest of the
+  hand doesn't move on the gun (`PISTOL_RIGHT_INDEXED`, `SHOTGUN_RIGHT_INDEXED`: the shooting grips
+  refitted with the forefinger alone moving). Aiming, the gun comes up as the arms ease to the aim
+  (a quarter of a second, most of the way), and only once it's 80 percent up does the finger go
+  to the trigger (0.12 s); lowering, it comes off first (0.08 s), and it stays off through a
+  reload, a dodge or a kick. Like holding a pen just above the paper until you know what you're
+  going to write. (A shot fired before the finger gets there snaps it on: he pulled the trigger.)
+- Carrying it, he keeps both hands on it however badly hurt he is: he no longer holds his ribs
+  with a free hand (he has none); the limp and the hunch show it.
+
+Going to the ready, and up from it to the aim, his shoulders and wrists turn the short way, as his
+fingers do (`slerp_angles`, written back the way the pose table writes them, `angles_near`): eased
+angle by angle, an arm written down one way in one pose and the other way in the next would swing
+the long way round, through his chest, on the way up. The ready is fitted like the aim:
+`fit_pistol` takes a goal (`PistolFit`: a box for the grip in front of him, where the bore's line
+meets the floor, both wrists as a physio measures them, nothing through his body), and the 870's
+low ready is fitted with the same care for the wrists and the left hand held on the wood.
 
 **The grips** (`--fitgrips`, `src/grip_fit.cpp`, written to `src/grips_fitted.inc`). Think of
 fitting a glove in the dark. Each gun becomes a distance field (for any point near it: how far
@@ -206,11 +287,26 @@ notices. Three things keep the arms honest.
   `together`), and the end of each sleeve follows the wrist a little, so a bent wrist's skin
   never pokes through the cuff.
 
+- **The butt against the coat, not through it** (`ShotgunFit::pad_press`, `--fit870`). The
+  shoulder pocket is right at the torso's edge, where the chest meets the shoulder and the collar,
+  and the oval plates are trimmed there; so the 870's aim is fitted against the coat's own skin:
+  its vertices round the shoulder, skinned afresh as the search moves him, held against points
+  over the recoil pad and up the stock past the comb. Like pressing a stamp onto a cushion and
+  looking at where it sinks. The coat is a shell over the hoodie, so each garment is judged on
+  its own by its outward faces (a shell's inner face would call a point in the hollow behind it
+  clear), and also by whichever face is nearest, as `--clearance` judges it; the deeper counts.
+  The pad must touch (no more than 2 mm clear) and press in no more than 8 mm. The pocket the
+  search is pulled toward is where the pad comes to rest (the fit reports it), just inboard of the
+  shoulder, between it and the collarbone, as a real one is.
+
 Two tools check it and tune it:
 
 ```bash
-../build/macos/damned_waters --clearance    # play every reload through, frame by frame: how deep the arms,
-                                            # hands and gun go into the body (and each other), and both wrists
+../build/macos/damned_waters --clearance    # play each way he carries a gun (standing, walking, running, raising
+                                            # it, aimed and settled, lowering it) and every reload through, frame by
+                                            # frame: how deep the arms, hands and gun go into the body (and each other;
+                                            # for the gun, where along it and how many of its points), both wrists,
+                                            # and where the trigger finger is (DW_CLEAR_ONLY=stance or reload: half)
 ../build/macos/damned_waters --fitreload    # search where the pistol is brought in to reload (least wrist strain,
                                             # nothing through anything); paste the result into ReloadShape
 DW_CLASH=1 ../build/macos/damned_waters --view "survivor@chest/gun=0/live/reload=0.6,-30,10,1.3,0,-0.1,38" out.png
@@ -251,6 +347,204 @@ table: everything laid out, nothing moving until you close it.
 The buttons drawn are the pad in your hand: PlayStation shapes, Xbox letters, or key caps.
 Fonts are Cinzel and EB Garamond, under the SIL Open Font License (`engine/assets/fonts`).
 
+## The house and its doors
+
+The rooms of a storey share one floor plan, the way a building plan does: each room file is
+written in its own coordinates and says where its corner lies in the house (`"origin"`), and the
+game moves it there (`RoomSpec::translate`). A doorway in one room's wall and the doorway in the
+next room's wall at the same spot are one hole (`house.hpp` pairs them), so he walks from one room
+into the next and the camera simply cuts to the new room's shot. Like a film set built as a real
+flat: the camera crew moves room to room, nobody has to change the scenery.
+
+- **Doors you push, RE9-style** (`include/dw/doors.hpp`, `src/game_house.cpp`). A door that leads
+  somewhere is a real leaf in the room, drawn by the game over a picture painted with the doorway
+  open (Blender builds the room beyond, so an open door shows it). Walk gently into a shut door and
+  it eases ajar; keep leaning on it and the camera looks through the crack (each side of a door
+  can have a `"peek"` shot in the room file, rendered like any other shot), with whatever is in
+  the next room moving there. Press Cross at it, or run into it, and it swings wide away from you;
+  Cross at an open door slams it shut, and the Drowned hear that. A locked door waits for its key.
+  The leaf is double-acting: it swings away from whoever pushes it, like a saloon door with a temper.
+- **The Drowned follow him through the house.** They see him only with nothing in between (a wall
+  or a shut door blocks the line), hear through walls at half the distance, and keep after a noise
+  for a moment, so a closed door doesn't make him vanish. One that wants him in another room heads
+  for the doorway that leads there (`house::next_doorway`, breadth first through the rooms); at a
+  shut door it beats on it for about a second, then shoves it open. Shots fly through an open
+  doorway into the next room and stop at walls and shut doors.
+- **Stairs between storeys** are a short beat in the dark (`include/dw/transition.hpp`): the
+  picture fades, his steps on the stairs, the other floor is put in place, it fades up. A stage
+  blackout between scenes. The cellar door under the hall's stairs opens onto painted steps going
+  down; walking through it takes him to the souterrain, whose door at the far end leads on into the
+  flooded kelder; the souterrain's stairs bring him back up. He arrives as he is: his hair and
+  straps are laid out afresh where he stands (`Character::settle`), not swung over from where he was. The kelder's iron water gate swings
+  open on the tunnel to the canal (a gate's leaf is bars, `"style": "grate"`: he can see and shoot
+  through it shut), and the steps near the tunnel's mouth climb to the quay.
+- **Streets run into each other** (`"kind": "passage"` in a wall's openings). A passage is a gap
+  with no leaf: always open, never shut, seen and shot through. Two rooms on one storey that meet
+  at a passage are one walk (Thorbeckeplein's top end is Rembrandtplein's bottom edge: he walks
+  across and the camera cuts, as at an open door). A passage with no room behind it on its storey
+  is a beat to another storey, like the stairs: the Herengracht is on the house's storey, the city
+  beyond the bridge is its own (`"storey": 10`, "THE CITY" on the map). Like crossing from one film
+  set to the next on the same sound stage, or being driven to another studio.
+- **Shops he can walk into.** A shop is a room of its own behind its street's shopfront: its door is
+  a glass one (`"style": "glass"`: a dark frame with a push bar, the pane drawn so only what it
+  reflects is added, so the lit shop shows through it; the Drowned see through it too), pushed
+  open like any other, and the camera cuts inside. What he finds there (ammunition, field
+  dressings, first aid kits) lies where it was left: on the counter, behind the till, on the wall.
+- **The city's districts.** Each district of the city is a storey of its own (10: Rembrandtplein, 11:
+  the Munt, ...), so the game holds one at a time: its streets, its shops, its Drowned (eight at
+  most). Crossing into the next is a short beat, like the stairs; within a district the streets and
+  shops run into each other with no beat. The map shows every district on one page, THE CITY,
+  as a street plan does. The beat is a door interactable with a `"target_room"` standing in the
+  gap (within 1.6 m of its middle); one that stands anywhere else never fires, and the way on is a
+  wall, so a test checks every one in the city.
+- **No waiting at a door.** The plates of the rooms next door are decoded on a worker thread
+  while he's still in this one and uploaded a couple per frame (`src/plates.cpp`), so the cut is
+  instant; rooms out of reach are let go. A stage crew setting up the next backdrops in the wings.
+- **The dead lie still** (`"lying"` on one of the Drowned in a room file): laid out among the
+  bodies, it stays down until he comes within 4 m and it can see him, or a shot goes off, or it's
+  hit; then it gets up the way a knocked-down one does. **Keys** (the cellar key, the store's staff
+  pass) are used at their doors and never thrown away (`is_key`).
+- **What the house remembers** (`status::WorldState`, keyed `"room/id"`): what he took, read and
+  unlocked, which rooms he's been in, which Drowned are dead (they stay dead), and what has happened
+  (flags). Taking the cellar key sets `heard_thud`: a bang at the front door, and the two Drowned
+  that were waiting for it come into the hall after him. In the cellar the Drowned wait under the
+  water (`"emerge"`) and rise when he comes near or a shot goes off.
+- **Try again** after dying puts him back on the threshold of the room he last walked into, as he
+  was then (his case, his health, what the house remembered).
+- **He starts with the M92FS and 30 rounds.** The Remington 870 lies in the parlour.
+
+## How the rooms are built (Blender, from the RoomSpecs)
+
+Each room file is the single blueprint: Blender paints the plates from it, the game walks on it.
+`python3 tools/pipeline/build_backgrounds.py --quality final --gpu` fetches the assets, renders
+every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
+
+- **Modelled to match photos.** The director's reference photos set the look: a room is built to
+  match a photo's architecture and furniture, and its main shot copies the photo's framing.
+  `tools/photo/camera_match.py photo.jpg --overlay lines.png` finds the camera that took a photo
+  from its straight edges (vanishing points give the lens and the angle), like reading where a
+  photographer stood from where the kerbs meet on the horizon.
+- **CC0 materials and models.** A room file names Poly Haven textures and models as `"ph:<id>"`
+  (or `{"ph": id, "tint": [...]}`); `tools/assets/polyhaven.py fetch` downloads them once into
+  `pipeline_out/` (outside git) and records who made them in `tools/assets/manifest.json`. Wallpaper
+  sold by the metre: each texture is hung at its true size. The furniture kit
+  (`tools/blender/kit.py`) builds bevelled sofas, panelled kasten, a carved marble mantel, arched
+  steel windows and the like from the props' sizes.
+- **The whole floor at once.** To render a room, Blender builds every room on its storey at its
+  origin (`tools/pipeline/house.py` agrees with the engine on the floor plan), so an open doorway
+  shows the real room beyond. A shared wall is built half by each room; a door the game swings is
+  left out of the picture (the game draws it); each room's lamps light only that room, so a fire
+  next door never spills through a doorway the game may show shut. Beyond the cellar door, steps
+  go down into the dark.
+- **The room files are tested too** (`tools/pipeline/tests/test_house.py`), as a stage manager
+  walks the set before the show: every beat stands in its gap, every pickup has somewhere to stand
+  within reach of it (his body a circle 0.28 m in radius on the floor, his reach 1 m), and a model's
+  collider lies the way the model does (the manifest keeps each model's size), so a parked car is
+  never an invisible wall across the quay. An aid post's tent is walked into: only its table, its
+  stretchers and what lies under the sheets are solid.
+- **What the kit builds now.** The hall's carved open-tread stair (or a solid one with a plastered
+  half wall, the souterrain's), floor-to-ceiling bookcases with a library ladder, a brass bird cage
+  full of stuffed parrots, a round pedestal table; a black steel-glazed wall (`"steel_grid"`) onto a
+  planted lightwell, tall windows onto a night garden; and for the attic a gabled roof
+  (`"roof"`: knee walls under the eaves, the gables up to the ridge, rafters, collar ties, king
+  posts, purlins and a glazed roof light), a roll-top bath on claw feet (full of still, black
+  water), a pedestal basin and a towel horse. Seen from upstairs, the canal and the houses across it
+  drop away below (`"exterior": {"drop": 10.5}`), like looking down from a theatre's balcony.
+- **Outside: the street kit** (`tools/blender/street.py`). A room marked `"outdoor"` has no walls or
+  roof of its own: it stands on ground slabs beside the canal, between rows of real canal-house
+  fronts. Each front is laid out like an architect's elevation (`tools/pipeline/facade.py`,
+  unit-tested: the outline of a neck, bell, step or spout gable or a cornice, the grid of sash
+  windows and the door, the brick cut around them), then built in brick with white sashes, stone
+  sills, a stoop, a hoist beam, a few windows lit. Our own house's front goes on as a thin skin over
+  the rooms' real walls, with holes where their windows are, so its parlour glows from the street.
+  The kit also has the Amsterdammertjes (the brown bollards with three crosses), black upright
+  bikes (some knocked over), bare elms, quay railings, a houseboat, a swamped rowing boat, and a hump
+  bridge with a bulb every 40 cm round its arches. The street is built whichever room on its storey
+  is rendered, so every window onto it shows the same street.
+- **Made to look like the photographs.** Like the rooms, the street is matched to reference photos
+  of the canals at night (openly licensed, kept out of the repo) and dressed in CC0 scans: old Dutch
+  brick (five kinds, a little different house to house), painted window frames and doors, bluestone
+  sills and stoops, grey roof tiles, plane-tree bark, mossy brick at the waterline, and wet
+  herringbone pavers. `"wet"` on any scan darkens it and makes it glossy, with still puddles
+  (`"puddles"`) that mirror the lamps, as the streets are after rain.
+- **The sky** is a CC0 night-sky panorama (`"sky": {"hdri": ...}`), clouds lit from below by the
+  city. How bright it looks and how much light it gives are set apart, the way a film set lights a
+  painted backdrop for the lens and not for the actors.
+- **Lit windows show real rooms.** Behind each lit window is a patch of a CC0 interior panorama (a
+  bar, a fireplace, an office), a different patch for every window, so the street looks lived in;
+  the dark ones show the same rooms, unlit. The glass reflects the sky and the lamps.
+- **Shops, cafés and coffeeshops** (`"shop"` on a front): a glazed front on a stall riser, the shop
+  inside, its name lit on the fascia, a blade sign over the pavement, an awning, and its light
+  falling out onto the terrace. The power is still on all over the city; nobody is there. Terraces
+  use CC0 café tables and chairs, chalkboards, planters, and patio heaters still burning.
+- **Lamps** (`"outdoor": {"lamps": [[x, z], ...]}`): CC0 street lamps with their lanterns alight
+  and their light; the game reads the same list, so he is lit by the lamps you see. A bloom in the
+  compositor makes lamps and signs glow as they do in a photograph at night (never in the depth
+  map).
+- **The city kit** (`tools/blender/city.py`), for the squares: neon lettering bent from glass tube
+  (`"neon": true` on a bar's or coffeeshop's shop) and big neon signs on the roofs
+  (`"rooftop_signs"`), strings of bulbs slung between the trees over the terraces (`"strings"`:
+  from, to, sag, bulb spacing), tram rails let into the street (`"tracks"`) and a tram stopped at
+  its stop with its lights on and its doors open, benches, a bronze statue on a floodlit plinth,
+  kiosks, terrace windbreaks, and a park (`"parks"`: a lawn, gravel paths, low iron fences).
+- **Landmarks** (`tools/blender/landmarks.py`), built from a few measurements each: the Munttoren
+  (brick base with sandstone quoins, the octagon with its four clock faces lit and stopped at 11:47,
+  the open lantern with its bells, a lead ogee dome, a gilded ball), an art-deco picture palace's
+  front (`"deco"` on a front: tiled towers with copper domes, a stained-glass window, a marquee
+  ringed with bulbs, floodlights, a vertical THEATER sign), the Bloemenmarkt's glasshouse stalls on
+  their pontoons (buckets of tulips, boards of bulb packets, shutters part way down), a pharmacy's
+  green neon cross (`"cross"` on a shop), police crowd barriers with tape.
+- **Shop interiors** (`tools/blender/shops.py`): shelving stocked with packets and bottles in the
+  shop's colours (gaps where things were grabbed, a few knocked to the floor), counters with a till,
+  glass display cases, velvet ropes on brass posts, lit posters, a ticket booth, a cloakroom rail
+  with the coats still on it, strip lights, a gun shop's wall rack (long guns stood on a felt ledge,
+  most of the slots empty, the last two chained). A thousand packets are one mesh per colour. A
+  shop's front wall is its street's (`"facade": true` on that wall): the street builds the shopfront
+  there with its door bay open (`"enter"` on the shop), and the room builds no wall.
+- **What the evacuation left** (`tools/blender/aftermath.py`, `docs/city_aftermath.md`): the city
+  was emptied in a hurry, and every street says so. Hand-sprayed EVACUATIEROUTE boards pointing to
+  Centraal, an aid post (a tent, stretchers, a floodlight on a generator, someone under a sheet),
+  suitcases and bags and a pushchair dropped in the road, evacuation leaflets everywhere, cars and
+  vans left with their doors open and their lights on (a taxi, an ambulance, a police van, an army
+  truck), sandbag walls at the doors, a fire pump with its hose down into the canal, shop windows
+  put in by looters (the glass on the pavement), and a tide line where the water came up the house
+  fronts (`"tide"`: below it the brick is dark and still wet). Like a stage after the audience
+  fled: the coats are still on the seats.
+- **The Dam's kits**: the palace (`landmarks.palace`: rusticated ground floor, two storeys of
+  pilasters, the pediment, the cupola with its ship), a gothic church front (`gothic_front`: the
+  great window lit from inside, buttresses, the ridge turret), the National Monument; the funfair
+  (`tools/blender/fair.py`: Ferris wheel, drop tower, carousel, stalls, all steel and bulbs); the
+  church inside (`tools/blender/church.py`: clustered piers, pointed arcades, the wooden vault, the
+  organ, a pulpit, gothic windows, brass chandeliers); buses, mobile light towers and camp beds for
+  the evacuation (`aftermath.py`).
+- **Lived in, then left** (`builders.weather`; the dressing itself is in the room files): every
+  built surface renders with its edges rounded (a bevel at render time) and dirt worked into its
+  creases (ambient occlusion), so nothing keeps a toy's clean sharp edges. Shops and offices get a
+  suspended ceiling of 600 mm tiles (`drop_ceiling`: some water-stained, a few fallen open onto the
+  dark above), a lit NOODUITGANG over the doors, an extinguisher by the way in, a camera in a
+  corner, paper on the floor (and in offices and lobbies a chair knocked over); stockrooms and halls
+  get galvanised ducts and a sprinkler main (`duct`). Streets get bin bags, wheelie bins, boxes,
+  planters and bikes along their house fronts, and a third of their shops have the shutter down (a
+  photo-scanned one). A scan lying on its side is `"tip"`. ELI5: a film's art department "breaking
+  down" a brand-new set: scuffing, staining and cluttering it until it looks used.
+- **The great hall** (`tools/blender/halls.py`): the Beurs's brick arcades with the gallery over
+  them, steel trusses and the glass roof; and the mortuary the army made of it: body bags in rows
+  (some on trestles, one unzipped and empty), an ammunition crate, work lights on tripods, hospital
+  screens, the registration's tables with their laptops still on, a refrigerated container at the
+  gate. A landmark's shell can "enclose" a room (`"encloses"` on the prop): rendering that room
+  leaves the shell out, so from inside, the hall's own walls are the building (the back of a stage
+  flat is not the set; the room built behind it is). The Damrak shops' pieces are `shops.py`'s
+  (clogs, cheeses, the exchange's board of rates, the cashiers' glass, the safe), and a tour boat
+  can be boarded (`canal_boat`'s `"door"`, `"aisle"` and `"draught"`).
+- **The next district down the street.** Rendering a district also builds the streets of the
+  districts beside it (within 40 m), so the end of a street shows the city going on, not a void.
+- **One ground per street.** Rooms on one storey are built together, and each room's lights only
+  light its own things; so two streets' ground slabs must meet edge to edge and never overlap,
+  or the other street's slab, unlit, shows through as a black patch.
+- **A row ends where it says.** A row of houses is laid out house by house at random widths; the
+  last one takes whatever is left of the row (never a sliver, never a house standing out in the
+  next street). A terrace ends at the corner plot, whatever its size.
+
 ## The death screen
 
 When he goes down, the picture drains into a deep red-black and blood seeps in from the edges;
@@ -269,14 +563,15 @@ are named by position (PlayStation / Xbox):
 
 | Action | Type A (RE Remake) | Type B (Souls) | Type C (Shooter) | Keyboard / mouse |
 |---|---|---|---|---|
-| Move (tilt: walk, all the way: run) | Left stick | Left stick | Left stick | WASD, Shift runs |
+| Move (a light touch: sneak, half: walk, all the way: run) | Left stick | Left stick | Left stick | WASD walks, Ctrl sneaks, Shift runs |
+| Run, with a Run option that walks by default | L3 (held, or clicked), or hold R2 | L3, or hold R1 | L3, or hold R2 | Shift |
 | Aim (locks on) | L2 | L1 | L2 | Right mouse / K |
 | Aim over the body (head, arms, legs) | Right stick | Right stick | Right stick | Mouse, or W/S |
 | Switch target | Flick the right stick | Flick | Flick | Mouse wheel |
 | Fire | R2 | R1 | R2 | Left mouse / J |
 | Dodge | R1 | Circle/B | Circle/B | Space / C |
 | Kick (counter, or a staggered one) and interact | Cross/A | Square/X kicks, Cross/A interacts | Square/X kicks, Cross/A interacts | E |
-| Quick turn | Circle/B | R2 | L1 | Q |
+| Quick turn | Circle/B | R2, or stick back + Circle/B | L1, or stick back + Circle/B | Q |
 | Reload | Square/X | Triangle/Y | R1 | R |
 | Status screen | Triangle/Y | Share/View | Share/View | Tab |
 | Flashlight | L1 | L2 | D-pad down | L |
@@ -285,6 +580,32 @@ are named by position (PlayStation / Xbox):
 | In the case: select / back | Cross/A / Circle/B | Cross/A / Circle/B | Cross/A / Circle/B | Enter / Esc |
 | In the case: combine / examine | Square/X / Triangle/Y | Square/X / Triangle/Y | Square/X / Triangle/Y | C / X |
 | In the case: change tab / turn the item | L1, R1 / right stick | L1, R1 / right stick | L1, R1 / right stick | Q, R / mouse drag |
+
+**Sneak, walk, run** (`include/dw/controls.hpp`). The stick reads how hard you push, like a car's
+accelerator rather than a light switch. Ease it about a quarter of the way and he sneaks: 0.8 m/s,
+shorter placed steps, knees bent and the gun drawn in, and so quiet that only a Drowned at arm's
+length hears him. Half way he walks (1.9 m/s, heard 2.5 m off); all the way he runs (3.8 m/s, heard
+across the hall). Each change of gait has a little slack (hysteresis: up at its mark, back down
+only a bit below it), so a thumb resting on the edge never makes him stutter between two. The
+d-pad has no pressure on any pad and holds the weapon shortcuts, so it doesn't move him. The keys
+have no pressure either, so Ctrl and Shift say it for them.
+
+**Run** (pause menu): how running is asked for. *Push the stick all the way* (the default); *Hold
+L3 in*; *Click L3*, running until the stick comes back to the centre (or a second click); or *Hold
+the fire trigger*, R2 (R1 in Type B). Every comfortable button already has a job, and that trigger
+fires only while aiming, which stops him, so running and firing never want it at once. In all
+but the first, full tilt walks, and a light touch still sneaks. The keys always walk, with Shift
+to run.
+
+**Quick turn on stick back + Circle/B** (pause menu, on): RE3's turn. Back means behind him: down
+on tank controls, and on modern ones whichever way is behind him on screen (down when he faces into
+the picture, up when he faces you), so after the turn the stick already points where he faces and
+he walks on. In Type B and C, where Circle/B dodges, it still dodges alone or with the stick pushed
+any other way. Two thumbs never land on the same frame, so the stick counts if it was back up to
+0.1 s before the press, or gets there up to 0.05 s after; a dodge with the stick centred waits
+those three frames to see which it is, like a doorbell that waits a beat to hear whether you're
+also knocking. While aiming, Circle/B always dodges (back + Circle is the dodge out backwards). In
+Type A, Circle/B turns him on its own anyway.
 
 **Skill.** Dodge in the last moment of a lunge (a perfect dodge) and the Drowned bites air and
 stumbles past, open to a kick, and your next shot does double damage; slow motion on a perfect
@@ -306,16 +627,22 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 | `src/grip_fit.cpp`, `src/grips_fitted.inc` | The grip fitter (`--fitgrips`) and what it wrote: where each gun (and the magazine and shell the left hand loads) sits in each hand and how the fingers wrap it. |
 | `include/dw/two_bone.hpp`, `src/two_bone.cpp` | The two-bone arm solve that keeps the left hand on the gun, the aim fitters' arm measures (elbow hanging down, its bend), a wrist's swing and twist, and blending joint turns the short way. Pure maths, unit-tested. |
 | `include/dw/clearance.hpp`, `src/clearance.cpp` | How far one surface sinks into another, and the torso as stacked oval slices for the elbows to keep out of. Pure, unit-tested. |
-| `src/character_clearance.cpp` | The clearance check on the posed body (`--clearance`) and the pistol's reload-position fitter (`--fitreload`). |
+| `src/character_clearance.cpp` | The clearance check on the posed body (`--clearance`: the carries and the reloads) and the pistol's reload-position fitter (`--fitreload`). |
+| `include/dw/ready.hpp` | Trigger discipline: how far up the gun is, and when the trigger finger may go on and must come off. Pure, unit-tested. |
 | `include/dw/reload.hpp`, `src/reload.cpp` | The reloads' steps: where the left hand goes and what it holds, and when the magazine drops, goes home and the slide runs forward. Pure, unit-tested. |
 | `include/dw/status.hpp`, `src/status.cpp` | The status screen as rules: condition, what each item can do, loading from the case, what the world remembers, and the screen's state machine (browse, act, combine, discard, read, pick up, make room). Pure, unit-tested. |
-| `include/dw/world_map.hpp`, `src/world_map.cpp` | The map, laid out from the room files' doors and storeys. Pure, unit-tested. |
+| `include/dw/world_map.hpp`, `src/world_map.cpp` | The map, laid out from the rooms' origins (or, without them, from their doors) and storeys. Pure, unit-tested. |
+| `include/dw/house.hpp`, `src/house.cpp` | The house's floor plan per storey: doorways paired across rooms, which room a point is in, sight lines across walls and shut doors, the way through the doors. Pure, unit-tested. |
+| `include/dw/doors.hpp` | A door leaf: pushed, leant on, slammed, shoved; its collider follows its swing. Pure, unit-tested. |
+| `include/dw/transition.hpp` | The beat between storeys: fade, dark, swap, fade up. Pure, unit-tested. |
+| `src/game_house.cpp` | The house in the game: loading every room, each storey's walls and Drowned, walking into the next room, the doors and their peeks, the Drowned following through doorways, the cellar's risers, the stairs, the retry checkpoint. |
+| `src/plates.hpp`, `src/plates.cpp` | The plates of the rooms around him, decoded in the background and uploaded a few a frame. |
 | `src/status_view.cpp` | The status screen on screen: fonts, the 3D previews and icons, his figure, the tabs, the button glyphs. |
 | `include/dw/death.hpp` | The death screen's timing: the fade, the words, the drips, the choice. Pure, unit-tested. |
 | `src/game_world.cpp` | Pickups, notes, things to look at and doors in a room; carrying out what the screen asks for. |
 | `src/cast_items.cpp` | The case's items as 3D models (the guns are `cast_guns.cpp`'s). |
 | `src/effects.cpp` | Blood, brass and spent shells, limbs that come away, the empty magazines he drops, the muzzle flash. |
-| `src/character_combat.cpp` | Hit capsules, wounds, severing, the guns in hand, and the aim fitters (`--fitpistol`, `--fit870`). |
+| `src/character_combat.cpp` | Hit capsules, wounds, severing, the guns in hand, and the aim and ready fitters (`--fitpistol`, `--fit870`). |
 | `src/shaders.cpp` | All GLSL, embedded. |
 | `src/game.cpp` | Room, cameras, input, AI, and render order. |
 | `src/main.cpp` | Entry point, capture mode, and telemetry. |
@@ -325,7 +652,7 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 1. The background is drawn, writing `gl_FragDepth` from its painted depth.
 2. Characters are drawn depth-tested against the painting.
 3. Blob shadows are drawn.
-4. The post pass (grain and vignette) goes to the window.
+4. The post pass (the film grade, grain and vignette) goes to the window.
 
 **Pose convention (character axes):**
 
@@ -347,13 +674,23 @@ sqlite3 build/damned_waters.db "SELECT mode, status, runtime_s, frames, worst_fr
 Done in the C++ engine: combat (both guns, kick, dodge, counters, gore), the reloads, the
 status screen (items, files, map, pickups), the death screen. Still to come, in order:
 
-1. **More of the house, and the city.** The canal house's other rooms (`voorkamer`, `kelder`
-   and new ones), with doors and room-to-room transitions; then the streets along the canals,
-   Amsterdam Centraal, and the metro north under the IJ to Station Noord. All pre-rendered
-   backgrounds from RoomSpecs (`docs/handoff/areas_session_prompt.md` is the brief).
-2. Saves (the typewriter), a title screen.
-3. **#27 (polish, deferred): a palm arch joint**, so the 870's right wrist cocks less (about 49
+1. **The city.** The house is in (hall, parlour, library, souterrain, kelder; the attic bathroom
+   waits for its stairs), and out of it the Herengracht, Thorbeckeplein and Rembrandtplein, the
+   Munt (Reguliersbreestraat, Muntplein, the Bloemenmarkt), Rokin, the main road north (its water
+   and tour boats, the Wilhelmina statue, the flooded metro), the Dam (the Palace, the Nieuwe Kerk,
+   the National Monument, the funfair, the evacuation point) and the Kalverstraat beside it, and
+   Damrak (the Beurs's hall made a mortuary, the basin and its boats, the leaning houses), two to
+   five places to search in each. Next, the station and the metro north under the IJ to Station
+   Noord. All pre-rendered backgrounds
+   from RoomSpecs (`docs/handoff/areas_session_prompt.md` is the brief).
+2. **Polish pass over the shop interiors** (once every area is built): each one modelled to match
+   one or two reference photos (the camera matched to the photo, the room and its fixtures built
+   to it), its stand-ins swapped for CC0 scans, photo layers projected where modelling can't
+   compete (packed shelves, posters, flowers), its light matched; checked side by side with the
+   photo. Only CC0 / CC-BY photos go into a picture; the rest are for layout only.
+3. Saves (the typewriter), a title screen.
+4. **#27 (polish, deferred): a palm arch joint**, so the 870's right wrist cocks less (about 49
    degrees toward the little finger now). A rig change: rebuild `survivor.dwc`, then refit the
    grips (`--fitgrips`) and the poses (`--fitpistol`, `--fit870`).
-4. Reload tuning from play-testing (timing, the 870's hip load).
-5. Rumble and the SDL3 backend; the cyclist and the other creatures.
+5. Reload tuning from play-testing (timing, the 870's hip load).
+6. Rumble and the SDL3 backend; the cyclist and the other creatures.

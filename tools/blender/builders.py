@@ -12,6 +12,7 @@ import random
 
 import bpy
 
+import surfaces
 from roomspec import g2b, wall_segments
 
 WALL_T = 0.3  # wall thickness, grows outward from the room bounds
@@ -178,8 +179,77 @@ def _brick(nt, vec, c1, c2, mortar, width, row, mortar_size, offset=0.5, bias=0.
     return t
 
 
+_DRY = {"glass", "water", "canal_water", "soot"}
+
+
+def weather(m, key):
+    """Rounded edges (a render-time bevel) and dirt worked into the creases (ambient occlusion)."""
+    k = key if isinstance(key, dict) else {}
+    if (isinstance(key, str) and key in _DRY) or "emit" in k or "room" in k:
+        return
+    nt = m.node_tree
+    for b in [n for n in nt.nodes if n.type == "BSDF_PRINCIPLED"]:
+        tw = b.inputs["Transmission Weight"]
+        if tw.is_linked or tw.default_value > 0:
+            continue
+        r = k.get("bevel", 0.012)
+        if r > 0:
+            bv = nt.nodes.new("ShaderNodeBevel")
+            bv.samples = 4
+            bv.inputs["Radius"].default_value = r
+            nin = b.inputs["Normal"]
+            if nin.is_linked:
+                nt.links.new(nin.links[0].from_socket, bv.inputs["Normal"])
+            nt.links.new(bv.outputs["Normal"], nin)
+        g = k.get("grime", 0.7)
+        if g <= 0:
+            continue
+        ao = nt.nodes.new("ShaderNodeAmbientOcclusion")
+        ao.samples = 6
+        ao.inputs["Distance"].default_value = k.get("grime_reach", 0.4)
+        tc = nt.nodes.new("ShaderNodeTexCoord")
+        nz = nt.nodes.new("ShaderNodeTexNoise")
+        nz.inputs["Scale"].default_value = 2.2
+        nz.inputs["Detail"].default_value = 8.0
+        nt.links.new(tc.outputs["Object"], nz.inputs["Vector"])
+        inv = _wmath(nt, "SUBTRACT", 1.0, ao.outputs["AO"])
+        patch = _wmath(nt, "MULTIPLY", inv, nz.outputs["Fac"])
+        fac = _wmath(nt, "MULTIPLY", patch, g * 2.0, clamp=True)
+        mx = nt.nodes.new("ShaderNodeMixRGB")
+        mx.blend_type = "MULTIPLY"
+        mx.inputs["Color2"].default_value = (0.3, 0.26, 0.21, 1.0)
+        nt.links.new(fac, mx.inputs["Fac"])
+        bc = b.inputs["Base Color"]
+        if bc.is_linked:
+            nt.links.new(bc.links[0].from_socket, mx.inputs["Color1"])
+        else:
+            mx.inputs["Color1"].default_value = bc.default_value[:]
+        nt.links.new(mx.outputs["Color"], bc)
+
+
+def _wmath(nt, op, a, b, clamp=False):
+    n = nt.nodes.new("ShaderNodeMath")
+    n.operation = op
+    n.use_clamp = clamp
+    for i, v in enumerate((a, b)):
+        if isinstance(v, (int, float)):
+            n.inputs[i].default_value = v
+        else:
+            nt.links.new(v, n.inputs[i])
+    return n.outputs[0]
+
+
 def material(key):
-    """Material library keyed by the names used in RoomSpec JSON."""
+    """Material library keyed by the names used in RoomSpec JSON. A Poly Haven reference
+    ("ph:<id>" or {"ph": ...}) or a painted surface ({"color": ...}) goes to surfaces.py."""
+    if surfaces.is_ref(key):
+        ck = surfaces.cache_key(key)
+        if ck not in _MATS:
+            m, nt, out = _new_mat(ck[:60])
+            surfaces.build(nt, out, key)
+            weather(m, key)
+            _MATS[ck] = m
+        return _MATS[ck]
     if key in _MATS:
         return _MATS[key]
     m, nt, out = _new_mat(key)
@@ -222,6 +292,14 @@ def material(key):
         n = _noise(nt, _uv(nt), 3.0, 2)
         b = _bsdf(nt, out, color=(0.01, 0.018, 0.012), rough=0.03, bump_socket=n, bump=0.04)
         b.inputs["IOR"].default_value = 1.33
+    elif key == "canal_water":   # a canal at night: near black, a mirror broken by small ripples
+        tc = nt.nodes.new("ShaderNodeTexCoord")
+        mp = nt.nodes.new("ShaderNodeMapping")
+        mp.inputs["Scale"].default_value = (1.0, 2.2, 1.0)
+        nt.links.new(tc.outputs["UV"], mp.inputs["Vector"])
+        n = _noise(nt, mp.outputs["Vector"], 2.4, 7, 0.62)
+        b = _bsdf(nt, out, color=(0.005, 0.008, 0.007), rough=0.008, bump_socket=n, bump=0.1)
+        b.inputs["IOR"].default_value = 1.33
     elif key == "glass":
         g = nt.nodes.new("ShaderNodeBsdfPrincipled")
         g.inputs["Base Color"].default_value = (0.6, 0.65, 0.7, 1)
@@ -252,6 +330,7 @@ def material(key):
             "typewriter": ((0.015, 0.015, 0.015), 0.35, 0.3), "plaster_raw": ((0.35, 0.33, 0.3), 0.95, 0.0),
         }.get(key, ((0.5, 0.0, 0.5), 0.5, 0.0))  # magenta = missing material, obvious on purpose
         _bsdf(nt, out, color=flat[0], rough=flat[1], metal=flat[2])
+    weather(m, key)
     _MATS[key] = m
     return m
 
@@ -292,15 +371,56 @@ def _opening_span(op):
 
 
 def build_shell(spec):
-    """Floor, ceiling, beams, walls with openings, wainscot, doors, windows, gates."""
+    """Floor, ceiling, beams, walls with openings, wainscot, doors, windows, gates.
+    In a house (render_rooms.build_house): a wall shared with a neighbour ("_shared") is built half
+    thick by each room, so the two halves meet in its middle; a live doorway ("_live": the game
+    hangs its leaf) is left open; a live door with no room behind it ("_stairs") gets the stairs
+    down beyond it."""
+    if spec.get("outdoor"):   # a street: the ground, the canal, the houses (street.py); no walls of its own
+        import kit
+        import street
+        street.outdoor(spec)
+        for side, wall in wall_segments(spec).items():
+            for k, op in enumerate(wall["openings"]):
+                if (side, k) in spec.get("_stairs", set()) and op.get("kind") == "door":
+                    kit.stair_stub(spec, side, op)
+        return
     mats = spec["materials"]
     (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
     h, t = spec["height"], WALL_T
-    box_aabb("floor", (x0 - t, -0.2, z0 - t), (x1 + t, 0.0, z1 + t), material(mats["floor"]))
-    box_aabb("ceiling", (x0 - t, h, z0 - t), (x1 + t, h + 0.2, z1 + t), material(mats["ceiling"]))
+    shared = spec.get("_shared", set())
+    # A shop's front wall is the street's: the street builds the house front with the shopfront in
+    # it ("facade": true on that wall), in the wall's place, so the room builds no wall there (its
+    # floor and ceiling still run out under and over it, to the street).
+    fronts = {side for side, w in spec.get("walls", {}).items() if isinstance(w, dict) and w.get("facade")}
+    ts = {side: t / 2 if side in shared else t for side in ("north", "south", "west", "east")}
+    fx0, fz0, fx1, fz1 = x0 - ts["west"], z0 - ts["north"], x1 + ts["east"], z1 + ts["south"]
+    holes = spec.get("floor_holes", [])   # wells in the floor (escalators down): the floor round them, a pit wall at each edge
+    if holes:
+        import facade as layout
+        for u0, u1, v0, v1 in layout.cut_rects(fx1 - fx0, fz1 - fz0, [(a - fx0, c - fx0, b - fz0, d - fz0) for a, b, c, d in holes]):
+            box_aabb("floor", (fx0 + u0, -0.2, fz0 + v0), (fx0 + u1, 0.0, fz0 + v1), material(mats["floor"]))
+        pit = material(mats.get("pit", {"color": [0.25, 0.25, 0.26], "rough": 0.6}))
+        for a, b, c, d in holes:
+            for lo, hi in (((a, -6.0, b - 0.2), (c, 0.0, b)), ((a, -6.0, d), (c, 0.0, d + 0.2)), ((a - 0.2, -6.0, b), (a, 0.0, d)), ((c, -6.0, b), (c + 0.2, 0.0, d))):
+                box_aabb("pit", lo, hi, pit)
+    else:
+        box_aabb("floor", (fx0, -0.2, fz0), (fx1, 0.0, fz1), material(mats["floor"]))
+    roof, vault = spec.get("roof"), spec.get("vault")
+    eaves = (("west", "east") if roof.get("axis", "z") == "z" else ("north", "south")) if roof else ()
+    if vault:   # a barrel vault: the long walls stop at its springing (kit.py)
+        eaves = ("west", "east") if vault.get("axis", "z") == "z" else ("north", "south")
+        roof = {"eave": vault["spring"]}
+        import kit
+        kit.vault(spec)
+    elif roof:   # an attic: knee walls under the eaves, gables up to the ridge, the roof's timber (kit.py)
+        import kit
+        kit.roof(spec)
+    else:
+        box_aabb("ceiling", (x0 - ts["west"], h, z0 - ts["north"]), (x1 + ts["east"], h + 0.2, z1 + ts["south"]), material(mats["ceiling"]))
     beams = spec.get("ceiling_beams")
     if beams:
-        wood = material("dark_wood")
+        wood = material(beams.get("material", "dark_wood"))
         if beams["axis"] == "x":
             z = z0 + beams["spacing"] / 2
             while z < z1:
@@ -315,24 +435,32 @@ def build_shell(spec):
     wall_mat = material(mats["wall"])
     wain_key, wain_h = mats.get("wainscot", ""), mats.get("wainscot_height", 0.0)
     for side, wall in wall_segments(spec).items():
+        if side in fronts:
+            continue
+        hs = roof["eave"] if side in eaves else h
         (ax, az), (bx, bz) = wall["line"]
         length = abs(bx - ax) + abs(bz - az)
-        ops = sorted(wall["openings"], key=lambda o: o["center"])
+        indexed = sorted(enumerate(wall["openings"]), key=lambda kv: kv[1]["center"])
+        ops = [op for _, op in indexed]
+        tw = ts[side]
         # Solid spans between openings (full height), extended past corners.
         cursor = -t
-        for op in ops:
+        for k, op in indexed:
             ou0, ou1, ov0, ov1 = _opening_span(op)
             if ou0 > cursor:
-                _wall_box(spec, side, cursor, ou0, 0, h, 0, t, wall_mat, f"wall_{side}")
-            _wall_box(spec, side, ou0, ou1, ov1, h, 0, t, wall_mat, f"lintel_{side}")
+                _wall_box(spec, side, cursor, ou0, 0, hs, 0, tw, wall_mat, f"wall_{side}")
+            _wall_box(spec, side, ou0, ou1, ov1, hs, 0, tw, wall_mat, f"lintel_{side}")
             if ov0 > 0:
-                _wall_box(spec, side, ou0, ou1, 0, ov0, 0, t, wall_mat, f"sill_{side}")
+                _wall_box(spec, side, ou0, ou1, 0, ov0, 0, tw, wall_mat, f"sill_{side}")
             cursor = max(cursor, ou1)
-            _build_opening(spec, side, op)
+            _build_opening(spec, side, op, live=(side, k) in spec.get("_live", set()))
+            if (side, k) in spec.get("_stairs", set()):
+                import kit
+                kit.stair_stub(spec, side, op)
         if cursor < length + t:
-            _wall_box(spec, side, cursor, length + t, 0, h, 0, t, wall_mat, f"wall_{side}")
+            _wall_box(spec, side, cursor, length + t, 0, hs, 0, tw, wall_mat, f"wall_{side}")
         # Wainscot / skirting: thin layer on the interior face, skipping doorways.
-        doors = [_opening_span(o) for o in ops if o["kind"] in ("door", "gate")]
+        doors = [_opening_span(o) for o in ops if o["kind"] in ("door", "gate") or o.get("sill", 1.0) < 0.05]
         spans, c = [], 0.0
         for du0, du1, _, _ in sorted(doors):
             spans.append((c, du0))
@@ -344,16 +472,31 @@ def build_shell(spec):
             if wain_key and wain_h > 0:
                 _wall_box(spec, side, su0, su1, 0, wain_h, -0.025, 0, material(wain_key), "wainscot")
                 _wall_box(spec, side, su0, su1, wain_h - 0.03, wain_h + 0.03, -0.045, 0, material("dark_wood"), "rail")
-            _wall_box(spec, side, su0, su1, 0, 0.14, -0.04, 0, material("dark_wood"), "skirting")
+            sk = mats.get("skirting", "dark_wood")
+            if sk:
+                _wall_box(spec, side, su0, su1, 0, mats.get("skirting_height", 0.14), -0.02, 0, material(sk), "skirting")
 
 
-def _build_opening(spec, side, op):
+def _build_opening(spec, side, op, live=False):
+    if op.get("arch"):   # round-headed, steel-framed (kit.py)
+        import kit
+        kit.arch_opening(spec, side, op)
+        return
     u0, u1, v0, v1 = _opening_span(op)
     wood, dark = material("dark_wood"), material("soot")
+    if op["kind"] in ("portal", "passage"):   # a plain hole (the tunnel's mouth, a street running on): nothing in it
+        return
+    if op.get("style") == "grate":   # an iron gate the game hangs: a stone surround, no wood
+        _wall_box(spec, side, u0 - 0.1, u1 + 0.1, v1, v1 + 0.3, -0.05, 0.3, material("stone_floor"), "gate_arch")
+        for a, b in ((u0 - 0.12, u0), (u1, u1 + 0.12)):
+            _wall_box(spec, side, a, b, v0, v1, -0.04, 0.3, material("stone_floor"), "gate_jamb")
+        return
     # Interior casing around every opening.
     for (a, b, c, d) in ((u0 - 0.08, u0, v0, v1 + 0.08), (u1, u1 + 0.08, v0, v1 + 0.08), (u0, u1, v1, v1 + 0.08)):
         _wall_box(spec, side, a, b, c, d, -0.03, 0.0, wood, "casing")
-    if op["kind"] == "door":
+    if op["kind"] == "door" and live:
+        pass   # the game hangs this leaf itself (it opens): the picture shows the hole and what's beyond
+    elif op["kind"] == "door":
         _wall_box(spec, side, u0, u1, v0, v1, 0.06, 0.11, wood, "door_leaf")
         w, hh = u1 - u0, v1 - v0
         for (pu, pv, pw, ph) in ((0.5, 0.72, 0.7, 0.4), (0.5, 0.28, 0.7, 0.36)):
@@ -361,6 +504,16 @@ def _build_opening(spec, side, op):
             _wall_box(spec, side, cu - w * pw / 2, cu + w * pw / 2, cv - hh * ph / 2, cv + hh * ph / 2,
                       0.04, 0.06, wood, "door_panel")
         _wall_box(spec, side, u1 - 0.13, u1 - 0.08, v0 + 1.0, v0 + 1.06, 0.0, 0.06, material("brass"), "knob")
+    elif op["kind"] == "window" and op.get("steel_grid"):   # a black steel-framed glazed wall, panes in a grid
+        steel = material({"color": [0.015, 0.015, 0.017], "rough": 0.35, "metal": 0.7, "noise": 0.05})
+        _wall_box(spec, side, u0, u1, v0, v1, 0.12, 0.13, material("glass"), "glass")
+        cols, rows = op.get("grid", [4, 3])
+        for k in range(cols + 1):
+            uu = u0 + (u1 - u0) * k / cols
+            _wall_box(spec, side, uu - 0.025, uu + 0.025, v0, v1, 0.09, 0.16, steel, "steel")
+        for k in range(rows + 1):
+            vv = v0 + (v1 - v0) * k / rows
+            _wall_box(spec, side, u0, u1, vv - 0.025, vv + 0.025, 0.09, 0.16, steel, "steel")
     elif op["kind"] == "window":
         _wall_box(spec, side, u0, u1, v0, v1, 0.14, 0.15, material("glass"), "glass")
         paint = material("cream")
@@ -385,12 +538,17 @@ def build_water(spec):
         return
     (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
     z_far = z0 - 9.0 if spec.get("exterior") == "north_canal" else z0
-    box_aabb("water", (x0, w["y"] - 0.02, z_far), (x1, w["y"], z1), material("water"))
+    z_near = z1 + 9.0 if spec.get("exterior") == "south_canal" else z1
+    box_aabb("water", (x0, w["y"] - 0.02, z_far), (x1, w["y"], z_near), material("water"))
 
 
 def build_exterior(spec, rng):
     """Cheap, atmospheric outside world visible through windows/gates."""
     ext = spec.get("exterior")
+    if isinstance(ext, dict):   # the canal and the houses across it (kit.py)
+        import kit
+        kit.build_exterior(spec, rng)
+        return
     (x0, z0), (x1, z1) = spec["bounds"]["min"], spec["bounds"]["max"]
     if ext == "south":
         box_aabb("canal", (x0 - 30, -1.4, z1 + 0.5), (x1 + 30, -1.38, z1 + 13), material("water"))
@@ -411,6 +569,12 @@ def build_exterior(spec, rng):
                                        emissive("window", (1.0, 0.55, 0.25), 3.0))
                         win.visible_shadow = False
             x += w
+    elif ext == "south_canal":   # the water gate's tunnel out to the canal, to the south
+        box_aabb("tunnel_l", (x0 - 0.5, 0, z1), (x0 + 1.2, 2.2, z1 + 9), material("brick"))
+        box_aabb("tunnel_r", (x1 - 1.2, 0, z1), (x1 + 0.5, 2.2, z1 + 9), material("brick"))
+        box_aabb("tunnel_top", (x0 - 0.5, 1.9, z1), (x1 + 0.5, 2.3, z1 + 9), material("brick"))
+        glow = box_aabb("canal_glow", (x0, 0, z1 + 9.0), (x1, 2.2, z1 + 9.2), emissive("canal", (0.2, 0.7, 0.55), 0.6))
+        glow.visible_shadow = False
     elif ext == "north_canal":
         box_aabb("tunnel_l", (x0 - 0.5, 0, z0 - 9), (x0 + 1.2, 2.2, z0), material("brick"))
         box_aabb("tunnel_r", (x1 - 1.2, 0, z0 - 9), (x1 + 0.5, 2.2, z0), material("brick"))
@@ -422,6 +586,18 @@ def build_exterior(spec, rng):
 # ───────────────────────────── prop kit ─────────────────────────────────────
 def build_prop(p, room_h):
     t = p["type"]
+    import kit
+    import street  # noqa: F401  (adds the street kit's props to kit.PROPS)
+    import city  # noqa: F401  (and the city kit's)
+    import landmarks  # noqa: F401  (the Munttoren, the flower stalls)
+    import shops  # noqa: F401  (shop interiors: shelving, counters, the cinema's booth)
+    import aftermath  # noqa: F401  (what the evacuation left: luggage, vehicles, sandbags, the aid post)
+    import fair  # noqa: F401  (the Dam's funfair: the wheel, the drop tower, the carousel, the stalls)
+    import church  # noqa: F401  (the Nieuwe Kerk inside: piers, arcades, the vault, the organ)
+    import halls  # noqa: F401  (the Beurs's hall: arcades, the glass roof; the mortuary the army made of it)
+    import station  # noqa: F401  (Centraal and the metro: shop units, boards, the trackbed, the canopy)
+    if t in kit.PROPS:   # the detailed kit: sofas, kasten, the marble mantel, models...
+        return kit.build_prop(p, room_h)
     size = p.get("size", [0.45, 0.95, 0.45])
     w, h, d = size
     yaw, tip = p.get("yaw", 0.0), 0.0
@@ -521,7 +697,7 @@ def build_prop(p, room_h):
         cyl(root, "shade", (0, 0.1, 0), 0.24, 0.16, material("brass"), r_top=0.05)
         cyl(root, "bulb", (0, 0.0, 0), 0.04, 0.07, emissive("bulb", (1.0, 0.6, 0.3), 12.0))
     elif t == "rug":
-        part(root, "rug", (0, 0.004, 0), (w, 0.008, d), material("rug"))
+        part(root, "rug", (0, 0.004, 0), (w, 0.008, d), material(p.get("material", "rug")))
     elif t == "paper":
         part(root, "paper", (0, 0.001, 0), (0.21, 0.002, 0.297), material("paper"))
     elif t == "candle":

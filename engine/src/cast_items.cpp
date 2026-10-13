@@ -118,6 +118,21 @@ ItemModel item_model(int item) {
             m.size = 0.15f;
             break;
         }
+        case I_STAFF_PASS: {   // a keycard on a red lanyard: white, the store's blue band, a photo, the clip
+            b.material(MAT_POLYMER).color(Color{232, 232, 228, 255}).box({0, 0, 0}, {0.043f, 0.027f, 0.0005f}, 0.12f, 12, 8);
+            b.color(Color{28, 52, 120, 255}).box({0, 0.017f, 0.0003f}, {0.043f, 0.009f, 0.0004f}, 0.08f, 10, 4);       // DE ZWERM's band
+            b.color(Color{120, 110, 100, 255}).box({-0.026f, -0.007f, 0.0004f}, {0.011f, 0.014f, 0.0003f}, 0.05f, 6, 6);  // the photo
+            b.color(Color{40, 40, 44, 255});
+            for (int k = 0; k < 3; ++k)   // the name, the number, the department
+                b.box({0.012f, -0.002f - 0.008f * float(k), 0.0004f}, {0.02f - 0.004f * float(k), 0.0015f, 0.0002f}, 0.05f, 6, 4);
+            b.material(MAT_STEEL).color(Color{170, 170, 166, 255}).box({0, 0.03f, 0}, {0.006f, 0.004f, 0.0015f}, 0.2f, 6, 4);   // the clip
+            b.material(MAT_CLOTH).color(Color{176, 30, 34, 255})
+                .chain({{0, 0.034f, 0}, {-0.012f, 0.06f, 0.002f}, {-0.03f, 0.1f, 0.004f}, {-0.02f, 0.14f, 0.004f}, {0.0f, 0.15f, 0.003f},
+                        {0.02f, 0.14f, 0.002f}, {0.03f, 0.1f, 0.001f}, {0.012f, 0.06f, 0.0f}, {0, 0.034f, 0}},
+                       {0.003f, 0.003f, 0.003f, 0.003f, 0.003f, 0.003f, 0.003f, 0.003f, 0.003f}, 6);   // the lanyard
+            m.size = 0.2f;
+            break;
+        }
         default: break;
     }
     // Centre it on its bounds (the preview turns it about its middle).

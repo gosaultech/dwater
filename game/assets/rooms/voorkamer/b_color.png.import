@@ -2,16 +2,10 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dbwqpqnomi7ce"
-path="res://.godot/imported/b_color.png-95d1c26be315d62d3a0b718193041997.ctex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://assets/rooms/voorkamer/b_color.png"
-dest_files=["res://.godot/imported/b_color.png-95d1c26be315d62d3a0b718193041997.ctex"]
 
 [params]
 

@@ -1,0 +1,1105 @@
+{
+  "_file": "damned_waters/game/data/rooms/bloemenmarkt.json \u2014 RoomSpec for Bloemenmarkt (the city, district 2: the Munt): the quay along the Singel where the flower market floats: glasshouse stalls on their pontoons full of tulips and packets of bulbs, some shuttered, one open; souvenir and cheese shops across the street; the Munttoren at the end. Modelled after openly licensed photographs; every business name is made up, the landmarks keep theirs. The power is still on; nobody is there. Outdoor (street.py, city.py and landmarks.py build it). Single source of truth for Blender (render) and the engine (collision, cameras, things).",
+  "id": "bloemenmarkt",
+  "display_name": "Bloemenmarkt",
+  "storey": 11,
+  "origin": [
+    795.1000000000001,
+    -40.0
+  ],
+  "bounds": {
+    "min": [
+      0.0,
+      0.0
+    ],
+    "max": [
+      70.0,
+      12.0
+    ]
+  },
+  "height": 8.0,
+  "materials": {
+    "floor": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "wall": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "ceiling": {
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ]
+    }
+  },
+  "footsteps": "marble",
+  "ambience": "amb_cellar",
+  "move_scale": 1.0,
+  "world": {
+    "color": [
+      0.014,
+      0.019,
+      0.036
+    ],
+    "strength": 1.0
+  },
+  "sky": {
+    "hdri": "kloppenheim_07_puresky",
+    "strength": 0.045,
+    "camera": 0.1,
+    "tint": [
+      1.0,
+      0.76,
+      0.55
+    ]
+  },
+  "render": {
+    "exposure": 0.85,
+    "bloom": {
+      "threshold": 0.9,
+      "strength": 0.4,
+      "size": 0.55
+    }
+  },
+  "outdoor": {
+    "window_rooms": [
+      "warm_bar",
+      "fireplace",
+      "small_empty_room_2",
+      "christmas_photo_studio_04",
+      "warm_restaurant_night",
+      "unfinished_office_night"
+    ],
+    "lamp_power": 360.0,
+    "lamp_energy": 1.0,
+    "ground": [
+      {
+        "name": "quay",
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          70.0,
+          3.6
+        ],
+        "y": 0.06,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "street",
+        "min": [
+          0.0,
+          3.6
+        ],
+        "max": [
+          70.0,
+          8.6
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "herringbone_brick",
+          "tint": [
+            0.8,
+            0.72,
+            0.66
+          ],
+          "wet": 0.8,
+          "puddles": 0.27,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "pavement_s",
+        "min": [
+          0.0,
+          8.6
+        ],
+        "max": [
+          70.0,
+          12.0
+        ],
+        "y": 0.06,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "street_on",
+        "min": [
+          -40.0,
+          0.0
+        ],
+        "max": [
+          0.0,
+          12.0
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "herringbone_brick",
+          "tint": [
+            0.8,
+            0.72,
+            0.66
+          ],
+          "wet": 0.8,
+          "puddles": 0.27,
+          "puddle_scale": 0.9
+        }
+      }
+    ],
+    "canal": {
+      "z": 0.0,
+      "side": -1,
+      "width": 14.0,
+      "x": [
+        -40.0,
+        70.0
+      ],
+      "ends": true,
+      "far_quay": 6.0,
+      "lit": 0.3,
+      "shops": 0.25,
+      "far_span": [
+        -40.0,
+        30.0
+      ]
+    },
+    "lamps": [
+      [
+        8.0,
+        9.4
+      ],
+      [
+        24.0,
+        9.4
+      ],
+      [
+        40.0,
+        9.4
+      ],
+      [
+        56.0,
+        9.4
+      ],
+      [
+        16.0,
+        3.2
+      ],
+      [
+        48.0,
+        3.2
+      ],
+      [
+        66.0,
+        3.2
+      ]
+    ],
+    "rows": [
+      {
+        "from": -40.0,
+        "to": -0.05,
+        "line": 12.0,
+        "facing": "north",
+        "lit": 0.3,
+        "shops": 0.4
+      }
+    ],
+    "facades": [
+      {
+        "facing": "north",
+        "storeys": [
+          4.2,
+          3.3,
+          3.1,
+          2.9
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 501,
+        "lit": 0.3,
+        "x0": 0.0,
+        "x1": 8.5,
+        "z": 12.0,
+        "shop": {
+          "name": "KAASHANDEL DE KOE",
+          "kind": "snack",
+          "room": "warm_restaurant_night",
+          "sign": [
+            1.0,
+            0.85,
+            0.2
+          ],
+          "frame": [
+            0.35,
+            0.04,
+            0.03
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "KAAS",
+          "awning": [
+            [
+              0.75,
+              0.05,
+              0.04
+            ],
+            [
+              0.95,
+              0.85,
+              0.2
+            ]
+          ]
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.2,
+          3.3,
+          3.1,
+          2.9,
+          2.7
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 502,
+        "lit": 0.3,
+        "x0": 8.55,
+        "x1": 17.0,
+        "z": 12.0,
+        "shop": {
+          "name": "SOUVENIRS \u00b7 TULPEN",
+          "kind": "souvenir",
+          "room": "christmas_photo_studio_04",
+          "sign": [
+            1.0,
+            0.55,
+            0.1
+          ],
+          "frame": [
+            0.05,
+            0.08,
+            0.25
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "SOUVENIRS",
+          "awning": [
+            [
+              0.9,
+              0.4,
+              0.05
+            ],
+            [
+              0.92,
+              0.9,
+              0.85
+            ]
+          ]
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.0,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "bell",
+        "seed": 503,
+        "lit": 0.3,
+        "x0": 17.05,
+        "x1": 24.0,
+        "z": 12.0,
+        "door_bay": 1,
+        "stoop": 0.5,
+        "gable_h": 3.6
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.2,
+          3.3,
+          3.1,
+          2.9
+        ],
+        "bays": 3,
+        "gable": "step",
+        "seed": 504,
+        "lit": 0.3,
+        "x0": 24.05,
+        "x1": 33.0,
+        "z": 12.0,
+        "shop": {
+          "name": "BOLLENHUIS",
+          "kind": "books",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.88,
+            0.7
+          ],
+          "frame": [
+            0.06,
+            0.12,
+            0.1
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "BOLLEN",
+          "awning": [
+            [
+              0.05,
+              0.2,
+              0.15
+            ],
+            [
+              0.8,
+              0.75,
+              0.62
+            ]
+          ]
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.2,
+          3.3,
+          3.1,
+          2.9
+        ],
+        "bays": 4,
+        "gable": "cornice",
+        "seed": 505,
+        "lit": 0.3,
+        "x0": 33.05,
+        "x1": 42.0,
+        "z": 12.0,
+        "shop": {
+          "name": "CAF\u00c9 HET BLOEMPJE",
+          "kind": "cafe",
+          "room": "warm_bar",
+          "sign": [
+            1.0,
+            0.8,
+            0.5
+          ],
+          "frame": [
+            0.2,
+            0.05,
+            0.035
+          ],
+          "font": "DejaVuSerif-BoldItalic.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "CAF\u00c9"
+        },
+        "stoop": 0.0
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.0,
+          3.3,
+          3.1,
+          2.9
+        ],
+        "bays": 3,
+        "gable": "neck",
+        "seed": 506,
+        "lit": 0.3,
+        "x0": 42.05,
+        "x1": 50.0,
+        "z": 12.0,
+        "shop": {
+          "name": "COFFEESHOP TULP",
+          "kind": "coffeeshop",
+          "room": "warm_bar",
+          "sign": [
+            0.35,
+            1.0,
+            0.4
+          ],
+          "frame": [
+            0.03,
+            0.12,
+            0.05
+          ],
+          "font": "DejaVuSans-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": true,
+          "blade": "COFFEESHOP",
+          "awning": [
+            [
+              0.05,
+              0.3,
+              0.08
+            ],
+            [
+              0.85,
+              0.75,
+              0.1
+            ]
+          ]
+        },
+        "stoop": 0.0,
+        "gable_h": 3.8
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.2,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 3,
+        "gable": "spout",
+        "seed": 507,
+        "lit": 0.3,
+        "x0": 50.05,
+        "x1": 58.0,
+        "z": 12.0,
+        "door_bay": 1,
+        "stoop": 0.5,
+        "gable_h": 3.4
+      },
+      {
+        "facing": "north",
+        "storeys": [
+          4.4,
+          3.4,
+          3.2,
+          3.0,
+          2.8
+        ],
+        "bays": 5,
+        "gable": "cornice",
+        "seed": 508,
+        "lit": 0.55,
+        "x0": 58.05,
+        "x1": 70.0,
+        "z": 12.0,
+        "shop": {
+          "name": "HOTEL DE MUNT",
+          "kind": "hotel",
+          "room": "fireplace",
+          "sign": [
+            0.95,
+            0.9,
+            0.8
+          ],
+          "frame": [
+            0.12,
+            0.1,
+            0.08
+          ],
+          "font": "DejaVuSerif-Bold.ttf",
+          "glow": 0.3,
+          "power": 27.2,
+          "door_bay": 1,
+          "neon": false,
+          "blade": "HOTEL"
+        },
+        "stoop": 0.0
+      }
+    ]
+  },
+  "props": [
+    {
+      "type": "flower_stall",
+      "pos": [
+        4.0,
+        0.0,
+        0.0
+      ],
+      "yaw": 0,
+      "size": [
+        7.0,
+        4.0,
+        4.5
+      ],
+      "seed": 600,
+      "name": "BLOEMEN \u00b7 BOLLEN",
+      "collide": false
+    },
+    {
+      "type": "flower_stall",
+      "pos": [
+        11.5,
+        0.0,
+        0.0
+      ],
+      "yaw": 0,
+      "size": [
+        7.0,
+        4.0,
+        4.5
+      ],
+      "seed": 601,
+      "name": "TULPEN",
+      "collide": false,
+      "shutter": 0.85
+    },
+    {
+      "type": "flower_stall",
+      "pos": [
+        19.0,
+        0.0,
+        0.0
+      ],
+      "yaw": 0,
+      "size": [
+        7.0,
+        4.0,
+        4.5
+      ],
+      "seed": 602,
+      "name": "BOLLEN \u00b7 ZADEN",
+      "collide": false
+    },
+    {
+      "type": "flower_stall",
+      "pos": [
+        30.5,
+        0.0,
+        0.0
+      ],
+      "yaw": 0,
+      "size": [
+        7.0,
+        4.0,
+        5.1
+      ],
+      "seed": 603,
+      "name": "BLOEMENKRAAM 4",
+      "collide": false,
+      "enter": true,
+      "gap": [
+        -0.9,
+        0.9
+      ]
+    },
+    {
+      "type": "flower_stall",
+      "pos": [
+        38.0,
+        0.0,
+        0.0
+      ],
+      "yaw": 0,
+      "size": [
+        7.0,
+        4.0,
+        4.5
+      ],
+      "seed": 604,
+      "name": "TULPEN \u00b7 ROZEN",
+      "collide": false
+    },
+    {
+      "type": "flower_stall",
+      "pos": [
+        45.5,
+        0.0,
+        0.0
+      ],
+      "yaw": 0,
+      "size": [
+        7.0,
+        4.0,
+        4.5
+      ],
+      "seed": 605,
+      "name": "BLOEMEN",
+      "collide": false,
+      "shutter": 0.5
+    },
+    {
+      "type": "flower_stall",
+      "pos": [
+        53.0,
+        0.0,
+        0.0
+      ],
+      "yaw": 0,
+      "size": [
+        7.0,
+        4.0,
+        4.5
+      ],
+      "seed": 606,
+      "name": "CACTUSSEN",
+      "collide": false
+    },
+    {
+      "type": "flower_stall",
+      "pos": [
+        60.5,
+        0.0,
+        0.0
+      ],
+      "yaw": 0,
+      "size": [
+        7.0,
+        4.0,
+        4.5
+      ],
+      "seed": 607,
+      "name": "BOLLEN",
+      "collide": false,
+      "shutter": 0.85
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        8.0,
+        0.06,
+        1.0
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        15.5,
+        0.06,
+        1.0
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        23.0,
+        0.06,
+        1.0
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        34.5,
+        0.06,
+        1.0
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        42.0,
+        0.06,
+        1.0
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        49.5,
+        0.06,
+        1.0
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:planter_box_01",
+      "pos": [
+        57.0,
+        0.06,
+        1.0
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "bike",
+      "pos": [
+        20.0,
+        0.06,
+        10.6
+      ],
+      "yaw": 2,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 120
+    },
+    {
+      "type": "bike",
+      "pos": [
+        44.0,
+        0.0,
+        6.4
+      ],
+      "yaw": 70,
+      "roll": 84,
+      "size": [
+        1.8,
+        1.1,
+        0.5
+      ],
+      "collide": false,
+      "seed": 121
+    },
+    {
+      "type": "model",
+      "model": "ph:watering_can_metal_01",
+      "pos": [
+        27.0,
+        0.06,
+        1.4
+      ],
+      "yaw": 40,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:garden_gnome",
+      "pos": [
+        34.2,
+        0.06,
+        0.9
+      ],
+      "yaw": 160,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:hand_truck",
+      "pos": [
+        55.5,
+        0.06,
+        1.6
+      ],
+      "yaw": 80,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        0.6,
+        0.0,
+        6.0
+      ],
+      "yaw": 90,
+      "size": [
+        11.0,
+        1.1,
+        0.7
+      ],
+      "seed": 5,
+      "tape": true
+    }
+  ],
+  "walls": {
+    "east": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 6.0,
+          "width": 12.0,
+          "height": 10.0
+        }
+      ]
+    },
+    "north": {
+      "openings": [
+        {
+          "kind": "passage",
+          "center": 30.5,
+          "width": 1.8,
+          "height": 2.2
+        }
+      ]
+    }
+  },
+  "lights": [
+    {
+      "kind": "sun",
+      "dir_from": [
+        -0.35,
+        0.55,
+        1.0
+      ],
+      "color": [
+        0.55,
+        0.66,
+        1.0
+      ],
+      "blender_power": 0.12,
+      "godot_energy": 0.25,
+      "angle": 2.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        30.5,
+        2.6,
+        0.5
+      ],
+      "color": [
+        1.0,
+        0.85,
+        0.65
+      ],
+      "blender_power": 0,
+      "godot_energy": 0.6,
+      "range": 7.0
+    }
+  ],
+  "shots": [
+    {
+      "id": "a",
+      "pos": [
+        68.5,
+        3.5,
+        9.0
+      ],
+      "look_at": [
+        40.0,
+        1.6,
+        2.5
+      ],
+      "fov": 58,
+      "zone": {
+        "min": [
+          50.0,
+          0.0
+        ],
+        "max": [
+          70.0,
+          12.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "b",
+      "pos": [
+        53.0,
+        3.5,
+        9.2
+      ],
+      "look_at": [
+        24.0,
+        1.6,
+        2.0
+      ],
+      "fov": 58,
+      "zone": {
+        "min": [
+          30.0,
+          0.0
+        ],
+        "max": [
+          50.0,
+          12.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "c",
+      "pos": [
+        36.0,
+        3.5,
+        9.2
+      ],
+      "look_at": [
+        8.0,
+        1.6,
+        2.0
+      ],
+      "fov": 58,
+      "zone": {
+        "min": [
+          12.0,
+          0.0
+        ],
+        "max": [
+          30.0,
+          12.0
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "id": "d",
+      "pos": [
+        3.5,
+        3.6,
+        8.8
+      ],
+      "look_at": [
+        44.0,
+        6.5,
+        3.0
+      ],
+      "fov": 58,
+      "zone": {
+        "min": [
+          0.0,
+          0.0
+        ],
+        "max": [
+          12.0,
+          12.0
+        ]
+      },
+      "priority": 1
+    }
+  ],
+  "spawns": {
+    "from_muntplein": {
+      "pos": [
+        68.5,
+        0.0,
+        6.0
+      ],
+      "yaw": 90
+    },
+    "from_bloemenkraam": {
+      "pos": [
+        30.5,
+        0.06,
+        1.0
+      ],
+      "yaw": 180
+    }
+  },
+  "interactables": [
+    {
+      "id": "stalls",
+      "kind": "examine",
+      "pos": [
+        12.0,
+        1.0,
+        0.6
+      ],
+      "radius": 1.6,
+      "text": "Tulips in their buckets, still fresh. The stalls rock on their pontoons, though there's no wind."
+    },
+    {
+      "id": "koningsplein",
+      "kind": "examine",
+      "pos": [
+        1.0,
+        1.0,
+        6.0
+      ],
+      "radius": 1.8,
+      "text": "Barriers across the street toward Koningsplein. Something has been pushing against them from the other side."
+    },
+    {
+      "id": "kraam",
+      "kind": "examine",
+      "pos": [
+        32.1,
+        1.0,
+        0.5
+      ],
+      "radius": 1.0,
+      "text": "Stall four. Its shutter is up, the light still on inside."
+    }
+  ],
+  "enemies": [
+    {
+      "id": "tussen_de_kramen",
+      "kind": "verdronkene",
+      "pos": [
+        46.0,
+        0.06,
+        1.8
+      ],
+      "yaw": 250
+    },
+    {
+      "id": "op_de_kade",
+      "kind": "verdronkene",
+      "pos": [
+        16.0,
+        0.0,
+        6.0
+      ],
+      "yaw": 100
+    }
+  ]
+}

@@ -49,7 +49,7 @@ int gun_for_ammo(int item) {
     return -1;
 }
 
-bool can_discard(int item) { return item != I_NONE && !is_gun(item) && item != I_CELLAR_KEY; }
+bool can_discard(int item) { return item != I_NONE && !is_gun(item) && !is_key(item); }
 
 bool can_combine(int a, int b) {
     auto fits = [](int ammo, int gun) { return is_gun(gun) && gun_for_ammo(ammo) == weapon_of(gun); };

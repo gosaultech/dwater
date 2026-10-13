@@ -41,6 +41,11 @@ float elbow_bend(Vector3 shoulder, Vector3 elbow, Vector3 wrist);
 // own: blending the angles themselves can swing a finger out sideways halfway between two poses
 // (like walking between two map pins along the lines of latitude rather than straight).
 Vector3 slerp_angles(Vector3 a, Vector3 b, float k);
+// The same turn as `e` (this rig's angles), written the way nearest `like`: every turn can be
+// written two ways, (x, y, z) and (pi - x, y + pi, z + pi) (give or take whole turns), and an arm
+// eased angle by angle from one to the next takes the short way only if both are written alike.
+// (slerp_angles gives the first way; a pose table may use the second.)
+Vector3 angles_near(Vector3 e, Vector3 like);
 
 // A wrist's turn split in two (swing-twist): the twist about the forearm's own length (`axis`;
 // the forearm's two bones roll round each other for that, up to about 80 degrees either way from

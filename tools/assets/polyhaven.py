@@ -1,0 +1,242 @@
+# damned_waters/tools/assets/polyhaven.py
+# Purpose: fetch the CC0 textures and models the room sets use from Poly Haven (polyhaven.com),
+# cache them outside git (pipeline_out/assets/polyhaven/), and keep a record of what was used and
+# who made it (tools/assets/manifest.json). A RoomSpec names an asset as "ph:<id>": a material
+# ("materials": {"floor": "ph:herringbone_parquet"} or {"ph": "...", "tint": [...]}) or a prop
+# model ({"type": "model", "model": "ph:sofa_02"}). Blender reads only the cache (no network
+# inside Blender); build_backgrounds.py runs `fetch` first, so the Mac downloads on first build.
+#
+# ELI5: a lending library for the set builder. The RoomSpec is the reading list; this goes and
+# borrows each book once, keeps it on the shelf (the cache), and writes the authors in the ledger.
+#
+#   python3 tools/assets/polyhaven.py fetch            # everything the RoomSpecs name
+#   python3 tools/assets/polyhaven.py fetch --res 2k   # sharper (final renders)
+#
+# Poly Haven assets are CC0 (public domain): no attribution is required; we record it anyway.
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import sys
+import urllib.request
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parents[1]
+CACHE = REPO / "pipeline_out" / "assets" / "polyhaven"
+MANIFEST = HERE / "manifest.json"
+API = "https://api.polyhaven.com"
+UA = {"User-Agent": "damned-waters-set-builder/1.0"}
+# Texture maps the set builder reads, by Poly Haven's map names.
+MAPS = {"diff": "Diffuse", "rough": "Rough", "nor_gl": "nor_gl", "arm": "arm", "disp": "Displacement"}
+# What the set kits fall back on when a RoomSpec names nothing: kit.py's materials, and street.py's
+# house fronts, quay, trees, boats and street lamps.
+KIT_DEFAULTS = {"marble_01": "texture", "dark_wood": "texture",
+                "medieval_red_brick": "texture", "red_bricks_04": "texture", "brick_wall_09": "texture",
+                "brick_wall_10": "texture", "dark_brick_wall": "texture", "distressed_painted_planks": "texture",
+                "large_sandstone_blocks": "texture", "grey_roof_tiles": "texture", "mossy_brick": "texture",
+                "bark_platanus": "texture", "rusty_painted_metal": "texture", "wood_peeling_paint_weathered": "texture",
+                "herringbone_brick": "texture", "street_lamp_01": "model",
+                "leafy_grass": "texture", "gravel_floor": "texture", "gothic_statue": "model",
+                "CashRegister_01": "model", "horse_statue_01": "model",
+                "vintage_suitcase": "model", "wheelchair_01": "model", "vintage_crutches_01": "model", "clipboard": "model",
+                "portable_generator": "model", "portable_searchlight": "model",
+                "rough_linen": "texture", "beige_wall_001": "texture", "ceiling_interior": "texture", "worn_plaster_wall": "texture",
+                "painted_metal_shutter": "texture", "rusty_metal_shutter": "texture"}
+# HDRIs: a set's sky is fetched sharp (it fills the background); the rooms seen through lit windows
+# across the street are small, so a light version does.
+HDRI_RES = {"sky": "4k", "hdri": "1k"}
+
+
+# ── Pure: what a RoomSpec asks for, and which files serve it ─────────────────────
+def ref_id(value) -> str | None:
+    """The asset id in a material or model reference ("ph:<id>" or {"ph": id}), else None."""
+    if isinstance(value, str) and value.startswith("ph:"):
+        return value[3:]
+    if isinstance(value, dict) and isinstance(value.get("ph"), str):
+        return value["ph"]
+    return None
+
+
+def references(spec: dict) -> dict[str, str]:
+    """Every Poly Haven asset a RoomSpec names: {id: "texture" | "model"}."""
+    out: dict[str, str] = {}
+
+    def walk(v, kind):
+        i = ref_id(v)
+        if i:
+            out.setdefault(i, kind)
+        elif isinstance(v, dict):
+            for k, x in v.items():
+                walk(x, "model" if k in ("model", "plants") else kind)
+        elif isinstance(v, list):
+            for x in v:
+                walk(x, kind)
+
+    walk(spec.get("materials", {}), "texture")
+    for p in spec.get("props", []):
+        walk(p, "texture")
+    for w in spec.get("walls", {}).values():
+        walk(w, "texture")
+    for key in ("exterior", "roof", "ceiling_beams", "outdoor"):   # the outside world, an attic's roof, beams, a street
+        if isinstance(spec.get(key), dict):
+            walk(spec[key], "texture")
+    sky = spec.get("sky")
+    if isinstance(sky, dict) and sky.get("hdri"):   # the set's sky (an HDRI panorama)
+        out[sky["hdri"]] = "sky"
+    for room in (spec.get("outdoor") or {}).get("window_rooms", []):   # real rooms behind lit windows
+        out.setdefault(room, "hdri")
+    return out
+
+
+def code_references(source: str) -> dict[str, str]:
+    """The assets the set-building code itself names (a kit's lions, its suitcases), so they're
+    fetched without a RoomSpec asking: "ph:<id>" in quotes is a model, {"ph": "<id>"} a texture."""
+    out: dict[str, str] = {}
+    for m in re.finditer(r'"ph:([A-Za-z0-9_]+)"', source):
+        out.setdefault(m.group(1), "model")
+    for m in re.finditer(r'"ph"\s*:\s*"([A-Za-z0-9_]+)"', source):
+        out.setdefault(m.group(1), "texture")
+    return out
+
+
+def pick_texture(files: dict, res: str, fmt: str = "jpg") -> dict[str, dict]:
+    """From the API's file list for a texture: {map: {"url", "md5"}} for the maps we use."""
+    picked = {}
+    for ours, theirs in MAPS.items():
+        r = files.get(theirs, {}).get(res, {})
+        f = r.get(fmt) or r.get("png")
+        if f:
+            picked[ours] = {"url": f["url"], "md5": f.get("md5", "")}
+    return picked
+
+
+def pick_hdri(files: dict, res: str) -> dict:
+    """From the API's file list for an HDRI: the Radiance .hdr at that resolution."""
+    f = files.get("hdri", {}).get(res, {}).get("hdr")
+    if not f:
+        raise KeyError(f"no .hdr at {res}")
+    return {"url": f["url"], "md5": f.get("md5", "")}
+
+
+def pick_model(files: dict, res: str) -> dict:
+    """From the API's file list for a model: the glTF and every file it pulls in."""
+    g = files.get("gltf", {}).get(res, {}).get("gltf")
+    if not g:
+        raise KeyError(f"no glTF at {res}")
+    inc = {rel: {"url": f["url"], "md5": f.get("md5", "")} for rel, f in g.get("include", {}).items()}
+    return {"gltf": {"url": g["url"], "md5": g.get("md5", "")}, "include": inc}
+
+
+def local_name(url: str) -> str:
+    return url.rsplit("/", 1)[-1]
+
+
+# ── Network and cache ────────────────────────────────────────────────────────────
+def _get_json(url: str) -> dict:
+    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+def md5_of(path: Path) -> str:
+    h = hashlib.md5()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def fetch(url: str, dest: Path, md5: str = "") -> Path:
+    """Download once: a file already there with the right checksum is kept."""
+    if dest.exists() and (not md5 or md5_of(dest) == md5):
+        return dest
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_suffix(dest.suffix + ".part")
+    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=300) as r, open(tmp, "wb") as f:
+        while chunk := r.read(1 << 20):
+            f.write(chunk)
+    if md5 and md5_of(tmp) != md5:
+        tmp.unlink()
+        raise IOError(f"checksum mismatch for {url}")
+    tmp.replace(dest)
+    return dest
+
+
+def ensure(asset_id: str, kind: str, res: str = "1k", cache: Path = CACHE) -> dict:
+    """Fetch one asset into the cache; returns (and writes) its asset.json for Blender."""
+    res = HDRI_RES.get(kind, res)
+    base = cache / asset_id / res
+    meta_path = base / "asset.json"
+    if meta_path.exists():
+        return json.loads(meta_path.read_text())
+    info = _get_json(f"{API}/info/{asset_id}")
+    files = _get_json(f"{API}/files/{asset_id}")
+    meta = {"id": asset_id, "kind": kind, "res": res, "name": info.get("name", asset_id),
+            "authors": sorted(info.get("authors", {})), "license": "CC0",
+            "dimensions_mm": info.get("dimensions"), "source": f"https://polyhaven.com/a/{asset_id}"}
+    if kind in HDRI_RES:
+        h = pick_hdri(files, res)
+        meta["hdr"] = str(fetch(h["url"], base / local_name(h["url"]), h["md5"]).relative_to(base))
+    elif kind == "model":
+        m = pick_model(files, res)
+        for rel, f in m["include"].items():
+            fetch(f["url"], base / rel, f["md5"])
+        gl = fetch(m["gltf"]["url"], base / local_name(m["gltf"]["url"]), m["gltf"]["md5"])
+        meta["gltf"] = str(gl.relative_to(base))
+    else:
+        maps = pick_texture(files, res)
+        if "diff" not in maps:
+            raise KeyError(f"{asset_id}: no diffuse map at {res}")
+        meta["maps"] = {}
+        for k, f in maps.items():
+            p = fetch(f["url"], base / local_name(f["url"]), f["md5"])
+            meta["maps"][k] = str(p.relative_to(base))
+    meta_path.write_text(json.dumps(meta, indent=1))
+    return meta
+
+
+def update_manifest(metas: list[dict], path: Path = MANIFEST) -> dict:
+    """The ledger in git: every asset used, its licence and authors (sorted, so diffs stay quiet), and
+    a model's size in millimetres along Blender's x, y (its depth) and z (up), as Poly Haven gives it."""
+    m = json.loads(path.read_text()) if path.exists() else {"_file": "", "assets": {}}
+    m["_file"] = ("damned_waters/tools/assets/manifest.json: the CC0 assets the room sets use "
+                  "(written by tools/assets/polyhaven.py fetch).")
+    for meta in metas:
+        m["assets"][meta["id"]] = {"kind": meta["kind"], "name": meta["name"], "authors": meta["authors"],
+                                   "license": meta["license"], "source": meta["source"]}
+        if meta["kind"] == "model" and meta.get("dimensions_mm"):   # (x, depth, height: which way it is long)
+            m["assets"][meta["id"]]["dimensions_mm"] = [round(v) for v in meta["dimensions_mm"]]
+    m["assets"] = dict(sorted(m["assets"].items()))
+    path.write_text(json.dumps(m, indent=1) + "\n")
+    return m
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description="Fetch the Poly Haven assets the RoomSpecs name.")
+    ap.add_argument("cmd", choices=["fetch"])
+    ap.add_argument("--res", default="1k")
+    ap.add_argument("--specs", default=str(REPO / "game" / "data" / "rooms"))
+    ap.add_argument("--extra", default="", help="more specs (files or dirs), comma separated")
+    a = ap.parse_args(argv)
+    wanted: dict[str, str] = dict(KIT_DEFAULTS)
+    for f in sorted((REPO / "tools" / "blender").glob("*.py")):   # what the kits name in their own code
+        for k, v in code_references(f.read_text(encoding="utf-8")).items():
+            wanted.setdefault(k, v)
+    paths = [Path(a.specs)] + [Path(p) for p in a.extra.split(",") if p]
+    for p in paths:
+        for f in sorted(p.glob("*.json")) if p.is_dir() else [p]:
+            for k, v in references(json.loads(f.read_text())).items():
+                wanted.setdefault(k, v)
+    metas = []
+    for asset_id, kind in sorted(wanted.items()):
+        print(f"[assets] {kind:7s} {asset_id}")
+        metas.append(ensure(asset_id, kind, a.res))
+    if metas:
+        update_manifest(metas)
+    print(f"[assets] {len(metas)} ready in {CACHE}")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

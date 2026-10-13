@@ -69,7 +69,10 @@ float ecg(float u) {
     if (u > 0.38f && u < 0.48f) return 0.3f * std::sin((u - 0.38f) / 0.10f * PI);
     return 0;
 }
-std::string storey_name(int s) { return s == 0 ? "GROUND FLOOR" : s < 0 ? (s == -1 ? "CELLAR" : "BELOW") : s == 1 ? "FIRST FLOOR" : "UPSTAIRS"; }
+// (storey 10 and up: the city outside, its streets and squares, one map of its own)
+std::string storey_name(int s) {
+    return s >= 10 ? "THE CITY" : s == 0 ? "GROUND FLOOR" : s < 0 ? (s == -1 ? "CELLAR" : "BELOW") : s == 1 ? "FIRST FLOOR" : "UPSTAIRS";
+}
 constexpr int PREVIEW_W = 900, PREVIEW_H = 640, ICON = 160;
 enum Glyph { G_CONFIRM, G_BACK, G_COMBINE, G_EXAMINE, G_TAB_L, G_TAB_R, G_STICK, G_DPAD };
 }  // namespace
@@ -470,7 +473,7 @@ void Game::draw_status_ui() {
             if (item_sel == I_HANDGUN || item_sel == I_SHOTGUN) stat = TextFormat("Holds %d", weapon_spec(item_sel == I_HANDGUN ? Weapon::Pistol : Weapon::Shotgun).mag);
             else if (status::gun_for_ammo(item_sel) >= 0) stat = std::string("Combine with the ") + weapon_spec(Weapon(status::gun_for_ammo(item_sel))).name + " to load it";
             else if (is_medicine(item_sel)) stat = health_ >= MAX_HEALTH ? "You don't need it now." : "Use it to treat your wounds.";
-            else if (item_sel == I_CELLAR_KEY) stat = "It's used at its door.";
+            else if (is_key(item_sel)) stat = "It's used at its door.";
             text(f_italic_, stat, 910, 556, 17, C_DIM);
         } else {
             text(f_italic_, "Empty.", 1060, 330, 22, C_FAINT, 1);
@@ -555,7 +558,7 @@ void Game::draw_status_ui() {
     auto visited = [&](const worldmap::Room& r) { return world_.visited.count(r.id) > 0; };
     std::vector<const worldmap::Room*> shown;
     for (const auto& r : map_) {
-        if (!r.placed || r.storey != storey) continue;
+        if (!r.placed || worldmap::page(r.storey) != storey) continue;
         bool known = visited(r);
         for (const auto& o : map_)
             if (visited(o))
@@ -563,7 +566,9 @@ void Game::draw_status_ui() {
         if (known) shown.push_back(&r);
     }
     if (shown.empty()) {
-        text(f_italic_, "You haven't found the way down here.", 640, 360, 24, C_FAINT, 1);
+        text(f_italic_, storey >= 10 ? "You haven't been out there yet." : storey > 0 ? "You haven't found the way up here."
+                                                                                    : "You haven't found the way down here.",
+             640, 360, 24, C_FAINT, 1);
     } else {
         float x0 = 1e9f, z0 = 1e9f, x1 = -1e9f, z1 = -1e9f;
         for (const auto* r : shown) {
@@ -608,7 +613,7 @@ void Game::draw_status_ui() {
                 if (locked) DrawRectangleRec({p.x - 5, p.y - 5, 10, 10}, C_RED_HI);
             }
             if (here) {   // where he stands, and which way he faces
-                const Vector2 p = to_screen(r->ox + player_.x, r->oz + player_.z);
+                const Vector2 p = to_screen(r->ox + player_.x - spec_.origin_x, r->oz + player_.z - spec_.origin_z);   // (he walks in house coordinates)
                 const V2 f = forward_from_yaw(player_.yaw);
                 const Vector2 fw{f.x, f.z}, side{-f.z, f.x};
                 const float s = 11 + 2 * std::sin(ui_t_ * 4);
@@ -637,6 +642,20 @@ void Game::draw_status_ui() {
 // The picture drains into a red-black, blood seeping in from the edges; YOU DIED rises out of the
 // dark in IM FELL English, blood red, settling as it comes, and drops gather under the letters and
 // run; then Try again / Quit. Drawn at the window's size (death.hpp times it).
+void Game::draw_end() const {
+    const float sw = float(GetScreenWidth()), sh = float(GetScreenHeight()), k = sh / float(H);
+    DrawRectangle(0, 0, int(sw), int(sh), Color{0, 0, 0, static_cast<unsigned char>(death::end_dark(end_t_) * 255)});
+    const char* words = "DAMNED WATERS";
+    const float size = 112 * k, space = 12 * k;
+    const Vector2 m = MeasureTextEx(f_fell_, words, size, space);
+    const float y = sh * 0.42f - m.y / 2;
+    DrawTextEx(f_fell_, words, {(sw - m.x) / 2, y}, size, space, Color{196, 188, 170, static_cast<unsigned char>(death::end_title(end_t_) * 255)});
+    const char* line = "to be continued";
+    const float s2 = 36 * k;
+    const Vector2 m2 = MeasureTextEx(f_italic_, line, s2, 2 * k);
+    DrawTextEx(f_italic_, line, {(sw - m2.x) / 2, y + m.y * 1.15f}, s2, 2 * k, Color{150, 142, 128, static_cast<unsigned char>(death::end_line(end_t_) * 255)});
+}
+
 void Game::draw_death() const {
     const float t = dead_t_, sw = float(GetScreenWidth()), sh = float(GetScreenHeight()), k = sh / float(H);
     const float dark = death::darkness(t), ti = death::title(t);
