@@ -253,7 +253,7 @@ def trestle_table(root, p, w, h, d):
 def reefer(root, p, w, h, d):
     """A refrigerated container along local x (w long, the cold unit at its +x end): ribbed white
     steel, the unit's grille and its status display lit green, the doors at the -x end shut."""
-    body = M(p.get("material", {"color": [0.82, 0.83, 0.8], "rough": 0.45, "metal": 0.3, "noise": 0.08}))
+    body = M(p.get("material", {"color": [0.55, 0.56, 0.53], "rough": 0.55, "metal": 0.3, "noise": 0.3, "noise_scale": 1.2, "grime": 1.4}))
     lbox(root, "reefer_box", (-w / 2, 0.0, -d / 2), (w / 2 - 0.25, h, d / 2), body)
     ribs = Acc()
     x = -w / 2 + 0.3
