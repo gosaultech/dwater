@@ -33,6 +33,7 @@ constexpr float END_DARK = 3.0f, END_TITLE_FROM = 2.5f, END_TITLE_TO = 5.0f, END
 inline float end_dark(float t) { return smooth(0.0f, END_DARK, t); }
 inline float end_title(float t) { return smooth(END_TITLE_FROM, END_TITLE_TO, t); }
 inline float end_line(float t) { return smooth(END_LINE_FROM, END_LINE_TO, t); }
+inline bool end_over(float t) { return t >= END_LINE_TO; }   // then, at a press, the title screen
 // Drop i (0..DRIPS-1): which letter of "YOU DIED" it runs from (never the space), where under it
 // (-0.5..0.5 of the letter's width from its middle), and how far it has run (0..1 of its own
 // length, which `drip_length` gives as a share of the letters' height). Each starts on its own

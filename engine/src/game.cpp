@@ -383,6 +383,7 @@ void Game::update(float dt) {
     time_ += dt;
     banner_t_ -= dt;
     if (IsKeyPressed(KEY_F3)) debug = !debug;
+    if (title_) { update_title(dt); sfx_.update(); return; }   // the title screen: nothing moves under it
     // A line of text being read (something looked at, a locked door): time stands still.
     if (!text_queue_.empty()) {
         ui_t_ += dt;
@@ -413,7 +414,12 @@ void Game::update(float dt) {
         update_menu();
     }
     if (paused_) { sfx_.update(); return; }   // time stands still
-    if (end_t_ >= 0) { end_t_ += dt; sfx_.update(); return; }   // the end: nothing moves now
+    if (end_t_ >= 0) {   // the end: nothing moves now; once its last line is up, a press goes to the title
+        end_t_ += dt;
+        if (death::end_over(end_t_) && in_.hit(ACT_CONFIRM)) { sfx_.play("ui_confirm", 0.6f); open_title(); }
+        sfx_.update();
+        return;
+    }
     if (beat_.busy()) {   // between storeys: the dark, his steps on the stairs, the other floor
         const float before = beat_.t;
         const Beat::Phase ph = beat_.phase;
@@ -473,6 +479,38 @@ void Game::update(float dt) {
     }
     animate(g);
     upload_lights();   // after the pose: the flash light sits where the muzzle is now
+}
+
+// ── The title screen ────────────────────────────────────────────────────────────
+void Game::open_title() {
+    title_ = true;
+    title_t_ = 0;
+    leave_t_ = -1;
+    title_sel_ = title::NEW_GAME;
+    paused_ = false;
+    ambience_ = "title_drone";   // (so the first room's own sound comes back as he steps into it)
+    sfx_.ambience(ambience_, 0.5f);
+}
+
+void Game::update_title(float dt) {
+    title_t_ += dt;
+    if (leave_t_ >= 0) {   // New Game: the dark comes down, then he's in the house, fresh
+        if (title::gone(leave_t_ += dt)) {
+            title_ = false;
+            end_t_ = -1;
+            reset_fight();
+            hero_.settle();   // (as he was posed at the route's end: not for a frame here)
+            animate(0.0f);
+        }
+        return;
+    }
+    if (!title::choosing(title_t_)) return;
+    if (in_.nav_y) { title_sel_ = title::next(title_sel_, in_.nav_y); sfx_.play("ui_move", 0.6f); }
+    if (in_.hit(ACT_CONFIRM)) {
+        sfx_.play("ui_confirm", 0.6f);
+        if (title_sel_ == title::NEW_GAME) leave_t_ = 0;
+        else quit_ = true;
+    }
 }
 
 // ── The pause menu ──────────────────────────────────────────────────────────────
@@ -605,6 +643,7 @@ std::string Game::stage(int i) {
     inv_.add(I_SHELLS, 4);
     paused_ = false;
     end_t_ = -1;
+    title_ = false;
     banner_t_ = 0;   // no room title over the stills
     staged_aim_ = false;
     staged_in_ = {};
@@ -1310,6 +1349,12 @@ std::string Game::stage(int i) {
             TraceLog(LOG_INFO, "STAGE %s: at %.2f %.2f in %s shot %s", name.c_str(), player_.x, player_.z, spec_.id.c_str(), shot_.c_str());
             break;
         }
+        case 96: {   // the title screen, its choice up
+            open_title();
+            title_t_ = title::MENU_TO + 1.0f;
+            name = "title_screen";
+            break;
+        }
         default: {   // bitten once too often: the words coming up (26), and all of it, the choice there (14)
             join(1, 1.0f, 8.3f, 0.0f, EState::Pursuit);
             player_ = {1.0f, 7.4f, kPi};
@@ -1651,7 +1696,7 @@ bool Game::gun_view(const std::string& who, const std::string& opts, float orbit
 
 void Game::render() {
     const PlateStore::Pair* cur = current_plate();
-    if (!cur) {   // (never expected: the room he's in is always loaded)
+    if (title_ || !cur) {   // the title screen's black (or, never expected, his room's plate not loaded)
         BeginTextureMode(rt_);
         ClearBackground(BLACK);
         EndTextureMode();
@@ -1746,6 +1791,7 @@ void Game::present() const {
     BeginShaderMode(post_);
     DrawTexturePro(rt_.texture, {0, 0, float(W), -float(H)}, {0, 0, float(GetScreenWidth()), float(GetScreenHeight())}, {0, 0}, 0, WHITE);
     EndShaderMode();
+    if (title_) { draw_title(); return; }
     if (status_.is_open() && status_drawn_) {   // the case, over everything
         DrawTexturePro(ui_rt_.texture, {0, 0, float(W), -float(H)}, {0, 0, float(GetScreenWidth()), float(GetScreenHeight())}, {0, 0}, 0, WHITE);
         return;

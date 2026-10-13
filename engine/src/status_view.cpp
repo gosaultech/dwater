@@ -654,6 +654,37 @@ void Game::draw_end() const {
     const float s2 = 36 * k;
     const Vector2 m2 = MeasureTextEx(f_italic_, line, s2, 2 * k);
     DrawTextEx(f_italic_, line, {(sw - m2.x) / 2, y + m.y * 1.15f}, s2, 2 * k, Color{150, 142, 128, static_cast<unsigned char>(death::end_line(end_t_) * 255)});
+    if (death::end_over(end_t_)) draw_choose(death::smooth(death::END_LINE_TO, death::END_LINE_TO + 0.6f, end_t_), "Title screen");
+}
+
+void Game::draw_title() const {
+    const float sw = float(GetScreenWidth()), sh = float(GetScreenHeight()), k = sh / float(H);
+    const float c = title::menu(title_t_);
+    const char* words = "DAMNED WATERS";   // (as the route's end shows it)
+    const float size = 112 * k, space = 12 * k;
+    const Vector2 m = MeasureTextEx(f_fell_, words, size, space);
+    DrawTextEx(f_fell_, words, {(sw - m.x) / 2, sh * 0.38f - m.y / 2}, size, space, Color{196, 188, 170, static_cast<unsigned char>(title::name(title_t_) * 255)});
+    const char* opts[title::ITEMS] = {"New Game", "Quit"};
+    for (int i = 0; i < title::ITEMS; ++i) {   // (as the death screen's choice)
+        const bool on = title_sel_ == i;
+        const float y = sh * 0.64f + float(i) * 44 * k, fs = 30 * k;
+        const Color col = on ? Color{226, 214, 190, static_cast<unsigned char>(c * 255)} : Color{120, 104, 92, static_cast<unsigned char>(c * 200)};
+        const Font& f = on ? f_head_b_ : f_head_;
+        const Vector2 mi = MeasureTextEx(f, opts[i], fs, 0);
+        DrawTextEx(f, opts[i], {(sw - mi.x) / 2, y - fs / 2}, fs, 0, col);
+        if (on) DrawPoly({(sw - mi.x) / 2 - 22 * k, y + 1}, 4, 6 * k, 45, Color{170, 20, 16, static_cast<unsigned char>(c * 255)});
+    }
+    if (title::choosing(title_t_)) draw_choose(c, "Choose");
+    if (leave_t_ >= 0) DrawRectangle(0, 0, int(sw), int(sh), Color{0, 0, 0, static_cast<unsigned char>(title::leaving(leave_t_) * 255)});
+}
+
+void Game::draw_choose(float alpha, const char* what) const {
+    const float sw = float(GetScreenWidth()), sh = float(GetScreenHeight()), k = sh / float(H);
+    const float hy = sh - 44 * k, gs = 26 * k;
+    const float gw = in_.glyphs == 0 ? std::max(gs, MeasureTextEx(f_head_b_, "Enter", gs * 0.5f, 0).x + gs * 0.5f) : gs;   // (as draw_glyph sizes it)
+    const float tw = MeasureTextEx(f_body_, what, 21 * k, 0).x, hx = (sw - gw - 8 * k - tw) / 2;
+    draw_glyph(hx, hy, 0, "Enter", gs);
+    DrawTextEx(f_body_, what, {hx + gw + 8 * k, hy - 11 * k}, 21 * k, 0, Color{170, 160, 145, static_cast<unsigned char>(alpha * 230)});
 }
 
 void Game::draw_death() const {
@@ -712,11 +743,7 @@ void Game::draw_death() const {
             DrawTextEx(f, opts[i], {(sw - m.x) / 2, y - size / 2}, size, 0, col);
             if (on) DrawPoly({(sw - m.x) / 2 - 22 * k, y + 1}, 4, 6 * k, 45, Color{170, 20, 16, static_cast<unsigned char>(c * 255)});
         }
-        const float hy = sh - 44 * k, gs = 26 * k;
-        const float gw = in_.glyphs == 0 ? std::max(gs, MeasureTextEx(f_head_b_, "Enter", gs * 0.5f, 0).x + gs * 0.5f) : gs;   // (as draw_glyph sizes it)
-        const float tw = MeasureTextEx(f_body_, "Choose", 21 * k, 0).x, hx = (sw - gw - 8 * k - tw) / 2;
-        draw_glyph(hx, hy, 0, "Enter", gs);
-        DrawTextEx(f_body_, "Choose", {hx + gw + 8 * k, hy - 11 * k}, 21 * k, 0, Color{170, 160, 145, static_cast<unsigned char>(c * 230)});
+        draw_choose(c, "Choose");
     }
 }
 

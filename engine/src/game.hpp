@@ -26,6 +26,7 @@
 #include "dw/room_spec.hpp"
 #include "dw/settings.hpp"
 #include "dw/status.hpp"
+#include "dw/title.hpp"
 #include "dw/transition.hpp"
 #include "dw/world_map.hpp"
 #include "effects.hpp"
@@ -74,7 +75,7 @@ public:
     void update(float dt);          // input, AI, animation
     void render();                  // scene -> offscreen target
     void present() const;           // post-process to the window + HUD
-    int capture_count() const { return 96; }
+    int capture_count() const { return 97; }
     std::string stage(int i);       // pose a capture setup; returns its name
     // A still of the room (--still): the survivor standing at (x, z) facing yaw (degrees), no
     // Drowned, seen from `shot` (empty: whichever shot covers him). Render and present after.
@@ -94,6 +95,9 @@ public:
     bool flashlight = false;   // L1 / L: the flashlight on his strap (a spot on the characters and on the painted room)
     std::string settings_path; // the SQLite database the options live in (set before init)
     bool quit_requested() const { return quit_; }
+    // The title screen: play opens on it, and the route's end comes back to it. Time stands still
+    // under it; New Game starts him fresh in the first room.
+    void open_title();
     // What happened in the fight, for the telemetry database.
     struct Stats {
         int shots = 0, hits = 0, kills = 0, limbs = 0, heads = 0, kicks = 0, counters = 0, dodges = 0, perfect_dodges = 0, deaths = 0;
@@ -184,8 +188,12 @@ private:
     void draw_end() const;                       // the route's end: the dark, the title, to be continued
     void draw_glyph(float x, float y, int which, const char* label, float size) const;   // a button, as this pad shows it
     float draw_hint(float x, float y, int which, const char* what) const;
+    void draw_choose(float alpha, const char* what) const;   // the confirm button and what it does, centred at the foot
     void show_text(const std::string& text);     // shown at the bottom, time stopped until it's read
     void notice(const std::string& s) { notice_ = s; notice_t_ = 3.0f; }
+
+    void update_title(float dt);
+    void draw_title() const;
 
     // The pause menu (time stands still) with the options, saved to the database.
     void update_menu();
@@ -310,6 +318,9 @@ private:
     Font f_fell_{};                              // the death screen's words (IM FELL English)
     int death_sel_ = 0;                          // dead: 0 try again, 1 quit
     float end_t_ = -1;                           // since the route's end was read (-1: not reached)
+    bool title_ = false;                         // the title screen is up
+    float title_t_ = 0, leave_t_ = -1;           // since it came up; since New Game was chosen (-1: not yet)
+    int title_sel_ = 0;                          // 0 New Game, 1 Quit (title.hpp)
     Mesh item_mesh_[I_COUNT]{};
     Vector3 item_centre_[I_COUNT]{};
     float item_size_[I_COUNT]{}, item_base_[I_COUNT]{};
