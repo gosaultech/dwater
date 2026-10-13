@@ -355,3 +355,19 @@ TEST(Settings, TheRunOptionAndTheBackTurnComeBackToo) {
     EXPECT_EQ(Settings::load(path).run, RunMode::Analog);
     std::remove(path.c_str());
 }
+
+TEST(Controls, AHeldStickWalksOnTheWayHeFacesAfterABeat) {
+    const Vector2 dirs[] = {{0, -1}, {1, 0}, {0.6f, 0.8f}, {-0.8f, 0.6f}};
+    const Vector2 sticks[] = {{0, 1}, {1, 0}, {0.3f, 0.9f}, {-0.7f, -0.2f}};
+    for (const Vector2 d : dirs)
+        for (const Vector2 st : sticks) {
+            const Vector2 f = dw::basis_for(st, d);
+            const Vector2 r{-f.y, f.x};
+            const float l = std::hypot(st.x, st.y);
+            const Vector2 w{(r.x * st.x + f.x * st.y) / l, (r.y * st.x + f.y * st.y) / l};
+            EXPECT_NEAR(w.x, d.x, 1e-5f);
+            EXPECT_NEAR(w.y, d.y, 1e-5f);
+            EXPECT_NEAR(std::hypot(f.x, f.y), 1.0f, 1e-5f);
+        }
+}
+

@@ -358,7 +358,14 @@ void Game::finish_beat() {
     const auto sp = to.spawns.find(beat_spawn_);
     const Spawn s = sp != to.spawns.end() ? sp->second : to.spawns.begin()->second;
     player_ = {s.pos.x, s.pos.z, s.yaw};
-    holding_ = false;
+    holding_ = Vector2Length(in_.move) > 0.2f;   // pushing on through it: on the way he faces now
+    if (holding_) {
+        const V2 f = forward_from_yaw(s.yaw);
+        const Vector2 b = basis_for(in_.move, {f.x, f.z});
+        held_fwd_ = {b.x, 0, b.y};
+        held_right_ = {-b.y, 0, b.x};
+        held_in_ = in_.move;
+    }
     if (to.floor != storey_) build_storey(to.floor);
     enter_room(r);
     hero_.settle();
