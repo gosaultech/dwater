@@ -181,6 +181,7 @@ private:
     void draw_text_box() const;                  // a line of text at the bottom (present)
     void draw_glints() const;                    // the glint that marks each pickup (present)
     void draw_death() const;                     // YOU DIED, and the choice after it (present; death.hpp times it)
+    void draw_end() const;                       // the route's end: the dark, the title, to be continued
     void draw_glyph(float x, float y, int which, const char* label, float size) const;   // a button, as this pad shows it
     float draw_hint(float x, float y, int which, const char* what) const;
     void show_text(const std::string& text);     // shown at the bottom, time stopped until it's read
@@ -308,6 +309,7 @@ private:
     Font f_head_{}, f_head_b_{}, f_body_{}, f_body_b_{}, f_italic_{};
     Font f_fell_{};                              // the death screen's words (IM FELL English)
     int death_sel_ = 0;                          // dead: 0 try again, 1 quit
+    float end_t_ = -1;                           // since the route's end was read (-1: not reached)
     Mesh item_mesh_[I_COUNT]{};
     Vector3 item_centre_[I_COUNT]{};
     float item_size_[I_COUNT]{}, item_base_[I_COUNT]{};

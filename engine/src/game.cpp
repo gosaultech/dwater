@@ -413,6 +413,7 @@ void Game::update(float dt) {
         update_menu();
     }
     if (paused_) { sfx_.update(); return; }   // time stands still
+    if (end_t_ >= 0) { end_t_ += dt; sfx_.update(); return; }   // the end: nothing moves now
     if (beat_.busy()) {   // between storeys: the dark, his steps on the stairs, the other floor
         const float before = beat_.t;
         const Beat::Phase ph = beat_.phase;
@@ -1718,6 +1719,7 @@ void Game::present() const {
     // Only death gets words on the screen, as in the classic games.
     if (beat_.busy()) DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color{0, 0, 0, static_cast<unsigned char>(255 * beat_.black())});
     if (pmode_ == PMode::Dead) draw_death();
+    if (end_t_ > 0) draw_end();
     if (paused_) draw_menu();
     if (debug) {
         std::string es;

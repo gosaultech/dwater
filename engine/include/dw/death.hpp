@@ -27,6 +27,12 @@ inline float darkness(float t) { return smooth(DARK_FROM, DARK_TO, t); }
 inline float title(float t) { return smooth(TITLE_FROM, TITLE_TO, t); }
 // The words settle as they come: a little larger at first, then their size.
 inline float title_scale(float t) { return 1.07f - 0.07f * title(t); }
+// The route's end (Game::draw_end), after its last words are read: the picture goes to black, the
+// title comes up once it's dark, then the line under it.
+constexpr float END_DARK = 3.0f, END_TITLE_FROM = 2.5f, END_TITLE_TO = 5.0f, END_LINE_FROM = 4.5f, END_LINE_TO = 6.5f;
+inline float end_dark(float t) { return smooth(0.0f, END_DARK, t); }
+inline float end_title(float t) { return smooth(END_TITLE_FROM, END_TITLE_TO, t); }
+inline float end_line(float t) { return smooth(END_LINE_FROM, END_LINE_TO, t); }
 // Drop i (0..DRIPS-1): which letter of "YOU DIED" it runs from (never the space), where under it
 // (-0.5..0.5 of the letter's width from its middle), and how far it has run (0..1 of its own
 // length, which `drip_length` gives as a share of the letters' height). Each starts on its own

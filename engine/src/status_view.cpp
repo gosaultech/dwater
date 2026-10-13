@@ -642,6 +642,20 @@ void Game::draw_status_ui() {
 // The picture drains into a red-black, blood seeping in from the edges; YOU DIED rises out of the
 // dark in IM FELL English, blood red, settling as it comes, and drops gather under the letters and
 // run; then Try again / Quit. Drawn at the window's size (death.hpp times it).
+void Game::draw_end() const {
+    const float sw = float(GetScreenWidth()), sh = float(GetScreenHeight()), k = sh / float(H);
+    DrawRectangle(0, 0, int(sw), int(sh), Color{0, 0, 0, static_cast<unsigned char>(death::end_dark(end_t_) * 255)});
+    const char* words = "DAMNED WATERS";
+    const float size = 112 * k, space = 12 * k;
+    const Vector2 m = MeasureTextEx(f_fell_, words, size, space);
+    const float y = sh * 0.42f - m.y / 2;
+    DrawTextEx(f_fell_, words, {(sw - m.x) / 2, y}, size, space, Color{196, 188, 170, static_cast<unsigned char>(death::end_title(end_t_) * 255)});
+    const char* line = "to be continued";
+    const float s2 = 36 * k;
+    const Vector2 m2 = MeasureTextEx(f_italic_, line, s2, 2 * k);
+    DrawTextEx(f_italic_, line, {(sw - m2.x) / 2, y + m.y * 1.15f}, s2, 2 * k, Color{150, 142, 128, static_cast<unsigned char>(death::end_line(end_t_) * 255)});
+}
+
 void Game::draw_death() const {
     const float t = dead_t_, sw = float(GetScreenWidth()), sh = float(GetScreenHeight()), k = sh / float(H);
     const float dark = death::darkness(t), ti = death::title(t);

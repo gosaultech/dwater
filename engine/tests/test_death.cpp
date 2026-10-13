@@ -39,3 +39,17 @@ TEST(Death, TheChoiceWaitsForTheWords) {
     EXPECT_TRUE(choosing(TITLE_TO + 0.5f));
     EXPECT_GE(CHOICE_AT, TITLE_TO);
 }
+
+TEST(Death, TheEndGoesDarkThenTitleThenLine) {
+    EXPECT_FLOAT_EQ(end_dark(0.0f), 0.0f);
+    EXPECT_FLOAT_EQ(end_title(END_TITLE_FROM), 0.0f);
+    EXPECT_GT(end_dark(END_TITLE_FROM), 0.9f);          // the title comes up out of the dark, not over the picture
+    EXPECT_FLOAT_EQ(end_line(END_LINE_FROM), 0.0f);
+    EXPECT_GT(end_title(END_LINE_FROM), 0.8f);          // the line after the title
+    for (float t = 0; t < 8; t += 0.05f) {
+        EXPECT_LE(end_dark(t), end_dark(t + 0.05f));
+        EXPECT_LE(end_title(t), end_title(t + 0.05f));
+        EXPECT_LE(end_line(t), end_line(t + 0.05f));
+    }
+    EXPECT_FLOAT_EQ(end_line(END_LINE_TO), 1.0f);
+}

@@ -112,6 +112,7 @@ bool Game::interact() {
         return true;
     }
     if (it.kind == "door") return use_door(room, it);   // unlock, open, shut, or the stairs (game_house.cpp)
+    if (it.kind == "end" && end_t_ < 0) end_t_ = 0;     // (it counts once its words are read)
     show_text(it.text);   // examine, the typewriter, the water gate
     return !it.text.empty();
 }
