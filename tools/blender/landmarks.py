@@ -966,7 +966,7 @@ def beurs(root, p, w, h, d):
         flat.box((u - 0.35, 1.2, 0.0), (u + 0.35, h - 0.6, 0.25))
     flat.build("beurs_piers", brick, root, smooth=False)
     lbox(root, "beurs_eaves", (-0.2, h - 0.6, -0.8), (w - 12.0 + 0.2, h, 0.5), stone)
-    street.fan_prism(root, "beurs_roof", [(-d / 2 - 0.3, 0.0), (d / 2 + 0.3, 0.0), (0.0, d * 0.45)], (0.0, 0.5), -(w - 12.0),
+    street.fan_prism(root, "beurs_roof", [(-d / 2 - 0.3, 0.0), (d / 2 + 0.3, 0.0), (0.0, d * 0.45)], (0.0, 0.5), w - 12.0,
                      M({"color": [0.14, 0.15, 0.16], "rough": 0.5, "metal": 0.4}), ((0.0, h, -d / 2), (0, 0, 1), (0, 1, 0), (1, 0, 0)))
     # the tower at the +x end: 12 m square, twice the eaves' height, a clock on its front
     tx0, tx1 = w - 12.0, w
@@ -1083,7 +1083,7 @@ def station(root, p, w, h, d):
     bands.box((0.0, h, -1.0), (w, h + 0.3, 0.25))
     bands.build("station_bands", stone, root, smooth=False)
     lbox(root, "station_roof", (0.0, h + 0.3, -d), (w, h + 0.6, -0.2), slate)
-    street.fan_prism(root, "station_roof_ridge", [(-d / 2, 0.0), (d / 2, 0.0), (0.0, 6.0)], (0.0, 0.5), -w,
+    street.fan_prism(root, "station_roof_ridge", [(-d / 2, 0.0), (d / 2, 0.0), (0.0, 6.0)], (0.0, 0.5), w,
                      slate, ((0.0, h + 0.6, -d / 2), (0, 0, 1), (0, 1, 0), (1, 0, 0)))
     for i in range(1, n, 2):   # dormers on the roof's front slope
         u = bay * (i + 0.5)
