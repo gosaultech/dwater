@@ -265,7 +265,8 @@
       "palette": "souvenir",
       "empty": 0.35,
       "seed": 2,
-      "fallen": 3
+      "fallen": 3,
+      "photo": "health_wall"
     },
     {
       "type": "shelving",
@@ -283,7 +284,8 @@
       "palette": "souvenir",
       "empty": 0.35,
       "seed": 10,
-      "fallen": 3
+      "fallen": 3,
+      "photo": "health_wall"
     },
     {
       "type": "shelving",
@@ -301,7 +303,8 @@
       "palette": "souvenir",
       "empty": 0.35,
       "seed": 18,
-      "fallen": 3
+      "fallen": 3,
+      "photo": "health_wall"
     },
     {
       "type": "escalator",
@@ -618,18 +621,6 @@
     },
     {
       "type": "model",
-      "model": "ph:plastic_crate_02",
-      "pos": [
-        14.3,
-        0.0,
-        0.42
-      ],
-      "yaw": 16,
-      "scale": 0.92,
-      "collide": false
-    },
-    {
-      "type": "model",
       "model": "ph:trashbag",
       "pos": [
         22.58,
@@ -638,66 +629,6 @@
       ],
       "yaw": -63,
       "scale": 1.0,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        7.44,
-        0.0,
-        0.42
-      ],
-      "yaw": -18,
-      "scale": 0.97,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:potted_plant_04",
-      "pos": [
-        15.84,
-        0.0,
-        0.42
-      ],
-      "yaw": 15,
-      "scale": 0.85,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        1.77,
-        0.0,
-        0.42
-      ],
-      "yaw": -11,
-      "scale": 0.91,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:potted_plant_04",
-      "pos": [
-        5.74,
-        0.0,
-        0.42
-      ],
-      "yaw": 13,
-      "scale": 0.93,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        5.02,
-        0.0,
-        0.42
-      ],
-      "yaw": -24,
-      "scale": 0.99,
       "collide": false
     },
     {
@@ -746,18 +677,6 @@
       ],
       "yaw": -72,
       "scale": 0.85,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:potted_plant_04",
-      "pos": [
-        6.53,
-        0.0,
-        0.42
-      ],
-      "yaw": -25,
-      "scale": 0.92,
       "collide": false
     },
     {
@@ -961,6 +880,215 @@
       ],
       "yaw": -90,
       "collide": false
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        2.6,
+        0.0,
+        16.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_closet",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        4.6,
+        0.0,
+        16.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_hangers",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        2.6,
+        0.0,
+        18.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "tshirts_rack",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        4.6,
+        0.0,
+        18.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_closet",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        8.0,
+        0.0,
+        17.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_hangers",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        14.0,
+        0.0,
+        16.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "tshirts_rack",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        14.0,
+        0.0,
+        18.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_closet",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        19.0,
+        0.0,
+        16.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_hangers",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        19.0,
+        0.0,
+        18.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "tshirts_rack",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        21.0,
+        0.0,
+        17.6
+      ],
+      "yaw": 0,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_closet",
+      "interior": true
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        9.0,
+        0.0,
+        0.3
+      ],
+      "yaw": 0,
+      "size": [
+        15.0,
+        2.4,
+        0.45
+      ],
+      "palette": "pharmacy",
+      "photo": "health_wall",
+      "seed": 3,
+      "interior": true
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        9.0,
+        3.1,
+        0.05
+      ],
+      "size": [
+        4.2,
+        0.4,
+        0.03
+      ],
+      "yaw": 0,
+      "text": "PARFUMERIE \u00b7 COSMETICA",
+      "panel": {
+        "color": [
+          0.08,
+          0.06,
+          0.05
+        ],
+        "rough": 0.5
+      },
+      "color": [
+        0.95,
+        0.85,
+        0.6
+      ],
+      "glow": 1.5,
+      "collide": false,
+      "interior": true
     }
   ],
   "lights": [

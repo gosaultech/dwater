@@ -151,7 +151,8 @@
           0.2
         ],
         "scale": 0.5
-      }
+      },
+      "photo": "wine_shelf"
     },
     {
       "type": "model",

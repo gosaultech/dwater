@@ -123,7 +123,8 @@
       "palette": "pharmacy",
       "empty": 0.35,
       "seed": 31,
-      "shelves": 4
+      "shelves": 4,
+      "photo": "health_wall"
     },
     {
       "type": "shelving",
@@ -140,7 +141,8 @@
       "yaw": 0,
       "palette": "pharmacy",
       "empty": 0.3,
-      "seed": 32
+      "seed": 32,
+      "photo": "health_wall"
     },
     {
       "type": "shelving",
@@ -157,7 +159,8 @@
       "yaw": 180,
       "palette": "pharmacy",
       "empty": 0.45,
-      "seed": 33
+      "seed": 33,
+      "photo": "health_wall"
     },
     {
       "type": "wall_sign",
@@ -194,18 +197,6 @@
         0.2
       ],
       "yaw": 90,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        0.42,
-        0.0,
-        4.7
-      ],
-      "yaw": 68,
-      "scale": 0.97,
       "collide": false
     },
     {
@@ -266,18 +257,6 @@
       ],
       "yaw": 69,
       "scale": 0.99,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:potted_plant_04",
-      "pos": [
-        0.42,
-        0.0,
-        6.32
-      ],
-      "yaw": 84,
-      "scale": 0.82,
       "collide": false
     },
     {
@@ -367,6 +346,125 @@
       "rough": 0.7,
       "lift": 0.5,
       "collide": false
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        7.2,
+        0.0,
+        2.8
+      ],
+      "yaw": 90,
+      "size": [
+        3.6,
+        1.7,
+        0.9
+      ],
+      "double": true,
+      "palette": "pharmacy",
+      "shelves": 4,
+      "photo": "health_wall",
+      "seed": 4,
+      "interior": true
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        0.3,
+        0.0,
+        4.5
+      ],
+      "yaw": 90,
+      "size": [
+        4.0,
+        2.0,
+        0.45
+      ],
+      "palette": "candy",
+      "photo": "candy_jars",
+      "interior": true
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        4.6,
+        0.0,
+        6.8
+      ],
+      "yaw": 90,
+      "size": [
+        1.6,
+        1.5,
+        0.9
+      ],
+      "double": true,
+      "palette": "pharmacy",
+      "shelves": 4,
+      "photo": "health_wall",
+      "seed": 7,
+      "interior": true
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        4.5,
+        2.65,
+        0.05
+      ],
+      "size": [
+        2.6,
+        0.4,
+        0.03
+      ],
+      "yaw": 0,
+      "text": "2E HALVE PRIJS",
+      "panel": {
+        "color": [
+          0.8,
+          0.05,
+          0.05
+        ],
+        "rough": 0.5
+      },
+      "color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "glow": 1.0,
+      "collide": false,
+      "interior": true
+    },
+    {
+      "type": "wall_sign",
+      "pos": [
+        3.4,
+        2.65,
+        8.95
+      ],
+      "size": [
+        1.6,
+        0.4,
+        0.03
+      ],
+      "yaw": 180,
+      "text": "ACTIE",
+      "panel": {
+        "color": [
+          0.8,
+          0.05,
+          0.05
+        ],
+        "rough": 0.5
+      },
+      "color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "glow": 1.0,
+      "collide": false,
+      "interior": true
     }
   ],
   "lights": [

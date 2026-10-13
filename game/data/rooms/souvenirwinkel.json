@@ -134,7 +134,8 @@
       "palette": "souvenir",
       "empty": 0.3,
       "seed": 62,
-      "fallen": 6
+      "fallen": 6,
+      "photo": "souvenir_window"
     },
     {
       "type": "shelving",
@@ -153,7 +154,8 @@
       "palette": "souvenir",
       "empty": 0.35,
       "seed": 63,
-      "shelves": 4
+      "shelves": 4,
+      "photo": "souvenir_window"
     },
     {
       "type": "cheeses",
@@ -303,30 +305,6 @@
     },
     {
       "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        0.42,
-        0.0,
-        3.13
-      ],
-      "yaw": 69,
-      "scale": 0.99,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:trashbag",
-      "pos": [
-        0.42,
-        0.0,
-        4.36
-      ],
-      "yaw": 91,
-      "scale": 0.89,
-      "collide": false
-    },
-    {
-      "type": "model",
       "model": "ph:plastic_crate_02",
       "pos": [
         0.42,
@@ -463,6 +441,72 @@
       "rough": 0.7,
       "lift": 0.5,
       "collide": false
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        6.0,
+        0.0,
+        3.4
+      ],
+      "yaw": 90,
+      "size": [
+        1.5,
+        1.55,
+        0.5
+      ],
+      "photo": "tshirts_rack",
+      "interior": true
+    },
+    {
+      "type": "clothes_rail",
+      "pos": [
+        6.0,
+        0.0,
+        1.4
+      ],
+      "yaw": 90,
+      "size": [
+        1.4,
+        1.55,
+        0.5
+      ],
+      "photo": "clothes_hangers",
+      "interior": true
+    },
+    {
+      "type": "photo_layer",
+      "photo": "souvenir_window",
+      "pos": [
+        8.97,
+        0.95,
+        2.4
+      ],
+      "yaw": -90,
+      "size": [
+        2.6,
+        1.6,
+        0.01
+      ],
+      "collide": false,
+      "interior": true
+    },
+    {
+      "type": "shelving",
+      "pos": [
+        0.3,
+        0.0,
+        4.6
+      ],
+      "yaw": 90,
+      "size": [
+        2.6,
+        2.0,
+        0.45
+      ],
+      "palette": "candy",
+      "photo": "candy_jars",
+      "interior": true
     }
   ],
   "lights": [

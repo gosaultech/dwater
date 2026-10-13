@@ -1,0 +1,339 @@
+{
+  "_file": "damned_waters/tools/assets/photos.json - the photographs used as texture in the sets (tools/assets/photos.py): source, author, licence (CC0, CC BY or public domain only), and the crops the props use (rows: shelf levels; panel: the whole picture), as fractions of the image (u0, v0 from its top-left, u1, v1).",
+  "wine_rows": {
+    "title": "wine",
+    "creator": "gfairchild",
+    "license": "by",
+    "license_version": "2.0",
+    "url": "https://live.staticflickr.com/2527/4144527067_34f546525d_b.jpg",
+    "landing": "https://www.flickr.com/photos/36770908@N08/4144527067",
+    "size": [
+      1024,
+      656
+    ],
+    "rows": [
+      [
+        0.0,
+        0.01,
+        1.0,
+        0.205
+      ],
+      [
+        0.0,
+        0.235,
+        1.0,
+        0.475
+      ],
+      [
+        0.0,
+        0.515,
+        1.0,
+        0.78
+      ]
+    ]
+  },
+  "wine_shelf": {
+    "title": "Wine",
+    "creator": "Tobyotter",
+    "license": "by",
+    "license_version": "2.0",
+    "url": "https://live.staticflickr.com/4047/4433318139_69f48ef1e6_b.jpg",
+    "landing": "https://www.flickr.com/photos/78428166@N00/4433318139",
+    "size": [
+      1024,
+      768
+    ],
+    "rows": [
+      [
+        0.0,
+        0.02,
+        1.0,
+        0.43
+      ],
+      [
+        0.0,
+        0.48,
+        1.0,
+        0.92
+      ]
+    ]
+  },
+  "bar_cubbies": {
+    "title": "Bar",
+    "creator": "Sam Howzit",
+    "license": "by",
+    "license_version": "2.0",
+    "url": "https://live.staticflickr.com/7303/16235516979_01b6db9366_b.jpg",
+    "landing": "https://www.flickr.com/photos/12508217@N08/16235516979",
+    "size": [
+      1024,
+      683
+    ],
+    "panel": [
+      0.1,
+      0.1,
+      0.95,
+      0.62
+    ]
+  },
+  "apothecary_jars": {
+    "title": "pharmacy at blists hill",
+    "creator": "apdk",
+    "license": "by",
+    "license_version": "2.0",
+    "url": "https://live.staticflickr.com/3409/3669682422_1fc0fb6d40_b.jpg",
+    "landing": "https://www.flickr.com/photos/62337512@N00/3669682422",
+    "size": [
+      1024,
+      683
+    ],
+    "rows": [
+      [
+        0.0,
+        0.08,
+        1.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.5,
+        1.0,
+        0.9
+      ]
+    ]
+  },
+  "pharmacy_drawers": {
+    "title": "",
+    "creator": "g_firkser",
+    "license": "by",
+    "license_version": "2.0",
+    "url": "https://live.staticflickr.com/5108/5671191923_3ac0a65229_b.jpg",
+    "landing": "https://www.flickr.com/photos/38902313@N04/5671191923",
+    "size": [
+      1024,
+      685
+    ],
+    "panel": [
+      0.0,
+      0.0,
+      1.0,
+      0.95
+    ]
+  },
+  "tulips_a": {
+    "title": "Winter tulips in buckets...",
+    "creator": "Hermie Carino Photo Images",
+    "license": "by",
+    "license_version": "2.0",
+    "url": "https://live.staticflickr.com/5241/5344882894_45ca1925c7_b.jpg",
+    "landing": "https://www.flickr.com/photos/38451453@N02/5344882894",
+    "size": [
+      1024,
+      682
+    ],
+    "panel": [
+      0.0,
+      0.32,
+      0.88,
+      0.88
+    ]
+  },
+  "tulips_b": {
+    "title": "Winter tulips in buckets",
+    "creator": "Hermie Carino Photo Images",
+    "license": "by",
+    "license_version": "2.0",
+    "url": "https://live.staticflickr.com/5208/5344271335_026564d131_b.jpg",
+    "landing": "https://www.flickr.com/photos/38451453@N02/5344271335",
+    "size": [
+      1024,
+      682
+    ],
+    "panel": [
+      0.0,
+      0.2,
+      1.0,
+      0.88
+    ]
+  },
+  "tulip_buckets": {
+    "title": "Tulips by the bucket",
+    "creator": "Mr Padraig",
+    "license": "by",
+    "license_version": "2.0",
+    "url": "https://live.staticflickr.com/7721/26668603330_a16873883b_b.jpg",
+    "landing": "https://www.flickr.com/photos/41489545@N00/26668603330",
+    "size": [
+      1024,
+      686
+    ],
+    "panel": [
+      0.0,
+      0.38,
+      0.92,
+      0.95
+    ]
+  },
+  "souvenir_window": {
+    "title": "Seaside Souvenir Shop Window",
+    "creator": "Nick Page Photos",
+    "license": "by",
+    "license_version": "2.0",
+    "url": "https://live.staticflickr.com/7062/6924730458_bf0d3aa7f1_b.jpg",
+    "landing": "https://www.flickr.com/photos/27506472@N04/6924730458",
+    "size": [
+      1024,
+      768
+    ],
+    "panel": [
+      0.0,
+      0.0,
+      1.0,
+      1.0
+    ],
+    "rows": [
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.34
+      ],
+      [
+        0.0,
+        0.34,
+        1.0,
+        0.67
+      ],
+      [
+        0.0,
+        0.67,
+        1.0,
+        1.0
+      ]
+    ]
+  },
+  "health_wall": {
+    "title": "mbk drugstore stand",
+    "creator": "goodiesfirst",
+    "license": "by",
+    "license_version": "2.0",
+    "url": "https://live.staticflickr.com/2695/4430525627_348d6eb113_b.jpg",
+    "landing": "https://www.flickr.com/photos/49215102@N00/4430525627",
+    "size": [
+      1000,
+      667
+    ],
+    "rows": [
+      [
+        0.3,
+        0.02,
+        1.0,
+        0.31
+      ],
+      [
+        0.3,
+        0.31,
+        1.0,
+        0.6
+      ],
+      [
+        0.3,
+        0.6,
+        1.0,
+        0.92
+      ]
+    ]
+  },
+  "clothes_hangers": {
+    "title": "Clothing By Iris",
+    "creator": "FeatheredTar",
+    "license": "by",
+    "license_version": "2.0",
+    "url": "https://live.staticflickr.com/3254/2298993649_45635192b3_b.jpg",
+    "landing": "https://www.flickr.com/photos/55915190@N00/2298993649",
+    "size": [
+      1024,
+      685
+    ],
+    "panel": [
+      0.0,
+      0.16,
+      1.0,
+      1.0
+    ]
+  },
+  "tshirts_rack": {
+    "title": "T Shirt",
+    "creator": "oatsy40",
+    "license": "by",
+    "license_version": "2.0",
+    "url": "https://live.staticflickr.com/7369/9475504359_3b12935ed5_b.jpg",
+    "landing": "https://www.flickr.com/photos/68089229@N06/9475504359",
+    "size": [
+      1024,
+      674
+    ],
+    "panel": [
+      0.0,
+      0.04,
+      1.0,
+      0.73
+    ]
+  },
+  "clothes_closet": {
+    "title": "Closet",
+    "creator": "Sofy Marquez",
+    "license": "by",
+    "license_version": "2.0",
+    "url": "https://live.staticflickr.com/6224/6334619144_0fee129e42_b.jpg",
+    "landing": "https://www.flickr.com/photos/69593795@N06/6334619144",
+    "size": [
+      1024,
+      771
+    ],
+    "panel": [
+      0.0,
+      0.2,
+      1.0,
+      1.0
+    ]
+  },
+  "candy_jars": {
+    "title": "Puestos t\u00edpicos",
+    "creator": "gobierno.edomex",
+    "license": "by",
+    "license_version": "2.0",
+    "url": "https://live.staticflickr.com/6081/6047193004_6a5dc99691_b.jpg",
+    "landing": "https://www.flickr.com/photos/29804007@N07/6047193004",
+    "size": [
+      1024,
+      576
+    ],
+    "panel": [
+      0.0,
+      0.0,
+      1.0,
+      0.95
+    ],
+    "rows": [
+      [
+        0.0,
+        0.02,
+        1.0,
+        0.32
+      ],
+      [
+        0.0,
+        0.32,
+        1.0,
+        0.63
+      ],
+      [
+        0.0,
+        0.63,
+        1.0,
+        0.95
+      ]
+    ]
+  }
+}

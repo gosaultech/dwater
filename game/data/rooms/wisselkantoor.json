@@ -386,6 +386,82 @@
       "rough": 0.7,
       "lift": 0.5,
       "collide": false
+    },
+    {
+      "type": "stanchions",
+      "pos": [
+        4.8,
+        0.0,
+        3.0
+      ],
+      "yaw": 90,
+      "size": [
+        3.0,
+        0.95,
+        0.1
+      ],
+      "interior": true
+    },
+    {
+      "type": "bench",
+      "pos": [
+        6.6,
+        0.0,
+        1.8
+      ],
+      "yaw": -90,
+      "size": [
+        1.8,
+        0.85,
+        0.5
+      ],
+      "interior": true
+    },
+    {
+      "type": "poster",
+      "pos": [
+        6.97,
+        0.9,
+        3.6
+      ],
+      "size": [
+        1.0,
+        1.4,
+        0.05
+      ],
+      "yaw": -90,
+      "title": "GEEN COMMISSIE",
+      "line": "BESTE KOERS VAN DAMRAK",
+      "color": [
+        0.05,
+        0.25,
+        0.55
+      ],
+      "collide": false,
+      "interior": true
+    },
+    {
+      "type": "poster",
+      "pos": [
+        4.6,
+        0.9,
+        0.03
+      ],
+      "size": [
+        0.9,
+        1.4,
+        0.05
+      ],
+      "yaw": 0,
+      "title": "EXCHANGE",
+      "line": "OPEN 7 DAGEN",
+      "color": [
+        0.85,
+        0.65,
+        0.1
+      ],
+      "collide": false,
+      "interior": true
     }
   ],
   "lights": [

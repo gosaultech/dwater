@@ -285,8 +285,9 @@ def deco_front(root, f, W, s0, rng):
 FLOWERS = [(0.75, 0.04, 0.05), (0.95, 0.75, 0.05), (0.92, 0.9, 0.85), (0.9, 0.35, 0.55), (0.95, 0.42, 0.06), (0.4, 0.12, 0.5)]
 
 
-def buckets(root, rows, rng):
-    """Galvanised buckets of tulips, roses and the like on stepped staging: rows [(x0, x1, y, z), ...]."""
+def buckets(root, rows, rng, photo=False):
+    """Galvanised buckets of tulips, roses and the like on stepped staging: rows [(x0, x1, y, z), ...]
+    (photo: each bunch's heads a patch of a real one's, seen from above)."""
     tin, stems, leaves = Acc(), Acc(), Acc()
     heads = [Acc() for _ in FLOWERS]
     for x0, x1, y, z in rows:
@@ -296,8 +297,10 @@ def buckets(root, rows, rng):
             k = rng.randrange(len(FLOWERS))
             for _ in range(rng.randint(7, 12)):   # a bunch: stems up out of the water, a cupped head on each
                 hx, hz = x + rng.uniform(-0.11, 0.11), z + rng.uniform(-0.11, 0.11)
-                hy = y + rng.uniform(0.55, 0.8)
+                hy = y + (0.65 if photo else rng.uniform(0.55, 0.8))
                 stems.rod((x + (hx - x) * 0.3, y + 0.3, z + (hz - z) * 0.3), (hx, hy, hz), 0.005, 0.005, 4)
+                if photo:
+                    continue
                 r = rng.uniform(0.022, 0.03)
                 heads[k].rod((hx, hy - 0.005, hz), (hx, hy + r * 1.2, hz), r * 0.45, r, 8)
                 heads[k].rod((hx, hy + r * 1.2, hz), (hx, hy + r * 2.4, hz), r, r * 0.6, 8)
@@ -309,6 +312,10 @@ def buckets(root, rows, rng):
                 tip = (x + ca * (0.08 + L * 0.6), y + 0.3 + L * 0.8, z + sa * (0.08 + L * 0.6))
                 leaves.quad(b0, b1, tip, tip)
             x += 0.36
+    if photo:   # the heads a photo of real ones, banked along each tier
+        import photos
+        for x0, x1, y, z in rows:
+            photos.bank(root, x0, x1, y, z, rng)
     tin.build("buckets", M({"color": [0.5, 0.52, 0.52], "rough": 0.35, "metal": 0.9, "noise": 0.25}), root)
     stems.build("stems", M({"color": [0.08, 0.22, 0.05], "rough": 0.6}), root)
     leaves.build("leaves", M({"color": [0.1, 0.24, 0.07], "rough": 0.45, "noise": 0.2, "bevel": 0}), root, smooth=False)
@@ -413,7 +420,7 @@ def flower_buckets(root, p, w, h, d):
         if k:
             lbox(root, "staging", (-w / 2, 0.0, z - 0.2), (w / 2, y, z + 0.2), wood)
         rows.append((-w / 2, w / 2, y, z))
-    buckets(root, rows, rng)
+    buckets(root, rows, rng, photo=bool(p.get("photo")))
 
 
 # ── A pharmacy's green cross ────────────────────────────────────────────────────────────

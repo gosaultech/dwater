@@ -31,6 +31,11 @@ def shop_unit(root, p, w, h, d):
     if lift > 0.05:
         lbox(root, "unit_glow", (-w / 2 + 0.3, top - 0.08, -f + 0.4), (w / 2 - 0.3, top - 0.05, -f + 0.6),
              builders.emissive("unit_glow", (1.0, 0.85, 0.65), 2.0))
+        if p.get("photo"):   # its stock on the back wall, under the shutter
+            import photos
+            for k in range(3):
+                y0 = 0.15 + (top - 0.35) * k / 3
+                photos.row_card(root, p["photo"], k, -w / 2 + 0.2, w / 2 - 0.2, y0, y0 + (top - 0.35) / 3 - 0.04, -f + 0.07)
         lbox(root, "unit_floor", (-w / 2 + 0.12, 0.0, -f), (w / 2 - 0.12, 0.01, f), M({"color": [0.08, 0.08, 0.08], "rough": 0.5}))
     lbox(root, "shutter", (-w / 2 + 0.12, lift, f - 0.09), (w / 2 - 0.12, top, f - 0.07),
          M({"ph": p.get("look", "painted_metal_shutter"), "tint": [0.75, 0.77, 0.8], "scale": 1.0}))

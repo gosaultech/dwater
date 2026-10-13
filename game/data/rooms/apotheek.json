@@ -142,7 +142,8 @@
       "palette": "pharmacy",
       "empty": 0.45,
       "seed": 1,
-      "fallen": 0
+      "fallen": 0,
+      "photo": "apothecary_jars"
     },
     {
       "type": "shelving",
@@ -161,7 +162,8 @@
       "palette": "pharmacy",
       "empty": 0.3,
       "seed": 2,
-      "shelves": 4
+      "shelves": 4,
+      "photo": "health_wall"
     },
     {
       "type": "shelving",
@@ -180,7 +182,8 @@
       "palette": "pharmacy",
       "empty": 0.25,
       "seed": 3,
-      "shelves": 4
+      "shelves": 4,
+      "photo": "health_wall"
     },
     {
       "type": "shelving",
@@ -197,7 +200,8 @@
       "yaw": 90,
       "palette": "pharmacy",
       "empty": 0.2,
-      "seed": 4
+      "seed": 4,
+      "photo": "health_wall"
     },
     {
       "type": "wall_sign",
@@ -535,6 +539,91 @@
       "rough": 0.7,
       "lift": 0.5,
       "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        8.25,
+        0.0,
+        0.3
+      ],
+      "size": [
+        1.9,
+        1.05,
+        0.5
+      ],
+      "material": {
+        "ph": "dark_wood",
+        "tint": [
+          0.42,
+          0.3,
+          0.22
+        ],
+        "scale": 0.5
+      },
+      "interior": true
+    },
+    {
+      "type": "photo_layer",
+      "photo": "pharmacy_drawers",
+      "pos": [
+        8.25,
+        0.06,
+        0.56
+      ],
+      "size": [
+        1.8,
+        0.95,
+        0.01
+      ],
+      "collide": false,
+      "interior": true
+    },
+    {
+      "type": "poster",
+      "pos": [
+        9.42,
+        0.9,
+        4.2
+      ],
+      "size": [
+        1.0,
+        1.4,
+        0.05
+      ],
+      "yaw": -90,
+      "title": "GRIEPPRIK",
+      "line": "VRAAG HET UW APOTHEKER",
+      "color": [
+        0.1,
+        0.45,
+        0.35
+      ],
+      "collide": false,
+      "interior": true
+    },
+    {
+      "type": "poster",
+      "pos": [
+        9.42,
+        0.9,
+        6.6
+      ],
+      "size": [
+        1.0,
+        1.4,
+        0.05
+      ],
+      "yaw": -90,
+      "title": "HOOIKOORTS?",
+      "line": "WIJ HELPEN U VERDER",
+      "color": [
+        0.85,
+        0.75,
+        0.2
+      ],
+      "collide": false,
+      "interior": true
     }
   ],
   "lights": [

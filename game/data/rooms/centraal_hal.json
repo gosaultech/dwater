@@ -152,7 +152,8 @@
         1.0
       ],
       "name": "BROODJES \u00b7 KOFFIE",
-      "open": 0.35
+      "open": 0.35,
+      "photo": "candy_jars"
     },
     {
       "type": "shop_unit",
@@ -216,7 +217,8 @@
         1.0
       ],
       "name": "DROGISTERIJ",
-      "open": 0.6
+      "open": 0.6,
+      "photo": "health_wall"
     },
     {
       "type": "shop_unit",

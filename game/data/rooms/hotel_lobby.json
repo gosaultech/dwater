@@ -142,7 +142,8 @@
         ],
         "scale": 0.6
       },
-      "fallen": 0
+      "fallen": 0,
+      "photo": "pharmacy_drawers"
     },
     {
       "type": "wall_sign",

@@ -129,7 +129,8 @@
       "palette": "souvenir",
       "empty": 0.3,
       "seed": 7,
-      "shelves": 4
+      "shelves": 4,
+      "photo": "tulip_buckets"
     },
     {
       "type": "model",
@@ -212,7 +213,8 @@
       ],
       "yaw": 0,
       "seed": 77,
-      "collide": true
+      "collide": true,
+      "photo": true
     },
     {
       "type": "model",

@@ -596,6 +596,7 @@ def build_prop(p, room_h):
     import church  # noqa: F401  (the Nieuwe Kerk inside: piers, arcades, the vault, the organ)
     import halls  # noqa: F401  (the Beurs's hall: arcades, the glass roof; the mortuary the army made of it)
     import station  # noqa: F401  (Centraal and the metro: shop units, boards, the trackbed, the canopy)
+    import photos  # noqa: F401  (photographs on cards: the stock on shelves, walls of bottles, tulips)
     if t in kit.PROPS:   # the detailed kit: sofas, kasten, the marble mantel, models...
         return kit.build_prop(p, room_h)
     size = p.get("size", [0.45, 0.95, 0.45])

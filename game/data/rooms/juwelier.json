@@ -107,7 +107,7 @@
         0.7
       ],
       "yaw": 0,
-      "palette": "candy",
+      "palette": "jewel",
       "empty": 0.95,
       "seed": 41
     },
@@ -124,7 +124,7 @@
         0.7
       ],
       "yaw": 180,
-      "palette": "candy",
+      "palette": "jewel",
       "empty": 0.95,
       "seed": 42
     },
@@ -170,22 +170,6 @@
     },
     {
       "type": "model",
-      "model": "ph:drawer_cabinet",
-      "pos": [
-        7.6,
-        0.0,
-        1.0
-      ],
-      "yaw": -90,
-      "scale": 1.0,
-      "size": [
-        0.6,
-        1.2,
-        0.5
-      ]
-    },
-    {
-      "type": "model",
       "model": "ph:Chandelier_02",
       "pos": [
         4.0,
@@ -202,30 +186,6 @@
     },
     {
       "type": "model",
-      "model": "ph:potted_plant_04",
-      "pos": [
-        1.11,
-        0.0,
-        8.08
-      ],
-      "yaw": 182,
-      "scale": 0.88,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:potted_plant_04",
-      "pos": [
-        2.05,
-        0.0,
-        0.42
-      ],
-      "yaw": -26,
-      "scale": 0.95,
-      "collide": false
-    },
-    {
-      "type": "model",
       "model": "ph:plastic_crate_03",
       "pos": [
         0.72,
@@ -238,18 +198,6 @@
     },
     {
       "type": "model",
-      "model": "ph:trashbag",
-      "pos": [
-        3.96,
-        0.0,
-        0.42
-      ],
-      "yaw": -7,
-      "scale": 1.0,
-      "collide": false
-    },
-    {
-      "type": "model",
       "model": "ph:cardboard_box_01",
       "pos": [
         1.85,
@@ -258,18 +206,6 @@
       ],
       "yaw": 205,
       "scale": 0.86,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:plastic_crate_03",
-      "pos": [
-        5.34,
-        0.0,
-        8.08
-      ],
-      "yaw": 208,
-      "scale": 0.81,
       "collide": false
     },
     {
@@ -395,6 +331,130 @@
       "rough": 0.7,
       "lift": 0.5,
       "collide": false
+    },
+    {
+      "type": "display_case",
+      "pos": [
+        2.0,
+        0.0,
+        0.3
+      ],
+      "size": [
+        1.6,
+        2.0,
+        0.5
+      ],
+      "palette": "jewel",
+      "seed": 11,
+      "interior": true
+    },
+    {
+      "type": "display_case",
+      "pos": [
+        4.4,
+        0.0,
+        0.3
+      ],
+      "size": [
+        1.6,
+        2.0,
+        0.5
+      ],
+      "palette": "jewel",
+      "seed": 12,
+      "interior": true
+    },
+    {
+      "type": "display_case",
+      "pos": [
+        6.4,
+        0.0,
+        8.2
+      ],
+      "yaw": 180,
+      "size": [
+        1.6,
+        2.0,
+        0.5
+      ],
+      "palette": "jewel",
+      "seed": 13,
+      "interior": true
+    },
+    {
+      "type": "safe",
+      "pos": [
+        7.45,
+        0.0,
+        0.6
+      ],
+      "yaw": -90,
+      "size": [
+        0.8,
+        1.2,
+        0.7
+      ],
+      "open": true,
+      "interior": true
+    },
+    {
+      "type": "runner",
+      "pos": [
+        3.0,
+        0.0,
+        4.25
+      ],
+      "yaw": 90,
+      "size": [
+        0.9,
+        0.012,
+        4.6
+      ],
+      "collide": false,
+      "interior": true
+    },
+    {
+      "type": "model",
+      "model": "ph:modern_arm_chair_01",
+      "pos": [
+        1.2,
+        0.0,
+        7.6
+      ],
+      "yaw": 160,
+      "scale": 1.0,
+      "size": [
+        0.7,
+        0.8,
+        0.7
+      ],
+      "interior": true
+    },
+    {
+      "type": "model",
+      "model": "ph:side_table_01",
+      "pos": [
+        2.2,
+        0.0,
+        7.8
+      ],
+      "yaw": 0,
+      "scale": 1.0,
+      "collide": false,
+      "interior": true
+    },
+    {
+      "type": "model",
+      "model": "ph:ornate_mirror_01",
+      "pos": [
+        5.0,
+        1.0,
+        8.45
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "collide": false,
+      "interior": true
     }
   ],
   "lights": [
