@@ -13,6 +13,8 @@
 import math
 import random
 
+import bpy
+
 import builders
 import kit
 import street
@@ -204,8 +206,17 @@ def ticket_booth(root, p, w, h, d):
     lbox(root, "booth_sign", (-w / 2 + 0.1, h - 0.36, d / 2 + 0.08), (w / 2 - 0.1, h - 0.04, d / 2 + 0.1), M({"color": [0.05, 0.04, 0.03], "rough": 0.4}))
     text(root, p.get("name", "KASSA"), (0.0, h - 0.2, d / 2 + 0.11), 0.18, builders.emissive("booth_sign", (1.0, 0.8, 0.45), 4.0),
          font="DejaVuSerif-Bold.ttf", depth=0.0)
-    lbox(root, "booth_inside", (-w / 2 + 0.1, 1.1, -d / 2 + 0.1), (w / 2 - 0.1, h - 0.45, -d / 2 + 0.12),
-         builders.emissive("booth_inside", (1.0, 0.78, 0.5), 0.8))
+    lbox(root, "booth_inside", (-w / 2 + 0.1, 1.1, -d / 2 + 0.1), (w / 2 - 0.1, h - 0.45, -d / 2 + 0.12), wood)
+    import city
+    city.ad_face(root, -w / 2 + 0.25, w / 2 - 0.25, 1.35, h - 0.6, -d / 2 + 0.125, "z", 0.35, p.get("ad", 4))
+    ball(root, "booth_bulb", (0.0, h - 0.5, 0.0), 0.04, builders.emissive("booth_bulb", (1.0, 0.8, 0.55), 30.0), seg=8)
+    ld = bpy.data.lights.new("booth_lamp", "POINT")
+    ld.energy, ld.color, ld.shadow_soft_size = 25.0, (1.0, 0.8, 0.55), 0.05
+    ob = bpy.data.objects.new("booth_lamp", ld)
+    bpy.context.scene.collection.objects.link(ob)
+    ob.parent = root
+    ob.location = street.g2b((0.0, h - 0.6, 0.0))
+    street.hide_panel(ob)
     kit.model(root, {"model": "ph:CashRegister_01", "fit": [0.4, 0.35, 0.4]}, 0.4, 0.35, 0.4)
     for o in root.children:
         if o.name.startswith("model_"):
