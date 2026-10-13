@@ -490,7 +490,15 @@ def canal_boat(root, p, w, h, d):
         za, zb = -r * math.cos(a0), -r * math.cos(a1)
         ya, yb = y1 + ch * 0.62 + 0.45 * math.sin(a0), y1 + ch * 0.62 + 0.45 * math.sin(a1)
         roof.quad((c0, ya, za), (c1, ya, za), (c1, yb, zb), (c0, yb, zb))
-    roof.build("cabin_roof", M({"color": [0.04, 0.06, 0.07], "rough": 0.04, "metal": 0.7}), root, smooth=True)   # tinted glass: it mirrors the lamps
+    roof.build("cabin_roof", M({"color": [0.015, 0.02, 0.025], "rough": 0.08, "grime": 0, "bevel": 0}), root, smooth=True)   # tinted glass
+    ribs = Acc()   # the roof's aluminium ribs, one over each pair of posts
+    for i in range(n + 1):
+        x = c0 + (c1 - c0) * i / n
+        for k in range(seg):
+            a0, a1 = math.pi * k / seg, math.pi * (k + 1) / seg
+            r = Wd / 2 - 0.2
+            ribs.rod((x, y1 + ch * 0.62 + 0.45 * math.sin(a0) - 0.02, -r * math.cos(a0)), (x, y1 + ch * 0.62 + 0.45 * math.sin(a1) - 0.02, -r * math.cos(a1)), 0.03, 0.03, 4)
+    ribs.build("roof_ribs", white, root, smooth=False)
     seats = Acc()
     x = c0 + 0.5
     while x < c1 - 0.5:
@@ -501,8 +509,20 @@ def canal_boat(root, p, w, h, d):
             seats.box((x, y1 + 0.5, sz * aisle), (x + 0.08, y1 + 1.0, sz * (Wd / 2 - 0.35)))
         x += 1.0
     seats.build("boat_seats", seat, root, smooth=False)
-    lbox(root, "cabin_light", (c0 + 0.3, y1 + ch * 0.62 + 0.3, -0.25), (c1 - 0.3, y1 + ch * 0.62 + 0.33, 0.25),
-         emit((1.0, 0.85, 0.65), p.get("glow", 2.5), "boat_light"))
+    lamps = Acc()   # small fittings down the roof's middle, still on; the light itself is a hidden panel
+    yl = y1 + ch * 0.62 + 0.4
+    for i in range(n):
+        x = c0 + (c1 - c0) * (i + 0.5) / n
+        lamps.box((x - 0.16, yl, -0.07), (x + 0.16, yl + 0.03, 0.07))
+    lamps.build("cabin_lamps", emit((1.0, 0.86, 0.68), p.get("glow", 9.0), "boat_light"), root, smooth=False)
+    ld = bpy.data.lights.new("cabin_glow", "AREA")
+    ld.shape, ld.size, ld.size_y = "RECTANGLE", (c1 - c0) * 0.85, 0.9
+    ld.energy, ld.color = p.get("power", 180.0), (1.0, 0.86, 0.68)
+    ob = bpy.data.objects.new("cabin_glow", ld)
+    bpy.context.scene.collection.objects.link(ob)
+    ob.parent = root
+    ob.location = g2b(((c0 + c1) / 2, yl - 0.05, 0.0))
+    street.hide_panel(ob)
     text(root, p.get("name", "RONDVAART 7"), (xs + 2.5, y1 - 0.35, Wd / 2 + 0.01), 0.28, white, font="DejaVuSans-Bold.ttf", depth=0.005)
 
 
