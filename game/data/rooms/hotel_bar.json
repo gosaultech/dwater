@@ -170,57 +170,67 @@
       "collide": false
     },
     {
-      "type": "sofa",
+      "type": "model",
+      "model": "ph:sofa_02",
       "pos": [
         3.0,
         0.0,
         9.45
       ],
       "yaw": 180,
+      "scale": 1.0,
       "size": [
-        2.2,
-        0.9,
-        0.85
+        1.8,
+        0.8,
+        0.7
       ]
     },
     {
-      "type": "sofa",
+      "type": "model",
+      "model": "ph:Sofa_01",
       "pos": [
         7.0,
         0.0,
         9.45
       ],
       "yaw": 180,
+      "scale": 1.0,
       "size": [
-        2.2,
-        0.9,
-        0.85
+        1.6,
+        0.8,
+        0.7
       ]
     },
     {
-      "type": "table",
+      "type": "model",
+      "model": "ph:CoffeeTable_01",
       "pos": [
         3.0,
         0.0,
         8.35
       ],
+      "yaw": 4,
+      "scale": 0.8,
       "size": [
-        1.2,
-        0.72,
-        0.7
+        1.25,
+        0.45,
+        0.6
       ]
     },
     {
-      "type": "table",
+      "type": "model",
+      "model": "ph:coffee_table_round_01",
       "pos": [
         7.0,
         0.0,
         8.35
       ],
+      "yaw": 0,
+      "scale": 0.7,
       "size": [
-        1.2,
-        0.72,
-        0.7
+        0.9,
+        0.35,
+        0.9
       ]
     },
     {
@@ -525,26 +535,50 @@
     },
     {
       "type": "model",
-      "model": "ph:potted_plant_04",
+      "model": "ph:cardboard_box_01",
       "pos": [
-        0.42,
+        4.43,
         0.0,
-        4.16
+        9.53
       ],
-      "yaw": 113,
-      "scale": 0.93,
+      "yaw": 157,
+      "scale": 0.94,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        5.55,
+        0.0,
+        9.53
+      ],
+      "yaw": 181,
+      "scale": 0.9,
       "collide": false
     },
     {
       "type": "model",
       "model": "ph:cardboard_box_01",
       "pos": [
-        5.38,
+        9.29,
         0.0,
         9.53
       ],
-      "yaw": 178,
-      "scale": 0.95,
+      "yaw": 190,
+      "scale": 0.88,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.42,
+        0.0,
+        4.08
+      ],
+      "yaw": 105,
+      "scale": 0.92,
       "collide": false
     },
     {
@@ -553,9 +587,9 @@
       "pos": [
         0.42,
         0.0,
-        2.7
+        2.76
       ],
-      "yaw": 96,
+      "yaw": 84,
       "scale": 1.0,
       "collide": false
     },
@@ -563,48 +597,24 @@
       "type": "model",
       "model": "ph:cardboard_box_01",
       "pos": [
-        1.15,
+        0.42,
         0.0,
-        9.53
+        6.07
       ],
-      "yaw": 175,
-      "scale": 0.98,
+      "yaw": 82,
+      "scale": 0.88,
       "collide": false
     },
     {
       "type": "model",
       "model": "ph:trashbag",
       "pos": [
-        0.42,
-        0.0,
-        7.02
-      ],
-      "yaw": 97,
-      "scale": 0.86,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        1.25,
+        0.73,
         0.0,
         0.42
       ],
-      "yaw": -18,
-      "scale": 0.98,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        0.42,
-        0.0,
-        5.83
-      ],
-      "yaw": 107,
-      "scale": 0.84,
+      "yaw": 19,
+      "scale": 0.99,
       "collide": false
     },
     {
@@ -621,25 +631,37 @@
     },
     {
       "type": "model",
-      "model": "ph:cardboard_box_01",
+      "model": "ph:potted_plant_04",
       "pos": [
-        4.45,
+        0.42,
         0.0,
-        9.53
+        4.83
       ],
-      "yaw": 168,
-      "scale": 0.95,
+      "yaw": 65,
+      "scale": 0.99,
       "collide": false
     },
     {
       "type": "model",
       "model": "ph:wall_clock",
       "pos": [
-        9.63,
+        1.28,
         2.15,
         9.92
       ],
       "yaw": 180,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:hanging_picture_frame_02",
+      "pos": [
+        0.03,
+        1.75,
+        7.1
+      ],
+      "yaw": 90,
       "scale": 1.0,
       "collide": false
     },
@@ -662,27 +684,27 @@
       "type": "model",
       "model": "ph:security_camera_01",
       "pos": [
-        0.2,
+        11.8,
         3.1,
-        0.2
+        9.75
       ],
-      "yaw": 45,
+      "yaw": -135,
       "scale": 1.0,
       "collide": false
     },
     {
       "type": "leaflets",
       "pos": [
-        10.19,
+        1.63,
         0.0,
-        8.53
+        5.19
       ],
       "size": [
         4.0,
         0.01,
         3.0
       ],
-      "seed": 714,
+      "seed": 410,
       "count": 6,
       "paper": [
         0.5,
@@ -696,16 +718,16 @@
     {
       "type": "leaflets",
       "pos": [
-        1.36,
+        2.49,
         0.0,
-        8.52
+        4.28
       ],
       "size": [
         4.0,
         0.01,
         3.0
       ],
-      "seed": 210,
+      "seed": 884,
       "count": 6,
       "paper": [
         0.5,
@@ -718,13 +740,13 @@
     },
     {
       "type": "model",
-      "model": "ph:plastic_monobloc_chair_01",
+      "model": "ph:dining_chair_02",
       "pos": [
-        5.26,
+        10.47,
         0.0,
-        8.02
+        7.47
       ],
-      "yaw": 279,
+      "yaw": 19,
       "tip": 90,
       "scale": 1.0,
       "size": [
