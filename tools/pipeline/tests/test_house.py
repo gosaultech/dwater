@@ -166,6 +166,50 @@ class RealHouseTests(unittest.TestCase):
                          for a in range(10) for k in range(24)]
                 self.assertTrue(any(clear(*q) for q in spots), f"{rid}/{it['id']}: nowhere to stand within reach of it")
 
+    def test_every_way_and_thing_is_reachable(self):   # nothing put down cuts a room in two
+        import numpy as np
+        from scipy import ndimage
+        live = set()
+        for d in house.doorways(self.specs):
+            if d["live"]:
+                live.add((d["a"], d["side_a"], d["open_a"]))
+                if d["b"]:
+                    live.add((d["b"], d["side_b"], d["open_b"]))
+        for rid, s in self.specs.items():
+            if s.get("storey", 0) < house.CITY:
+                continue
+            (x0, z0), (x1, z1) = s["bounds"]["min"], s["bounds"]["max"]
+            c = 0.1
+            X, Z = np.meshgrid(np.arange(x0 + c / 2, x1, c), np.arange(z0 + c / 2, z1, c), indexing="ij")
+            free = (X >= x0 + PLAYER_R) & (X <= x1 - PLAYER_R) & (Z >= z0 + PLAYER_R) & (Z <= z1 - PLAYER_R)
+            for q in s.get("props", []):
+                if q.get("collide", True) is False or "size" not in q:
+                    continue
+                t = math.radians(q.get("yaw", 0.0))
+                dx, dz = X - q["pos"][0], Z - q["pos"][2]
+                lx, lz = dx * math.cos(t) - dz * math.sin(t), dx * math.sin(t) + dz * math.cos(t)
+                free &= np.hypot(np.maximum(np.abs(lx) - q["size"][0] / 2, 0), np.maximum(np.abs(lz) - q["size"][2] / 2, 0)) >= PLAYER_R
+            lab, _ = ndimage.label(free)
+
+            def near(x, z, r):   # the components he can stand in within r of (x, z)
+                m = free & (np.hypot(X - x, Z - z) <= r)
+                return set(lab[m].tolist())
+            targets = [(f"spawn {k}", v["pos"][0], v["pos"][2], 0.45) for k, v in s.get("spawns", {}).items()]
+            targets += [(f"{i['id']}", i["pos"][0], i["pos"][2], max(REACH, i.get("radius", 1.0))) for i in s.get("interactables", [])]
+            for side, k, o in house.openings(s):   # the ways on: into the next room on this storey, or a beat
+                if (rid, side, k) not in live:
+                    continue
+                u, hw = o["center"], o.get("width", 1.0) / 2
+                pts = [u + f * hw for f in (-0.8, -0.4, 0.0, 0.4, 0.8)]   # anywhere across it will do
+                at = [{"north": (x0 + v, z0 + 0.5), "south": (x0 + v, z1 - 0.5), "west": (x0 + 0.5, z0 + v), "east": (x1 - 0.5, z0 + v)}[side] for v in pts]
+                targets.append((f"{side} opening at {u}", at, None, min(0.6, hw)))
+            if not targets:
+                continue
+            ways = [set().union(*[near(px, pz, r) for px, pz in x]) if z is None else near(x, z, r) for _, x, z, r in targets]
+            main = max({k for w in ways for k in w}, key=lambda k: sum(k in w for w in ways), default=None)
+            for (name, *_), w in zip(targets, ways):
+                self.assertIn(main, w, f"{rid}: {name} cannot be reached from the rest of the room")
+
     def test_peeks_are_shots(self):
         ids = [s["id"] for s in house.peek_shots(self.specs["voorkamer"])]
         self.assertEqual(ids, ["peek_door_gang"])

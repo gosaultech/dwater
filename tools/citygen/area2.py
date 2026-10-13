@@ -118,7 +118,7 @@ T["shots"] = [
     {"id": "b", "pos": [19.0, 2.8, 52.0], "look_at": [7.0, 1.4, 32.0], "fov": 58, "zone": {"min": [0.0, 30.0], "max": [24.0, 46.0]}, "priority": 1},
     {"id": "c", "pos": [5.0, 2.8, 10.0], "look_at": [18.0, 1.4, 28.0], "fov": 58, "zone": {"min": [0.0, 14.0], "max": [24.0, 30.0]}, "priority": 1},
     {"id": "d", "pos": [18.8, 3.0, 26.0], "look_at": [9.0, 2.8, 0.0], "fov": 60, "zone": {"min": [0.0, 0.0], "max": [24.0, 14.0]}, "priority": 1}]
-T["spawns"] = {"from_herengracht": {"pos": [4.0, 0.0, 57.0], "yaw": -45}, "from_rembrandtplein": {"pos": [12.0, 0.0, 1.5], "yaw": 180}}
+T["spawns"] = {"from_herengracht": {"pos": [4.0, 0.0, 57.0], "yaw": -45}, "from_rembrandtplein": {"pos": [8.0, 0.0, 1.2], "yaw": 180}}
 T["interactables"] = [
     {"id": "to_herengracht", "kind": "door", "pos": [0.2, 1.0, 61.0], "radius": 1.6, "target_room": "herengracht", "target_spawn": "from_thorbeckeplein"},
     {"id": "terraces", "kind": "examine", "pos": [11.2, 1.0, 24.0], "radius": 1.6, "text": "Glasses half full, a jacket on a chair. The heaters are still burning for nobody."},

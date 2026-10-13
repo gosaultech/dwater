@@ -463,7 +463,7 @@ K["interactables"] = [
     {"id": "dressing", "kind": "pickup", "item": "med_small", "count": 1, "pos": [5.6, 0.97, 3.0], "radius": 0.9},
     {"id": "tin", "kind": "examine", "pos": [5.2, 1.0, 3.8], "radius": 0.9,
      "text": "A first aid tin under the till, the kind every stall keeps for thorns and cut fingers."},
-    {"id": "window", "kind": "examine", "pos": [3.5, 1.0, 0.4], "radius": 1.2,
+    {"id": "window", "kind": "examine", "pos": [3.5, 1.0, 0.4], "radius": 1.7,
      "text": "Through the glass, the Singel. Something pale turns over under the surface and is gone."}]
 K["enemies"] = []
 write(K)
