@@ -291,6 +291,9 @@ def white_world():
     return w
 
 
+LITTER = {"leaflets", "luggage", "broken_glass", "bike"}
+
+
 def build_room(spec, outside=True, rendering=None):
     """One room's set: its shell, its water, its street outside (outside=True), its props. A prop
     that "encloses" the room being rendered (a landmark's shell round the hall inside it) is left
@@ -305,6 +308,8 @@ def build_room(spec, outside=True, rendering=None):
         print(f"[build] {spec['id']} shell/outside {time.time() - t0:.1f}s")
     for p in spec.get("props", []):
         if rendering and rendering in p.get("encloses", []):
+            continue
+        if spec.get("_far") and (p.get("junk") or p.get("after") or p["type"] in LITTER):   # (too small to see from the next district)
             continue
         t1 = time.time()
         builders.build_prop(p, spec["height"])
