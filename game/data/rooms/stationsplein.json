@@ -96,7 +96,7 @@
         "name": "plein",
         "min": [
           -45.0,
-          -8.0
+          0.0
         ],
         "max": [
           115.0,
@@ -115,6 +115,52 @@
           "puddle_scale": 0.9
         },
         "kerb": true
+      },
+      {
+        "name": "plein_w",
+        "min": [
+          -45.0,
+          -1.6
+        ],
+        "max": [
+          22.9,
+          0.0
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        }
+      },
+      {
+        "name": "plein_e",
+        "min": [
+          47.1,
+          -1.6
+        ],
+        "max": [
+          115.0,
+          0.0
+        ],
+        "y": 0.0,
+        "material": {
+          "ph": "square_concrete_pavers",
+          "tint": [
+            0.75,
+            0.74,
+            0.72
+          ],
+          "wet": 0.55,
+          "puddles": 0.12,
+          "puddle_scale": 0.9
+        }
       },
       {
         "name": "hendrikkade",

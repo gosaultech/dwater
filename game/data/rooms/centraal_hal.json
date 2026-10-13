@@ -40,9 +40,9 @@
     "ceiling": {
       "ph": "dark_wood",
       "tint": [
-        0.3,
-        0.22,
-        0.16
+        0.46,
+        0.34,
+        0.25
       ],
       "scale": 0.5
     },
@@ -89,10 +89,24 @@
     "south": {
       "openings": [
         {
+          "kind": "window",
+          "center": 4.5,
+          "width": 3.0,
+          "sill": 3.2,
+          "height": 5.0
+        },
+        {
           "kind": "passage",
           "center": 12.0,
           "width": 5.2,
           "height": 8.5
+        },
+        {
+          "kind": "window",
+          "center": 19.5,
+          "width": 3.0,
+          "sill": 3.2,
+          "height": 5.0
         }
       ]
     },
@@ -704,6 +718,312 @@
       "collide": false
     },
     {
+      "type": "block",
+      "pos": [
+        0.06,
+        4.4,
+        18.0
+      ],
+      "size": [
+        0.12,
+        0.35,
+        36.0
+      ],
+      "material": {
+        "ph": "large_sandstone_blocks",
+        "tint": [
+          0.86,
+          0.8,
+          0.68
+        ],
+        "scale": 0.8
+      },
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        23.94,
+        4.4,
+        18.0
+      ],
+      "size": [
+        0.12,
+        0.35,
+        36.0
+      ],
+      "material": {
+        "ph": "large_sandstone_blocks",
+        "tint": [
+          0.86,
+          0.8,
+          0.68
+        ],
+        "scale": 0.8
+      },
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        12.0,
+        4.4,
+        0.06
+      ],
+      "size": [
+        24.0,
+        0.35,
+        0.12
+      ],
+      "material": {
+        "ph": "large_sandstone_blocks",
+        "tint": [
+          0.86,
+          0.8,
+          0.68
+        ],
+        "scale": 0.8
+      },
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        0.06,
+        8.4,
+        18.0
+      ],
+      "size": [
+        0.12,
+        0.35,
+        36.0
+      ],
+      "material": {
+        "ph": "large_sandstone_blocks",
+        "tint": [
+          0.86,
+          0.8,
+          0.68
+        ],
+        "scale": 0.8
+      },
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        23.94,
+        8.4,
+        18.0
+      ],
+      "size": [
+        0.12,
+        0.35,
+        36.0
+      ],
+      "material": {
+        "ph": "large_sandstone_blocks",
+        "tint": [
+          0.86,
+          0.8,
+          0.68
+        ],
+        "scale": 0.8
+      },
+      "collide": false
+    },
+    {
+      "type": "block",
+      "pos": [
+        12.0,
+        8.4,
+        0.06
+      ],
+      "size": [
+        24.0,
+        0.35,
+        0.12
+      ],
+      "material": {
+        "ph": "large_sandstone_blocks",
+        "tint": [
+          0.86,
+          0.8,
+          0.68
+        ],
+        "scale": 0.8
+      },
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        2.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        5.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        8.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        11.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        14.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        17.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        20.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        23.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        26.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        29.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        32.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
+      "type": "beam",
+      "pos": [
+        12.0,
+        10.4,
+        35.0
+      ],
+      "size": [
+        24.0,
+        0.6,
+        0.36
+      ],
+      "collide": false
+    },
+    {
       "type": "camp_bed",
       "pos": [
         16.6,
@@ -841,86 +1161,14 @@
     },
     {
       "type": "model",
-      "model": "ph:cardboard_box_01",
+      "model": "ph:potted_plant_04",
       "pos": [
-        7.72,
-        0.0,
-        0.42
-      ],
-      "yaw": 0,
-      "scale": 0.85,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        23.06,
-        0.0,
-        0.42
-      ],
-      "yaw": 17,
-      "scale": 0.86,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        0.42,
-        0.0,
-        23.3
-      ],
-      "yaw": 110,
-      "scale": 0.97,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:plastic_crate_02",
-      "pos": [
-        23.58,
-        0.0,
-        34.26
-      ],
-      "yaw": -69,
-      "scale": 0.84,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        7.98,
+        8.48,
         0.0,
         35.58
       ],
-      "yaw": 199,
-      "scale": 0.85,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:plastic_crate_02",
-      "pos": [
-        8.7,
-        0.0,
-        35.58
-      ],
-      "yaw": 173,
-      "scale": 0.87,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:plastic_crate_02",
-      "pos": [
-        15.36,
-        0.0,
-        0.42
-      ],
-      "yaw": 0,
-      "scale": 0.97,
+      "yaw": 189,
+      "scale": 0.81,
       "collide": false
     },
     {
@@ -939,96 +1187,36 @@
       "type": "model",
       "model": "ph:cardboard_box_01",
       "pos": [
-        0.42,
-        0.0,
-        34.69
-      ],
-      "yaw": 91,
-      "scale": 0.84,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        13.8,
-        0.0,
-        35.58
-      ],
-      "yaw": 178,
-      "scale": 0.99,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:trashbag",
-      "pos": [
-        9.0,
-        0.0,
-        0.42
-      ],
-      "yaw": 7,
-      "scale": 0.84,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        0.42,
-        0.0,
-        16.07
-      ],
-      "yaw": 60,
-      "scale": 0.81,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        23.58,
-        0.0,
-        31.73
-      ],
-      "yaw": -116,
-      "scale": 0.9,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        16.35,
-        0.0,
-        0.42
-      ],
-      "yaw": 13,
-      "scale": 0.86,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
-        3.46,
-        0.0,
-        35.58
-      ],
-      "yaw": 194,
-      "scale": 0.95,
-      "collide": false
-    },
-    {
-      "type": "model",
-      "model": "ph:cardboard_box_01",
-      "pos": [
         21.31,
         0.0,
         35.58
       ],
       "yaw": 150,
       "scale": 0.82,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        22.15,
+        0.0,
+        35.58
+      ],
+      "yaw": 171,
+      "scale": 0.94,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        14.65,
+        0.0,
+        35.58
+      ],
+      "yaw": 207,
+      "scale": 0.96,
       "collide": false
     },
     {
@@ -1067,9 +1255,9 @@
       "pos": [
         23.8,
         10.5,
-        0.2
+        35.8
       ],
-      "yaw": -45,
+      "yaw": -135,
       "scale": 1.0,
       "collide": false
     },
@@ -1079,25 +1267,25 @@
       "pos": [
         0.2,
         10.5,
-        0.2
+        35.8
       ],
-      "yaw": 45,
+      "yaw": 135,
       "scale": 1.0,
       "collide": false
     },
     {
       "type": "leaflets",
       "pos": [
-        22.07,
+        14.12,
         0.0,
-        12.81
+        24.97
       ],
       "size": [
         4.0,
         0.01,
         3.0
       ],
-      "seed": 920,
+      "seed": 266,
       "count": 6,
       "paper": [
         0.5,
@@ -1111,16 +1299,16 @@
     {
       "type": "leaflets",
       "pos": [
-        16.69,
+        7.79,
         0.0,
-        29.31
+        14.52
       ],
       "size": [
         4.0,
         0.01,
         3.0
       ],
-      "seed": 108,
+      "seed": 224,
       "count": 6,
       "paper": [
         0.5,
@@ -1137,7 +1325,7 @@
       "kind": "area",
       "pos": [
         12.0,
-        10.8,
+        10.0,
         8.0
       ],
       "look_at": [
@@ -1145,21 +1333,21 @@
         0.0,
         8.0
       ],
-      "size": 1.65,
+      "size": 2.2,
       "color": [
         1.0,
         0.86,
         0.68
       ],
-      "blender_power": 320,
-      "godot_energy": 0.6,
-      "range": 12.0
+      "blender_power": 1500,
+      "godot_energy": 0.8,
+      "range": 14.0
     },
     {
       "kind": "area",
       "pos": [
         12.0,
-        10.8,
+        10.0,
         20.0
       ],
       "look_at": [
@@ -1167,22 +1355,22 @@
         0.0,
         20.0
       ],
-      "size": 1.65,
+      "size": 2.2,
       "color": [
         1.0,
         0.86,
         0.68
       ],
-      "blender_power": 300,
-      "godot_energy": 0.6,
-      "range": 12.0,
+      "blender_power": 1400,
+      "godot_energy": 0.8,
+      "range": 14.0,
       "flicker": true
     },
     {
       "kind": "area",
       "pos": [
         12.0,
-        10.8,
+        10.0,
         30.0
       ],
       "look_at": [
@@ -1190,15 +1378,93 @@
         0.0,
         30.0
       ],
-      "size": 1.65,
+      "size": 2.2,
       "color": [
         1.0,
         0.86,
         0.68
       ],
-      "blender_power": 260,
-      "godot_energy": 0.5,
-      "range": 12.0
+      "blender_power": 1300,
+      "godot_energy": 0.7,
+      "range": 14.0
+    },
+    {
+      "kind": "point",
+      "pos": [
+        12.0,
+        9.6,
+        8.0
+      ],
+      "color": [
+        1.0,
+        0.72,
+        0.42
+      ],
+      "blender_power": 160,
+      "godot_energy": 0.3,
+      "range": 8.0,
+      "radius": 0.4
+    },
+    {
+      "kind": "point",
+      "pos": [
+        12.0,
+        9.6,
+        28.5
+      ],
+      "color": [
+        1.0,
+        0.72,
+        0.42
+      ],
+      "blender_power": 160,
+      "godot_energy": 0.3,
+      "range": 8.0,
+      "radius": 0.4
+    },
+    {
+      "kind": "area",
+      "pos": [
+        3.0,
+        4.2,
+        8.2
+      ],
+      "look_at": [
+        3.0,
+        0.0,
+        8.2
+      ],
+      "size": 1.1,
+      "color": [
+        1.0,
+        0.9,
+        0.75
+      ],
+      "blender_power": 220,
+      "godot_energy": 0.3,
+      "range": 7.0
+    },
+    {
+      "kind": "area",
+      "pos": [
+        21.0,
+        4.2,
+        8.2
+      ],
+      "look_at": [
+        21.0,
+        0.0,
+        8.2
+      ],
+      "size": 1.1,
+      "color": [
+        1.0,
+        0.9,
+        0.75
+      ],
+      "blender_power": 220,
+      "godot_energy": 0.3,
+      "range": 7.0
     },
     {
       "kind": "point",

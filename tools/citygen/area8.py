@@ -57,7 +57,9 @@ S = street_room("stationsplein", "Stationsplein", SO, (SW, SD), 14.0,
                 "the crowd to the station's middle arch, and over it all the station's long front, floodlit.")
 S["outdoor"] = {
     "window_rooms": ROOMS, "lamp_power": 420.0, "lamp_energy": 1.0,
-    "ground": [{"name": "plein", "min": [-45.0, -8.0], "max": [115.0, 40.0], "y": 0.0, "material": PAVERS, "kerb": True},
+    "ground": [{"name": "plein", "min": [-45.0, 0.0], "max": [115.0, 40.0], "y": 0.0, "material": PAVERS, "kerb": True},
+               {"name": "plein_w", "min": [-45.0, -1.6], "max": [ARCH - 12.1, 0.0], "y": 0.0, "material": PAVERS},   # (up to the station's
+               {"name": "plein_e", "min": [ARCH + 12.1, -1.6], "max": [115.0, 0.0], "y": 0.0, "material": PAVERS},   # front, not into its hall)
                {"name": "hendrikkade", "min": [-45.0, 40.0], "max": [115.0, SD], "y": 0.0, "material": BRICKS}],
     "tracks": [{"from": [33.5, SD], "to": [33.5, 32.0], "y": 0.0}, {"from": [33.5, 32.0], "to": [24.0, 24.0], "y": 0.0},
                {"from": [24.0, 24.0], "to": [-30.0, 24.0], "y": 0.0},
@@ -139,10 +141,12 @@ H = shop_room("centraal_hal", "Centraal Station · Hal", HO, (24.0, 36.0), 11.0,
               "but for the gap the army cut in it, and beyond it the escalators down to line 52.",
               {"floor": {"ph": "terrazzo_tiles", "tint": [0.62, 0.6, 0.57], "rough": 0.3},
                "wall": {"ph": "red_bricks_04", "tint": [0.75, 0.52, 0.42], "scale": 1.0},
-               "ceiling": {"ph": "dark_wood", "tint": [0.3, 0.22, 0.16], "scale": 0.5},
+               "ceiling": {"ph": "dark_wood", "tint": [0.46, 0.34, 0.25], "scale": 0.5},
                "wainscot": {"ph": "large_sandstone_blocks", "tint": [0.86, 0.8, 0.68], "scale": 0.8}, "wainscot_height": 1.4,
                "pit": {"color": [0.2, 0.2, 0.2], "rough": 0.7}, "skirting": None}, exposure=1.0)
-H["walls"] = {"south": {"openings": [{"kind": "passage", "center": 12.0, "width": ARCH_W, "height": ARCH_H}]},
+H["walls"] = {"south": {"openings": [{"kind": "window", "center": 4.5, "width": 3.0, "sill": 3.2, "height": 5.0},
+                                     {"kind": "passage", "center": 12.0, "width": ARCH_W, "height": ARCH_H},
+                                     {"kind": "window", "center": 19.5, "width": 3.0, "sill": 3.2, "height": 5.0}]},
               "north": {"openings": [{"kind": "passage", "center": 12.0, "width": 4.4, "height": 4.0}]}}   # the escalators down, beyond it
 units = [("west", 3.4, "KRANTEN · TIJDSCHRIFTEN", 0.0), ("west", 8.2, "BROODJES · KOFFIE", 0.35), ("west", 13.0, "BLOEMEN", 0.0),
          ("east", 3.4, "STROOPWAFELS", 0.0), ("east", 8.2, "BOEKHANDEL", 0.0), ("east", 13.0, "DROGISTERIJ", 0.6)]
@@ -181,15 +185,26 @@ props += [
     {"type": "model", "model": "ph:wall_clock", "pos": [12.0, 7.4, 0.04], "yaw": 0, "scale": 3.0, "collide": False},
     {"type": "model", "model": "ph:lantern_chandelier_01", "pos": [12.0, 9.0, 8.0], "yaw": 0, "fit": [1.2, 2.0, 1.2], "collide": False},
     {"type": "model", "model": "ph:lantern_chandelier_01", "pos": [12.0, 9.0, 28.5], "yaw": 0, "fit": [1.2, 2.0, 1.2], "collide": False}]
+SAND = {"ph": "large_sandstone_blocks", "tint": [0.86, 0.8, 0.68], "scale": 0.8}
+for y in (4.4, 8.4):   # sandstone bands round the brick
+    props += [{"type": "block", "pos": [0.06, y, 18.0], "size": [0.12, 0.35, 36.0], "material": SAND, "collide": False},
+              {"type": "block", "pos": [23.94, y, 18.0], "size": [0.12, 0.35, 36.0], "material": SAND, "collide": False},
+              {"type": "block", "pos": [12.0, y, 0.06], "size": [24.0, 0.35, 0.12], "material": SAND, "collide": False}]
+for z in range(2, 36, 3):   # the roof's beams
+    props.append({"type": "beam", "pos": [12.0, 10.4, float(z)], "size": [24.0, 0.6, 0.36], "collide": False})
 for k, x in enumerate((16.6, 17.6, 18.6, 19.6, 20.6)):   # camp beds: they waited the night here
     props.append({"type": "camp_bed", "pos": [x, 0.0, 32.6], "yaw": 0, "size": [0.7, 0.42, 1.9], "occupied": k == 3, "seed": 840 + k})
 for z in (25.2, 26.2, 27.2, 28.2):
     props.append({"type": "ticket_machine", "pos": [23.7, 0.0, z], "yaw": -90, "size": [0.8, 1.7, 0.5]})
 H["props"] = props
 H["lights"] = [
-    {"kind": "area", "pos": [12.0, 10.8, 8.0], "look_at": [12.0, 0.0, 8.0], "size": 3.0, "color": [1.0, 0.86, 0.68], "blender_power": 320, "godot_energy": 0.6, "range": 12.0},
-    {"kind": "area", "pos": [12.0, 10.8, 20.0], "look_at": [12.0, 0.0, 20.0], "size": 3.0, "color": [1.0, 0.86, 0.68], "blender_power": 300, "godot_energy": 0.6, "range": 12.0, "flicker": True},
-    {"kind": "area", "pos": [12.0, 10.8, 30.0], "look_at": [12.0, 0.0, 30.0], "size": 3.0, "color": [1.0, 0.86, 0.68], "blender_power": 260, "godot_energy": 0.5, "range": 12.0},
+    {"kind": "area", "pos": [12.0, 10.0, 8.0], "look_at": [12.0, 0.0, 8.0], "size": 4.0, "color": [1.0, 0.86, 0.68], "blender_power": 1500, "godot_energy": 0.8, "range": 14.0},
+    {"kind": "area", "pos": [12.0, 10.0, 20.0], "look_at": [12.0, 0.0, 20.0], "size": 4.0, "color": [1.0, 0.86, 0.68], "blender_power": 1400, "godot_energy": 0.8, "range": 14.0, "flicker": True},
+    {"kind": "area", "pos": [12.0, 10.0, 30.0], "look_at": [12.0, 0.0, 30.0], "size": 4.0, "color": [1.0, 0.86, 0.68], "blender_power": 1300, "godot_energy": 0.7, "range": 14.0},
+    {"kind": "point", "pos": [12.0, 9.6, 8.0], "color": [1.0, 0.72, 0.42], "blender_power": 160, "godot_energy": 0.3, "range": 8.0, "radius": 0.4},
+    {"kind": "point", "pos": [12.0, 9.6, 28.5], "color": [1.0, 0.72, 0.42], "blender_power": 160, "godot_energy": 0.3, "range": 8.0, "radius": 0.4},
+    {"kind": "area", "pos": [3.0, 4.2, 8.2], "look_at": [3.0, 0.0, 8.2], "size": 2.0, "color": [1.0, 0.9, 0.75], "blender_power": 220, "godot_energy": 0.3, "range": 7.0},
+    {"kind": "area", "pos": [21.0, 4.2, 8.2], "look_at": [21.0, 0.0, 8.2], "size": 2.0, "color": [1.0, 0.9, 0.75], "blender_power": 220, "godot_energy": 0.3, "range": 7.0},
     {"kind": "point", "pos": [12.0, -4.4, -8.6], "color": [0.75, 0.85, 1.0], "blender_power": 80, "godot_energy": 0.2, "range": 6.0, "radius": 0.3}]
 H["shots"] = [
     {"id": "a", "pos": [21.8, 5.2, 22.5], "look_at": [7.0, 1.2, 34.5], "fov": 64, "zone": {"min": [0.0, 24.0], "max": [24.0, 36.0]}, "priority": 1},
