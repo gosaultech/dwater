@@ -3,6 +3,7 @@
 # bioscoop, bloemenkraam (shops he walks into). Doors between a street and a shop are worked out with
 # tools/pipeline/facade.py, the same arithmetic the renderer uses.
 from pathlib import Path
+import os
 import json
 import random
 import sys
@@ -10,7 +11,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
 import facade as fz  # noqa: E402
 
-R = str(Path(__file__).resolve().parents[2] / "game" / "data" / "rooms") + "/"
+R = os.environ.get("DW_ROOMS", str(Path(__file__).resolve().parents[2] / "game" / "data" / "rooms") + "/")
 STOREY = 11
 SKY = {"hdri": "kloppenheim_07_puresky", "strength": 0.045, "camera": 0.1, "tint": [1.0, 0.76, 0.55]}
 ROOMS = ["warm_bar", "fireplace", "small_empty_room_2", "christmas_photo_studio_04", "warm_restaurant_night", "unfinished_office_night"]
