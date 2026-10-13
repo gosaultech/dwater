@@ -29,23 +29,22 @@
       "rough": 0.9
     },
     "wall": {
-      "color": [
-        0.32,
-        0.06,
-        0.05
+      "ph": "beige_wall_001",
+      "tint": [
+        0.41,
+        0.077,
+        0.064
       ],
-      "rough": 0.55,
-      "noise": 0.12
+      "rough": 0.55
     },
     "ceiling": {
-      "color": [
-        0.28,
-        0.2,
-        0.09
+      "ph": "ceiling_interior",
+      "tint": [
+        0.359,
+        0.256,
+        0.115
       ],
-      "rough": 0.45,
-      "metal": 0.4,
-      "noise": 0.1
+      "rough": 0.45
     },
     "wainscot": {
       "ph": "rosewood_veneer1",
@@ -80,7 +79,7 @@
     "strength": 0.5
   },
   "render": {
-    "exposure": 1.1,
+    "exposure": 0.902,
     "bloom": {
       "threshold": 0.95,
       "strength": 0.25,
@@ -522,6 +521,258 @@
       ],
       "lamp": false,
       "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        14.06,
+        0.0,
+        13.58
+      ],
+      "yaw": 166,
+      "scale": 0.88,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        8.94,
+        0.0,
+        13.58
+      ],
+      "yaw": 199,
+      "scale": 0.94,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.42,
+        0.0,
+        1.89
+      ],
+      "yaw": 72,
+      "scale": 0.97,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        3.17,
+        0.0,
+        13.58
+      ],
+      "yaw": 186,
+      "scale": 0.81,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        13.07,
+        0.0,
+        13.58
+      ],
+      "yaw": 200,
+      "scale": 0.98,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        15.53,
+        0.0,
+        4.32
+      ],
+      "yaw": -119,
+      "scale": 0.8,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        0.42,
+        0.0,
+        6.85
+      ],
+      "yaw": 85,
+      "scale": 0.96,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:potted_plant_04",
+      "pos": [
+        0.42,
+        0.0,
+        7.62
+      ],
+      "yaw": 61,
+      "scale": 0.92,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wall_clock",
+      "pos": [
+        0.03,
+        2.15,
+        11.48
+      ],
+      "yaw": 90,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:hanging_picture_frame_02",
+      "pos": [
+        7.46,
+        1.75,
+        13.97
+      ],
+      "yaw": 180,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        7.229,
+        2.43,
+        0.08
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 0,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        5.0,
+        2.58,
+        13.92
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 180,
+      "collide": false
+    },
+    {
+      "type": "exit_sign",
+      "pos": [
+        11.0,
+        2.58,
+        13.92
+      ],
+      "size": [
+        0.42,
+        0.17,
+        0.07
+      ],
+      "yaw": 180,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        0.2,
+        3.9,
+        13.8
+      ],
+      "yaw": 135,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:security_camera_01",
+      "pos": [
+        15.75,
+        3.9,
+        13.8
+      ],
+      "yaw": -135,
+      "scale": 1.0,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        10.66,
+        0.0,
+        1.23
+      ],
+      "size": [
+        4.0,
+        0.01,
+        3.0
+      ],
+      "seed": 289,
+      "count": 6,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "leaflets",
+      "pos": [
+        9.47,
+        0.0,
+        4.02
+      ],
+      "size": [
+        4.0,
+        0.01,
+        3.0
+      ],
+      "seed": 905,
+      "count": 6,
+      "paper": [
+        0.5,
+        0.48,
+        0.44
+      ],
+      "rough": 0.7,
+      "lift": 0.5,
+      "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_monobloc_chair_01",
+      "pos": [
+        14.28,
+        0.0,
+        8.62
+      ],
+      "yaw": 67,
+      "tip": 90,
+      "scale": 1.0,
+      "size": [
+        0.9,
+        0.5,
+        0.6
+      ]
     }
   ],
   "lights": [
