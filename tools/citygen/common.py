@@ -181,12 +181,20 @@ def finish_indoors(spec):
         return True
     fronts = {s_ for s_, w in spec.get("walls", {}).items() if w.get("facade")}
     sides = [s_ for s_ in ("north", "south", "east", "west") if s_ not in fronts]
-    n, added = max(3, int(W * D / 9)), 0
+    big = W * D > 200   # (a hall gets its junk in heaps, not lined round the walls)
+    n, added = (min(16, int(W * D / 25)) if big else max(3, int(W * D / 9))), 0
+    heap = None
     for _ in range(n * 10):
         if added >= n or not sides:
             break
-        side = rng.choice(sides)
-        u = rng.uniform(0.7, (W if side in ("north", "south") else D) - 0.7)
+        if big and heap and rng.random() < 0.7:
+            side, u = heap[0], heap[1] + rng.uniform(-0.9, 0.9)
+        else:
+            side = rng.choice(sides)
+            u = rng.uniform(0.7, (W if side in ("north", "south") else D) - 0.7)
+            heap = (side, u)
+        if not 0.7 < u < (W if side in ("north", "south") else D) - 0.7:
+            continue
         x, z, yaw = {"north": (u, 0.42, 0), "south": (u, D - 0.42, 180), "west": (0.42, u, 90), "east": (W - 0.42, u, -90)}[side]
         if not free(x, z, 0.35):
             continue
@@ -194,7 +202,7 @@ def finish_indoors(spec):
                               "yaw": round(yaw + rng.uniform(-30, 30)), "scale": round(rng.uniform(0.8, 1.0), 2), "collide": False})
         boxes.append((x, z, 0.35, 0.35, 0.0))
         added += 1
-    for ref, y in ON_WALLS:   # a clock, a picture, on walls with nothing against them
+    for ref, y in ON_WALLS if KINDS.get(spec["id"]) != "church" else []:   # a clock, a picture, on walls with nothing against them
         for _ in range(20):
             side = rng.choice(sides) if sides else None
             if side is None:

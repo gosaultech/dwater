@@ -248,6 +248,11 @@ wp += [
     {"type": "model", "model": "ph:Chandelier_03", "pos": [15.0, 4.2, 9.5], "yaw": 0, "fit": [1.4, 1.0, 1.4], "collide": False},
     {"type": "luggage", "pos": [uw, 0.0, 17.0], "size": [3.0, 0.0, 2.6], "seed": 61, "cases": 2, "bags": 3, "umbrella": True, "collide": False},
     {"type": "leaflets", "pos": [Ww / 2, 0.0, 10.0], "size": [Ww - 2, 0.0, 18.0], "seed": 62, "count": 30, "collide": False}]
+for x, z in ((6.5, 3.5), (11.5, 3.5), (16.5, 3.5), (6.5, 15.5), (16.5, 15.5)):   # the building's columns
+    wp.append({"type": "column", "pos": [x, 0.0, z], "size": [0.6, 5.5, 0.6]})
+for x, z, k in ((21.0, 15.5, 81), (2.6, 15.0, 82)):   # the coats and jackets at the back, picked over
+    wp.append({"type": "coat_rack", "pos": [x, 0.0, z], "yaw": 90, "size": [2.4, 1.6, 0.6], "seed": k,
+               "colors": [[0.04, 0.04, 0.05], [0.35, 0.28, 0.2], [0.12, 0.16, 0.22], [0.45, 0.06, 0.06], [0.5, 0.46, 0.4], [0.18, 0.22, 0.12]]})
 Wh["props"] = wp
 Wh["lights"] = [{"kind": "area", "pos": [7.0, 5.4, 9.5], "look_at": [7.0, 0.0, 9.5], "size": 3.0, "color": [1.0, 0.92, 0.82], "blender_power": 220, "godot_energy": 0.6, "range": 9.0},
                 {"kind": "area", "pos": [16.0, 5.4, 9.5], "look_at": [16.0, 0.0, 9.5], "size": 3.0, "color": [1.0, 0.92, 0.82], "blender_power": 180, "godot_energy": 0.5, "range": 9.0}]

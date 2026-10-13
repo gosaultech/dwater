@@ -484,6 +484,18 @@ def lockers(root, p, w, h, d):
             lbox(root, "locker_vent", (x0 + 0.08, h - 0.3, d / 2), (x1 - 0.08, h - 0.2, d / 2 + 0.003), M({"color": [0.05, 0.05, 0.06], "rough": 0.5}))
 
 
+def column(root, p, w, h, d):
+    """A store's structural column: plaster over concrete, a smoked mirror down each face, a dark plinth."""
+    lbox(root, "column", (-w / 2, 0.0, -d / 2), (w / 2, h, d / 2), M(p.get("material", {"ph": "beige_wall_001", "tint": [1.0, 0.98, 0.95]})))
+    lbox(root, "column_plinth", (-w / 2 - 0.012, 0.0, -d / 2 - 0.012), (w / 2 + 0.012, 0.12, d / 2 + 0.012), M({"color": [0.12, 0.11, 0.1], "rough": 0.4}))
+    glass = M({"color": [0.35, 0.34, 0.33], "rough": 0.12, "metal": 1.0, "grime": 0.3})
+    e, y0, y1 = 0.07, 0.6, 2.4
+    lbox(root, "column_mirror", (-w / 2 + e, y0, d / 2), (w / 2 - e, y1, d / 2 + 0.006), glass)
+    lbox(root, "column_mirror", (-w / 2 + e, y0, -d / 2 - 0.006), (w / 2 - e, y1, -d / 2), glass)
+    lbox(root, "column_mirror", (w / 2, y0, -d / 2 + e), (w / 2 + 0.006, y1, d / 2 - e), glass)
+    lbox(root, "column_mirror", (-w / 2 - 0.006, y0, -d / 2 + e), (-w / 2, y1, d / 2 - e), glass)
+
+
 TILE = {"color": [0.6, 0.58, 0.53], "rough": 0.95, "noise": 0.25, "noise_scale": 30.0, "bump": 0.4, "bevel": 0}
 STAINED = {"color": [0.45, 0.38, 0.27], "rough": 0.95, "noise": 0.55, "noise_scale": 2.5, "bump": 0.4, "bevel": 0}
 TBAR = {"color": [0.72, 0.72, 0.7], "rough": 0.4, "metal": 0.3, "noise": 0.05}
@@ -576,4 +588,4 @@ kit.PROPS.update({"ticket_machine": ticket_machine, "ticket_gates": ticket_gates
                   "poster": poster, "ticket_booth": ticket_booth, "coat_rack": coat_rack, "strip_light": strip_light,
                   "gun_rack": gun_rack, "clogs": clogs, "cheeses": cheeses, "rates_board": rates_board,
                   "glass_partition": glass_partition, "safe": safe,
-                  "drop_ceiling": drop_ceiling, "duct": duct, "exit_sign": exit_sign})
+                  "drop_ceiling": drop_ceiling, "duct": duct, "exit_sign": exit_sign, "column": column})
