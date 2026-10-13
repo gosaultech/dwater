@@ -12,6 +12,8 @@
 import math
 import random
 
+import bpy
+
 import builders
 import kit
 import street
@@ -361,13 +363,33 @@ def bus(root, p, w, h, d):
     body = M({"color": [0.82, 0.83, 0.84], "rough": 0.3, "metal": 0.3})
     band = M({"color": [0.12, 0.16, 0.22], "rough": 0.35})
     dark = M({"color": [0.02, 0.02, 0.02], "rough": 0.5})
-    inside = builders.emissive("bus_inside", (0.95, 0.97, 1.0), 0.6)
+    inside = builders.emissive("bus_inside", (0.95, 0.97, 1.0), 0.12)
+    seat = M({"color": [0.08, 0.12, 0.25], "rough": 0.8, "noise": 0.2})
+    strip = builders.emissive("bus_strip", (0.95, 0.97, 1.0), 5.0)
     halves = ((-w / 2, -0.3), (0.3, w / 2)) if p.get("bendy", w > 14.0) else ((-w / 2, w / 2),)
     for x0, x1 in halves:
         lbox(root, "bus_skirt", (x0, 0.35, -d / 2), (x1, 1.05, d / 2), body)
         lbox(root, "bus_roof", (x0, h - 0.45, -d / 2), (x1, h, d / 2), body)
         lbox(root, "bus_band", (x0, 1.0, -d / 2 - 0.005), (x1, 1.1, d / 2 + 0.005), band)
-        lbox(root, "bus_saloon", (x0 + 0.3, 1.05, -0.02), (x1 - 0.3, h - 0.45, 0.02), inside)
+        seats = Acc()   # the saloon: rows of seats each side of the gangway, strip lights in the ceiling
+        x = x0 + 0.9
+        while x < x1 - 1.6:
+            for sz in (-1, 1):
+                seats.box((x, 0.75, sz * 0.32), (x + 0.45, 0.85, sz * (d / 2 - 0.12)))
+                seats.box((x, 0.85, sz * 0.32), (x + 0.08, 1.45, sz * (d / 2 - 0.12)))
+            x += 0.8
+        seats.build("bus_seats", seat, root, smooth=False)
+        lbox(root, "bus_floor", (x0 + 0.2, 0.7, -d / 2 + 0.1), (x1 - 0.2, 0.74, d / 2 - 0.1), dark)
+        for sz in (-1, 1):
+            lbox(root, "bus_strip", (x0 + 0.5, h - 0.47, sz * 0.55 - 0.03), (x1 - 0.5, h - 0.45, sz * 0.55 + 0.03), strip)
+        ld = bpy.data.lights.new("bus_glow", "AREA")
+        ld.shape, ld.size, ld.size_y = "RECTANGLE", (x1 - x0) * 0.85, 1.4
+        ld.energy, ld.color = p.get("power", 160.0), (0.95, 0.97, 1.0)
+        ob = bpy.data.objects.new("bus_glow", ld)
+        bpy.context.scene.collection.objects.link(ob)
+        ob.parent = root
+        ob.location = g2b(((x0 + x1) / 2, h - 0.55, 0.0))
+        street.hide_panel(ob)
         for sz in (-1, 1):
             lbox(root, "bus_window", (x0 + 0.1, 1.1, sz * d / 2 - 0.01), (x1 - 0.1, h - 0.5, sz * d / 2 + 0.01), M("glass"))
             for k in range(int((x1 - x0) / 1.4) + 1):

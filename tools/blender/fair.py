@@ -271,10 +271,20 @@ def stall(root, p, w, h, d):
     paint, trim = LIVERY.get(p.get("kind", "oliebollen"), LIVERY["oliebollen"])
     body = M({"color": list(paint), "rough": 0.3, "noise": 0.05})
     f = d / 2   # (its footprint centred on its spot, as the game's collider is: the front at +d/2)
-    lbox(root, "stall_body", (-w / 2, 0.0, -d / 2), (w / 2, h, f - 0.05), body)
+    for lo, hi in (((-w / 2, 0.0, -d / 2), (w / 2, h, -d / 2 + 0.05)),            # the box as a shell, its hatch open:
+                   ((-w / 2, 0.0, -d / 2), (-w / 2 + 0.06, h, f - 0.05)),          # back, sides, roof, and the front
+                   ((w / 2 - 0.06, 0.0, -d / 2), (w / 2, h, f - 0.05)),            # round the hatch
+                   ((-w / 2, h - 0.06, -d / 2), (w / 2, h, f - 0.05)),
+                   ((-w / 2, 0.0, f - 0.12), (w / 2, 1.0, f - 0.05)),
+                   ((-w / 2, h - 0.5, f - 0.12), (w / 2, h, f - 0.05))):
+        lbox(root, "stall_body", lo, hi, body)
+    lbox(root, "stall_floor", (-w / 2, 0.88, -d / 2), (w / 2, 0.92, f - 0.1), M({"color": [0.2, 0.2, 0.21], "rough": 0.6}))
     lbox(root, "stall_band", (-w / 2 - 0.01, 0.42, -d / 2 - 0.01), (w / 2 + 0.01, 0.62, f - 0.06), M({"color": list(trim), "rough": 0.35}))
     lbox(root, "stall_skirt", (-w / 2 - 0.01, 0.0, -d / 2 - 0.01), (w / 2 + 0.01, 0.3, f - 0.06), M({"color": [0.7, 0.72, 0.74], "rough": 0.2, "metal": 0.9}))
-    lbox(root, "stall_inside", (-w / 2 + 0.1, 1.0, f - 0.05), (w / 2 - 0.1, h - 0.5, f - 0.03), builders.emissive("stall_inside", (1.0, 0.85, 0.6), 1.2))
+    lbox(root, "stall_inside", (-w / 2 + 0.1, 1.0, f - 1.2), (w / 2 - 0.1, h - 0.5, f - 1.18), M({"ph": "dirty_tiles", "tint": [0.9, 0.88, 0.84], "scale": 0.5}))
+    for sx in (-1, 1):   # the box's insides, lit by its own lamp
+        lbox(root, "stall_cheek", (sx * (w / 2 - 0.1) - 0.02, 1.0, f - 1.2), (sx * (w / 2 - 0.1) + 0.02, h - 0.5, f - 0.05), body)
+    lbox(root, "stall_ceiling", (-w / 2 + 0.1, h - 0.52, f - 1.2), (w / 2 - 0.1, h - 0.5, f - 0.05), M({"color": [0.75, 0.73, 0.7], "rough": 0.6}))
     lbox(root, "stall_counter", (-w / 2, 0.95, f - 0.1), (w / 2, 1.05, f + 0.5), M({"color": [0.5, 0.06, 0.05], "rough": 0.4}))
     flap = Acc()
     flap_b = Acc()
@@ -301,8 +311,25 @@ def stall(root, p, w, h, d):
                 x += 0.38
         for c, acc in toys.items():
             acc.build("prizes", M({"color": [v * 0.8 for v in BULB_COLOURS[c]], "rough": 0.9}), root, smooth=False)
-    elif show == "food":   # trays on the counter, a sugar shaker, a pile of paper bags
-        lbox(root, "food_tray", (-w / 4, 1.05, f), (w / 4, 1.12, f + 0.4), M({"color": [0.45, 0.28, 0.1], "rough": 0.6}))
+    elif show == "food":   # a glass case of what was fried, the fryers behind, the prices up on a board
+        steel = M({"color": [0.62, 0.63, 0.64], "rough": 0.3, "metal": 1.0, "noise": 0.15})
+        lbox(root, "food_case", (-w / 3, 1.05, f + 0.02), (w / 3, 1.08, f + 0.42), steel)
+        lbox(root, "food_glass", (-w / 3, 1.08, f + 0.4), (w / 3, 1.4, f + 0.42), M("glass"))
+        balls, sugar = Acc(), Acc()
+        for _ in range(int(w * 9)):
+            x, z = rng.uniform(-w / 3 + 0.06, w / 3 - 0.06), rng.uniform(f + 0.08, f + 0.36)
+            r = rng.uniform(0.035, 0.045)
+            balls.rod((x, 1.08, z), (x, 1.08 + r * 1.6, z), r, r * 0.7, 8)
+            sugar.rod((x, 1.08 + r * 1.55, z), (x, 1.08 + r * 1.75, z), r * 0.72, r * 0.2, 8)
+        balls.build("oliebollen", M({"color": [0.32, 0.17, 0.06], "rough": 0.55, "noise": 0.3}), root)
+        sugar.build("poedersuiker", M({"color": [0.85, 0.84, 0.8], "rough": 0.9}), root)
+        for x in (-w / 4, w / 4):
+            lbox(root, "fryer", (x - 0.4, 0.95, f - 1.15), (x + 0.4, 1.2, f - 0.7), steel)
+            lbox(root, "fryer_oil", (x - 0.34, 1.19, f - 1.1), (x + 0.34, 1.205, f - 0.75), M({"color": [0.12, 0.07, 0.01], "rough": 0.05}))
+        lbox(root, "menu_board", (-w / 2 + 0.4, 1.6, f - 1.17), (w / 2 - 0.4, h - 0.65, f - 1.15), M({"color": [0.03, 0.03, 0.035], "rough": 0.5}))
+        chalk = M({"color": [0.85, 0.84, 0.78], "rough": 0.8})
+        for k, line in enumerate(p.get("menu", [name, "3 STUKS  4,50", "6 STUKS  8,00", "MET ROZIJNEN +0,50"])):
+            text(root, line, (0.0, h - 0.85 - k * 0.24, f - 1.14), 0.13 if k else 0.18, chalk, font="DejaVuSans-Bold.ttf", depth=0.0)
     import landmarks
     landmarks.point(root, (0.0, h - 0.6, f + 0.8), p.get("power", 40.0), (1.0, 0.82, 0.55), radius=0.5)
 
