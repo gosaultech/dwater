@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import aftermath13  # noqa: E402
 import common  # noqa: E402
 
 
@@ -66,6 +67,17 @@ class DressTests(unittest.TestCase):
         once = copy.deepcopy(s)
         common.dress_street(s)
         self.assertEqual(s, once)
+
+    def test_a_street_s_story_is_put_down_once(self):
+        s = {"id": "reguliersbreestraat", "props": [], "outdoor": {"facades": [
+            {"facing": "south", "x0": 34.05, "x1": 44.0, "shop": {"name": "X"}}]}}
+        aftermath13.apply(s)
+        once = copy.deepcopy(s)
+        aftermath13.apply(s)
+        self.assertEqual(s, once)
+        self.assertTrue(all(p["after"] for p in s["props"]))
+        self.assertEqual(s["outdoor"]["facades"][0]["shop"]["smashed"], [1])
+        self.assertTrue(all(p.get("collide") is False for p in s["props"] if p["type"] in ("luggage", "leaflets")))
 
 
 if __name__ == "__main__":

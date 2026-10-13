@@ -43,3 +43,8 @@ Like a stage after the audience has fled the theatre: the coats are still on the
 
 Pickups (ammunition, medicine) are never painted into a picture: the game draws them, so they can
 be taken. Anything painted that looks like a pickup must not be one.
+
+The first districts (Herengracht, Thorbeckeplein, Rembrandtplein, Reguliersbreestraat, Muntplein, the
+Bloemenmarkt) predate this brief; their stories are retrofitted by `tools/citygen/aftermath13.py`: a family's
+luggage at the kerb, the hotel's guests, the queue for the last tram, a looted coffeeshop and a taxi, the
+police line at the Rokin, sandbagged doors along the flower market.

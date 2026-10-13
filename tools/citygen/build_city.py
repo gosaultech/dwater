@@ -20,6 +20,12 @@ def main(argv=None):
         runpy.run_path(str(HERE / f"{name}.py"), run_name="__main__")
     import json
     import common
+    import aftermath13
+    for rid in aftermath13.STORIES:
+        f = Path(common.R) / f"{rid}.json"
+        spec = json.loads(f.read_text())
+        aftermath13.apply(spec)
+        f.write_text(json.dumps(spec, indent=2, ensure_ascii=True) + "\n")
     for rid in KEPT:
         f = Path(common.R) / f"{rid}.json"
         spec = json.loads(f.read_text())
