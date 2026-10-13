@@ -436,6 +436,14 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   sold by the metre: each texture is hung at its true size. The furniture kit
   (`tools/blender/kit.py`) builds bevelled sofas, panelled kasten, a carved marble mantel, arched
   steel windows and the like from the props' sizes.
+- **Photographed stock.** Where modelling can't compete (a shelf of shampoo, a wall of wine, tulips
+  in their buckets, clothes on a rail), the shops show photographs of the real thing: a prop names
+  one (`"photo": "wine_rows"` on a shelving unit, a `photo_layer`, a `clothes_rail`) and Blender puts
+  each shelf's row of it on a card just behind the shelf's edge, so the real edge throws its shadow
+  on it. Like a stage set's painted backdrop behind real furniture: from the stalls you can't tell.
+  The photos are CC0, CC BY or public domain only (`tools/assets/photos.json` keeps each one's author
+  and licence; `tools/assets/photos.py fetch` downloads them, `credits` writes
+  `docs/photo_credits.md`). `tools/citygen/interiors.py` is the pass that dresses the shops with them.
 - **The whole floor at once.** To render a room, Blender builds every room on its storey at its
   origin (`tools/pipeline/house.py` agrees with the engine on the floor plan), so an open doorway
   shows the real room beyond. A shared wall is built half by each room; a door the game swings is
@@ -689,11 +697,10 @@ status screen (items, files, map, pickups), the death screen. Still to come, in 
    five places to search in each, then the station, its hall and line 52 under the IJ to Station
    Noord, where the route ends. Next, what lies past Noord. All pre-rendered backgrounds
    from RoomSpecs (`docs/handoff/areas_session_prompt.md` is the brief).
-2. **Polish pass over the shop interiors** (once every area is built): each one modelled to match
-   one or two reference photos (the camera matched to the photo, the room and its fixtures built
-   to it), its stand-ins swapped for CC0 scans, photo layers projected where modelling can't
-   compete (packed shelves, posters, flowers), its light matched; checked side by side with the
-   photo. Only CC0 / CC-BY photos go into a picture; the rest are for layout only.
+2. **Polish pass over the shop interiors**, under way (`tools/citygen/interiors.py`): photographed
+   stock on the shelves, the fixtures and signs each kind of shop is crowded with. Still to do: each
+   room's camera and light matched to a reference photo of a real shop of its kind, checked side by
+   side. Only CC0 / CC-BY photos go into a picture; the rest are for layout only.
 3. Saves (the typewriter), a title screen.
 4. **#27 (polish, deferred): a palm arch joint**, so the 870's right wrist cocks less (about 49
    degrees toward the little finger now). A rig change: rebuild `survivor.dwc`, then refit the
