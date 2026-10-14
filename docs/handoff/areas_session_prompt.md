@@ -1,5 +1,8 @@
 <!-- damned_waters/docs/handoff/areas_session_prompt.md -->
-<!-- Purpose: the brief that starts the next session (new areas as pre-rendered backgrounds). Paste it as the first message. -->
+<!-- Purpose: the brief that started the areas session (new areas as pre-rendered backgrounds). Kept for its history. -->
+
+> Superseded: the areas it asks for are built. Where the work stands now is in
+> `docs/handoff/session_memory.md` (and `CLAUDE.md` at the root).
 
 Continue Damned Waters (repo gosaultech/dwater). Start from branch `claude/inspiring-turing-gl0kys`
 (last commit: the death screen), and develop on the branch this session is given. This session

@@ -716,7 +716,7 @@ status screen (items, files, map, pickups), the death screen, a title screen. St
    Damrak (the Beurs's hall made a mortuary, the basin and its boats, the leaning houses), two to
    five places to search in each, then the station, its hall and line 52 under the IJ to Station
    Noord, where the route ends. Next, what lies past Noord. All pre-rendered backgrounds
-   from RoomSpecs (`docs/handoff/areas_session_prompt.md` is the brief).
+   from RoomSpecs (`docs/handoff/session_memory.md`: where the work stands).
 2. **Polish pass over the shop interiors**, under way (`tools/citygen/interiors.py`): photographed
    stock on the shelves, the fixtures and signs each kind of shop is crowded with. Still to do: each
    room's camera and light matched to a reference photo of a real shop of its kind, checked side by
