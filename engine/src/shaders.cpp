@@ -459,8 +459,8 @@ void main() {
     vec3 c = vec3(texture(texture0, fragTexCoord + ca).r, texture(texture0, fragTexCoord).g, texture(texture0, fragTexCoord - ca).b);
     c = clamp(c, 0.0, 1.0);
     float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
-    c = mix(vec3(l), c, 0.86);                                    // film: a little less colour
-    c *= mix(vec3(0.92, 1.0, 1.04), vec3(1.04, 1.0, 0.94), smoothstep(0.05, 0.6, l));   // cold shadows, warm lights
+    c = mix(vec3(l), c, 1.05);                                    // the city's own colours, a touch richer
+    c *= mix(vec3(0.88, 0.97, 1.08), vec3(1.02, 1.0, 0.97), smoothstep(0.05, 0.6, l));   // a moonlit night: blue shadows, lamplight barely warm
     c = mix(c, c * c * (3.0 - 2.0 * c), 0.2);                     // a gentle S-curve
     c = c * 0.97 + 0.01;                                          // blacks lifted a hair
     float v = smoothstep(0.4, 1.0, distance(fragTexCoord, vec2(0.5)) * 1.3);

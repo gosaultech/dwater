@@ -120,60 +120,6 @@
       0.95
     ]
   },
-  "tulips_a": {
-    "title": "Winter tulips in buckets...",
-    "creator": "Hermie Carino Photo Images",
-    "license": "by",
-    "license_version": "2.0",
-    "url": "https://live.staticflickr.com/5241/5344882894_45ca1925c7_b.jpg",
-    "landing": "https://www.flickr.com/photos/38451453@N02/5344882894",
-    "size": [
-      1024,
-      682
-    ],
-    "panel": [
-      0.0,
-      0.32,
-      0.88,
-      0.88
-    ]
-  },
-  "tulips_b": {
-    "title": "Winter tulips in buckets",
-    "creator": "Hermie Carino Photo Images",
-    "license": "by",
-    "license_version": "2.0",
-    "url": "https://live.staticflickr.com/5208/5344271335_026564d131_b.jpg",
-    "landing": "https://www.flickr.com/photos/38451453@N02/5344271335",
-    "size": [
-      1024,
-      682
-    ],
-    "panel": [
-      0.0,
-      0.2,
-      1.0,
-      0.88
-    ]
-  },
-  "tulip_buckets": {
-    "title": "Tulips by the bucket",
-    "creator": "Mr Padraig",
-    "license": "by",
-    "license_version": "2.0",
-    "url": "https://live.staticflickr.com/7721/26668603330_a16873883b_b.jpg",
-    "landing": "https://www.flickr.com/photos/41489545@N00/26668603330",
-    "size": [
-      1024,
-      686
-    ],
-    "panel": [
-      0.0,
-      0.38,
-      0.92,
-      0.95
-    ]
-  },
   "souvenir_window": {
     "title": "Seaside Souvenir Shop Window",
     "creator": "Nick Page Photos",

@@ -12,8 +12,5 @@ used as published, cropped and lit within the scene.
 - **pharmacy_drawers**: "untitled" by g_firkser, CC BY 2.0, <https://www.flickr.com/photos/38902313@N04/5671191923>
 - **souvenir_window**: "Seaside Souvenir Shop Window" by Nick Page Photos, CC BY 2.0, <https://www.flickr.com/photos/27506472@N04/6924730458>
 - **tshirts_rack**: "T Shirt" by oatsy40, CC BY 2.0, <https://www.flickr.com/photos/68089229@N06/9475504359>
-- **tulip_buckets**: "Tulips by the bucket" by Mr Padraig, CC BY 2.0, <https://www.flickr.com/photos/41489545@N00/26668603330>
-- **tulips_a**: "Winter tulips in buckets..." by Hermie Carino Photo Images, CC BY 2.0, <https://www.flickr.com/photos/38451453@N02/5344882894>
-- **tulips_b**: "Winter tulips in buckets" by Hermie Carino Photo Images, CC BY 2.0, <https://www.flickr.com/photos/38451453@N02/5344271335>
 - **wine_rows**: "wine" by gfairchild, CC BY 2.0, <https://www.flickr.com/photos/36770908@N08/4144527067>
 - **wine_shelf**: "Wine" by Tobyotter, CC BY 2.0, <https://www.flickr.com/photos/78428166@N00/4433318139>

@@ -29,11 +29,11 @@
       "rough": 0.55
     },
     "wall": {
-      "ph": "beige_wall_001",
+      "ph": "plastered_wall",
       "tint": [
         1.0,
-        0.974,
-        0.897
+        1.02,
+        1.012
       ],
       "rough": 0.9
     },
@@ -41,8 +41,8 @@
       "ph": "ceiling_interior",
       "tint": [
         0.154,
-        0.115,
-        0.09
+        0.128,
+        0.109
       ],
       "rough": 0.8
     },

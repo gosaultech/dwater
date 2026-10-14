@@ -41,7 +41,7 @@ where they stood. Through the arch is the station's hall (`centraal_hal`): the s
 train on the board RIJDT NIET but one, and the escalators down to line 52 (`metro_centraal`), where
 the last train north waits with its doors open. It runs under the IJ to Station Noord
 (`station_noord`), the end of the line and, for now, of the game: a title card comes up out of the
-dark. (Like a play's last scene: the lights go down before the curtain.) The attic bathroom
+dark, and a press goes back to the title screen. (Like a play's last scene: the lights go down before the curtain.) The attic bathroom
 (`badkamer`) is built and rendered, waiting for its stairs. And:
 
 - **Backgrounds and depth.** Pre-rendered Cycles backgrounds, each with a painted depth map.
@@ -84,7 +84,7 @@ cd engine
 cmake --preset macos            # configure
 cmake --build --preset macos    # build
 ctest --preset macos            # unit tests
-../build/macos/damned_waters    # play
+../build/macos/damned_waters    # play (opens on the title screen)
 ```
 
 **Windows 10 or 11**
@@ -436,14 +436,23 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   sold by the metre: each texture is hung at its true size. The furniture kit
   (`tools/blender/kit.py`) builds bevelled sofas, panelled kasten, a carved marble mantel, arched
   steel windows and the like from the props' sizes.
-- **Photographed stock.** Where modelling can't compete (a shelf of shampoo, a wall of wine, tulips
-  in their buckets, clothes on a rail), the shops show photographs of the real thing: a prop names
+- **Photographed stock.** Where modelling can't compete (a shelf of shampoo, a wall of wine,
+  clothes on a rail), the shops show photographs of the real thing: a prop names
   one (`"photo": "wine_rows"` on a shelving unit, a `photo_layer`, a `clothes_rail`) and Blender puts
   each shelf's row of it on a card just behind the shelf's edge, so the real edge throws its shadow
   on it. Like a stage set's painted backdrop behind real furniture: from the stalls you can't tell.
   The photos are CC0, CC BY or public domain only (`tools/assets/photos.json` keeps each one's author
   and licence; `tools/assets/photos.py fetch` downloads them, `credits` writes
   `docs/photo_credits.md`). `tools/citygen/interiors.py` is the pass that dresses the shops with them.
+- **Tulips, modelled.** Flowers on a card looked like what they were, so the flower stalls' tulips
+  are built (`tools/blender/flowers.py`): each bloom six petals in two layers, green where it meets
+  the stem, a little light through it; stems bending out of the bucket into a domed bunch; broad
+  leaves over the rim. One mesh per colour, so a stall of a thousand blooms builds in a blink.
+- **Night colours.** The brick, road and paving scans were photographed under sunnier skies and
+  all sat orange or tan. `GRADE` in `tools/blender/surfaces.py` turns and drains each one (`"hue"`,
+  `"sat"`, which any RoomSpec material can also set): the brick red-brown, the clinker road a dark
+  purple-brown, the pavement and cobbles grey. Like a photographer's colour profile per camera: the
+  same scene, its colours as they really are. The moon does the rest: a cool sky, warm-white lamps.
 - **The whole floor at once.** To render a room, Blender builds every room on its storey at its
   origin (`tools/pipeline/house.py` agrees with the engine on the floor plan), so an open doorway
   shows the real room beyond. A shared wall is built half by each room; a door the game swings is
@@ -568,6 +577,16 @@ or Quit. Like a curtain coming down in a set order: lights, words, then the hous
 The timing lives in `include/dw/death.hpp` (pure, unit-tested); `Game::draw_death` draws it.
 `--capture` has it twice: `you_died_falling` (the words coming up) and `you_died` (all of it).
 
+## The title screen
+
+The game opens on black: DAMNED WATERS comes up out of the dark in the same lettering as the
+route's end, then the choice under it, New Game or Quit, with the title drone underneath. New Game
+brings the dark down and he wakes in the hall, fresh; the route's end comes back here. A theatre
+before the play: house lights down, the name on the curtain, then the usher's question. For now
+it is only that: no picture behind it, no Continue until there are saves. `--room id` skips it,
+straight into that room. The timing lives in `include/dw/title.hpp` (pure, unit-tested);
+`Game::draw_title` draws it, and `--capture` has it as `title_screen`.
+
 ## Controls
 
 Controller first: any DualSense, Xbox or Switch Pro controller (USB or Bluetooth) on both
@@ -653,6 +672,7 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 | `src/plates.hpp`, `src/plates.cpp` | The plates of the rooms around him, decoded in the background and uploaded a few a frame. |
 | `src/status_view.cpp` | The status screen on screen: fonts, the 3D previews and icons, his figure, the tabs, the button glyphs. |
 | `include/dw/death.hpp` | The death screen's timing: the fade, the words, the drips, the choice. Pure, unit-tested. |
+| `include/dw/title.hpp` | The title screen's timing and its menu (New Game, Quit). Pure, unit-tested. |
 | `src/game_world.cpp` | Pickups, notes, things to look at and doors in a room; carrying out what the screen asks for. |
 | `src/cast_items.cpp` | The case's items as 3D models (the guns are `cast_guns.cpp`'s). |
 | `src/effects.cpp` | Blood, brass and spent shells, limbs that come away, the empty magazines he drops, the muzzle flash. |
@@ -686,7 +706,7 @@ sqlite3 build/damned_waters.db "SELECT mode, status, runtime_s, frames, worst_fr
 ## Next milestones
 
 Done in the C++ engine: combat (both guns, kick, dodge, counters, gore), the reloads, the
-status screen (items, files, map, pickups), the death screen. Still to come, in order:
+status screen (items, files, map, pickups), the death screen, a title screen. Still to come, in order:
 
 1. **The city.** The house is in (hall, parlour, library, souterrain, kelder; the attic bathroom
    waits for its stairs), and out of it the Herengracht, Thorbeckeplein and Rembrandtplein, the
@@ -701,7 +721,7 @@ status screen (items, files, map, pickups), the death screen. Still to come, in 
    stock on the shelves, the fixtures and signs each kind of shop is crowded with. Still to do: each
    room's camera and light matched to a reference photo of a real shop of its kind, checked side by
    side. Only CC0 / CC-BY photos go into a picture; the rest are for layout only.
-3. Saves (the typewriter), a title screen.
+3. Saves (the typewriter), and a Continue on the title screen.
 4. **#27 (polish, deferred): a palm arch joint**, so the 870's right wrist cocks less (about 49
    degrees toward the little finger now). A rig change: rebuild `survivor.dwc`, then refit the
    grips (`--fitgrips`) and the poses (`--fitpistol`, `--fit870`).

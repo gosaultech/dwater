@@ -21,20 +21,20 @@
   "materials": {
     "floor": "ph:marble_01",
     "wall": {
-      "ph": "beige_wall_001",
+      "ph": "plastered_wall",
       "tint": [
-        0.795,
-        0.705,
-        0.564
+        0.128,
+        0.295,
+        0.246
       ],
-      "rough": 0.6
+      "rough": 0.8
     },
     "ceiling": {
       "ph": "ceiling_interior",
       "tint": [
         0.962,
-        0.897,
-        0.795
+        0.994,
+        0.968
       ],
       "rough": 0.6
     },
@@ -956,6 +956,40 @@
       "godot_energy": 0.3,
       "range": 4.0,
       "radius": 0.1
+    },
+    {
+      "kind": "point",
+      "pos": [
+        0.35,
+        2.28,
+        8.193
+      ],
+      "color": [
+        0.25,
+        1.0,
+        0.42
+      ],
+      "blender_power": 7,
+      "godot_energy": 0.06,
+      "range": 3.0,
+      "radius": 0.08
+    },
+    {
+      "kind": "point",
+      "pos": [
+        8.0,
+        2.43,
+        0.35
+      ],
+      "color": [
+        0.25,
+        1.0,
+        0.42
+      ],
+      "blender_power": 7,
+      "godot_energy": 0.06,
+      "range": 3.0,
+      "radius": 0.08
     }
   ],
   "shots": [

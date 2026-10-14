@@ -4,6 +4,7 @@
 //   ./damned_waters                 play: WASD move, Shift run, Q quick turn, RMB/K aim (W/S: head/legs),
 //                                   LMB/J/Space fire, R reload, 1/2/F guns, C/Alt dodge, E kick, L flashlight,
 //                                   T tank/modern, F3 debug; Enter after dying to try again
+//                                   (it opens on the title screen; --room id starts straight in that room)
 //   --flashlight                    start with the flashlight on (also for --capture)
 //   ./damned_waters --capture out   stage + screenshot every setup, then exit
 //   ./damned_waters --room proef --still 3.2,2.2,163 out.png [--shot c]
@@ -45,13 +46,14 @@
 int main(int argc, char** argv) {
     std::string capture, sheet, only, view, view_png, room = "gang", still, still_png, shot;
     long max_frames = -1;
+    bool chose_room = false;
     for (int i = 1; i + 1 < argc; ++i) {
         std::string a = argv[i];
         if (a == "--capture") capture = argv[++i];
         else if (a == "--sheet") sheet = argv[++i];
         else if (a == "--only") only = argv[++i];
         else if (a == "--view" && i + 2 < argc) { view = argv[++i]; view_png = argv[++i]; }
-        else if (a == "--room") room = argv[++i];
+        else if (a == "--room") { room = argv[++i]; chose_room = true; }
         else if (a == "--still" && i + 2 < argc) { still = argv[++i]; still_png = argv[++i]; }
         else if (a == "--shot") shot = argv[++i];
         else if (a == "--frames") max_frames = std::stol(argv[++i]);
@@ -198,6 +200,7 @@ int main(int argc, char** argv) {
             TraceLog(LOG_INFO, "captured %s", name.c_str());
         }
     } else {
+        if (!chose_room) game.open_title();
         while (!WindowShouldClose() && !game.quit_requested()) {
             float dt = std::min(GetFrameTime(), 1.0f / 20.0f);
             worst = std::max(worst, double(GetFrameTime()) * 1000.0);
