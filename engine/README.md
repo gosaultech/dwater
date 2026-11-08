@@ -49,7 +49,8 @@ dark, and a press goes back to the title screen. (Like a play's last scene: the 
 - **Camera cuts.** The camera switches shots as you cross zones. The current shot is kept near
   the thresholds (hysteresis), so it never flickers back and forth. The streets, squares and halls
   are cut into many short shots (the camera pass below), so he's never a speck.
-- **The survivor.** Walk and run, tank or modern controls, quick turn, and an aim pose.
+- **The survivor.** Walk and run, tank or modern controls, quick turn, and an aim pose. He sneaks,
+  walks, runs and stands as real people do: motion capture (below), his arms on the gun.
 - **One Verdronkene.** Its brain runs IDLE → ALERT → PURSUIT → ATTACK (0.85 s readable
   wind-up) → RECOVERY. The strike does 20 damage and knocks you back.
 - **Characters built in C++ at startup.** There are no model files. Torso, arms and legs are
@@ -602,6 +603,28 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   last one takes whatever is left of the row (never a sliver, never a house standing out in the
   next street). A terrace ends at the corner plot, whatever its size.
 
+## How he walks (motion capture)
+
+His legs, hips, spine, neck and head move as real people's did: gait cycles from the 100STYLE motion
+capture dataset (CC BY 4.0, `docs/motion_credits.md`), a tactical "Swat" walk for the sneak, a
+hurried walk and run, a standing idle. `tools/anim/bake_mocap.py` finds the actors' strides nearest
+each of his speeds, averages them into one loop, mirrors it so neither leg is favoured, sets the
+average lean and gaze (the actors hurried and crouched; he stays upright, eyes ahead), and writes the
+loops for his rig into `src/mocap_clips.inc`. The capture faces +z and the rig -z; both turn a joint
+Y then X then Z, so a captured turn seen from behind is the same turn with its X and Z reversed.
+
+`dw/mocap.hpp` plays them: each loop starts with the left foot down, the stride's phase moves on as
+far as his feet carry him (so they plant instead of sliding), the loops either side of his speed are
+mixed at the same phase, and faster than a loop's own speed its stride lengthens and its step
+quickens a little each. Slowing to a stop he settles into the idle loop. His arms stay on the gun
+(the fitted carry), and his torso swings a little less for holding it. ELI5: a flip-book of a real
+person walking for each pace; walk faster and you flip faster, and between two paces both books are
+traced over each other.
+
+Re-bake: `python3 tools/anim/bake_mocap.py --src <folder holding 100STYLE/>` (the 1.5 GB dataset from
+Zenodo record 8127870). A filmstrip of a stride: `--view "survivor/pose=walk/speed=1.9/t=0.3,90,4,3.2,0,0.95,30" out.png`
+(`t`: seconds further on).
+
 ## The death screen
 
 When he goes down, the picture drains into a deep red-black and blood seeps in from the edges;
@@ -716,6 +739,7 @@ other). Run it under `xvfb-run` like `--capture`. Classic tank controls are in t
 | `src/game_walk.cpp` | The walk-through (`--walkthrough`): the stick held through every doorway and staircase, to prove a cut never turns him round. |
 | `src/game_house.cpp` | The house in the game: loading every room, each storey's walls and Drowned, walking into the next room, the doors and their peeks, the Drowned following through doorways, the cellar's risers, the stairs, the retry checkpoint. |
 | `src/plates.hpp`, `src/plates.cpp` | The plates of the shots near him, decoded in the background and uploaded a few a frame. |
+| `include/dw/mocap.hpp`, `src/mocap.cpp`, `src/mocap_clips.inc` | The motion-captured gait loops and how they're played by his speed. Pure, unit-tested. |
 | `include/dw/streaming.hpp` | Which plates to keep: every shot he could step into within a few seconds; one let go only once he's well away. Pure, unit-tested. |
 | `src/status_view.cpp` | The status screen on screen: fonts, the 3D previews and icons, his figure, the tabs, the button glyphs. |
 | `include/dw/death.hpp` | The death screen's timing: the fade, the words, the drips, the choice. Pure, unit-tested. |

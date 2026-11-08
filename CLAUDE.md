@@ -48,7 +48,7 @@ off, what is open, and the lessons learned in this container.
   - Tests: `<dir>/dw_tests`.
   - Screenshots: `xvfb-run -a -s "-screen 0 1920x1080x24" <dir>/damned_waters --capture <out>`
     (97 setups).
-- Tools tests: `python3 -m unittest discover -s tools/<citygen|assets|pipeline|telemetry>/tests`.
+- Tools tests: `python3 -m unittest discover -s tools/<citygen|assets|pipeline|telemetry|anim>/tests`.
   Use `set -o pipefail` before piping a check through `tail`.
 - City room files: `python3 tools/citygen/build_city.py` regenerates `game/data/rooms` (set
   `DW_ROOMS=<dir>/` to write elsewhere).

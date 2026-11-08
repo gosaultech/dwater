@@ -1500,6 +1500,7 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     Character c = Character::make(survivor ? Kind::Survivor : Kind::Drowned, variant);
     c.place({0, 0, 0}, 0);
     Pose pose = Pose::Idle;
+    float speed_opt = -1, extra_t = 0;
     std::vector<int> cuts;
     float pitch = 0;
     bool live = false;   // /live: a reload played up to its moment as the game plays it, not posed and settled there
@@ -1529,9 +1530,11 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
         if (key == "rack") c.reloading.kind = reload::Kind::ShellRack;
         if (key == "port") c.reloading.from_grip = false;
         if (key == "live") live = true;
+        if (key == "speed") speed_opt = std::stof(val);   // m/s (walk, run: the stride the motion capture takes at it)
+        if (key == "t") extra_t = std::stof(val);         // s more of it (a filmstrip: a frame of the stride each)
         i = j;
     }
-    const float speed = pose == Pose::Walk || pose == Pose::Shamble ? 0.8f : 0.0f;
+    const float speed = speed_opt >= 0 ? speed_opt : pose == Pose::Walk || pose == Pose::Shamble ? 0.8f : 0.0f;
     if (c.reloading.on && c.weapon() == 1 && c.reloading.kind == reload::Kind::Magazine) c.reloading.kind = reload::Kind::Shell;
     if (live && c.reloading.on) {   // played as the game plays it: from the aim, the reload running in real time up to t
         const float until = c.reloading.t;
@@ -1555,7 +1558,7 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
         const Vector3 b = c.barrel_dir();
         TraceLog(LOG_INFO, "VIEW barrel dir %.2f %.2f %.2f  muzzle %.2f %.2f %.2f", b.x, b.y, b.z, c.muzzle().x, c.muzzle().y, c.muzzle().z);
     }
-    if (!live) for (int f = 0; f < 60; ++f) c.animate(pose, speed, 1.0f / 60, pitch);
+    if (!live) for (int f = 0; f < 60 + int(extra_t * 60); ++f) c.animate(pose, speed, 1.0f / 60, pitch);
     else c.animate(pose, speed, 1.0f / 60, pitch);
     render_shadows({&c});
     bind_shadows();

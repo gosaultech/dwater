@@ -11,6 +11,8 @@
 
 #include "dw/character_file.hpp"
 #include "dw/core.hpp"
+#include "dw/controls.hpp"
+#include "dw/mocap.hpp"
 #include "dw/ready.hpp"
 #include "dw/room_spec.hpp"
 #include "cast_guns.hpp"
@@ -423,7 +425,7 @@ void Character::fk() {
         const Vector3 a = Vector3Add(ang_[j], twitch_[j]);
         Matrix R = MatrixMultiply(MatrixMultiply(MatrixRotateZ(a.z), MatrixRotateX(a.x)), MatrixRotateY(a.y));
         Vector3 o = off_[j];
-        if (j == J_PELVIS) o = {off_[j].x, pelvis_h_ + bob_, off_[j].z};
+        if (j == J_PELVIS) o = {off_[j].x + sway_.x, pelvis_h_ + bob_, off_[j].z + sway_.y};
         Matrix L = MatrixMultiply(R, MatrixTranslate(o.x, o.y, o.z));
         W_[j] = MatrixMultiply(L, PARENT[j] < 0 ? root : W_[PARENT[j]]);
     }
@@ -707,13 +709,18 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     if (pose != Pose::Aim) from_ready_ = ready;
     const bool carrying = kind == Kind::Survivor && (ready || (pose == Pose::Aim && from_ready_));
     auto arm = [](int j) { return j == J_SHO_L || j == J_WRI_L || j == J_SHO_R || j == J_WRI_R; };
+    // The motion capture's joints follow it closely (eased as slowly as a change of pose, a walk's
+    // swing would be dulled to half of itself).
+    const float km = smoothing(30.0f, dt);
+    auto captured = [&](int j) { return mocap_feet_ && (j <= J_HEAD || (j >= J_HIP_L && j <= J_ANK_R)); };
     for (int j = 0; j < J_COUNT; ++j)
         ang_[j] = j >= J_THUMB1_L ? slerp_angles(ang_[j], T[j], k)
                   : carrying && arm(j) ? angles_near(slerp_angles(ang_[j], T[j], k), T[j])   // (written as the pose has it, once there)
-                                       : Vector3Lerp(ang_[j], T[j], k);
+                                       : Vector3Lerp(ang_[j], T[j], captured(j) ? km : k);
     if (steps_)   // a reload's steps time the fingers themselves: they follow closely
         for (int j = J_THUMB1_L; j < J_THUMB1_R; ++j) ang_[j] = slerp_angles(ang_[j], T[j], smoothing(40.0f, dt));
-    bob_ = Lerp(bob_, bob, k);
+    bob_ = Lerp(bob_, bob, mocap_feet_ ? km : k);
+    sway_ = Vector2Lerp(sway_, sway_t_, mocap_feet_ ? km : k);
     // Trigger discipline (ready.hpp): the gun comes up as the arms ease to the aim, and only once
     // it's nearly there does the trigger finger leave the frame for the trigger; it comes off first
     // when he lowers it, and stays off through a reload, a dodge, a kick.
@@ -935,9 +942,33 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
     // the way (its wrist sits easy there, not bent round a gun held in at the chest).
     const bool driving_out = !drowned && weapon_ == 0 && pose == Pose::Reload && reloading.on && reloading.kind == reload::Kind::Magazine &&
                              reloading.t >= reload::DRIVE_OUT;
+    // Standing, sneaking, walking, running: his legs, hips and spine as a real person's at his speed
+    // (motion capture, mocap.hpp); the stride's phase moves on as far as his feet carry him, so they
+    // plant. The arms stay on the gun (below); the torso swings a little less for holding it.
+    mocap_feet_ = false;
+    sway_t_ = {};
+    if (!drowned && (pose == Pose::Idle || pose == Pose::Walk || pose == Pose::Run)) {
+        const float scale = pelvis_h_ / mocap::WALK.hip_height;
+        const mocap::Pace p = mocap::pace(speed, scale, SNEAK_SPEED, WALK_SPEED, RUN_SPEED);
+        loco_ += dt * speed / std::max(p.stride, 0.2f);
+        loco_ -= std::floor(loco_);
+        idle_ += dt / mocap::IDLE.time;
+        idle_ -= std::floor(idle_);
+        const float still = 1.0f - std::clamp((speed - 0.05f) / 0.45f, 0.0f, 1.0f);
+        const mocap::Frame f = mocap::at(p, loco_, still, idle_);
+        static constexpr int JM[mocap::NJ] = {J_PELVIS, J_SPINE, J_CHEST, J_NECK, J_HEAD, J_HIP_L, J_KNE_L, J_ANK_L, J_HIP_R, J_KNE_R, J_ANK_R};
+        for (int k = 0; k < mocap::NJ; ++k) T[JM[k]] = f.ang[k];
+        T[J_SPINE].y *= 0.6f;
+        T[J_CHEST].y *= 0.6f;
+        bob = f.off.y * scale - pelvis_h_;
+        sway_t_ = {f.off.x * scale, f.off.z * scale};
+        phase_ = loco_ * 2 * kPi;   // (the limp keys off his step)
+        mocap_feet_ = true;
+    }
     switch (driving_out ? Pose::Aim : pose) {
         case Pose::Walk:
         case Pose::Run: {
+            if (mocap_feet_) break;   // (his: the motion capture, above; this is the Drowned's)
             const bool run = pose == Pose::Run;
             // Sneaking (his walk at a sneak's pace, about 0.8 m/s): shorter steps placed carefully,
             // knees bent, a little hunched, arms drawn in, the head kept up. Eased in by the speed.
@@ -1232,7 +1263,8 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         T[J_SPINE] = Vector3Add(T[J_SPINE], {-0.1f * limp, 0, 0.12f * limp * std::max(0.0f, -s) * moving});
         bob -= 0.035f * limp * std::max(0.0f, -s) * moving;
     }
-    for (float s : {-1.0f, 1.0f}) {   // keep the soles flat
+    for (float s : {-1.0f, 1.0f}) {   // keep the soles flat (the motion capture's feet roll heel to toe on their own)
+        if (mocap_feet_) break;
         int hp = s < 0 ? J_HIP_L : J_HIP_R, kn = s < 0 ? J_KNE_L : J_KNE_R;
         T[s < 0 ? J_ANK_L : J_ANK_R] = {-(T[hp].x + T[kn].x) * 0.9f, 0, 0};
     }
