@@ -47,7 +47,8 @@ dark, and a press goes back to the title screen. (Like a play's last scene: the 
 - **Backgrounds and depth.** Pre-rendered Cycles backgrounds, each with a painted depth map.
   Characters are hidden correctly behind painted furniture, like RE (1998).
 - **Camera cuts.** The camera switches shots as you cross zones. The current shot is kept near
-  the thresholds (hysteresis), so it never flickers back and forth.
+  the thresholds (hysteresis), so it never flickers back and forth. The streets, squares and halls
+  are cut into many short shots (the camera pass below), so he's never a speck.
 - **The survivor.** Walk and run, tank or modern controls, quick turn, and an aim pose.
 - **One Verdronkene.** Its brain runs IDLE → ALERT → PURSUIT → ATTACK (0.85 s readable
   wind-up) → RECOVERY. The strike does 20 damage and knocks you back.
@@ -404,9 +405,11 @@ flat: the camera crew moves room to room, nobody has to change the scenery.
   as a street plan does. The beat is a door interactable with a `"target_room"` standing in the
   gap (within 1.6 m of its middle); one that stands anywhere else never fires, and the way on is a
   wall, so a test checks every one in the city.
-- **No waiting at a door.** The plates of the rooms next door are decoded on a worker thread
-  while he's still in this one and uploaded a couple per frame (`src/plates.cpp`), so the cut is
-  instant; rooms out of reach are let go. A stage crew setting up the next backdrops in the wings.
+- **No waiting at a door.** The plates of every shot he could step into within a few seconds
+  (`dw/streaming.hpp`: within 14 m of its zone, through doors and down stairs too) are decoded on a
+  worker thread and uploaded a couple per frame (`src/plates.cpp`); one is let go only once he's
+  22 m from it. So the cut is instant, and the GPU holds a dozen or so plates, not whole
+  districts. A stage crew setting up the next backdrops in the wings.
 - **The dead lie still** (`"lying"` on one of the Drowned in a room file): laid out among the
   bodies, it stays down until he comes within 4 m and it can see him, or a shot goes off, or it's
   hit; then it gets up the way a knocked-down one does. **Keys** (the cellar key, the store's staff
@@ -454,6 +457,28 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   `"sat"`, which any RoomSpec material can also set): the brick red-brown, the clinker road a dark
   purple-brown, the pavement and cobbles grey. Like a photographer's colour profile per camera: the
   same scene, its colours as they really are. The moon does the rest: a cool sky, warm-white lamps.
+- **Cordons through the wide rooms** (`tools/citygen/barricades.py`). The big squares and
+  boulevards (the Dam, the Stationsplein, Rembrandtplein, Muntplein, Thorbeckeplein, Rokin, Damrak)
+  were too open to film: a shot that holds 90 x 70 m of the Dam holds him as a speck. As the
+  PlayStation-era survival horrors walled their streets with wrecks and barricades, the evacuation
+  left lanes of crowd barriers (dranghekken, police tape along the top) through each one: he walks a
+  lane ten or so metres wide past every door, item and Drowned, and sees the rest of the square
+  through the bars. Each room's lanes are rectangles; a line of barriers stands wherever a lane's
+  edge crosses open floor. Tested (`tools/citygen/tests/test_barricades.py`): everything in a room is
+  on one walkable network, nothing outside the lanes can be walked, and the lanes meet across the
+  seamless passages between rooms. ELI5: a festival's stewards' fences: the field is still there,
+  you just walk where the fences let you, and so the cameras know where to point.
+- **The camera pass** (`tools/citygen/cameras.py`). The wide rooms' shots are planned by rule, the way
+  the PlayStation survival horrors cut their cities into many short shots: each shot holds a stretch
+  of floor about ten metres long (a lane, cut along its length), and from it a 1.75 m man stands
+  about a fifth to a third of the picture's height (the old wide shots held him at 5 to 10 percent),
+  never under 17 percent typically, and wholly in the picture anywhere in the zone. The cameras look
+  the way he travels through the room, so "forward" stays forward on the stick across a cut; from a
+  little above (about 20 degrees down) with the game's lenses (40 to 60 degrees), alternating sides;
+  never in a tree, a lamp, an awning or a prop, and with a clear view of the floor they hold.
+  `python3 tools/citygen/cameras.py report` prints every shot's numbers; the tests
+  (`tools/citygen/tests/test_cameras.py`) check them all. Like a crew blocking a walk-and-talk: not
+  one camera on a rooftop, but one every ten metres, each looking the way the actor walks.
 - **The whole floor at once.** To render a room, Blender builds every room on its storey at its
   origin (`tools/pipeline/house.py` agrees with the engine on the floor plan), so an open doorway
   shows the real room beyond. A shared wall is built half by each room; a door the game swings is
@@ -682,7 +707,8 @@ other). Run it under `xvfb-run` like `--capture`. Classic tank controls are in t
 | `include/dw/transition.hpp` | The beat between storeys: fade, dark, swap, fade up. Pure, unit-tested. |
 | `src/game_walk.cpp` | The walk-through (`--walkthrough`): the stick held through every doorway and staircase, to prove a cut never turns him round. |
 | `src/game_house.cpp` | The house in the game: loading every room, each storey's walls and Drowned, walking into the next room, the doors and their peeks, the Drowned following through doorways, the cellar's risers, the stairs, the retry checkpoint. |
-| `src/plates.hpp`, `src/plates.cpp` | The plates of the rooms around him, decoded in the background and uploaded a few a frame. |
+| `src/plates.hpp`, `src/plates.cpp` | The plates of the shots near him, decoded in the background and uploaded a few a frame. |
+| `include/dw/streaming.hpp` | Which plates to keep: every shot he could step into within a few seconds; one let go only once he's well away. Pure, unit-tested. |
 | `src/status_view.cpp` | The status screen on screen: fonts, the 3D previews and icons, his figure, the tabs, the button glyphs. |
 | `include/dw/death.hpp` | The death screen's timing: the fade, the words, the drips, the choice. Pure, unit-tested. |
 | `include/dw/title.hpp` | The title screen's timing and its menu (New Game, Quit). Pure, unit-tested. |

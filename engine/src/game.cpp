@@ -33,7 +33,7 @@ bool Game::init(const std::string& room_id) {
     if (!load_house(room_id)) return false;
     spec_ = rooms_[size_t(room_)];
     plates_.start(root + "/game/assets/rooms");
-    if (!plates_.need(spec_.id, shot_ids(spec_))) { TraceLog(LOG_ERROR, "missing plates for %s", spec_.id.c_str()); return false; }
+    if (spec_.shots.empty() || !plates_.need(spec_.id, {spec_.shots.front().id})) { TraceLog(LOG_ERROR, "missing plates for %s", spec_.id.c_str()); return false; }
     plate_ = LoadShaderFromMemory(nullptr, shaders::PLATE_FS);
     l_depth_ = GetShaderLocation(plate_, "u_depth");
     l_near_ = GetShaderLocation(plate_, "u_near");
@@ -288,6 +288,7 @@ void Game::bind_shadows() {
 }
 
 void Game::cut_to(const std::string& id) {
+    plates_.need(spec_.id, {id});   // (streamed in ahead of him; if he outran it, a hitch rather than no picture)
     for (const auto& s : spec_.shots)
         if (s.id == id) {
             shot_ = id;
@@ -475,6 +476,7 @@ void Game::update(float dt) {
         std::string next = select_shot(spec_.zones(), shot_, player_.x, player_.z);
         if (next != shot_) cut_to(next);
     }
+    if (std::hypot(player_.x - stream_at_.x, player_.z - stream_at_.y) > streaming::RESTREAM) stream_plates();
     animate(g);
     upload_lights();   // after the pose: the flash light sits where the muzzle is now
 }
@@ -1158,7 +1160,7 @@ std::string Game::stage(int i) {
                 run(6.0f);                               // (through the beat and out on the Dam)
                 name = "onto_the_dam";
             } else if (i == 62) {
-                at("dam", 34.0f, 44.0f, 0.9f);   // among the stalls, the wheel ahead
+                at("dam", 47.5f, 46.0f, 0.9f);   // by the carousel, the wheel ahead beyond the cordon
                 run(0.6f);
                 name = "the_funfair";
             } else if (i == 63) {

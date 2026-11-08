@@ -2034,6 +2034,618 @@
       "seed": 34,
       "roll": 82,
       "collide": false
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        8.0,
+        0.0,
+        55.0
+      ],
+      "yaw": 90,
+      "size": [
+        10.7,
+        1.1,
+        0.6
+      ],
+      "seed": 700,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        12.0,
+        0.0,
+        4.625
+      ],
+      "yaw": 90,
+      "size": [
+        9.45,
+        1.1,
+        0.6
+      ],
+      "seed": 701,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        38.0,
+        0.0,
+        13.575
+      ],
+      "yaw": 90,
+      "size": [
+        9.85,
+        1.1,
+        0.6
+      ],
+      "seed": 702,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        38.0,
+        0.0,
+        23.425
+      ],
+      "yaw": 90,
+      "size": [
+        9.85,
+        1.1,
+        0.6
+      ],
+      "seed": 703,
+      "tape": false,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        46.0,
+        0.0,
+        33.1
+      ],
+      "yaw": 90,
+      "size": [
+        10.9,
+        1.1,
+        0.6
+      ],
+      "seed": 704,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        46.0,
+        0.0,
+        44.0
+      ],
+      "yaw": 90,
+      "size": [
+        10.9,
+        1.1,
+        0.6
+      ],
+      "seed": 705,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        46.0,
+        0.0,
+        54.9
+      ],
+      "yaw": 90,
+      "size": [
+        10.9,
+        1.1,
+        0.6
+      ],
+      "seed": 706,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        52.0,
+        0.0,
+        1.125
+      ],
+      "yaw": 90,
+      "size": [
+        2.45,
+        1.1,
+        0.6
+      ],
+      "seed": 707,
+      "tape": false,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        52.0,
+        0.0,
+        24.0
+      ],
+      "yaw": 90,
+      "size": [
+        8.7,
+        1.1,
+        0.6
+      ],
+      "seed": 708,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        58.0,
+        0.0,
+        48.058
+      ],
+      "yaw": 90,
+      "size": [
+        8.817,
+        1.1,
+        0.6
+      ],
+      "seed": 709,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        58.0,
+        0.0,
+        56.875
+      ],
+      "yaw": 90,
+      "size": [
+        8.817,
+        1.1,
+        0.6
+      ],
+      "seed": 710,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        58.0,
+        0.0,
+        65.692
+      ],
+      "yaw": 90,
+      "size": [
+        8.817,
+        1.1,
+        0.6
+      ],
+      "seed": 711,
+      "tape": false,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        62.0,
+        0.0,
+        6.325
+      ],
+      "yaw": 90,
+      "size": [
+        9.35,
+        1.1,
+        0.6
+      ],
+      "seed": 712,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        62.0,
+        0.0,
+        15.675
+      ],
+      "yaw": 90,
+      "size": [
+        9.35,
+        1.1,
+        0.6
+      ],
+      "seed": 713,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        62.0,
+        0.0,
+        45.5
+      ],
+      "yaw": 90,
+      "size": [
+        3.7,
+        1.1,
+        0.6
+      ],
+      "seed": 714,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        67.0,
+        0.0,
+        30.825
+      ],
+      "yaw": 90,
+      "size": [
+        6.35,
+        1.1,
+        0.6
+      ],
+      "seed": 715,
+      "tape": false,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        67.0,
+        0.0,
+        37.175
+      ],
+      "yaw": 90,
+      "size": [
+        6.35,
+        1.1,
+        0.6
+      ],
+      "seed": 716,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        79.0,
+        0.0,
+        43.5
+      ],
+      "yaw": 90,
+      "size": [
+        7.7,
+        1.1,
+        0.6
+      ],
+      "seed": 717,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        57.0,
+        0.0,
+        2.0
+      ],
+      "yaw": 0,
+      "size": [
+        10.7,
+        1.1,
+        0.6
+      ],
+      "seed": 718,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        16.1,
+        0.0,
+        9.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.9,
+        1.1,
+        0.6
+      ],
+      "seed": 719,
+      "tape": false,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        25.0,
+        0.0,
+        9.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.9,
+        1.1,
+        0.6
+      ],
+      "seed": 720,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        33.9,
+        0.0,
+        9.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.9,
+        1.1,
+        0.6
+      ],
+      "seed": 721,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        57.0,
+        0.0,
+        20.0
+      ],
+      "yaw": 0,
+      "size": [
+        10.7,
+        1.1,
+        0.6
+      ],
+      "seed": 722,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        42.0,
+        0.0,
+        28.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.7,
+        1.1,
+        0.6
+      ],
+      "seed": 723,
+      "tape": false,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        55.575,
+        0.0,
+        28.0
+      ],
+      "yaw": 0,
+      "size": [
+        7.85,
+        1.1,
+        0.6
+      ],
+      "seed": 724,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        63.425,
+        0.0,
+        28.0
+      ],
+      "yaw": 0,
+      "size": [
+        7.85,
+        1.1,
+        0.6
+      ],
+      "seed": 725,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        69.825,
+        0.0,
+        40.0
+      ],
+      "yaw": 0,
+      "size": [
+        6.35,
+        1.1,
+        0.6
+      ],
+      "seed": 726,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        76.175,
+        0.0,
+        40.0
+      ],
+      "yaw": 0,
+      "size": [
+        6.35,
+        1.1,
+        0.6
+      ],
+      "seed": 727,
+      "tape": false,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        60.0,
+        0.0,
+        44.0
+      ],
+      "yaw": 0,
+      "size": [
+        4.7,
+        1.1,
+        0.6
+      ],
+      "seed": 728,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        66.075,
+        0.0,
+        47.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.85,
+        1.1,
+        0.6
+      ],
+      "seed": 729,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        74.925,
+        0.0,
+        47.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.85,
+        1.1,
+        0.6
+      ],
+      "seed": 730,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        4.125,
+        0.0,
+        50.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.45,
+        1.1,
+        0.6
+      ],
+      "seed": 731,
+      "tape": false,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        9.5,
+        0.0,
+        60.0
+      ],
+      "yaw": 0,
+      "size": [
+        3.7,
+        1.1,
+        0.6
+      ],
+      "seed": 732,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        18.638,
+        0.0,
+        60.0
+      ],
+      "yaw": 0,
+      "size": [
+        9.975,
+        1.1,
+        0.6
+      ],
+      "seed": 733,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        28.612,
+        0.0,
+        60.0
+      ],
+      "yaw": 0,
+      "size": [
+        9.975,
+        1.1,
+        0.6
+      ],
+      "seed": 734,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        41.875,
+        0.0,
+        60.0
+      ],
+      "yaw": 0,
+      "size": [
+        8.95,
+        1.1,
+        0.6
+      ],
+      "seed": 735,
+      "tape": false,
+      "barricade": true
     }
   ],
   "walls": {
@@ -2173,179 +2785,654 @@
   ],
   "shots": [
     {
-      "id": "a",
       "pos": [
-        29.0,
-        3.6,
-        68.0
-      ],
-      "look_at": [
-        8.0,
-        10.0,
-        28.0
-      ],
-      "fov": 64,
-      "zone": {
-        "min": [
-          0.0,
-          35.0
-        ],
-        "max": [
-          30.0,
-          70.0
-        ]
-      },
-      "priority": 1
-    },
-    {
-      "id": "b",
-      "pos": [
-        47.0,
-        3.6,
-        69.0
-      ],
-      "look_at": [
-        22.0,
-        10.0,
-        26.0
-      ],
-      "fov": 64,
-      "zone": {
-        "min": [
-          30.0,
-          35.0
-        ],
-        "max": [
-          60.0,
-          70.0
-        ]
-      },
-      "priority": 1
-    },
-    {
-      "id": "c",
-      "pos": [
-        61.0,
-        3.6,
-        68.5
-      ],
-      "look_at": [
-        84.0,
-        4.0,
-        26.0
-      ],
-      "fov": 62,
-      "zone": {
-        "min": [
-          60.0,
-          35.0
-        ],
-        "max": [
-          90.0,
-          70.0
-        ]
-      },
-      "priority": 1
-    },
-    {
-      "id": "d",
-      "pos": [
+        48.37,
         2.6,
-        3.8,
-        34.0
+        13.07
       ],
       "look_at": [
-        17.0,
-        5.0,
-        2.0
+        52.69,
+        0.49,
+        9.48
       ],
-      "fov": 64,
+      "fov": 46.6,
+      "zone": {
+        "min": [
+          51.25,
+          1.75
+        ],
+        "max": [
+          62.25,
+          11.75
+        ]
+      },
+      "priority": 1,
+      "id": "a"
+    },
+    {
+      "pos": [
+        42.38,
+        2.6,
+        12.26
+      ],
+      "look_at": [
+        46.18,
+        0.43,
+        8.16
+      ],
+      "fov": 46.4,
+      "zone": {
+        "min": [
+          44.25,
+          0.0
+        ],
+        "max": [
+          52.75,
+          10.0
+        ]
+      },
+      "priority": 1,
+      "id": "b"
+    },
+    {
+      "pos": [
+        35.62,
+        2.6,
+        11.07
+      ],
+      "look_at": [
+        39.64,
+        0.39,
+        7.2
+      ],
+      "fov": 51.2,
+      "zone": {
+        "min": [
+          37.25,
+          0.0
+        ],
+        "max": [
+          45.75,
+          10.0
+        ]
+      },
+      "priority": 1,
+      "id": "c"
+    },
+    {
+      "pos": [
+        27.61,
+        2.6,
+        11.4
+      ],
+      "look_at": [
+        31.19,
+        0.38,
+        7.13
+      ],
+      "fov": 47.7,
+      "zone": {
+        "min": [
+          28.5,
+          0.0
+        ],
+        "max": [
+          38.75,
+          9.25
+        ]
+      },
+      "priority": 1,
+      "id": "d"
+    },
+    {
+      "pos": [
+        19.0,
+        2.6,
+        11.31
+      ],
+      "look_at": [
+        22.61,
+        0.37,
+        7.07
+      ],
+      "fov": 47.3,
+      "zone": {
+        "min": [
+          20.0,
+          0.0
+        ],
+        "max": [
+          30.0,
+          9.25
+        ]
+      },
+      "priority": 1,
+      "id": "e"
+    },
+    {
+      "pos": [
+        53.36,
+        4.2,
+        25.06
+      ],
+      "look_at": [
+        55.11,
+        1.69,
+        19.9
+      ],
+      "fov": 46.4,
+      "zone": {
+        "min": [
+          51.25,
+          10.25
+        ],
+        "max": [
+          62.25,
+          20.25
+        ]
+      },
+      "priority": 1,
+      "id": "f"
+    },
+    {
+      "pos": [
+        40.51,
+        2.6,
+        18.92
+      ],
+      "look_at": [
+        45.22,
+        0.42,
+        15.92
+      ],
+      "fov": 51.8,
+      "zone": {
+        "min": [
+          44.25,
+          8.5
+        ],
+        "max": [
+          52.75,
+          19.5
+        ]
+      },
+      "priority": 1,
+      "id": "g"
+    },
+    {
+      "pos": [
+        12.0,
+        2.6,
+        11.4
+      ],
+      "look_at": [
+        15.35,
+        0.26,
+        7.0
+      ],
+      "fov": 47.9,
+      "zone": {
+        "min": [
+          11.75,
+          0.0
+        ],
+        "max": [
+          21.5,
+          9.25
+        ]
+      },
+      "priority": 1,
+      "id": "h"
+    },
+    {
+      "pos": [
+        36.13,
+        2.6,
+        20.98
+      ],
+      "look_at": [
+        40.06,
+        0.35,
+        17.05
+      ],
+      "fov": 46.2,
+      "zone": {
+        "min": [
+          37.75,
+          8.5
+        ],
+        "max": [
+          45.75,
+          19.5
+        ]
+      },
+      "priority": 1,
+      "id": "i"
+    },
+    {
+      "pos": [
+        50.29,
+        3.3,
+        33.04
+      ],
+      "look_at": [
+        49.31,
+        1.02,
+        27.58
+      ],
+      "fov": 48.3,
+      "zone": {
+        "min": [
+          44.25,
+          18.0
+        ],
+        "max": [
+          52.75,
+          28.75
+        ]
+      },
+      "priority": 1,
+      "id": "j"
+    },
+    {
+      "pos": [
+        35.9,
+        2.6,
+        28.81
+      ],
+      "look_at": [
+        40.01,
+        0.37,
+        25.04
+      ],
+      "fov": 46.2,
+      "zone": {
+        "min": [
+          37.75,
+          18.0
+        ],
+        "max": [
+          45.75,
+          28.25
+        ]
+      },
+      "priority": 1,
+      "id": "k"
+    },
+    {
+      "pos": [
+        55.14,
+        2.6,
+        39.68
+      ],
+      "look_at": [
+        58.68,
+        0.32,
+        35.41
+      ],
+      "fov": 49.4,
+      "zone": {
+        "min": [
+          55.75,
+          27.75
+        ],
+        "max": [
+          67.25,
+          36.75
+        ]
+      },
+      "priority": 1,
+      "id": "l"
+    },
+    {
+      "pos": [
+        46.86,
+        2.6,
+        40.41
+      ],
+      "look_at": [
+        49.97,
+        0.39,
+        35.78
+      ],
+      "fov": 49.4,
+      "zone": {
+        "min": [
+          45.75,
+          27.25
+        ],
+        "max": [
+          57.25,
+          36.75
+        ]
+      },
+      "priority": 1,
+      "id": "m"
+    },
+    {
+      "pos": [
+        68.12,
+        2.6,
+        48.5
+      ],
+      "look_at": [
+        72.1,
+        0.24,
+        44.67
+      ],
+      "fov": 45.6,
+      "zone": {
+        "min": [
+          69.75,
+          39.75
+        ],
+        "max": [
+          79.25,
+          47.25
+        ]
+      },
+      "priority": 1,
+      "id": "n"
+    },
+    {
+      "pos": [
+        53.43,
+        2.6,
+        46.91
+      ],
+      "look_at": [
+        57.55,
+        0.55,
+        43.05
+      ],
+      "fov": 47.2,
+      "zone": {
+        "min": [
+          55.75,
+          35.25
+        ],
+        "max": [
+          67.75,
+          44.75
+        ]
+      },
+      "priority": 1,
+      "id": "o"
+    },
+    {
+      "pos": [
+        59.24,
+        2.6,
+        48.03
+      ],
+      "look_at": [
+        63.5,
+        0.62,
+        44.29
+      ],
+      "fov": 47.0,
+      "zone": {
+        "min": [
+          61.25,
+          39.25
+        ],
+        "max": [
+          71.25,
+          47.25
+        ]
+      },
+      "priority": 1,
+      "id": "p"
+    },
+    {
+      "pos": [
+        46.84,
+        2.6,
+        47.87
+      ],
+      "look_at": [
+        49.99,
+        0.13,
+        43.4
+      ],
+      "fov": 52.3,
+      "zone": {
+        "min": [
+          45.75,
+          35.25
+        ],
+        "max": [
+          57.25,
+          44.75
+        ]
+      },
+      "priority": 1,
+      "id": "q"
+    },
+    {
+      "pos": [
+        45.99,
+        2.6,
+        56.35
+      ],
+      "look_at": [
+        49.42,
+        0.25,
+        52.03
+      ],
+      "fov": 51.4,
+      "zone": {
+        "min": [
+          45.75,
+          43.25
+        ],
+        "max": [
+          58.25,
+          53.5
+        ]
+      },
+      "priority": 1,
+      "id": "r"
+    },
+    {
+      "pos": [
+        44.77,
+        2.6,
+        65.17
+      ],
+      "look_at": [
+        48.46,
+        0.34,
+        61.02
+      ],
+      "fov": 46.3,
+      "zone": {
+        "min": [
+          45.25,
+          52.0
+        ],
+        "max": [
+          58.25,
+          62.0
+        ]
+      },
+      "priority": 1,
+      "id": "s"
+    },
+    {
+      "pos": [
+        41.38,
+        3.3,
+        69.17
+      ],
+      "look_at": [
+        46.07,
+        0.73,
+        66.46
+      ],
+      "fov": 46.8,
+      "zone": {
+        "min": [
+          45.25,
+          60.5
+        ],
+        "max": [
+          58.25,
+          70.0
+        ]
+      },
+      "priority": 1,
+      "id": "t"
+    },
+    {
+      "pos": [
+        32.62,
+        2.6,
+        69.36
+      ],
+      "look_at": [
+        37.51,
+        0.36,
+        66.69
+      ],
+      "fov": 42.8,
+      "zone": {
+        "min": [
+          36.0,
+          59.75
+        ],
+        "max": [
+          46.75,
+          70.0
+        ]
+      },
+      "priority": 1,
+      "id": "u"
+    },
+    {
+      "pos": [
+        1.86,
+        3.3,
+        64.63
+      ],
+      "look_at": [
+        3.48,
+        0.76,
+        59.44
+      ],
+      "fov": 48.2,
       "zone": {
         "min": [
           0.0,
-          0.0
+          49.75
         ],
         "max": [
-          30.0,
-          35.0
+          8.25,
+          60.75
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "v"
     },
     {
-      "id": "e",
       "pos": [
-        44.0,
-        3.4,
-        20.0
+        22.73,
+        2.6,
+        69.46
       ],
       "look_at": [
-        46.0,
-        6.0,
-        0.0
+        27.54,
+        0.55,
+        66.52
       ],
-      "fov": 62,
+      "fov": 45.1,
       "zone": {
         "min": [
-          30.0,
-          0.0
+          26.75,
+          59.75
         ],
         "max": [
-          60.0,
-          15.0
+          37.5,
+          70.0
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "w"
     },
     {
-      "id": "g",
       "pos": [
-        60.0,
-        4.0,
-        27.0
+        13.85,
+        3.3,
+        69.17
       ],
       "look_at": [
-        0.0,
-        12.0,
-        33.0
+        18.54,
+        0.73,
+        66.44
       ],
-      "fov": 64,
+      "fov": 46.4,
       "zone": {
         "min": [
-          30.0,
-          15.0
+          17.75,
+          59.75
         ],
         "max": [
-          60.0,
-          35.0
+          28.25,
+          70.0
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "x"
     },
     {
-      "id": "f",
       "pos": [
-        61.0,
-        3.6,
-        21.0
+        4.88,
+        3.3,
+        69.09
       ],
       "look_at": [
-        76.0,
-        9.0,
-        38.0
+        9.51,
+        0.6,
+        66.4
       ],
-      "fov": 62,
+      "fov": 48.6,
       "zone": {
         "min": [
-          60.0,
-          0.0
+          8.5,
+          59.5
         ],
         "max": [
-          90.0,
-          35.0
+          19.25,
+          70.0
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "y"
+    },
+    {
+      "pos": [
+        13.18,
+        2.6,
+        69.41
+      ],
+      "look_at": [
+        8.62,
+        0.21,
+        66.34
+      ],
+      "fov": 48.9,
+      "zone": {
+        "min": [
+          0.0,
+          59.25
+        ],
+        "max": [
+          10.0,
+          70.0
+        ]
+      },
+      "priority": 1,
+      "id": "z"
     }
   ],
   "spawns": {
@@ -2419,9 +3506,9 @@
       "id": "palace",
       "kind": "examine",
       "pos": [
+        1.2,
         1.0,
-        1.0,
-        35.0
+        56.0
       ],
       "radius": 2.0,
       "text": "The Royal Palace. Every window lit, every door shut. Over the balcony someone has hung a bedsheet: EVACUATIEPUNT DAM."
@@ -2432,7 +3519,7 @@
       "pos": [
         24.0,
         1.0,
-        26.0
+        8.4
       ],
       "radius": 2.4,
       "text": "The Ferris wheel, stopped, its lights still running round. High up, one gondola's door swings open in the wind."
@@ -2441,9 +3528,9 @@
       "id": "carousel",
       "kind": "examine",
       "pos": [
-        40.0,
+        46.6,
         1.0,
-        53.0
+        50.0
       ],
       "radius": 2.0,
       "text": "The carousel's organ is still playing. The horses have stopped halfway up their poles."
@@ -2454,7 +3541,7 @@
       "pos": [
         78.5,
         1.0,
-        39.5
+        41.0
       ],
       "radius": 2.0,
       "text": "The buses never left. Their doors are open, their engines off, the seats full of bags."
@@ -2474,9 +3561,9 @@
       "id": "damrak",
       "kind": "examine",
       "pos": [
-        72.0,
+        61.0,
         1.0,
-        2.4
+        3.0
       ],
       "radius": 2.6,
       "text": "Damrak, straight to Centraal. The barriers are chained together here; the army closed it. There has to be another way round."
@@ -2487,9 +3574,9 @@
       "item": "shotgun_shells",
       "count": 6,
       "pos": [
-        64.6,
+        61.0,
         0.0,
-        11.2
+        10.0
       ],
       "radius": 1.0
     },
@@ -2511,9 +3598,9 @@
       "item": "handgun_ammo",
       "count": 10,
       "pos": [
-        79.7,
+        78.6,
         0.0,
-        33.0
+        44.5
       ],
       "radius": 0.9
     },
@@ -2535,9 +3622,9 @@
       "id": "bij_het_rad",
       "kind": "verdronkene",
       "pos": [
-        26.0,
+        28.0,
         0.0,
-        30.0
+        6.0
       ],
       "yaw": 120
     },
@@ -2547,7 +3634,7 @@
       "pos": [
         66.0,
         0.0,
-        52.5
+        43.0
       ],
       "yaw": 250
     },
@@ -2555,9 +3642,9 @@
       "id": "bij_de_bus",
       "kind": "verdronkene",
       "pos": [
-        78.0,
+        76.0,
         0.0,
-        22.0
+        45.5
       ],
       "yaw": 270
     },
@@ -2575,9 +3662,9 @@
       "id": "bij_de_draaimolen",
       "kind": "verdronkene",
       "pos": [
-        44.0,
+        48.0,
         0.0,
-        40.0
+        42.0
       ],
       "yaw": 160
     }

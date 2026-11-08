@@ -2258,6 +2258,380 @@
         0.56
       ],
       "junk": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        8.5,
+        0.0,
+        10.825
+      ],
+      "yaw": 90,
+      "size": [
+        6.35,
+        1.1,
+        0.6
+      ],
+      "seed": 700,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        8.5,
+        0.0,
+        17.175
+      ],
+      "yaw": 90,
+      "size": [
+        6.35,
+        1.1,
+        0.6
+      ],
+      "seed": 701,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        8.5,
+        0.0,
+        32.0
+      ],
+      "yaw": 90,
+      "size": [
+        8.7,
+        1.1,
+        0.6
+      ],
+      "seed": 702,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        8.5,
+        0.0,
+        48.762
+      ],
+      "yaw": 90,
+      "size": [
+        10.225,
+        1.1,
+        0.6
+      ],
+      "seed": 703,
+      "tape": false,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        8.5,
+        0.0,
+        58.988
+      ],
+      "yaw": 90,
+      "size": [
+        10.225,
+        1.1,
+        0.6
+      ],
+      "seed": 704,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        16.0,
+        0.0,
+        24.0
+      ],
+      "yaw": 90,
+      "size": [
+        8.7,
+        1.1,
+        0.6
+      ],
+      "seed": 705,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        16.0,
+        0.0,
+        40.0
+      ],
+      "yaw": 90,
+      "size": [
+        8.7,
+        1.1,
+        0.6
+      ],
+      "seed": 706,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        9.0,
+        0.0,
+        8.0
+      ],
+      "yaw": 0,
+      "size": [
+        1.7,
+        1.1,
+        0.6
+      ],
+      "seed": 707,
+      "tape": false,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        17.0,
+        0.0,
+        8.0
+      ],
+      "yaw": 0,
+      "size": [
+        9.2,
+        1.1,
+        0.6
+      ],
+      "seed": 708,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        23.25,
+        0.0,
+        8.0
+      ],
+      "yaw": 0,
+      "size": [
+        1.7,
+        1.1,
+        0.6
+      ],
+      "seed": 709,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        8.75,
+        0.0,
+        20.0
+      ],
+      "yaw": 0,
+      "size": [
+        1.2,
+        1.1,
+        0.6
+      ],
+      "seed": 710,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        12.0,
+        0.0,
+        20.0
+      ],
+      "yaw": 0,
+      "size": [
+        4.7,
+        1.1,
+        0.6
+      ],
+      "seed": 711,
+      "tape": false,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        15.5,
+        0.0,
+        20.0
+      ],
+      "yaw": 0,
+      "size": [
+        1.7,
+        1.1,
+        0.6
+      ],
+      "seed": 712,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        8.75,
+        0.0,
+        28.0
+      ],
+      "yaw": 0,
+      "size": [
+        1.2,
+        1.1,
+        0.6
+      ],
+      "seed": 713,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        12.0,
+        0.0,
+        28.0
+      ],
+      "yaw": 0,
+      "size": [
+        4.7,
+        1.1,
+        0.6
+      ],
+      "seed": 714,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        15.5,
+        0.0,
+        28.0
+      ],
+      "yaw": 0,
+      "size": [
+        1.7,
+        1.1,
+        0.6
+      ],
+      "seed": 715,
+      "tape": false,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        8.75,
+        0.0,
+        36.0
+      ],
+      "yaw": 0,
+      "size": [
+        1.2,
+        1.1,
+        0.6
+      ],
+      "seed": 716,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        12.0,
+        0.0,
+        36.0
+      ],
+      "yaw": 0,
+      "size": [
+        4.7,
+        1.1,
+        0.6
+      ],
+      "seed": 717,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        15.5,
+        0.0,
+        36.0
+      ],
+      "yaw": 0,
+      "size": [
+        1.7,
+        1.1,
+        0.6
+      ],
+      "seed": 718,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        8.75,
+        0.0,
+        44.0
+      ],
+      "yaw": 0,
+      "size": [
+        1.2,
+        1.1,
+        0.6
+      ],
+      "seed": 719,
+      "tape": false,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        12.0,
+        0.0,
+        44.0
+      ],
+      "yaw": 0,
+      "size": [
+        4.7,
+        1.1,
+        0.6
+      ],
+      "seed": 720,
+      "tape": true,
+      "barricade": true
+    },
+    {
+      "type": "crowd_barrier",
+      "pos": [
+        15.5,
+        0.0,
+        44.0
+      ],
+      "yaw": 0,
+      "size": [
+        1.7,
+        1.1,
+        0.6
+      ],
+      "seed": 721,
+      "tape": true,
+      "barricade": true
     }
   ],
   "walls": {
@@ -2334,104 +2708,254 @@
   ],
   "shots": [
     {
-      "id": "a",
       "pos": [
-        3.5,
+        7.94,
         2.6,
-        62.5
+        12.04
       ],
       "look_at": [
-        14.0,
-        1.8,
-        30.0
+        10.53,
+        0.47,
+        7.06
       ],
-      "fov": 58,
+      "fov": 46.6,
       "zone": {
         "min": [
-          0.0,
-          46.0
+          7.25,
+          0.0
+        ],
+        "max": [
+          16.75,
+          8.25
+        ]
+      },
+      "priority": 1,
+      "id": "a"
+    },
+    {
+      "pos": [
+        15.49,
+        2.6,
+        10.82
+      ],
+      "look_at": [
+        18.48,
+        0.26,
+        6.17
+      ],
+      "fov": 46.9,
+      "zone": {
+        "min": [
+          15.25,
+          0.0
         ],
         "max": [
           24.0,
-          64.0
+          8.25
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "b"
     },
     {
-      "id": "b",
       "pos": [
-        19.0,
-        2.8,
-        52.0
+        8.56,
+        2.6,
+        14.66
       ],
       "look_at": [
-        7.0,
-        1.4,
-        32.0
+        5.71,
+        0.44,
+        9.84
       ],
-      "fov": 58,
-      "zone": {
-        "min": [
-          0.0,
-          30.0
-        ],
-        "max": [
-          24.0,
-          46.0
-        ]
-      },
-      "priority": 1
-    },
-    {
-      "id": "c",
-      "pos": [
-        5.0,
-        2.8,
-        10.0
-      ],
-      "look_at": [
-        18.0,
-        1.4,
-        28.0
-      ],
-      "fov": 58,
-      "zone": {
-        "min": [
-          0.0,
-          14.0
-        ],
-        "max": [
-          24.0,
-          30.0
-        ]
-      },
-      "priority": 1
-    },
-    {
-      "id": "d",
-      "pos": [
-        18.8,
-        3.0,
-        26.0
-      ],
-      "look_at": [
-        9.0,
-        2.8,
-        0.0
-      ],
-      "fov": 60,
+      "fov": 51.5,
       "zone": {
         "min": [
           0.0,
           0.0
         ],
         "max": [
-          24.0,
-          14.0
+          9.25,
+          11.5
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "c"
+    },
+    {
+      "pos": [
+        9.31,
+        2.6,
+        25.27
+      ],
+      "look_at": [
+        6.07,
+        0.31,
+        20.77
+      ],
+      "fov": 45.6,
+      "zone": {
+        "min": [
+          0.0,
+          10.0
+        ],
+        "max": [
+          9.25,
+          22.0
+        ]
+      },
+      "priority": 1,
+      "id": "d"
+    },
+    {
+      "pos": [
+        7.63,
+        2.6,
+        30.15
+      ],
+      "look_at": [
+        10.77,
+        0.03,
+        25.73
+      ],
+      "fov": 48.3,
+      "zone": {
+        "min": [
+          7.75,
+          19.75
+        ],
+        "max": [
+          16.25,
+          28.25
+        ]
+      },
+      "priority": 1,
+      "id": "e"
+    },
+    {
+      "pos": [
+        8.56,
+        2.6,
+        36.49
+      ],
+      "look_at": [
+        5.74,
+        0.66,
+        31.56
+      ],
+      "fov": 47.0,
+      "zone": {
+        "min": [
+          0.0,
+          20.5
+        ],
+        "max": [
+          9.25,
+          32.75
+        ]
+      },
+      "priority": 1,
+      "id": "f"
+    },
+    {
+      "pos": [
+        9.52,
+        2.6,
+        46.57
+      ],
+      "look_at": [
+        6.3,
+        0.28,
+        42.06
+      ],
+      "fov": 48.4,
+      "zone": {
+        "min": [
+          0.0,
+          31.25
+        ],
+        "max": [
+          9.25,
+          43.5
+        ]
+      },
+      "priority": 1,
+      "id": "g"
+    },
+    {
+      "pos": [
+        7.63,
+        2.6,
+        46.02
+      ],
+      "look_at": [
+        10.77,
+        -0.04,
+        41.64
+      ],
+      "fov": 49.4,
+      "zone": {
+        "min": [
+          7.75,
+          35.75
+        ],
+        "max": [
+          16.25,
+          44.25
+        ]
+      },
+      "priority": 1,
+      "id": "h"
+    },
+    {
+      "pos": [
+        7.3,
+        2.6,
+        57.88
+      ],
+      "look_at": [
+        4.89,
+        0.52,
+        52.79
+      ],
+      "fov": 46.6,
+      "zone": {
+        "min": [
+          0.0,
+          42.0
+        ],
+        "max": [
+          9.25,
+          54.0
+        ]
+      },
+      "priority": 1,
+      "id": "i"
+    },
+    {
+      "pos": [
+        13.11,
+        2.6,
+        62.27
+      ],
+      "look_at": [
+        7.87,
+        0.85,
+        59.94
+      ],
+      "fov": 51.4,
+      "zone": {
+        "min": [
+          0.0,
+          52.5
+        ],
+        "max": [
+          8.75,
+          64.0
+        ]
+      },
+      "priority": 1,
+      "id": "j"
     }
   ],
   "spawns": {
@@ -2548,9 +3072,9 @@
       "id": "in_de_deur",
       "kind": "verdronkene",
       "pos": [
-        22.6,
+        1.2,
         0.0,
-        22.5
+        33.0
       ],
       "yaw": -90
     }

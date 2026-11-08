@@ -44,6 +44,14 @@ def main(argv=None):
         spec = json.loads(f.read_text())
         interiors.apply(spec)
         f.write_text(json.dumps(spec, indent=2, ensure_ascii=True) + "\n")
+    import barricades
+    import cameras
+    for rid in list(barricades.LANES) + [r for r in cameras.ROOMS if r not in barricades.LANES]:
+        f = Path(common.R) / f"{rid}.json"   # the cordons through the wide rooms, then the cameras that film them
+        spec = json.loads(f.read_text())
+        barricades.apply(spec)
+        cameras.apply(spec)
+        f.write_text(json.dumps(spec, indent=2, ensure_ascii=True) + "\n")
 
 
 if __name__ == "__main__":

@@ -26,6 +26,7 @@
 #include "dw/room_spec.hpp"
 #include "dw/settings.hpp"
 #include "dw/status.hpp"
+#include "dw/streaming.hpp"
 #include "dw/title.hpp"
 #include "dw/transition.hpp"
 #include "dw/world_map.hpp"
@@ -208,8 +209,7 @@ private:
     bool load_house(const std::string& start_room);
     void build_storey(int storey);                  // colliders, sight walls, enemies and loot for that floor
     void enter_room(int r);                         // he's stepped into room r (seamless): its shots, lights, sound
-    void stream_plates();                           // the plates of the rooms next door, decoded in the background
-    std::vector<std::string> shot_ids(const RoomSpec& r) const;   // its camera shots and its doors' peeks
+    void stream_plates();                           // the plates of the shots near him, decoded in the background (dw/streaming.hpp)
     int room_index(const std::string& id) const;
     void update_doors(float dt, Vector2 want, float tilt);   // pushing, leaning, peeking, the stairs
     bool use_door(int room, const Interactable& it);  // Cross at a door: unlock, open, shut, or the stairs
@@ -339,6 +339,8 @@ private:
     int static_lights_ = 0;                      // room lights; the flash and the flashlight come after them
     int flash_light_ = -1, lamp_light_ = -1;     // where the flash and the flashlight sit in the light arrays (-1: off)
     int l_dynPos_ = -1, l_dynCol_ = -1, l_dynDir_ = -1, l_pDynSh_ = -1;
+    std::vector<streaming::Candidate> plate_cands_;  // (stream_plates: kept so it allocates once)
+    Vector2 stream_at_{1e9f, 1e9f};                  // where he stood when the plates were last thought about
     HeldFrame frame_;                // the camera directions the stick is read by: kept through cuts while it's held (controls.hpp)
     Vector2 frame_fwd_{0, -1};       // this frame's forward on the floor (x, z), from update_player
     int l_cam_ = -1, l_count_ = -1, l_pos_ = -1, l_col_ = -1, l_dir_ = -1, l_top_ = -1, l_bot_ = -1, l_rim_ = -1, l_fog_ = -1, l_fogr_ = -1;

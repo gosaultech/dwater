@@ -109,11 +109,39 @@ void PlateStore::pump(int budget) {
     }
 }
 
+void PlateStore::want(const std::vector<std::string>& keys) {
+    {
+        std::lock_guard<std::mutex> lk(m_);
+        for (const auto& k : keys) {
+            const size_t slash = k.find('/');
+            if (slash == std::string::npos) continue;
+            const std::string room = k.substr(0, slash), shot = k.substr(slash + 1);
+            if (has(room, shot) || queued_.count(k)) continue;
+            queued_.insert(k);
+            jobs_.push_back({room, shot});
+        }
+    }
+    cv_.notify_one();
+}
+
 void PlateStore::keep_only(const std::set<std::string>& keep) {
-    for (auto it = loaded_.begin(); it != loaded_.end();) {
-        if (keep.count(it->first)) { ++it; continue; }
-        for (auto& [id, p] : it->second) { UnloadTexture(p.first); UnloadTexture(p.second); }
-        it = loaded_.erase(it);
+    {
+        std::lock_guard<std::mutex> lk(m_);   // not started yet and no longer wanted: don't
+        for (auto it = jobs_.begin(); it != jobs_.end();) {
+            const std::string k = key(it->room, it->shot);
+            if (keep.count(k)) { ++it; continue; }
+            queued_.erase(k);
+            it = jobs_.erase(it);
+        }
+    }
+    for (auto r = loaded_.begin(); r != loaded_.end();) {
+        for (auto s = r->second.begin(); s != r->second.end();) {
+            if (keep.count(key(r->first, s->first))) { ++s; continue; }
+            UnloadTexture(s->second.first);
+            UnloadTexture(s->second.second);
+            s = r->second.erase(s);
+        }
+        r = r->second.empty() ? loaded_.erase(r) : std::next(r);
     }
 }
 
