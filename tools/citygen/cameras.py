@@ -51,7 +51,7 @@ ROOMS = {
     "damrak_zuid": {"travel": (0, -1)},
     "damrak_noord": {"travel": (0, -1)},
     "rondvaartboot": {"travel": (0, -1), "hall": True,   # inside the tour boat: the boat is the set, the cameras under its glass roof
-                      "ignore": ["canal_boat"], "kind": {"heights": (1.5, 1.75), "lens": (40.0, 70.0)}},
+                      "ignore": ["canal_boat"], "on_floor": True, "kind": {"heights": (1.5, 1.75), "lens": (40.0, 70.0)}},
     "stationsplein": {"travel": (0, -1)},
     "station_noord": {"travel": (0, -1)},
     "nieuwe_kerk": {"travel": (0, -1), "hall": True},
@@ -393,6 +393,10 @@ def plan_shot(spec, zone, kind, travel, prefer_side=0):
         ok &= (dist >= e) | open_run
     ok = (ok & inside) | beyond
     ok &= np.hypot(GX - cx, GZ - cz) <= kind["reach"]
+    if ROOMS.get(spec["id"], {}).get("on_floor"):   # (the seats are the set's own: stand only over the aisle he walks)
+        fi = np.clip(((GX - xs[0]) / CELL).round().astype(int), 0, len(xs) - 1)
+        fk = np.clip(((GZ - zs[0]) / CELL).round().astype(int), 0, len(zs) - 1)
+        ok &= mask[fi, fk]
     circles, boxes, things = _avoid(spec, kind)
     cams = []
     ceiling = spec.get("height", 3.0)

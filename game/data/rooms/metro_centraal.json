@@ -918,6 +918,29 @@
       "blender_power": 150,
       "godot_energy": 0.5,
       "range": 8.0
+    },
+    {
+      "kind": "area",
+      "pos": [
+        6.0,
+        4.2,
+        3.5
+      ],
+      "look_at": [
+        5.0,
+        0.0,
+        4.0
+      ],
+      "size": 0.77,
+      "color": [
+        0.75,
+        0.9,
+        1.0
+      ],
+      "blender_power": 70,
+      "godot_energy": 0.35,
+      "range": 7.0,
+      "flicker": true
     }
   ],
   "shots": [
