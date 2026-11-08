@@ -60,11 +60,19 @@ dark, and a press goes back to the title screen. (Like a play's last scene: the 
   alike (a little less colour, cold shadows and warm lights, a gentle S-curve, a hint of lens
   fringe at the corners), then grain and vignette.
 - **Rain over the streets** (`dw/rain.hpp`): out under the sky (a room with `"outdoor"`, unless it
-  says `"rain": false`), 1,400 drops fall through a box 18 m across that follows him, slanted by the
-  wind, each drawn as a short streak tested against the painting's depth, so it falls behind the
-  houses and in front of him. A fixed pool: nothing is allocated per frame. It is heard too: the
-  streets' ambience is rain (`amb_street_rain`, synthesized by `tools/audio/synth_sfx.py`). ELI5: a
-  stage hand with a watering can who always stands over the actor, never over the whole theatre.
+  says `"rain": false`), it rains on the whole shot. Eight sheets of falling streaks stand square to
+  the camera, from 1.2 m in front of the lens to 34 m down the street; each is drawn against the
+  painting's depth and the characters (tested, not written), so the rain falls behind the houses, in
+  front of him and all the way down the street. The streaks are drawn by a shader (`RAIN_FS`): each
+  column of drops at its own spacing and speed, leaned by the wind; a streak thinner than a pixel
+  fades rather than shimmers; and rain shows where there's light behind it (over a lit window or a
+  lamp it glows, against a dark wall it all but vanishes), as it does at night. Where it lands, rings
+  spread here and there over the street (`SPLASH_FS`). Nine quads a frame and no particles, so
+  nothing is allocated or simulated. It is heard too: the streets' ambience is rain
+  (`amb_street_rain`, synthesized by `tools/audio/synth_sfx.py`). (It used to be a box of drops 18 m
+  across that followed him, so a shot down a street showed a little rain cloud over his head.) ELI5:
+  a theatre's rain: curtains of falling water hung across the whole stage at different depths, and
+  the actors walk between them.
 
 **Not ported yet:** saves (the typewriter only talks so far), the cellar's boss and the crawling
 Kelderkind.

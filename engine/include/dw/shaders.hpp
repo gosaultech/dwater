@@ -8,5 +8,7 @@ extern const char* CHAR_FS;
 extern const char* PLATE_FS;
 extern const char* BLOB_FS;
 extern const char* POST_FS;
+extern const char* RAIN_FS;
+extern const char* SPLASH_FS;
 }  // namespace dw::shaders
 #endif

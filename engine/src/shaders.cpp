@@ -469,4 +469,70 @@ void main() {
     finalColor = vec4(c, 1.0);
 })";
 
+// Rain: one sheet of falling streaks (dw/rain.hpp), its texture coordinates in metres (across the
+// sheet, and height). Each column of the sheet carries drops at its own spacing and speed; a drop
+// is a short streak (the blur of its fall in a frame), leaned by the wind. A streak thinner than a
+// pixel (far off) fades rather than shimmers. Rain shows where there's light behind it: over a lit
+// window or a lamp it glows, against the dark it all but vanishes, as it does at night.
+const char* RAIN_FS = R"(#version 330
+in vec2 fragTexCoord; in vec4 fragColor; out vec4 finalColor;
+uniform float u_time; uniform float u_dist; uniform float u_seed;
+uniform sampler2D u_plate; uniform vec2 u_screen;
+float h1(float n) { return fract(sin(n * 91.345 + u_seed * 47.13) * 43758.5453); }
+void main() {
+    vec2 p = fragTexCoord;
+    p.x += p.y * 0.12;                                   // the wind leans them
+    float pitch = 0.04 + 0.008 * u_dist;                 // m between columns of drops
+    float col = floor(p.x / pitch);
+    float r1 = h1(col), r2 = h1(col + 13.7), r3 = h1(col + 29.1);
+    float len = 0.34;                                    // m: a drop's blur in one frame
+    float gap = len * (4.0 + 10.0 * r2);
+    float y = p.y + u_time * 9.5 * (0.9 + 0.2 * r3) + r1 * 23.0;
+    float along = mod(y, gap);                           // m up from the drop's head
+    float x = (fract(p.x / pitch) - (0.25 + 0.5 * r1)) * pitch;
+    float px = max(fwidth(p.x), 1e-5);                   // m per pixel on this sheet
+    float core = 0.0012;                                 // m: half a drop's width
+    float across = 1.0 - smoothstep(core, core + px, abs(x));
+    float thin = min(1.0, (2.0 * core + 0.6 * px) / (2.0 * px));   // thinner than a pixel: fainter
+    float down = smoothstep(0.0, 0.04, along) * (1.0 - smoothstep(len * 0.55, len, along));
+    vec2 uv = vec2(gl_FragCoord.x / u_screen.x, 1.0 - gl_FragCoord.y / u_screen.y);
+    vec3 bg = texture(u_plate, uv).rgb;
+    float l = dot(bg, vec3(0.2126, 0.7152, 0.0722));
+    float lit = 0.18 + 0.82 * smoothstep(0.02, 0.35, l);
+    float a = across * thin * down * lit * mix(0.55, 0.3, clamp(u_dist / 34.0, 0.0, 1.0));
+    vec3 c = mix(vec3(0.58, 0.63, 0.7), bg * 1.8 + 0.12, 0.45);
+    finalColor = vec4(c, a * fragColor.a);
+})";
+
+// Rain on the ground: a ring spreading where a drop lands, here and there all over the floor
+// (the room's floor as one quad just above the street, its texture coordinates in metres on the
+// floor plan), behind whatever stands in front of it; brighter where the street shines.
+const char* SPLASH_FS = R"(#version 330
+in vec2 fragTexCoord; in vec4 fragColor; out vec4 finalColor;
+uniform float u_time; uniform vec3 u_cam;
+uniform sampler2D u_plate; uniform vec2 u_screen;
+float h2(vec2 c, float k) { return fract(sin(dot(c, vec2(127.1, 311.7)) + k * 74.7) * 43758.5453); }
+void main() {
+    vec2 p = fragTexCoord;
+    float cell = 0.32;
+    vec2 c = floor(p / cell);
+    float period = 0.45 + 0.9 * h2(c, 1.0);
+    float life = 0.16;
+    float t = mod(u_time + h2(c, 2.0) * period, period);
+    if (t > life) discard;
+    vec2 centre = (c + 0.2 + 0.6 * vec2(h2(c, 3.0), h2(c, 4.0))) * cell;
+    float k = t / life;
+    float r = 0.012 + 0.06 * k;
+    float d = abs(length(p - centre) - r);
+    float px = max(fwidth(p.x), 1e-5);
+    float ring = 1.0 - smoothstep(0.004, 0.004 + px, d);
+    vec2 uv = vec2(gl_FragCoord.x / u_screen.x, 1.0 - gl_FragCoord.y / u_screen.y);
+    vec3 bg = texture(u_plate, uv).rgb;
+    float l = dot(bg, vec3(0.2126, 0.7152, 0.0722));
+    float far = 1.0 - smoothstep(14.0, 26.0, distance(vec3(p.x, 0.0, p.y), vec3(u_cam.x, 0.0, u_cam.z)));
+    float a = ring * (1.0 - k) * far * (0.15 + 0.85 * smoothstep(0.03, 0.3, l)) * 0.6 * min(1.0, 0.012 / px);
+    finalColor = vec4(mix(vec3(0.7, 0.74, 0.8), bg * 1.6 + 0.15, 0.5), a);
+})";
+
 }  // namespace dw::shaders
+

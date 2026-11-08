@@ -282,7 +282,10 @@ private:
     std::vector<Enemy> enemies_;
     SoundBank sfx_;
     Effects fx_;
-    Rain rain_;                                     // over the streets (spec_.rain)
+    Shader rain_sh_{};                              // the rain's sheets over the streets (spec_.rain; dw/rain.hpp)
+    int l_rTime_ = -1, l_rDist_ = -1, l_rSeed_ = -1, l_rPlate_ = -1, l_rScreen_ = -1;
+    Shader splash_sh_{};                            // the rain landing on the floor
+    int l_sTime_ = -1, l_sCam_ = -1, l_sPlate_ = -1, l_sScreen_ = -1;
     // The survivor in a fight.
     PMode pmode_ = PMode::Normal;
     float pmode_t_ = 0, invuln_ = 0, dodge_cd_ = 0, aim_pitch_ = 0, aim_snap_ = 0, dead_t_ = 0;

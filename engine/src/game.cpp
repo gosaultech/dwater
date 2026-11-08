@@ -62,6 +62,17 @@ bool Game::init(const std::string& room_id) {
     blob_mat_ = LoadMaterialDefault();
     blob_mat_.shader = blob_;
     blob_mesh_ = GenMeshPlane(1, 1, 1, 1);
+    rain_sh_ = LoadShaderFromMemory(nullptr, shaders::RAIN_FS);
+    l_rTime_ = GetShaderLocation(rain_sh_, "u_time");
+    l_rDist_ = GetShaderLocation(rain_sh_, "u_dist");
+    l_rSeed_ = GetShaderLocation(rain_sh_, "u_seed");
+    l_rPlate_ = GetShaderLocation(rain_sh_, "u_plate");
+    l_rScreen_ = GetShaderLocation(rain_sh_, "u_screen");
+    splash_sh_ = LoadShaderFromMemory(nullptr, shaders::SPLASH_FS);
+    l_sTime_ = GetShaderLocation(splash_sh_, "u_time");
+    l_sCam_ = GetShaderLocation(splash_sh_, "u_cam");
+    l_sPlate_ = GetShaderLocation(splash_sh_, "u_plate");
+    l_sScreen_ = GetShaderLocation(splash_sh_, "u_screen");
     post_ = LoadShaderFromMemory(nullptr, shaders::POST_FS);
     l_time_ = GetShaderLocation(post_, "u_time");
     l_res_ = GetShaderLocation(post_, "u_res");
@@ -103,7 +114,7 @@ void Game::shutdown() {
     fx_.shutdown();
     sfx_.shutdown();
     UnloadMesh(blob_mesh_);
-    UnloadShader(plate_); UnloadShader(char_); UnloadShader(blob_); UnloadShader(post_);
+    UnloadShader(plate_); UnloadShader(char_); UnloadShader(blob_); UnloadShader(post_); UnloadShader(rain_sh_); UnloadShader(splash_sh_);
     UnloadRenderTexture(rt_);
     for (auto& sm : shadows_) {
         rlUnloadTexture(sm.rt.depth.id);
@@ -467,7 +478,6 @@ void Game::update(float dt) {
     if (wake_t_ >= 0 && (wake_t_ -= g) < 0) wake(wake_flag_);
     update_enemies(g);
     fx_.update(g);
-    if (spec_.rain) rain_.update(g, player_.x, player_.z);
     for (Vector3 at; fx_.landed(at);) sfx_.play_at("mag_drop", at, ear(), ear_right(), 0.9f, 0.08f);   // an empty magazine on the floor
     sfx_.update();
     // Through a doorway into the next room: no loading, just a cut to its camera.
@@ -1771,16 +1781,56 @@ void Game::render() {
     if (status_.is_open()) render_status();
 }
 
-void Game::draw_rain() const {   // short streaks, behind whatever the painting puts in front of them
-    const V3 v = rain_.velocity();
-    const float k = Rain::STREAK;
-    rlBegin(RL_LINES);
-    rlColor4ub(175, 185, 200, 60);
-    for (const auto& d : rain_.drops()) {
-        rlVertex3f(d.x, d.y, d.z);
-        rlVertex3f(d.x - v.x * k, d.y - v.y * k, d.z - v.z * k);
+// Sheets of falling streaks across the whole shot, from the lens to the far end of the street
+// (dw/rain.hpp), each behind whatever the painting or a character puts in front of it: depth-tested,
+// not written.
+void Game::draw_rain() const {
+    const PlateStore::Pair* plate = current_plate();
+    if (!plate) return;
+    const auto sheets = rain::sheets({cam_.position.x, cam_.position.y, cam_.position.z}, {cam_.target.x, cam_.target.y, cam_.target.z},
+                                     cam_.fovy, float(W) / float(H));
+    const float t = time_, screen[2] = {float(W), float(H)};
+    rlDrawRenderBatchActive();
+    rlDisableBackfaceCulling();
+    {   // where it lands: the room's floor, a hair above the pavement (the painting hides it under anything nearer)
+        const Rect2& b = spec_.bounds;
+        const float y = 0.065f, cam[3] = {cam_.position.x, cam_.position.y, cam_.position.z};
+        BeginShaderMode(splash_sh_);
+        SetShaderValue(splash_sh_, l_sTime_, &t, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(splash_sh_, l_sCam_, cam, SHADER_UNIFORM_VEC3);
+        SetShaderValue(splash_sh_, l_sScreen_, screen, SHADER_UNIFORM_VEC2);
+        SetShaderValueTexture(splash_sh_, l_sPlate_, plate->first);
+        rlBegin(RL_QUADS);
+        rlColor4ub(255, 255, 255, 255);
+        rlTexCoord2f(b.x0, b.z0); rlVertex3f(b.x0, y, b.z0);
+        rlTexCoord2f(b.x0, b.z1); rlVertex3f(b.x0, y, b.z1);
+        rlTexCoord2f(b.x1, b.z1); rlVertex3f(b.x1, y, b.z1);
+        rlTexCoord2f(b.x1, b.z0); rlVertex3f(b.x1, y, b.z0);
+        rlEnd();
+        rlDrawRenderBatchActive();
+        EndShaderMode();
     }
-    rlEnd();
+    BeginShaderMode(rain_sh_);
+    SetShaderValue(rain_sh_, l_rTime_, &t, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(rain_sh_, l_rScreen_, screen, SHADER_UNIFORM_VEC2);
+    for (int i = 0; i < rain::SHEETS; ++i) {
+        const rain::Sheet& s = sheets[size_t(i)];
+        const float seed = 1.0f + float(i) * 7.31f;
+        SetShaderValue(rain_sh_, l_rDist_, &s.dist, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(rain_sh_, l_rSeed_, &seed, SHADER_UNIFORM_FLOAT);
+        SetShaderValueTexture(rain_sh_, l_rPlate_, plate->first);
+        const float uv[4][2] = {{s.u0, s.v0}, {s.u1, s.v0}, {s.u1, s.v1}, {s.u0, s.v1}};
+        rlBegin(RL_QUADS);
+        rlColor4ub(255, 255, 255, 255);
+        for (int k = 0; k < 4; ++k) {
+            rlTexCoord2f(uv[k][0], uv[k][1]);
+            rlVertex3f(s.c[k].x, s.c[k].y, s.c[k].z);
+        }
+        rlEnd();
+        rlDrawRenderBatchActive();   // (each sheet its own uniforms)
+    }
+    EndShaderMode();
+    rlEnableBackfaceCulling();
 }
 
 void Game::present() const {
