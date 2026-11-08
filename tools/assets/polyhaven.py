@@ -169,6 +169,15 @@ def fetch(url: str, dest: Path, md5: str = "") -> Path:
     return dest
 
 
+def api_kind(info: dict, guess: str) -> str:
+    """What Poly Haven says the asset is (0 an HDRI, 1 a texture, 2 a model), over a guess: "ph:<id>"
+    names a model in a prop and a texture in a material, and the kits' code says it both ways (a
+    brick wall once came down as a model, with no maps for the street to be paved with)."""
+    if guess in HDRI_RES:
+        return guess
+    return {1: "texture", 2: "model"}.get(info.get("type"), guess)
+
+
 def ensure(asset_id: str, kind: str, res: str = "1k", cache: Path = CACHE) -> dict:
     """Fetch one asset into the cache; returns (and writes) its asset.json for Blender."""
     res = HDRI_RES.get(kind, res)
@@ -177,6 +186,7 @@ def ensure(asset_id: str, kind: str, res: str = "1k", cache: Path = CACHE) -> di
     if meta_path.exists():
         return json.loads(meta_path.read_text())
     info = _get_json(f"{API}/info/{asset_id}")
+    kind = api_kind(info, kind)
     files = _get_json(f"{API}/files/{asset_id}")
     meta = {"id": asset_id, "kind": kind, "res": res, "name": info.get("name", asset_id),
             "authors": sorted(info.get("authors", {})), "license": "CC0",

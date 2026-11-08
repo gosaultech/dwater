@@ -125,6 +125,13 @@ note = "ph: not an id" """
         self.assertEqual(refs, {"lion_head": "model", "vintage_suitcase": "model", "dark_wood": "texture"})
 
 
+class KindTests(unittest.TestCase):
+    def test_poly_haven_says_what_an_asset_is(self):
+        self.assertEqual(polyhaven.api_kind({"type": 1}, "model"), "texture")   # "ph:brick_wall_003" in kit code
+        self.assertEqual(polyhaven.api_kind({"type": 2}, "texture"), "model")
+        self.assertEqual(polyhaven.api_kind({}, "model"), "model")               # (no word from the API: the guess)
+
+
 class ShelfStockTests(unittest.TestCase):
     def test_the_shelf_stock_table_is_fetched_too(self):
         # shops.py names its shelves' real products bare, in a table; a fresh checkout must fetch them
