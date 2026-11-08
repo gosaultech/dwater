@@ -79,6 +79,15 @@ CANOPIES = {"fair_stall", "aid_post", "kiosk", "tram_stop", "market_stall", "flo
 NOT_THINGS = {"leaflets", "palace", "gothic_front", "beurs", "station", "munttoren", "runner", "rug", "puddle",
               "collider"}   # (no footprint on this floor, or nothing to see)
 LIGHT_CLEAR = 3.0      # m: from a light (a lamp in the lens blows the picture out)
+LAMP_HEAD = 3.27       # m: a street lamp's lantern (tools/blender/street.py)
+LAMP_CLEAR = 4.0       # m: from a lantern, in 3D
+GLARE = {"vehicle", "bus", "tram", "light_tower", "work_light"}   # headlights, floodlights: keep GLARE_CLEAR off them
+GLARE_CLEAR = 3.0
+# Spots a render showed to be bad (a dark wall filling half the picture, poles across it): (x, z, radius).
+AVOID = {
+    "dam": [(12.0, 11.4, 4.0), (19.0, 11.3, 4.0)],               # the Nieuwe Kerk's unlit flank across half the frame
+    "stationsplein": [(27.6, 58.6, 3.5), (40.7, 66.2, 3.5)],      # tram poles and the square's darkest corner
+}
 
 
 # ── The room as the planner sees it ───────────────────────────────────────────────────────────────
@@ -229,6 +238,18 @@ def _avoid(spec, kind):
     o = spec.get("outdoor", {})
     for x, z in o.get("lamps", []):
         circles.append((x, z, 0.9, 0.0))
+    for ln in o.get("tracks", []):   # the tram wire's poles: every 24 m, 4.2 m to the left of the line
+        (x0, z0), (x1, z1) = ln["from"], ln["to"]
+        L = math.hypot(x1 - x0, z1 - z0)
+        if L < 1e-6:
+            continue
+        nx, nz = -(z1 - z0) / L, (x1 - x0) / L
+        n = max(1, int(L / 24.0))
+        for i in range(n + 1):
+            t = i / n
+            circles.append((x0 + (x1 - x0) * t + nx * 4.2, z0 + (z1 - z0) * t + nz * 4.2, 1.5, 0.0))
+    for x, z, r in AVOID.get(spec["id"], []):
+        circles.append((x, z, r, 0.0))
     for a, b, *_ in o.get("strings", []):   # strings of bulbs: keep off the wire
         for t in np.linspace(0, 1, 6):
             circles.append((a[0] + (b[0] - a[0]) * t, a[2] + (b[2] - a[2]) * t, 1.0, min(a[1], b[1]) - 1.2))
@@ -245,8 +266,10 @@ def _avoid(spec, kind):
             continue
         x, y, z = p["pos"]
         w, h, d = p["size"]
-        things.append(((x, z, w / 2, d / 2, math.radians(p.get("yaw", 0.0)), y, y + h, p["type"]),
-                       kind.get("clear", CLEAR) * (2.0 if p["type"] in CANOPIES else 1.0) + (0.5 if p["type"] in CANOPIES else 0.0)))
+        grow = kind.get("clear", CLEAR) * (2.0 if p["type"] in CANOPIES else 1.0) + (0.5 if p["type"] in CANOPIES else 0.0)
+        if p["type"] in GLARE:
+            grow = max(grow, GLARE_CLEAR)
+        things.append(((x, z, w / 2, d / 2, math.radians(p.get("yaw", 0.0)), y, y + h, p["type"]), grow))
     return circles, boxes, things
 
 
@@ -382,6 +405,8 @@ def plan_shot(spec, zone, kind, travel, prefer_side=0):
         for b, grow in things:
             if b[5] - 1.0 < h < b[6] + 2.0:   # (two metres over a thing's top, or well under a roof, a camera is clear of it)
                 good &= ~_in_box(GX, GZ, b, grow)
+        for lx, lz in spec.get("outdoor", {}).get("lamps", []):   # nor a street lamp's lantern
+            good &= np.sqrt((GX - lx) ** 2 + (GZ - lz) ** 2 + (h - LAMP_HEAD) ** 2) > LAMP_CLEAR
         for L in spec.get("lights", []):   # a lamp in the lens blows the picture out
             if "pos" in L:
                 lx, ly, lz = L["pos"]
