@@ -16,6 +16,13 @@ camera shots outside and in the big halls are way too wide; think RE3's city"):
 - **Their cameras are planned by rule** (`tools/citygen/cameras.py`): 254 shots in 27 rooms where
   there were about 95; he stands about a fifth of the picture high (5 to 10 percent before).
 - **Plates stream by shot** (`dw/streaming.hpp`), not by room.
+- **Rain on the whole shot** (`dw/rain.hpp`, `RAIN_FS`, `SPLASH_FS`): eight depth-tested sheets from
+  1.2 to 34 m in front of the camera, not a box following him; brighter where it's lit from behind.
+- **Motion capture** (`tools/anim/bake_mocap.py`, `dw/mocap.hpp`, `docs/motion_credits.md`): his
+  sneak (Swat), walk and run (Rushed) and idle (Neutral), and the Drowned's three shambles
+  (DragRightLeg, Drunk, BentForward), from the 100STYLE dataset (CC BY 4.0). The dataset isn't in the
+  repo: re-bake from Zenodo record 8127870 (1.5 GB). Next for it: turning on the spot, starts and
+  stops, a limp from LimpLeft/LimpRight, foot IK on slopes and steps.
 
 Earlier sessions: the city (areas 2 to 8), the shops' interior pass, the colour pass (Amsterdam's own
 colours on a spooky night), modelled tulips, a basic title screen. Everything up to PR #5 is merged
