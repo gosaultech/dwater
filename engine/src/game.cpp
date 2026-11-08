@@ -1325,7 +1325,7 @@ std::string Game::stage(int i) {
             } else if (i == 89) {
                 at("stationsplein", 38.0f, 12.0f, 0.0f);
                 run(0.6f);
-                name = "the_checkpoint";
+                name = "the_station_checkpoint";
             } else if (i == 90) {
                 at("stationsplein", 35.0f, 4.0f, 0.0f);   // at the arch, and in through it
                 staged_in_ = stick_toward(0, -1, 0.6f);
