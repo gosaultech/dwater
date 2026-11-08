@@ -153,6 +153,11 @@ the container's CPU).
 - **Flips at thresholds** come from the cameras either side facing each other, not from either
   one alone: making the first shot past a door "look the way he walks in" made it worse. Rooms
   along the route share a travel direction, so their cameras agree; entry zones hold close to it.
+- **The container sleeps when the session is idle** (about five minutes after the last turn ends)
+  unless a tracked background task (a Bash `run_in_background` waiter) is still running, and that
+  kills a detached render queue too. A `send_later` check-in does not keep it awake. Keep a waiter
+  armed for the whole render: one that returns at a milestone (the next N rooms done) under the
+  two-hour limit, then arm the next.
 - **Render queue and plans:** a Blender run reads the room files when that room starts, so
   changing the planner mid-queue leaves rendered rooms on the old shots. Freeze the planner first;
   compare a room's shots with a saved copy to find the few to re-render (`--shots a,b`).
