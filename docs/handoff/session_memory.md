@@ -169,6 +169,12 @@ the container's CPU).
   changing the planner mid-queue leaves rendered rooms on the old shots. Freeze the planner first;
   compare a room's shots with a saved copy to find the few to re-render (`--shots a,b`).
 - `depth_pack.py --prune` removes plates of shots a room no longer has; pack re-rendered rooms with it.
+- The camera planner only knows its own room's props: a camera standing out through a passage can
+  hang over the next street's kiosk (Rembrandtplein m, n did; fixed with `AVOID`). The general fix,
+  not yet done: read the neighbours' props near passages into `_avoid`.
+- A fresh container's asset fetch: the shelf-stock scans (shops.py's `SCANS`) and "ph:<id>" textures
+  named in kit code were both missed or mis-fetched before this session's fixes; if a render stops on
+  a missing or map-less asset, `polyhaven.py fetch` again (it now asks Poly Haven what each asset is).
 
 ## Decisions the user made
 - **The big squares are channelled** with the evacuation's crowd-barrier lanes (chosen over keeping
