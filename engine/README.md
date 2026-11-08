@@ -49,6 +49,25 @@ dark, and a press goes back to the title screen. (Like a play's last scene: the 
 - **Camera cuts.** The camera switches shots as you cross zones. The current shot is kept near
   the thresholds (hysteresis), so it never flickers back and forth. The streets, squares and halls
   are cut into many short shots (the camera pass below), so he's never a speck.
+- **The following view** (`dw/framing.hpp`, `src/game_view.cpp`). Within each shot, the screen
+  shows a window of the background that follows him, the way the GameCube Resident Evil panned
+  across its paintings. He stands about 38% of the picture's height (a fifth or less before),
+  never less than 22% while it can still zoom, and never more than 78%: it widens as he walks up
+  to the lens. There's room ahead of the way he faces, and a still middle so a step or a turn
+  doesn't swing the picture. The camera itself never moves, so the controls never change within a
+  shot. The first time he walks into a big space (450 m2 and up: the squares, the church, the
+  halls), the cut opens on the whole picture for a moment and then closes in on him. It holds with
+  him whatever he aims at, a Drowned within reach, and a pickup nearby. It leans in a little when
+  he faces a pickup, punches in on a blow, and pushes in slowly as he dies. If something painted
+  into the background hides him for more than a moment (the field hospital's tent, a bus), it
+  opens to the whole picture until he's out from behind it (a small copy of each plate's depth is
+  kept on the CPU to tell). The plates are 720
+  lines today, so a 2x window is soft; plates rendered bigger (step 2) make it sharp. Like a
+  photographer standing still on a balcony with a zoom lens: zoomed in on you as you cross the
+  square, wide for a moment when you first arrive.
+- **The fill.** A soft light from the camera's side on the characters, as much as the room's own
+  lights leave him in the dark and none where a lamp is on him, so he never goes black against a
+  dark painting (the Beurs' back wall). Like a reflector held just out of shot.
 - **The survivor.** Walk and run, tank or modern controls, quick turn, and an aim pose. He sneaks,
   walks, runs and stands as real people do: motion capture (below), his arms on the gun.
 - **One Verdronkene.** Its brain runs IDLE → ALERT → PURSUIT → ATTACK (0.85 s readable
@@ -754,12 +773,16 @@ other). Run it under `xvfb-run` like `--capture`. Classic tank controls are in t
 | `src/character_combat.cpp` | Hit capsules, wounds, severing, the guns in hand, and the aim and ready fitters (`--fitpistol`, `--fit870`). |
 | `src/shaders.cpp` | All GLSL, embedded. |
 | `src/game.cpp` | Room, cameras, input, AI, and render order. |
+| `include/dw/framing.hpp` | The following view: the window over a shot's background that follows him, its frustum, the establishing view and the push-ins. Pure, unit-tested. |
+| `src/game_view.cpp` | The game's side of the following view: him, his target, a threat and a pickup as the shot sees them; each shot's starting zoom. |
 | `src/main.cpp` | Entry point, capture mode, and telemetry. |
 
 **Render order per frame:**
 
-1. The background is drawn, writing `gl_FragDepth` from its painted depth.
-2. Characters are drawn depth-tested against the painting.
+1. The background is drawn through the window (`dw/framing.hpp`), writing `gl_FragDepth` from its
+   painted depth.
+2. Characters are drawn depth-tested against the painting, through the same window: the camera's
+   frustum cropped to it, so they stand exactly where the painting has their floor.
 3. Blob shadows are drawn.
 4. The post pass (the film grade, grain and vignette) goes to the window.
 

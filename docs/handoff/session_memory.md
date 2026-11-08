@@ -26,6 +26,14 @@ camera shots outside and in the big halls are way too wide; think RE3's city"):
 - **State at the end of the session:** every new shot is rendered (preview), packed and pushed on
   `claude/bold-ritchie-dow5ha`; tests, tools tests, the walk-through and the 97-setup capture pass.
   Not merged yet: open the PR when the user asks to play it.
+- **"Tight camera overall" (the user, after playing):** measured his height in every shot over the
+  floor it covers: about a fifth of the picture in the city and big halls (212 of 282 shots under
+  a quarter); the canal house, which feels right, about two-fifths. Pickups 15-20 px tall. The
+  user chose the following view (REmake-style window over each fixed shot, `dw/framing.hpp`):
+  **step 1 done** (engine only, on today's 720-line plates, soft when zoomed), plus a fill light
+  on the characters in the dark. **Step 2 waits on the user:** re-render all 282 plates at
+  2048x1152 (about 12-16 h of container CPU; plates 0.4 GB to about 1 GB, maybe JPEG colour), and
+  fix the spots where something hides him (Dam shot l, behind the field-hospital tent).
 
 Earlier sessions: the city (areas 2 to 8), the shops' interior pass, the colour pass (Amsterdam's own
 colours on a spooky night), modelled tulips, a basic title screen. Everything up to PR #5 is merged

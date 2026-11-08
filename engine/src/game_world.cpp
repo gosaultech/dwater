@@ -273,8 +273,10 @@ void Game::draw_glints() const {
         const Vector3 at{o.pos.x, o.pos.y + 0.05f, o.pos.z};
         const Vector3 to_cam = Vector3Subtract(cam_.position, at);
         if (Vector3DotProduct(to_cam, Vector3Subtract(cam_.target, cam_.position)) > 0) continue;   // behind the camera
-        const Vector2 p = GetWorldToScreenEx(at, cam_, W, H);
-        const Vector2 s{p.x * k * float(GetScreenWidth()) / (float(W) * k), p.y * k};
+        const Vector3 uv = lens().project(at);   // on the background, then through the window onto the screen
+        const Vector2 q = framing::to_screen(win_, {uv.x, uv.y});
+        if (q.x < 0 || q.x > 1 || q.y < 0 || q.y > 1) continue;
+        const Vector2 s{q.x * float(GetScreenWidth()), q.y * float(GetScreenHeight())};
         const float r = (6 + 10 * a) * k;
         const Color c{255, 236, 190, static_cast<unsigned char>(220 * a)};
         DrawLineEx({s.x - r, s.y}, {s.x + r, s.y}, 2 * k, c);

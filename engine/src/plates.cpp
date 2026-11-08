@@ -3,9 +3,41 @@
 // main thread, which owns the OpenGL context.
 #include "plates.hpp"
 
+#include <algorithm>
+
+#include "dw/core.hpp"
+
 namespace dw {
 namespace {
 std::string key(const std::string& room, const std::string& shot) { return room + "/" + shot; }
+
+// The depth picture, every few pixels (the nearest one: depth bytes are never blended), as the
+// 16-bit values it holds.
+std::vector<uint16_t> shrink(const Image& d) {
+    std::vector<uint16_t> out;
+    if (d.data == nullptr || d.width <= 0 || d.height <= 0) return out;
+    constexpr int W = PlateStore::SMALL_W, H = PlateStore::SMALL_H;
+    out.resize(size_t(W) * H);
+    const int bpp = d.format == PIXELFORMAT_UNCOMPRESSED_R8G8B8 ? 3 : d.format == PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 ? 4 : 0;
+    const auto* px = static_cast<const unsigned char*>(d.data);
+    for (int y = 0; y < H; ++y)
+        for (int x = 0; x < W; ++x) {
+            const int sx = std::min(d.width - 1, int((float(x) + 0.5f) * float(d.width) / W));
+            const int sy = std::min(d.height - 1, int((float(y) + 0.5f) * float(d.height) / H));
+            int hi, lo;
+            if (bpp) {
+                const unsigned char* p = px + (size_t(sy) * size_t(d.width) + size_t(sx)) * size_t(bpp);
+                hi = p[0];
+                lo = p[1];
+            } else {
+                const Color c = GetImageColor(d, sx, sy);
+                hi = c.r;
+                lo = c.g;
+            }
+            out[size_t(y) * W + size_t(x)] = uint16_t(hi * 256 + lo);
+        }
+    return out;
+}
 }  // namespace
 
 void PlateStore::start(const std::string& dir) {
@@ -27,6 +59,7 @@ void PlateStore::stop() {
     for (auto& [room, shots] : loaded_)
         for (auto& [id, p] : shots) { UnloadTexture(p.first); UnloadTexture(p.second); }
     loaded_.clear();
+    small_.clear();
     queued_.clear();
 }
 
@@ -41,14 +74,15 @@ void PlateStore::work() {
             jobs_.pop_front();
         }
         const std::string base = dir_ + "/" + j.room + "/" + j.shot;
-        Done d{j.room, j.shot, LoadImage((base + "_color.png").c_str()), LoadImage((base + "_depth.png").c_str())};
+        Done d{j.room, j.shot, LoadImage((base + "_color.png").c_str()), LoadImage((base + "_depth.png").c_str()), {}};
+        d.small = shrink(d.depth);   // (here, off the main thread)
         std::lock_guard<std::mutex> lk(m_);
         if (quit_) { UnloadImage(d.color); UnloadImage(d.depth); return; }
         done_.push_back(d);
     }
 }
 
-bool PlateStore::upload(const std::string& room, const std::string& shot, Image& c, Image& d) {
+bool PlateStore::upload(const std::string& room, const std::string& shot, Image& c, Image& d, std::vector<uint16_t>&& small) {
     if (c.data == nullptr || d.data == nullptr) {
         TraceLog(LOG_WARNING, "plates: missing %s/%s", room.c_str(), shot.c_str());
         UnloadImage(c);
@@ -63,7 +97,15 @@ bool PlateStore::upload(const std::string& room, const std::string& shot, Image&
     auto& slot = loaded_[room][shot];
     if (slot.first.id) { UnloadTexture(slot.first); UnloadTexture(slot.second); }
     slot = p;
+    small_[key(room, shot)] = std::move(small);
     return true;
+}
+
+float PlateStore::depth_at(const std::string& room, const std::string& shot, float u, float v) const {
+    const auto it = small_.find(key(room, shot));
+    if (it == small_.end() || it->second.empty()) return -1.0f;
+    const int x = std::clamp(int(u * SMALL_W), 0, SMALL_W - 1), y = std::clamp(int(v * SMALL_H), 0, SMALL_H - 1);
+    return float(it->second[size_t(y) * SMALL_W + size_t(x)]) / 65535.0f * depth::MAX_M;
 }
 
 void PlateStore::want(const std::string& room, const std::vector<std::string>& shots) {
@@ -89,7 +131,7 @@ bool PlateStore::need(const std::string& room, const std::vector<std::string>& s
         }
         const std::string base = dir_ + "/" + room + "/" + s;
         Image c = LoadImage((base + "_color.png").c_str()), d = LoadImage((base + "_depth.png").c_str());
-        ok = upload(room, s, c, d) && ok;
+        ok = upload(room, s, c, d, shrink(d)) && ok;
     }
     return ok;
 }
@@ -105,7 +147,7 @@ void PlateStore::pump(int budget) {
             queued_.erase(key(d.room, d.shot));
         }
         if (has(d.room, d.shot)) { UnloadImage(d.color); UnloadImage(d.depth); continue; }   // loaded on the spot meanwhile
-        upload(d.room, d.shot, d.color, d.depth);
+        upload(d.room, d.shot, d.color, d.depth, std::move(d.small));
     }
 }
 
@@ -139,6 +181,7 @@ void PlateStore::keep_only(const std::set<std::string>& keep) {
             if (keep.count(key(r->first, s->first))) { ++s; continue; }
             UnloadTexture(s->second.first);
             UnloadTexture(s->second.second);
+            small_.erase(key(r->first, s->first));
             s = r->second.erase(s);
         }
         r = r->second.empty() ? loaded_.erase(r) : std::next(r);

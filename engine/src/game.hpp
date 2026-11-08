@@ -21,6 +21,7 @@
 #include "dw/controls.hpp"
 #include "dw/core.hpp"
 #include "dw/doors.hpp"
+#include "dw/framing.hpp"
 #include "dw/house.hpp"
 #include "dw/rain.hpp"
 #include "dw/room_spec.hpp"
@@ -129,6 +130,9 @@ private:
     void bind_shadows();                // shadow uniforms for the character and plate shaders
 
     void cut_to(const std::string& id);
+    void update_view(float dt);                     // the window over the background follows him (dw/framing.hpp)
+    framing::Lens lens() const;                     // the shot's camera, as the window sees it
+    float shot_zoom(const std::string& id);         // the zoom a shot starts from (his typical size in it)
     void upload_lights();
     void upload_studio_lights();
     void set_lights(const Vector4* pos, const Vector4* col, const Vector4* dir, int n);   // uploads and remembers them
@@ -343,6 +347,17 @@ private:
     int flash_light_ = -1, lamp_light_ = -1;     // where the flash and the flashlight sit in the light arrays (-1: off)
     int l_dynPos_ = -1, l_dynCol_ = -1, l_dynDir_ = -1, l_pDynSh_ = -1;
     std::vector<streaming::Candidate> plate_cands_;  // (stream_plates: kept so it allocates once)
+    // The following view (dw/framing.hpp): a window over the shot's background that keeps him in it.
+    framing::Operator view_;
+    framing::Window win_{};                      // this frame's window over the background ({}: the whole of it)
+    std::vector<std::vector<float>> shot_zoom_;  // each room's shots' starting zoom (-1: not worked out yet)
+    std::vector<float> zoom_scratch_;            // (shot_zoom: kept so it allocates once)
+    std::vector<Obb2> near_solid_;               // (... and the solids round the shot it measures over)
+    bool view_cut_ = true;                       // a cut: the next frame starts straight on him...
+    bool view_establish_ = false;                // ... or opens wide (the first time in a big space)
+    bool establish_ = true;                      // (off for the capture setups, stills and the walk-through)
+    float item_push_ = 1;                        // a little closer while a pickup is within reach
+    int l_rWin_ = -1, l_sWin_ = -1, l_fill_ = -1;
     Vector2 stream_at_{1e9f, 1e9f};                  // where he stood when the plates were last thought about
     HeldFrame frame_;                // the camera directions the stick is read by: kept through cuts while it's held (controls.hpp)
     Vector2 frame_fwd_{0, -1};       // this frame's forward on the floor (x, z), from update_player

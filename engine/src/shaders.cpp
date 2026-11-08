@@ -50,6 +50,7 @@ flat in int vRegion;
 uniform int u_hidden;   // a bit per body region that has been shot away: its skin and clothes vanish
 uniform vec3 u_camPos; uniform int u_lightCount;
 uniform vec4 u_lightPos[8]; uniform vec4 u_lightCol[8]; uniform vec4 u_lightDir[8];
+uniform vec3 u_fill;   // a soft light from the camera's side, where the room leaves him dark
 uniform vec3 u_ambTop; uniform vec3 u_ambBottom; uniform vec3 u_rim; uniform vec3 u_fog; uniform vec2 u_fogRange;
 // What bare metal mirrors: the surroundings as a gradient from the floor (bottom) to the ceiling (top).
 uniform vec3 u_envTop; uniform vec3 u_envBottom;
@@ -363,6 +364,7 @@ void main() {
             col += aniso * pow(sqrt(max(1.0 - th * th, 0.0)), 48.0) * lc * step(0.0, ndl) * vAo * (vec3(0.2) + albedo * 4.0);
         }
     }
+    col += albedo * u_fill * (0.35 + 0.65 * max(dot(N, V), 0.0)) * vAo;   // the fill, from the camera's side
     if (metal > 0.0) {   // bare metal mirrors its surroundings, tinted by its own colour (strongest at grazing angles)
         vec3 R = reflect(-V, N);
         vec3 env = mix(u_envBottom, u_envTop, smoothstep(-0.15, 0.55, R.y));
@@ -477,7 +479,7 @@ void main() {
 const char* RAIN_FS = R"(#version 330
 in vec2 fragTexCoord; in vec4 fragColor; out vec4 finalColor;
 uniform float u_time; uniform float u_dist; uniform float u_seed;
-uniform sampler2D u_plate; uniform vec2 u_screen;
+uniform sampler2D u_plate; uniform vec2 u_screen; uniform vec4 u_win;   // (the window over the background: x0, y0, w, h)
 float h1(float n) { return fract(sin(n * 91.345 + u_seed * 47.13) * 43758.5453); }
 void main() {
     vec2 p = fragTexCoord;
@@ -495,7 +497,7 @@ void main() {
     float across = 1.0 - smoothstep(core, core + px, abs(x));
     float thin = min(1.0, (2.0 * core + 0.6 * px) / (2.0 * px));   // thinner than a pixel: fainter
     float down = smoothstep(0.0, 0.04, along) * (1.0 - smoothstep(len * 0.55, len, along));
-    vec2 uv = vec2(gl_FragCoord.x / u_screen.x, 1.0 - gl_FragCoord.y / u_screen.y);
+    vec2 uv = u_win.xy + vec2(gl_FragCoord.x / u_screen.x, 1.0 - gl_FragCoord.y / u_screen.y) * u_win.zw;
     vec3 bg = texture(u_plate, uv).rgb;
     float l = dot(bg, vec3(0.2126, 0.7152, 0.0722));
     float lit = 0.18 + 0.82 * smoothstep(0.02, 0.35, l);
@@ -510,7 +512,7 @@ void main() {
 const char* SPLASH_FS = R"(#version 330
 in vec2 fragTexCoord; in vec4 fragColor; out vec4 finalColor;
 uniform float u_time; uniform vec3 u_cam;
-uniform sampler2D u_plate; uniform vec2 u_screen;
+uniform sampler2D u_plate; uniform vec2 u_screen; uniform vec4 u_win;
 float h2(vec2 c, float k) { return fract(sin(dot(c, vec2(127.1, 311.7)) + k * 74.7) * 43758.5453); }
 void main() {
     vec2 p = fragTexCoord;
@@ -526,7 +528,7 @@ void main() {
     float d = abs(length(p - centre) - r);
     float px = max(fwidth(p.x), 1e-5);
     float ring = 1.0 - smoothstep(0.004, 0.004 + px, d);
-    vec2 uv = vec2(gl_FragCoord.x / u_screen.x, 1.0 - gl_FragCoord.y / u_screen.y);
+    vec2 uv = u_win.xy + vec2(gl_FragCoord.x / u_screen.x, 1.0 - gl_FragCoord.y / u_screen.y) * u_win.zw;
     vec3 bg = texture(u_plate, uv).rgb;
     float l = dot(bg, vec3(0.2126, 0.7152, 0.0722));
     float far = 1.0 - smoothstep(14.0, 26.0, distance(vec3(p.x, 0.0, p.y), vec3(u_cam.x, 0.0, u_cam.z)));

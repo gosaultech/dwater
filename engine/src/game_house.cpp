@@ -173,7 +173,8 @@ void Game::build_storey(int storey) {
 void Game::enter_room(int r) {
     room_ = r;
     spec_ = rooms_[size_t(r)];
-    if (!world_.visited.count(spec_.id)) {
+    const bool first = !world_.visited.count(spec_.id);
+    if (first) {
         world_.visited.insert(spec_.id);
         banner_t_ = 3.5f;   // its name, the first time
     }
@@ -183,6 +184,9 @@ void Game::enter_room(int r) {
     }
     peek_ = -1;
     cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+    // The first time in a big space, the cut opens on the whole picture and closes in on him.
+    const Rect2& b = spec_.bounds;
+    view_establish_ = first && establish_ && (b.x1 - b.x0) * (b.z1 - b.z0) >= framing::BIG;
     upload_lights();
     stream_plates();
     checkpoint();

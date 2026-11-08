@@ -13,6 +13,7 @@
 #include <raylib.h>
 
 #include <condition_variable>
+#include <cstdint>
 #include <deque>
 #include <map>
 #include <mutex>
@@ -42,14 +43,19 @@ public:
     void keep_only(const std::set<std::string>& keep);
     const Pair* get(const std::string& room, const std::string& shot) const;
     bool has(const std::string& room, const std::string& shot) const { return get(room, shot) != nullptr; }
+    // The painted depth (m along the camera's view) at (u, v) on a loaded plate, from a small copy
+    // kept on the CPU (SMALL_W x SMALL_H): is he behind something in the painting? -1: not loaded.
+    float depth_at(const std::string& room, const std::string& shot, float u, float v) const;
+    static constexpr int SMALL_W = 320, SMALL_H = 180;
 
 private:
     struct Job { std::string room, shot; };
-    struct Done { std::string room, shot; Image color{}, depth{}; };
+    struct Done { std::string room, shot; Image color{}, depth{}; std::vector<uint16_t> small; };
     void work();
-    bool upload(const std::string& room, const std::string& shot, Image& c, Image& d);
+    bool upload(const std::string& room, const std::string& shot, Image& c, Image& d, std::vector<uint16_t>&& small);
     std::string dir_;
     std::map<std::string, std::map<std::string, Pair>> loaded_;
+    std::map<std::string, std::vector<uint16_t>> small_;   // "room/shot": the depth, small, on the CPU
     std::set<std::string> queued_;           // "room/shot" sent to the worker and not yet uploaded
     std::deque<Job> jobs_;
     std::deque<Done> done_;
