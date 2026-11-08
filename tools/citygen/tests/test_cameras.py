@@ -65,18 +65,22 @@ class CameraPassTests(unittest.TestCase):
                     self.assertLessEqual(float(np.abs(fxn).max()), 1.0)      # all of him in the picture, everywhere in the zone
                     self.assertGreaterEqual(float(fyn.min()), -1.0)
                     self.assertLessEqual(float(hyn.max()), 1.0)
-                    self.assertTrue(cameras.LENS[0] - 0.1 <= s["fov"] <= cameras.LENS[1] + 0.1)
+                    lens = (cameras.HALL if cameras.ROOMS[rid].get("hall") else cameras.OUT)["lens"]
+                    self.assertTrue(lens[0] - 0.1 <= s["fov"] <= lens[1] + 0.1)
 
     def test_no_camera_stands_in_anything(self):
         for rid in cameras.ROOMS:
             spec = room(rid)
-            circles, boxes = cameras._avoid(spec, cameras.OUT)
+            circles, boxes, things = cameras._avoid(spec, cameras.HALL if cameras.ROOMS[rid].get("hall") else cameras.OUT)
             for s in spec["shots"]:
                 x, y, z = s["pos"]
                 with self.subTest(room=rid, shot=s["id"]):
                     for b in boxes:
                         if b[6] > y - 0.6:
                             self.assertFalse(bool(cameras._in_box(np.array(x), np.array(z), b, 0.45)), b[7])
+                    for b, grow in things:
+                        if b[5] - 1.0 < y < b[6] + 2.0:
+                            self.assertFalse(bool(cameras._in_box(np.array(x), np.array(z), b, grow - 0.05)), b[7])
                     for cx, cz, rad, below in circles:
                         if y > below:
                             self.assertGreater(math.hypot(x - cx, z - cz), rad - 0.05)

@@ -65,12 +65,19 @@ ROOMS = {
     "apotheek": {"travel": (0, -1), "hall": True},
 }
 
-OUT = {"zone_area": 120.0, "zone_side": 11.0, "heights": (2.6, 3.3, 4.2, 5.4), "reach": 14.0, "step": 1.0, "edge": 1.6}
-HALL = {"zone_area": 80.0, "zone_side": 9.0, "heights": (2.1, 2.7, 3.4, 4.4), "reach": 10.0, "step": 0.75, "edge": 0.45}
+OUT = {"zone_area": 120.0, "zone_side": 11.0, "heights": (2.4, 3.1, 4.0, 5.2), "reach": 14.0, "step": 1.0, "edge": 2.2,
+       "lens": (40.0, 60.0), "clear": 1.2}
+HALL = {"zone_area": 80.0, "zone_side": 9.0, "heights": (2.1, 2.7, 3.4, 4.4), "reach": 10.0, "step": 0.75, "edge": 0.45,
+        "lens": (40.0, 66.0), "clear": 0.6}   # (indoors is close quarters: a wider lens, nearer the furniture)
 OVERLAP = 0.75         # m: neighbouring zones overlap this much, so walking the line between them never flickers
 TREES = {"plane_tree", "elm"}
 TREE_CLEAR = 4.5       # m: from a tree's trunk, a camera above its first limbs is among the branches
 TALL = 1.2             # m: a prop this tall hides him (lower ones he's seen over)
+CLEAR = 1.2            # m: a camera keeps this far from anything standing (more from a canopy, a light)
+CANOPIES = {"fair_stall", "aid_post", "kiosk", "tram_stop", "market_stall", "flower_stall", "tent", "schiettent", "carousel", "terrace"}
+NOT_THINGS = {"leaflets", "palace", "gothic_front", "beurs", "station", "munttoren", "runner", "rug", "puddle",
+              "collider"}   # (no footprint on this floor, or nothing to see)
+LIGHT_CLEAR = 3.0      # m: from a light (a lamp in the lens blows the picture out)
 
 
 # ── The room as the planner sees it ───────────────────────────────────────────────────────────────
@@ -231,7 +238,15 @@ def _avoid(spec, kind):
             circles.append((b[0], b[1], TREE_CLEAR, 2.6))
         else:
             boxes.append(b)
-    return circles, boxes
+    things = []   # (box, grow): everything standing, solid or not
+    for p in spec.get("props", []):
+        if "size" not in p or p["type"] in NOT_THINGS or p["type"] in TREES or p["size"][1] < 0.8:
+            continue
+        x, y, z = p["pos"]
+        w, h, d = p["size"]
+        things.append(((x, z, w / 2, d / 2, math.radians(p.get("yaw", 0.0)), y, y + h, p["type"]),
+                       kind.get("clear", CLEAR) * (2.0 if p["type"] in CANOPIES else 1.0) + (0.5 if p["type"] in CANOPIES else 0.0)))
+    return circles, boxes, things
 
 
 def _segment_hits(cam, pts, boxes, step=0.35):
@@ -276,24 +291,31 @@ def _frame(cams, feet, heads):
         cy = (py.max(axis=1) + py.min(axis=1)) / 2
         f = f + r * cx[:, None] + u * cy[:, None]
         f /= np.linalg.norm(f, axis=1, keepdims=True)
-    r = np.cross(f, [0.0, 1.0, 0.0])
-    r /= np.linalg.norm(r, axis=1, keepdims=True)
-    u = np.cross(r, f)
-    depth = np.einsum("cnk,ck->cn", v, f)
-    behind = (depth < 0.3).any(axis=1)
-    depth = np.maximum(depth, 1e-3)
-    px = np.einsum("cnk,ck->cn", v, r) / depth
-    py = np.einsum("cnk,ck->cn", v, u) / depth
-    half_w = np.abs(px).max(axis=1) / 0.92          # (the picture's edges keep a margin)
-    half_h = np.maximum(py.max(axis=1) / 0.9, -py.min(axis=1) / 0.94)
-    tan_v = np.maximum(half_h, half_w / ASPECT)
+    for k in range(3):   # the floor at the foot of the picture: any room to spare goes above it, to what lies ahead
+        r = np.cross(f, [0.0, 1.0, 0.0])
+        r /= np.linalg.norm(r, axis=1, keepdims=True)
+        u = np.cross(r, f)
+        depth = np.einsum("cnk,ck->cn", v, f)
+        behind = (depth < 0.3).any(axis=1)
+        depth = np.maximum(depth, 1e-3)
+        px = np.einsum("cnk,ck->cn", v, r) / depth
+        py = np.einsum("cnk,ck->cn", v, u) / depth
+        half_w = np.abs(px).max(axis=1) / 0.92          # (the picture's edges keep a margin)
+        half_h = np.maximum(py.max(axis=1) / 0.9, -py.min(axis=1) / 0.94)
+        tan_v = np.maximum(half_h, half_w / ASPECT)
+        if k == 2:
+            break
+        spare = py.min(axis=1) + 0.94 * tan_v             # how far the floor's foot sits above the picture's foot
+        lift = np.where(np.isfinite(spare), np.clip(spare, 0, None) * 0.9, 0)
+        f = f + u * lift[:, None]
+        f /= np.linalg.norm(f, axis=1, keepdims=True)
     tan_v[behind] = np.inf
     n = feet.shape[0]
     tall = (py[:, n:] - py[:, :n]) / (2 * tan_v[:, None])
     return f, tan_v, tall
 
 
-def plan_shot(spec, zone, kind, travel, prev_side=0):
+def plan_shot(spec, zone, kind, travel, prefer_side=0):
     """The best camera for one zone. Returns (shot, stats) or (None, reason)."""
     xs, zs, mask = floor_grid(spec)
     X, Z = np.meshgrid(xs, zs, indexing="ij")
@@ -315,20 +337,23 @@ def plan_shot(spec, zone, kind, travel, prev_side=0):
     tl = math.hypot(*travel)
     tx, tz = travel[0] / tl, travel[1] / tl
 
-    # Candidate stands: a grid round the zone, inside the room, clear of what's in the way.
+    # Candidate stands: a grid round the zone, inside the room, clear of what's in the way: off the
+    # walls and shop fronts (their awnings and signs reach out), except where a wide passage runs on
+    # into the next street.
     (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
-    e = kind["edge"]
-    open_sides = {s for s, w in spec.get("walls", {}).items() if any(o.get("kind") == "passage" and o.get("width", 0) > 8
-                                                                     for o in w.get("openings", []))}
-    lo_x = bx0 + (0.3 if "west" in open_sides else e)
-    hi_x = bx1 - (0.3 if "east" in open_sides else e)
-    lo_z = bz0 + (0.3 if "north" in open_sides else e)
-    hi_z = bz1 - (0.3 if "south" in open_sides else e)
+    e = min(kind["edge"], min(bx1 - bx0, bz1 - bz0) / 2 - 0.4)   # (an alley keeps its cameras down the middle)
     g = np.arange(-kind["reach"], kind["reach"] + 1e-6, kind["step"])
     GX, GZ = np.meshgrid(cx + g, cz + g, indexing="ij")
     GX, GZ = GX.ravel(), GZ.ravel()
-    ok = (GX >= lo_x) & (GX <= hi_x) & (GZ >= lo_z) & (GZ <= hi_z) & (np.hypot(GX - cx, GZ - cz) <= kind["reach"])
-    circles, boxes = _avoid(spec, kind)
+    ok = (GX >= bx0 + 0.3) & (GX <= bx1 - 0.3) & (GZ >= bz0 + 0.3) & (GZ <= bz1 - 0.3) & (np.hypot(GX - cx, GZ - cz) <= kind["reach"])
+    for side, (dist, along, base) in {"west": (GX - bx0, GZ, bz0), "east": (bx1 - GX, GZ, bz0),
+                                      "north": (GZ - bz0, GX, bx0), "south": (bz1 - GZ, GX, bx0)}.items():
+        open_run = np.zeros_like(ok)
+        for o in spec.get("walls", {}).get(side, {}).get("openings", []):
+            if o.get("kind") == "passage" and o.get("width", 0) > 8:
+                open_run |= (along >= base + o["center"] - o["width"] / 2 + e) & (along <= base + o["center"] + o["width"] / 2 - e)
+        ok &= (dist >= e) | open_run
+    circles, boxes, things = _avoid(spec, kind)
     cams = []
     ceiling = spec.get("height", 3.0)
     for h in kind["heights"]:
@@ -341,6 +366,13 @@ def plan_shot(spec, zone, kind, travel, prev_side=0):
         for x, z, rad, below in circles:
             if h > below:
                 good &= np.hypot(GX - x, GZ - z) > rad
+        for b, grow in things:
+            if b[5] - 1.0 < h < b[6] + 2.0:   # (two metres over a thing's top, or well under a roof, a camera is clear of it)
+                good &= ~_in_box(GX, GZ, b, grow)
+        for L in spec.get("lights", []):   # a lamp in the lens blows the picture out
+            if "pos" in L:
+                lx, ly, lz = L["pos"]
+                good &= np.sqrt((GX - lx) ** 2 + (GZ - lz) ** 2 + (h - ly) ** 2) > LIGHT_CLEAR
         cams.append(np.stack([GX[good], np.full(good.sum(), h), GZ[good]], axis=1))
     cams = np.concatenate(cams) if cams else np.zeros((0, 3))
     if len(cams) == 0:
@@ -357,15 +389,17 @@ def plan_shot(spec, zone, kind, travel, prev_side=0):
     cost = (np.maximum(0, S["p10"] - p10) * 25 + np.maximum(0, S["median"] - med) * 20 + np.abs(med - 0.3) * 2
             + np.maximum(0, mx - S["max"]) * 6
             + np.maximum(0, off_travel - 30) / 30 * 1.2 + (off_travel > 62) * 3.0   # (looking back at him: only where nothing else will do)
-            + np.abs(pitch + 22) / 25
+            + np.abs(pitch + 15) / 20
             + np.maximum(0, fov - 56) / 8 + np.maximum(0, 46 - fov) / 6
-            + (side == prev_side) * (0.25 if prev_side else 0))
-    bad = ((fov > LENS[1]) | (fov < LENS[0]) | (p05 < S["p05"]) | (med < S["floor"]) | (pitch > 2) | (pitch < -48)
+            + (side == -prefer_side) * (0.3 if prefer_side else 0))
+    lens = kind.get("lens", LENS)
+    bad = ((fov > lens[1]) | (fov < lens[0]) | (p05 < S["p05"]) | (med < S["floor"]) | (pitch > 2) | (pitch < -48)
            | ~np.isfinite(cost))
     cost[bad] = np.inf
     order = np.argsort(cost)[:60]
     best, best_cost, best_seen = None, np.inf, 0.0
     targets = np.stack([fx, np.full_like(fx, 1.45), fz], axis=1)   # his chest and head, seen from the camera
+    boxes = boxes + [b for b, _ in things if b[6] >= TALL]          # (anything standing hides him, solid or not)
     for c in order:
         if not np.isfinite(cost[c]):
             break
@@ -400,7 +434,7 @@ def plan_room(spec):
     shots, stats, side = [], [], 0
     while zs:
         z = zs.pop(0)
-        shot, st = plan_shot(spec, z, kind, travel, side)
+        shot, st = plan_shot(spec, z, kind, travel, 1 if len(shots) % 2 == 0 else -1)
         if shot is None:   # nothing frames it all: film its two halves
             if max(z[2] - z[0], z[3] - z[1]) < 3.0:
                 raise RuntimeError(f"{spec['id']}: zone {z}: {st}")
@@ -416,7 +450,6 @@ def plan_room(spec):
         shot["id"] = _shot_id(len(shots))
         shots.append(shot)
         stats.append(st)
-        side = st["side"]
     return shots, stats
 
 
