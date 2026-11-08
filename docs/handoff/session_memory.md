@@ -23,6 +23,9 @@ camera shots outside and in the big halls are way too wide; think RE3's city"):
   (DragRightLeg, Drunk, BentForward), from the 100STYLE dataset (CC BY 4.0). The dataset isn't in the
   repo: re-bake from Zenodo record 8127870 (1.5 GB). Next for it: turning on the spot, starts and
   stops, a limp from LimpLeft/LimpRight, foot IK on slopes and steps.
+- **State at the end of the session:** every new shot is rendered (preview), packed and pushed on
+  `claude/bold-ritchie-dow5ha`; tests, tools tests, the walk-through and the 97-setup capture pass.
+  Not merged yet: open the PR when the user asks to play it.
 
 Earlier sessions: the city (areas 2 to 8), the shops' interior pass, the colour pass (Amsterdam's own
 colours on a spooky night), modelled tulips, a basic title screen. Everything up to PR #5 is merged
