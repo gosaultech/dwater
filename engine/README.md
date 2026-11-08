@@ -621,6 +621,10 @@ quickens a little each. Slowing to a stop he settles into the idle loop. His arm
 person walking for each pace; walk faster and you flip faster, and between two paces both books are
 traced over each other.
 
+The Drowned shamble the same way, each in its own gait (its variant): one drags a leg, one staggers
+like a drunk, one lurches bent double; those loops are kept lopsided (not mirrored), and their
+reaching arms, lolling heads and twitches stay the game's own.
+
 Re-bake: `python3 tools/anim/bake_mocap.py --src <folder holding 100STYLE/>` (the 1.5 GB dataset from
 Zenodo record 8127870). A filmstrip of a stride: `--view "survivor/pose=walk/speed=1.9/t=0.3,90,4,3.2,0,0.95,30" out.png`
 (`t`: seconds further on).

@@ -54,6 +54,16 @@ Pace pace(float speed, float scale, float sneak, float walk, float run) {
     return p;
 }
 
+Pace pace(const Clip& c, float speed, float scale) {
+    Pace p;
+    p.a = p.b = &c;
+    p.w = 0;
+    const float stride = c.stride * scale, own = stride / std::max(c.time, 1e-3f);
+    p.stretch = std::sqrt(std::max(1.0f, speed / std::max(own, 1e-3f)));
+    p.stride = stride * p.stretch;
+    return p;
+}
+
 Frame at(const Pace& p, float phase, float still, float idle_phase) {
     Frame f = mix(sample(*p.a, phase), sample(*p.b, phase), p.w);
     if (p.stretch > 1.0f) {   // a longer stride: the hips swing further about where they swing round

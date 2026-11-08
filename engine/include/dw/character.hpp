@@ -309,6 +309,7 @@ private:
     float loco_ = 0, idle_ = 0;                                     // the motion capture's phases: his stride (loops), standing (loops)
     Vector2 sway_{}, sway_t_{};                                     // the pelvis off his line (x across, y along), and where it's going
     bool mocap_feet_ = false;                                       // his legs and spine from the motion capture this frame (mocap.hpp)
+    int gait_ = 0;                                                  // a Drowned's shamble: 0 dragging a leg, 1 staggering, 2 lurching
     float pitch_ = 0, pivot_ = 0, lift_ = 0;                        // root: falls and crawling
     float from_pitch_ = 0, from_pivot_ = 0, from_lift_ = 0, root_k_ = 1;
     int root_mode_ = 0;                                             // 0 standing, 1 on its back, 2 prone

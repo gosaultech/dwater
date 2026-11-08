@@ -1007,6 +1007,27 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
             T[J_HEAD] = {0.34f + c * 0.06f, 0.1f - s * 0.1f, 0.38f + s * 0.1f};
             T[J_PELVIS] = {0, 0, s * 0.06f};   // lurching from hip to hip
             bob = -std::fabs(s) * 0.035f;
+            {   // its legs, hips and spine: a real person's dragging, staggering or lurching walk (mocap.hpp);
+                // the reaching arms, the lolling head and the jaw stay as above
+                static const mocap::Clip* const GAITS[3] = {&mocap::DRAG, &mocap::DRUNK, &mocap::LURCH};
+                const mocap::Clip& g = *GAITS[((gait_ % 3) + 3) % 3];
+                const float scale = pelvis_h_ / g.hip_height;
+                const mocap::Pace p = mocap::pace(g, speed, scale);
+                loco_ += dt * std::max(speed, 0.1f) / std::max(p.stride, 0.2f);
+                loco_ -= std::floor(loco_);
+                const mocap::Frame f = mocap::at(p, loco_, 0, 0);
+                for (int j : {J_PELVIS, J_SPINE, J_CHEST}) T[j] = f.ang[j == J_PELVIS ? mocap::PELVIS : j == J_SPINE ? mocap::SPINE : mocap::CHEST];
+                T[J_HIP_L] = f.ang[mocap::HIP_L];
+                T[J_KNE_L] = f.ang[mocap::KNE_L];
+                T[J_ANK_L] = f.ang[mocap::ANK_L];
+                T[J_HIP_R] = f.ang[mocap::HIP_R];
+                T[J_KNE_R] = f.ang[mocap::KNE_R];
+                T[J_ANK_R] = f.ang[mocap::ANK_R];
+                bob = f.off.y * scale - pelvis_h_;
+                sway_t_ = {f.off.x * scale, f.off.z * scale};
+                phase_ = loco_ * 2 * kPi;
+                mocap_feet_ = true;
+            }
             break;
         }
         case Pose::Aim: {   // both hands on the gun, elbows down: the pistol in the modern isosceles, or the shotgun shouldered

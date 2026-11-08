@@ -52,6 +52,7 @@ float ragged(float th, float a, float b, float phase) {   // an uneven hem: 1 +-
 Character build_drowned(int variant) {
     Character c;
     c.kind = Kind::Drowned;
+    c.gait_ = variant;   // (each walks its own way: mocap.hpp's shambles)
     c.pelvis_h_ = 1.0f;
     c.thickness_ = 0.2f;   // bloated: lies high off the floor
     c.rng_ = 0x9E3779B9u ^ unsigned(variant * 7919 + 17);

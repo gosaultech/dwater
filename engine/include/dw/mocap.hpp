@@ -35,6 +35,7 @@ struct Frame {
 };
 
 extern const Clip SNEAK, WALK, RUN, IDLE;
+extern const Clip DRAG, DRUNK, LURCH;   // the Drowned's shambles (one a variant), kept lopsided
 
 // The loop at `phase` (in loops: any number, wraps), between rows.
 Frame sample(const Clip& c, float phase);
@@ -54,6 +55,9 @@ struct Pace {
 // scale: his hip height over the actor's (the rig's pelvis above the floor / Clip::hip_height).
 // sneak, walk, run: the game's speeds for them (m/s).
 Pace pace(float speed, float scale, float sneak, float walk, float run);
+
+// One loop alone at `speed` (a Drowned's shamble): its stride at that size, stretched past its own speed.
+Pace pace(const Clip& c, float speed, float scale);
 
 // His legs, hips and spine moving at `speed`: the loops mixed, the stride stretched, and `still`
 // (0..1) of the idle loop at `idle_phase` over it as he slows to a stop.

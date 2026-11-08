@@ -50,6 +50,11 @@ GAITS = {
     "walk": {"style": "Rushed", "take": "FW", "speed": 1.9, "average": 8, "trunk": -8, "gaze": -8},
     "run": {"style": "Rushed", "take": "FR", "speed": 2.6, "average": 8, "trunk": -16, "gaze": -10},
     "idle": {"style": "Neutral", "take": "ID", "seconds": 6.0, "trunk": -5, "gaze": -6},
+    # The Drowned, one gait each (their variant): kept lopsided (not mirrored), hunched; their neck and
+    # head stay the game's own (lolling, twitching).
+    "drag": {"style": "DragRightLeg", "take": "FW", "speed": 0.8, "average": 6, "trunk": -22, "gaze": -10, "mirror": False},
+    "drunk": {"style": "Drunk", "take": "FW", "speed": 0.85, "average": 6, "trunk": -18, "gaze": -10, "mirror": False},
+    "lurch": {"style": "BentForward", "take": "FW", "speed": 0.85, "average": 6, "trunk": -26, "gaze": -10, "mirror": False},
 }
 # trunk: degrees he leans forward on average (pelvis, spine and chest together); gaze: where his face
 # points on average (degrees below level). The actors leaned into hurrying and crouching, and the
@@ -244,7 +249,8 @@ def bake_gait(src: Path, g: dict) -> dict:
     near = [k for k in order if abs(speeds[k] - g["speed"]) <= 0.15 * g["speed"]]
     order = (near if len(near) >= 3 else list(order[:3]))[: g["average"]]   # (cycles far off the speed would blur it)
     cycles = [cycle(m, local, G, P, *spans[k]) for k in order]
-    return {"clip": average_cycle(cycles), "source": m, "cycles": len(cycles), "speeds": speeds[order].tolist(), "symmetric": True}
+    return {"clip": average_cycle(cycles), "source": m, "cycles": len(cycles), "speeds": speeds[order].tolist(),
+            "symmetric": g.get("mirror", True)}
 
 
 def write_inc(baked: dict, path: Path = OUT) -> None:
