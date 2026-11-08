@@ -70,6 +70,7 @@ OUT = {"zone_area": 120.0, "zone_side": 11.0, "heights": (2.4, 3.1, 4.0, 5.2), "
 HALL = {"zone_area": 80.0, "zone_side": 9.0, "heights": (2.1, 2.7, 3.4, 4.4), "reach": 10.0, "step": 0.75, "edge": 0.45,
         "lens": (40.0, 66.0), "clear": 0.6}   # (indoors is close quarters: a wider lens, nearer the furniture)
 OVERLAP = 0.75         # m: neighbouring zones overlap this much, so walking the line between them never flickers
+PASSAGE_REACH = 3.5    # m: how far out through a passage, into the next street, a camera may stand
 TREES = {"plane_tree", "elm"}
 TREE_CLEAR = 4.5       # m: from a tree's trunk, a camera above its first limbs is among the branches
 TALL = 1.2             # m: a prop this tall hides him (lower ones he's seen over)
@@ -334,6 +335,10 @@ def plan_shot(spec, zone, kind, travel, prefer_side=0):
     feet = np.stack([fx, np.full_like(fx, FEET), fz], axis=1)
     heads = np.stack([fx, np.full_like(fx, HEAD), fz], axis=1)
     cx, cz = fx.mean(), fz.mean()
+    # Where he comes in (a spawn in this zone: a door, the stairs, the next street), the camera keeps
+    # close to the room's way through: the rooms along his route look the same way, so the cameras
+    # either side of a threshold agree and a cut there never turns the stick round (either way).
+    entry = any(x0 <= sp["pos"][0] <= x1 and z0 <= sp["pos"][2] <= z1 for sp in spec.get("spawns", {}).values())
     tl = math.hypot(*travel)
     tx, tz = travel[0] / tl, travel[1] / tl
 
@@ -345,14 +350,22 @@ def plan_shot(spec, zone, kind, travel, prefer_side=0):
     g = np.arange(-kind["reach"], kind["reach"] + 1e-6, kind["step"])
     GX, GZ = np.meshgrid(cx + g, cz + g, indexing="ij")
     GX, GZ = GX.ravel(), GZ.ravel()
-    ok = (GX >= bx0 + 0.3) & (GX <= bx1 - 0.3) & (GZ >= bz0 + 0.3) & (GZ <= bz1 - 0.3) & (np.hypot(GX - cx, GZ - cz) <= kind["reach"])
+    inside = (GX >= bx0 + 0.3) & (GX <= bx1 - 0.3) & (GZ >= bz0 + 0.3) & (GZ <= bz1 - 0.3)
+    ok = inside.copy()
+    beyond = np.zeros_like(ok)   # a little way out through a passage, in the next street, looking in at the gateway
     for side, (dist, along, base) in {"west": (GX - bx0, GZ, bz0), "east": (bx1 - GX, GZ, bz0),
                                       "north": (GZ - bz0, GX, bx0), "south": (bz1 - GZ, GX, bx0)}.items():
         open_run = np.zeros_like(ok)
         for o in spec.get("walls", {}).get(side, {}).get("openings", []):
-            if o.get("kind") == "passage" and o.get("width", 0) > 8:
-                open_run |= (along >= base + o["center"] - o["width"] / 2 + e) & (along <= base + o["center"] + o["width"] / 2 - e)
+            if o.get("kind") != "passage" or o.get("width", 0) < 3.0:
+                continue
+            m = min(e, o["width"] / 2 - 0.6)
+            span = (along >= base + o["center"] - o["width"] / 2 + m) & (along <= base + o["center"] + o["width"] / 2 - m)
+            open_run |= span
+            beyond |= span & (dist <= -0.3) & (dist >= -PASSAGE_REACH)
         ok &= (dist >= e) | open_run
+    ok = (ok & inside) | beyond
+    ok &= np.hypot(GX - cx, GZ - cz) <= kind["reach"]
     circles, boxes, things = _avoid(spec, kind)
     cams = []
     ceiling = spec.get("height", 3.0)
@@ -388,7 +401,7 @@ def plan_shot(spec, zone, kind, travel, prefer_side=0):
     S = STANDARD
     cost = (np.maximum(0, S["p10"] - p10) * 25 + np.maximum(0, S["median"] - med) * 20 + np.abs(med - 0.3) * 2
             + np.maximum(0, mx - S["max"]) * 6
-            + np.maximum(0, off_travel - 30) / 30 * 1.2 + (off_travel > 62) * 3.0   # (looking back at him: only where nothing else will do)
+            + np.maximum(0, off_travel - 30) / 30 * (3.0 if entry else 1.2) + (off_travel > 62) * 3.0   # (looking back at him: only where nothing else will do)
             + np.abs(pitch + 15) / 20
             + np.maximum(0, fov - 56) / 8 + np.maximum(0, 46 - fov) / 6
             + (side == -prefer_side) * (0.3 if prefer_side else 0))
