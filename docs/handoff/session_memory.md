@@ -1,20 +1,26 @@
 <!-- damned_waters/docs/handoff/session_memory.md -->
 <!-- Purpose: the memory between sessions: where the work stands, how it is made, what was learned, what is open. Update it at the end of each session. -->
 
-# Where Damned Waters stands (last updated 2026-10-14)
+# Where Damned Waters stands (last updated 2026-11-08)
 
 ## In one paragraph
 The route runs end to end on pre-rendered backgrounds, from the canal house through central
-Amsterdam to Station Noord, where a "to be continued" card returns to a new title screen. The last
-session did four things:
-- built the city (areas 2 to 8);
-- did an interior pass over the shops;
-- answered a playtester ("too brown and tan; it should be Amsterdam's normal colours on a spooky
-  night; the interiors are drab") with a colour pass;
-- replaced photographed tulips with modelled ones, and added a basic title screen.
+Amsterdam to Station Noord, where a "to be continued" card returns to a new title screen. The
+session of 2026-11-08 answered the user's playtest ("controls reverse at room transitions"; "the
+camera shots outside and in the big halls are way too wide; think RE3's city"):
+- **Controls:** a held stick never turns him round at a cut (`HeldFrame`, `controls.hpp`);
+  `--walkthrough` proves it on every doorway and staircase (255 tries, none turn back).
+- **The wide rooms are cordoned** (user's choice, over "keep open with ~430 shots"): crowd-barrier
+  lanes through the Dam, Stationsplein, Rembrandtplein, Muntplein, Thorbeckeplein, Rokin and
+  Damrak (`tools/citygen/barricades.py`).
+- **Their cameras are planned by rule** (`tools/citygen/cameras.py`): 254 shots in 27 rooms where
+  there were about 95; he stands about a fifth of the picture high (5 to 10 percent before).
+- **Plates stream by shot** (`dw/streaming.hpp`), not by room.
 
-Everything is merged into `claude/inspiring-turing-gl0kys` (PRs #1 to #4). All backgrounds are
-preview quality at 1280x720 (Cycles on the container's CPU).
+Earlier sessions: the city (areas 2 to 8), the shops' interior pass, the colour pass (Amsterdam's own
+colours on a spooky night), modelled tulips, a basic title screen. Everything up to PR #5 is merged
+into `claude/inspiring-turing-gl0kys`. All backgrounds are preview quality at 1280x720 (Cycles on
+the container's CPU).
 
 ## Merged PRs (gosaultech/dwater, base `claude/inspiring-turing-gl0kys`)
 1. #1: the city route from the canal house to Damrak, the realism pass, rain, the ending.
@@ -59,6 +65,10 @@ preview quality at 1280x720 (Cycles on the container's CPU).
      dressed in place: sky set to `common.SKY`, the clinker road re-tinted to `common.BRICKS`;
   4. the interior pass, `tools/citygen/interiors.py`. It is idempotent: what it adds is marked
      `"interior"` and replaced on every run. It also sets each shop's wall paint from `PAINT`.
+  5. the cordons (`barricades.py`: LANES per room, barrier lines generated where a lane's edge
+     crosses open floor, MOVES puts Drowned/items/spawns into lanes; idempotent, marked
+     `"barricade"`), then the camera pass (`cameras.py`: replaces "shots" of every room in its
+     ROOMS; `python3 tools/citygen/cameras.py report` prints each shot's numbers). Both tested.
 - `area2.py` is reference only: its rooms carry hand edits.
 - **Doors between storeys:** a "door" interactable within 1.6 m of the doorway (a test enforces
   this), or `"board": true` for interact-only beats such as the train doors. Seamless doorways on
@@ -134,14 +144,34 @@ preview quality at 1280x720 (Cycles on the container's CPU).
   by the permission classifier; check PR state with the GitHub tools instead, and don't work
   around a denial.
 - `merge_pull_request` wants the full 40-character head SHA.
+- **Cameras, learned from the pilot renders:** a camera planned on floor maths alone stood under
+  stall canopies, over a van's floodlight and against shop awnings. The planner now keeps clear of
+  everything standing (solid or not, at its own height), of lights in 3D, of walls except along a
+  passage's own span (a whole side once counted as open because one passage was on it). Contact
+  sheets of in-game stills (`--still` per shot) are the review; a dark wall filling half a small
+  thumbnail can look like a bug when it's only an unlit facade, so look at the full frame.
+- **Flips at thresholds** come from the cameras either side facing each other, not from either
+  one alone: making the first shot past a door "look the way he walks in" made it worse. Rooms
+  along the route share a travel direction, so their cameras agree; entry zones hold close to it.
+- **Render queue and plans:** a Blender run reads the room files when that room starts, so
+  changing the planner mid-queue leaves rendered rooms on the old shots. Freeze the planner first;
+  compare a room's shots with a saved copy to find the few to re-render (`--shots a,b`).
+- `depth_pack.py --prune` removes plates of shots a room no longer has; pack re-rendered rooms with it.
 
 ## Decisions the user made
+- **The big squares are channelled** with the evacuation's crowd-barrier lanes (chosen over keeping
+  them open with ~430 shots, or looser framing in the squares), for RE3-style framing.
+- **Fix the fixed-camera bugs before** the over-the-shoulder camera.
 - The gun shop (`wapenhandel`) stays as it is ("ignore the gunshop becoming a regular shop for
   now"). Weapons can also be hidden in ordinary shops; the police post has an armoury.
 - The title screen stays basic for now: no background image, and no Continue until there are saves.
 - Don't render more than the change needs (the user is careful with credits).
 
 ## Open, in order (ask before starting the big ones)
+0. **The user's playtest notes** (they are writing them up): more bugs in the fixed cameras and
+   controls are coming. The over-the-shoulder camera with an on-the-fly toggle (R3 / V) is on hold
+   by the user's choice until the bugs are done; the plan for it is in the 2026-11-08 session (a
+   box-room prototype first, then real room geometry, then baked lighting).
 1. **Waiting on the user:** should the cellar (`kelder`) and the water gate (`waterpoort`) lose
    their strong teal, cold-lit look? It predates the colour pass.
 2. **Task #20: the interior pass, part 2.** Match each shop's camera and light to a reference
