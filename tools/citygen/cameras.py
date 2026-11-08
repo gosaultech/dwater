@@ -50,7 +50,8 @@ ROOMS = {
     "kalverstraat_noord": {"travel": (0.35, -0.94)},
     "damrak_zuid": {"travel": (0, -1)},
     "damrak_noord": {"travel": (0, -1)},
-    "rondvaartboot": {"travel": (0, -1), "hall": True},
+    "rondvaartboot": {"travel": (0, -1), "hall": True,   # inside the tour boat: the boat is the set, the cameras under its glass roof
+                      "ignore": ["canal_boat"], "kind": {"heights": (1.5, 1.75), "lens": (40.0, 70.0)}},
     "stationsplein": {"travel": (0, -1)},
     "station_noord": {"travel": (0, -1)},
     "nieuwe_kerk": {"travel": (0, -1), "hall": True},
@@ -263,8 +264,9 @@ def _avoid(spec, kind):
         else:
             boxes.append(b)
     things = []   # (box, grow): everything standing, solid or not
+    ignore = set(ROOMS.get(spec["id"], {}).get("ignore", ()))   # (a room inside a thing: the thing is its set)
     for p in spec.get("props", []):
-        if "size" not in p or p["type"] in NOT_THINGS or p["type"] in TREES or p["size"][1] < 0.8:
+        if "size" not in p or p["type"] in NOT_THINGS or p["type"] in TREES or p["type"] in ignore or p["size"][1] < 0.8:
             continue
         x, y, z = p["pos"]
         w, h, d = p["size"]
