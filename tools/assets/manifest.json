@@ -71,6 +71,20 @@
     1041
    ]
   },
+  "CheeseBox_01": {
+   "kind": "model",
+   "name": "CheeseBox_01",
+   "authors": [
+    "Gabriel Radi\u0107"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/CheeseBox_01",
+   "dimensions_mm": [
+    240,
+    136,
+    93
+   ]
+  },
   "ClassicConsole_01": {
    "kind": "model",
    "name": "Classic Console 01",
@@ -202,6 +216,20 @@
     205
    ]
   },
+  "brass_vase_01": {
+   "kind": "model",
+   "name": "Brass Vase 01",
+   "authors": [
+    "Rico Cilliers"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/brass_vase_01",
+   "dimensions_mm": [
+    227,
+    227,
+    692
+   ]
+  },
   "brick_pavement_02": {
    "kind": "texture",
    "name": "Brick Pavement 02",
@@ -240,6 +268,20 @@
    "license": "CC0",
    "source": "https://polyhaven.com/a/brick_wall_10"
   },
+  "can_rusted": {
+   "kind": "model",
+   "name": "Can Rusted",
+   "authors": [
+    "Rahul Chaudhary"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/can_rusted",
+   "dimensions_mm": [
+    125,
+    125,
+    151
+   ]
+  },
   "cardboard_box_01": {
    "kind": "model",
    "name": "Cardboard Box 01",
@@ -262,6 +304,20 @@
    ],
    "license": "CC0",
    "source": "https://polyhaven.com/a/ceiling_interior"
+  },
+  "ceramic_vase_01": {
+   "kind": "model",
+   "name": "Ceramic Vase 01",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/ceramic_vase_01",
+   "dimensions_mm": [
+    205,
+    206,
+    401
+   ]
   },
   "christmas_photo_studio_04": {
    "kind": "hdri",
@@ -784,6 +840,20 @@
     436
    ]
   },
+  "lubricant_spray": {
+   "kind": "model",
+   "name": "Lubricant Spray",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/lubricant_spray",
+   "dimensions_mm": [
+    67,
+    65,
+    165
+   ]
+  },
   "marble_01": {
    "kind": "texture",
    "name": "Marble 01",
@@ -907,6 +977,20 @@
     912,
     645,
     35
+   ]
+  },
+  "multi_cleaner_bottle": {
+   "kind": "model",
+   "name": "Multi Cleaner Bottle",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/multi_cleaner_bottle",
+   "dimensions_mm": [
+    88,
+    90,
+    229
    ]
   },
   "old_gas_mask": {
@@ -1187,6 +1271,20 @@
     1399,
     1399,
     1005
+   ]
+  },
+  "russian_food_cans_01": {
+   "kind": "model",
+   "name": "Russian Food Cans 01",
+   "authors": [
+    "Kosan Aziz"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/russian_food_cans_01",
+   "dimensions_mm": [
+    142,
+    46,
+    85
    ]
   },
   "rusty_metal_shutter": {
@@ -1519,6 +1617,21 @@
     742,
     756,
     871
+   ]
+  },
+  "wine_bottles_01": {
+   "kind": "model",
+   "name": "Wine Bottles 01",
+   "authors": [
+    "Jurita Burger",
+    "Rico Cilliers"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/wine_bottles_01",
+   "dimensions_mm": [
+    676,
+    81,
+    331
    ]
   },
   "wood_floor_worn": {

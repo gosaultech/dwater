@@ -125,5 +125,19 @@ note = "ph: not an id" """
         self.assertEqual(refs, {"lion_head": "model", "vintage_suitcase": "model", "dark_wood": "texture"})
 
 
+class ShelfStockTests(unittest.TestCase):
+    def test_the_shelf_stock_table_is_fetched_too(self):
+        # shops.py names its shelves' real products bare, in a table; a fresh checkout must fetch them
+        # all, or the first room with a stocked shelf stops the render (it once stopped Damrak's).
+        src = 'X = 1\nSCANS = {"grocery": ["can_rusted", "CheeseBox_01"],\n         "bar": ["wine_bottles_01"]}\n\n\ndef f():\n    return ["not_this"]\n'
+        refs = polyhaven.code_references(src)
+        self.assertEqual({k: v for k, v in refs.items()}, {"can_rusted": "model", "CheeseBox_01": "model", "wine_bottles_01": "model"})
+
+    def test_the_real_kit_names_every_scan(self):
+        src = (Path(__file__).resolve().parents[2] / "blender" / "shops.py").read_text(encoding="utf-8")
+        for asset in ("can_rusted", "russian_food_cans_01", "medical_box", "wine_bottles_01", "brass_vase_01"):
+            self.assertEqual(polyhaven.code_references(src).get(asset), "model", asset)
+
+
 if __name__ == "__main__":
     unittest.main()

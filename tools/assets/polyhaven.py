@@ -93,12 +93,17 @@ def references(spec: dict) -> dict[str, str]:
 
 def code_references(source: str) -> dict[str, str]:
     """The assets the set-building code itself names (a kit's lions, its suitcases), so they're
-    fetched without a RoomSpec asking: "ph:<id>" in quotes is a model, {"ph": "<id>"} a texture."""
+    fetched without a RoomSpec asking: "ph:<id>" in quotes is a model, {"ph": "<id>"} a texture, and
+    every id in a shelf-stock table (shops.py's SCANS = {palette: [model ids]}) a model."""
     out: dict[str, str] = {}
     for m in re.finditer(r'"ph:([A-Za-z0-9_]+)"', source):
         out.setdefault(m.group(1), "model")
     for m in re.finditer(r'"ph"\s*:\s*"([A-Za-z0-9_]+)"', source):
         out.setdefault(m.group(1), "texture")
+    for table in re.finditer(r"^SCANS\s*=\s*\{(.*?)\}\s*$", source, re.S | re.M):
+        for ids in re.finditer(r"\[([^\]]*)\]", table.group(1)):
+            for m in re.finditer(r'"([A-Za-z0-9_]+)"', ids.group(1)):
+                out.setdefault(m.group(1), "model")
     return out
 
 
