@@ -38,7 +38,7 @@ target_compile_definitions(dw_core PUBLIC DW_REPO_ROOT="${CMAKE_SOURCE_DIR}/..")
 set(DW_CAST src/character.cpp src/character_combat.cpp src/grip_fit.cpp src/character_clearance.cpp src/cast_items.cpp src/cast_survivor.cpp src/cast_guns.cpp src/cast_drowned.cpp src/cast_citizens.cpp
             src/mesh_builder.cpp)
 find_package(Threads REQUIRED)
-add_executable(damned_waters src/main.cpp src/game.cpp src/game_combat.cpp src/game_world.cpp src/game_house.cpp src/plates.cpp src/status_view.cpp src/input.cpp src/audio.cpp src/effects.cpp src/shaders.cpp ${DW_CAST})
+add_executable(damned_waters src/main.cpp src/game.cpp src/game_combat.cpp src/game_world.cpp src/game_house.cpp src/game_walk.cpp src/plates.cpp src/status_view.cpp src/input.cpp src/audio.cpp src/effects.cpp src/shaders.cpp ${DW_CAST})
 target_link_libraries(damned_waters PRIVATE dw_core raylib Threads::Threads)
 if(MSVC)
     target_compile_options(damned_waters PRIVATE /W4)

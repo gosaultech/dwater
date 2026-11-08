@@ -80,6 +80,9 @@ public:
     // A still of the room (--still): the survivor standing at (x, z) facing yaw (degrees), no
     // Drowned, seen from `shot` (empty: whichever shot covers him). Render and present after.
     void pose_still(float x, float z, float yaw_deg, const std::string& shot);
+    // The walk-through (game_walk.cpp): the stick held through every doorway and staircase, both
+    // ways, walking and running; a line per try in `report`. Returns how many went wrong.
+    int walkthrough(const std::string& report);
     // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
     // only: a comma-separated list of subjects to render (empty: all).
     void model_sheet(const std::string& dir, const std::string& only = "");
@@ -336,9 +339,8 @@ private:
     int static_lights_ = 0;                      // room lights; the flash and the flashlight come after them
     int flash_light_ = -1, lamp_light_ = -1;     // where the flash and the flashlight sit in the light arrays (-1: off)
     int l_dynPos_ = -1, l_dynCol_ = -1, l_dynDir_ = -1, l_pDynSh_ = -1;
-    Vector3 held_fwd_{0, 0, -1}, held_right_{1, 0, 0};
-    Vector2 held_in_{};
-    bool holding_ = false;
+    HeldFrame frame_;                // the camera directions the stick is read by: kept through cuts while it's held (controls.hpp)
+    Vector2 frame_fwd_{0, -1};       // this frame's forward on the floor (x, z), from update_player
     int l_cam_ = -1, l_count_ = -1, l_pos_ = -1, l_col_ = -1, l_dir_ = -1, l_top_ = -1, l_bot_ = -1, l_rim_ = -1, l_fog_ = -1, l_fogr_ = -1;
     int l_env_top_ = -1, l_env_bot_ = -1, l_softbox_ = -1;
     int l_depth_ = -1, l_near_ = -1, l_far_ = -1, l_dmax_ = -1, l_blob_ = -1, l_time_ = -1, l_res_ = -1;

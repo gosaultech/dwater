@@ -105,7 +105,7 @@ void Game::reset_fight() {
     hero_.reloading = {};
     slide_locked_ = false;
     shell_from_grip_ = true;
-    holding_ = false;
+    frame_ = {};
     build_storey(first.floor);
     enter_room(room_);
 }
@@ -172,9 +172,10 @@ void Game::update_player(float dt) {
     gait_ = gaits_.update(settings_.tank && !in_.move_keys ? std::fabs(in.y) : std::min(1.0f, Vector2Length(in)), in_.move_keys,
                           settings_.run, in_.hit(ACT_RUN) && !in_.move_keys, in_.held(ACT_RUN), in_.held(ACT_RUN_HOLD));
     const Vector3 cam_f = Vector3Subtract(cam_.target, cam_.position);
+    frame_fwd_ = frame_.update(dt, in, gait_ != Gait::Still, {cam_f.x, cam_f.z});   // (a cut doesn't turn a held stick round)
     const V2 ahead = forward_from_yaw(p.yaw);
     const bool chord_on = settings_.back_turn && back_turn_shares_dodge(settings_.scheme) && pmode_ == PMode::Normal;
-    const int chord = back_turn_.update(dt, settings_.tank ? in : stick_in_his_frame(in, {cam_f.x, cam_f.z}, {ahead.x, ahead.z}),
+    const int chord = back_turn_.update(dt, settings_.tank ? in : stick_in_his_frame(in, frame_fwd_, {ahead.x, ahead.z}),
                                         chord_on && in_.hit(ACT_BACK_TURN), chord_on);
     work_actions(dt);
     if (pmode_ != PMode::Aim) aim_pitch_ -= aim_pitch_ * smoothing(10.0f, dt);
@@ -285,22 +286,13 @@ void Game::move_player(float dt, Vector2 in, float speed_scale) {
         const V2 f = forward_from_yaw(p.yaw);
         const float k = in.y > 0.02f ? speed : in.y < -0.02f ? -0.6f * speed : 0.0f;
         want = {f.x * k, f.z * k};
-    } else {
-        Vector3 fwd = Vector3Subtract(cam_.target, cam_.position);
-        fwd.y = 0;
-        fwd = Vector3Normalize(fwd);
-        const Vector3 right{-fwd.z, 0, fwd.x};
-        if (gait_ == Gait::Still) holding_ = false;
-        else if (!holding_ || std::fabs(Vector2Angle(in, held_in_)) > 35.0f * DEG2RAD) {
-            holding_ = true;   // keep this camera's basis until the stick changes: no cut-induced reversals
-            held_fwd_ = fwd;
-            held_right_ = right;
-            held_in_ = in;
-        }
-        if (holding_) {
-            const Vector3 d = Vector3Normalize(Vector3Add(Vector3Scale(held_right_, in.x), Vector3Scale(held_fwd_, in.y)));
-            want = {d.x * speed, d.z * speed};
-            const float to = yaw_towards(0, 0, d.x, d.z);
+    } else if (gait_ != Gait::Still) {   // by the camera he set off on while the stick stays pushed (update_player)
+        const Vector2 w = stick_world(in, frame_fwd_);
+        const float wl = std::hypot(w.x, w.y);
+        if (wl > 1e-5f) {
+            const Vector2 d{w.x / wl, w.y / wl};
+            want = {d.x * speed, d.y * speed};
+            const float to = yaw_towards(0, 0, d.x, d.y);
             const bool reversal = std::fabs(wrap_pi(to - p.yaw)) > 2.4f;
             p.yaw = step_yaw(p.yaw, to, (reversal ? PIVOT : TURN) * dt);
         }
@@ -348,10 +340,8 @@ void Game::start_dodge(Vector2 in) {
     if (settings_.tank || (pmode_ == PMode::Aim && !in_.pad)) {   // relative to him: sideways, or forward past it
         d = Vector3Add(Vector3Scale(right, in.x), Vector3Scale(f, std::max(in.y, 0.0f)));
     } else {                               // relative to the camera, like walking (and aiming with a pad)
-        Vector3 fwd = Vector3Subtract(cam_.target, cam_.position);
-        fwd.y = 0;
-        fwd = Vector3Normalize(fwd);
-        d = Vector3Add(Vector3Scale({-fwd.z, 0, fwd.x}, in.x), Vector3Scale(fwd, in.y));
+        const Vector2 w = stick_world(in, frame_fwd_);
+        d = {w.x, 0, w.y};
     }
     if (Vector3LengthSqr(d) < 0.04f) d = Vector3Negate(f);   // no direction: hop back
     dodge_dir_ = Vector3Normalize(d);

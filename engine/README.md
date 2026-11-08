@@ -115,6 +115,7 @@ the shaders are GLSL 3.30 core, which both platforms support.
 ../build/macos/damned_waters --view m92fs,0,0,2.0,0,0,8.3 pistol.png              # a gun, catalogue-lit
 ../build/macos/damned_waters --view r870,30,14,1.6,0.05,0,14 shotgun.png           # the 870
 ../build/macos/damned_waters --room voorkamer --still 3.2,4.5,163 still.png --shot a   # him standing in a room (x, z, yaw degrees), one frame
+../build/macos/damned_waters --walkthrough /tmp/walk.txt   # hold the stick through every doorway and staircase, both ways (exit 2 if he ever turned back)
 DW_ROOT=/path/to/tree ../build/macos/damned_waters ...   # read rooms, plates and audio from another tree (a test room)
 ../build/macos/damned_waters --fitgrips  # fit his hands to both guns as people hold them, write src/grips_fitted.inc, exit
 ../build/macos/damned_waters --fitpistol # fit the pistol in both hands (the aim: right arm, wrist, head; the low ready, standing and running: the arms), print it, exit
@@ -645,8 +646,19 @@ stumbles past, open to a kick, and your next shot does double damage; slow motio
 dodge is an option. Kick in the last moment of a lunge (a counter) and it's thrown back and
 floored; kick too early and you eat the bite.
 
-Movement is camera-relative, and a cut keeps the previous camera's directions until you change
-direction, so a cut never reverses your movement. Classic tank controls are in the options
+Movement is camera-relative, and a cut never turns you round (`HeldFrame` in `controls.hpp`):
+for as long as the stick stays pushed, he goes by the camera you set off on, through any number
+of cuts and through a thumb correcting his line. Let go and the new camera's directions take over;
+a correction also takes them at once when the new camera looks within 45 degrees of the old one.
+A thumb slipping through the centre for a moment (a re-grip) doesn't count as letting go. ELI5: a
+driver steers by the road, not by whichever camera is filming the car.
+
+**The walk-through** (`--walkthrough report.txt`, `src/game_walk.cpp`) checks this on every
+doorway, passage and staircase in the game: it holds the stick through each one both ways,
+walking, running, and with a 40-degree correction just after the cut, and writes a line per try:
+OK, BOUNCED (back where he came from), STUCK (no headway: something stands in the way), and FLIP
+where letting go and pushing the same way again walks him back (the cameras either side face each
+other). Run it under `xvfb-run` like `--capture`. Classic tank controls are in the options
 (or T). Rumble arrives with the switch to raylib's SDL3 backend. F3 shows a debug line.
 
 ## Architecture
@@ -668,6 +680,7 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 | `include/dw/house.hpp`, `src/house.cpp` | The house's floor plan per storey: doorways paired across rooms, which room a point is in, sight lines across walls and shut doors, the way through the doors. Pure, unit-tested. |
 | `include/dw/doors.hpp` | A door leaf: pushed, leant on, slammed, shoved; its collider follows its swing. Pure, unit-tested. |
 | `include/dw/transition.hpp` | The beat between storeys: fade, dark, swap, fade up. Pure, unit-tested. |
+| `src/game_walk.cpp` | The walk-through (`--walkthrough`): the stick held through every doorway and staircase, to prove a cut never turns him round. |
 | `src/game_house.cpp` | The house in the game: loading every room, each storey's walls and Drowned, walking into the next room, the doors and their peeks, the Drowned following through doorways, the cellar's risers, the stairs, the retry checkpoint. |
 | `src/plates.hpp`, `src/plates.cpp` | The plates of the rooms around him, decoded in the background and uploaded a few a frame. |
 | `src/status_view.cpp` | The status screen on screen: fonts, the 3D previews and icons, his figure, the tabs, the button glyphs. |

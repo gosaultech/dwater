@@ -424,6 +424,7 @@ void Game::update(float dt) {
         const float before = beat_.t;
         const Beat::Phase ph = beat_.phase;
         if (beat_.update(dt) == Beat::Event::Swap) finish_beat();
+        else if (beat_.phase != Beat::Phase::Out && Vector2Length(in_.move) < 0.2f) frame_ = {};   // let go in the dark: the new camera's way
         if (ph == Beat::Phase::Hold && std::floor(before / 0.26f) != std::floor(beat_.t / 0.26f))
             sfx_.play("step_wood", 0.45f, 0.1f);
         sfx_.update();
@@ -457,11 +458,8 @@ void Game::update(float dt) {
             const V2 f = forward_from_yaw(player_.yaw);
             want = {f.x * std::max(0.0f, in_.move.y), f.z * std::max(0.0f, in_.move.y)};
         } else if (tilt > 0) {
-            Vector3 fwd = holding_ ? held_fwd_ : Vector3Subtract(cam_.target, cam_.position);
-            fwd.y = 0;
-            fwd = Vector3Normalize(fwd);
-            const Vector3 right = holding_ ? held_right_ : Vector3{-fwd.z, 0, fwd.x};
-            want = {right.x * in_.move.x + fwd.x * in_.move.y, right.z * in_.move.x + fwd.z * in_.move.y};
+            const Vector2 w = stick_world(in_.move, frame_fwd_);
+            want = {w.x, w.y};
         }
         update_doors(g, want, tilt);
     }
