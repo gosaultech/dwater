@@ -88,6 +88,7 @@ AVOID = {
     "dam": [(12.0, 11.4, 4.0), (19.0, 11.3, 4.0)],               # the Nieuwe Kerk's unlit flank across half the frame
     "stationsplein": [(27.6, 58.6, 3.5), (40.7, 66.2, 3.5)],      # tram poles and the square's darkest corner
     "rembrandtplein": [(30.4, 53.4, 3.5)],                       # out through the passage, over Thorbeckeplein's kiosk
+    "metro_centraal": [(12.25, 11.87, 3.5)],                     # looking into the platform's unlit end: him a shadow in it
 }
 
 
