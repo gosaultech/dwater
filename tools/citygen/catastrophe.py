@@ -210,7 +210,109 @@ def rokin_noord(spec):
     return props, fx, the_dead
 
 
+# ── Every other street: the night's marks laid by rule ──────────────────────────────────────
+SAYINGS = ["HELP", "WIJ LEVEN NOG", "3 LEVEND\nNAAR NOORD", "NIET OPENDOEN", "BESMET", "GEEN WATER", "GEEN ETEN",
+           "GEPLUNDERD", "WAAR IS IEDEREEN?", "BLIJF WEG", "RAAK ZE NIET AAN", "SCHIET OP HET HOOFD", "MAMA WIJ\nZIJN BIJ OMA",
+           "LUISTER NIET\nNAAR DE RADIO", "ZE ZITTEN IN\nHET WATER", "NIEMAND MEER\nBINNEN", "2 KINDEREN\nBOVEN"]
+MISSING = [("ELIF DEMIR", "7 JAAR", "ROZE JAS"), ("HENK VAN DAM", "81 JAAR", "WANDELSTOK"), ("NOOR JANSEN", "15 JAAR", "SCHOOLTAS"),
+           ("KEES DE BOER", "52 JAAR", "BLAUWE OVERALL"), ("LOTTE VISSER", "29 JAAR", "ZWANGER"), ("MILAN BAKKER", "4 JAAR", "GELE LAARSJES"),
+           ("FATIMA EL AMRANI", "63 JAAR", "GROENE HOOFDDOEK"), ("BRAM SMIT", "11 JAAR", "VOETBALSHIRT")]
+NORMALS = {"west": (-1.0, 0.0, -90.0), "east": (1.0, 0.0, 90.0), "north": (0.0, -1.0, 180.0), "south": (0.0, 1.0, 0.0)}
+
+
+def _front_spots(f):
+    """A facade's ground-floor bays: (along-centre, bay width, is the door's bay), and how to place a
+    thing on its face: (x, z) at a point along it, out in front by `out`, and the yaw facing out."""
+    nx, nz, yaw = NORMALS[f["facing"]]
+    if f["facing"] in ("west", "east"):
+        a, b, line = f["z0"], f["z1"], f["x"]
+        at = lambda u, out: (line + nx * out, u)
+    else:
+        a, b, line = f["x0"], f["x1"], f["z"]
+        at = lambda u, out: (u, line + nz * out)
+    bays = max(1, int(f.get("bays", 3)))
+    door = (f.get("shop") or {}).get("door_bay", f.get("door_bay", 1))
+    bw = (b - a) / bays
+    return [(a + bw * (k + 0.5), bw, k == door) for k in range(bays)], at, yaw
+
+
+def auto_story(spec, rng):
+    """The night's marks, by rule, for a street with no hand-written story: shops boarded and written
+    on (some looted, their glass on the pavement), the search teams' marks on house doors, the
+    missing pasted up; beacons left turning on the police and ambulances, cars burned out (one
+    still burning); the dead where people fell, clear of every door; the flood's silt."""
+    props, fx, the_dead = [], [], []
+    o = spec.get("outdoor") or {}
+    for f in o.get("facades", []):
+        if f.get("facing") not in NORMALS or not (f.get("x0") is not None or f.get("z0") is not None):
+            continue
+        bays, at, yaw = _front_spots(f)
+        shop = f.get("shop")
+        for u, bw, door in bays:
+            r = rng.random()
+            if shop and not door and r < 0.45 and bw > 1.2:   # boarded, and often written on
+                x, z = at(u, 0.1)
+                props.append(boards(round(x, 2), round(z, 2), yaw, round(bw - 0.4, 2), 2.3, seed=int(rng.integers(1 << 16))))
+                if rng.random() < 0.6:
+                    x, z = at(u, 0.14)
+                    props.append(spray(round(x, 2), 0.9, round(z, 2), yaw, round(bw - 0.6, 2), 0.8, SAYINGS[int(rng.integers(len(SAYINGS)))],
+                                       (0.92, 0.9, 0.86) if rng.random() < 0.5 else (0.72, 0.04, 0.03), seed=int(rng.integers(1 << 16))))
+            elif not shop and door and r < 0.55:   # a house the search teams went through
+                x, z = at(u, 0.04)
+                day, mins = 8, int(rng.integers(20, 59))
+                props.append(xcode(round(x, 2), 0.85, round(z, 2), yaw, 1.05, f"{day}/11 0{int(rng.integers(2, 6))}:{mins}",
+                                   f"BRW-{int(rng.integers(1, 9))}", ["WATER", "GAS", "INSTORT", "-"][int(rng.integers(4))],
+                                   str(int(rng.choice([0, 0, 1, 2, 3, 5]))) + (" DOOD" if rng.random() < 0.5 else ""), seed=int(rng.integers(1 << 16))))
+            if not door and rng.random() < 0.14:   # the missing, pasted up (on the boards or the wall beside)
+                x, z = at(u + bw * 0.32, 0.16)
+                name, age, mark = MISSING[int(rng.integers(len(MISSING)))]
+                props.append(poster(round(x, 2), 1.25, round(z, 2), yaw, f"VERMIST\n{name} · {age}\n{mark}\nZIE CENTRAAL", seed=int(rng.integers(1 << 16))))
+    burning = False
+    for p in spec["props"]:
+        if p["type"] != "vehicle":
+            continue
+        liv = p.get("livery", "car")
+        x, y, z = p["pos"]
+        w, h, d = p["size"]
+        a = math.radians(p.get("yaw", 0.0))
+        fx_, fz_ = math.cos(a), -math.sin(a)   # the vehicle's front (local +x)
+        if liv in ("police", "ambulance"):
+            fx.append({"kind": "strobe", "pos": [round(x + fx_ * w * 0.25, 2), round(h + 0.12, 2), round(z + fz_ * w * 0.25, 2)],
+                       "color": [0.15, 0.35, 1.0], "rate": round(float(rng.uniform(1.5, 2.3)), 2), "seed": int(rng.integers(100))})
+        elif liv in ("car", "taxi") and rng.random() < 0.5:
+            p["burnt"] = True
+            p["hero"] = True
+            props.append({"type": "scorch", "pos": [x, 0.0, z], "yaw": p.get("yaw", 0.0), "size": [w + 2.4, 0.0, d + 3.0], "collide": False})
+            if not burning:
+                burning = True
+                fx += [{"kind": "fire", "pos": [x, 0.75, z], "size": 1.3, "seed": int(rng.integers(100))},
+                       {"kind": "smoke", "pos": [x, 1.8, z], "size": 2.2, "seed": int(rng.integers(100))}]
+                props.append({"type": "glow", "pos": [x, 0.9, z], "color": [1.0, 0.45, 0.12], "power": 700.0, "radius": 0.6, "collide": False})
+    # The dead: where people fell, never near a door, a spawn, a thing to pick up or a Drowned.
+    keep_off = [(i["pos"][0], i["pos"][2]) for i in spec.get("interactables", [])] + \
+               [(sp["pos"][0], sp["pos"][2]) for sp in spec.get("spawns", {}).values()] + [(e["pos"][0], e["pos"][2]) for e in spec.get("enemies", [])]
+    xs, zs, ok = cameras.open_floor(spec)
+    cells = [(float(xs[i]), float(zs[k])) for i in range(len(xs)) for k in range(len(zs)) if ok[i, k]]
+    (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
+    want = int(min(7, max(2, (bx1 - bx0) * (bz1 - bz0) / 450)))
+    for _ in range(400):
+        if len(the_dead) >= want or not cells:
+            break
+        x, z = cells[int(rng.integers(len(cells)))]
+        if any(math.hypot(x - a, z - b) < 2.6 for a, b in keep_off) or any(math.hypot(x - b_["pos"][0], z - b_["pos"][2]) < 3.0 for b_ in the_dead):
+            continue
+        the_dead.append(dead(round(x, 2), round(z, 2), int(rng.integers(360)), int(rng.integers(3)), prone=bool(rng.random() < 0.55),
+                             blood=round(float(rng.uniform(0.35, 0.85)), 2)))
+    if o:
+        props.append({"type": "silt", "pos": [(bx0 + bx1) / 2, 0.0, (bz0 + bz1) / 2], "size": [bx1 - bx0, 0.0, bz1 - bz0],
+                      "material": dict(SILT), "cover": 0.5, "seed": int(rng.integers(1000)), "collide": False})
+    return props, fx, the_dead
+
+
 STORIES = {"rokin_zuid": rokin_zuid, "rokin_noord": rokin_noord}
+# The streets told by rule (auto_story), as their backgrounds are re-rendered (so a room's cameras and
+# its pictures always agree): add a room here in the same commit as its new plates.
+AUTO = set()
 
 
 def drift(spec, rng, n):
@@ -247,6 +349,9 @@ def apply(spec):
     """The street's story: its set pieces and its live effects (before the cordons, so their barriers
     fence what now stands where, and before the cameras, which plan round it)."""
     tell = STORIES.get(spec["id"])
+    if tell is None and spec["id"] in AUTO:
+        rng0 = np.random.default_rng(sum(map(ord, spec["id"])) + 7)
+        tell = lambda sp: auto_story(sp, rng0)
     if tell is None:   # (a street with no story yet: untouched)
         return spec
     spec["props"] = [p for p in spec.get("props", []) if not p.get(MARK)]
@@ -263,7 +368,7 @@ def apply(spec):
 
 def leavings(spec, n=180):
     """The flood's leavings, drifted (after the cordons: round their barriers too)."""
-    if spec["id"] not in STORIES:
+    if spec["id"] not in STORIES and spec["id"] not in AUTO:
         return spec
     spec["props"] = [p for p in spec["props"] if not p.get(MARK + "_drift")]
     rng = np.random.default_rng(sum(map(ord, spec["id"])))   # (the same street, the same mess, every run)
@@ -277,7 +382,7 @@ def foreground(spec, per_shot=1):
     """Something close to each shot's lens to look past (RE's cameras almost always have it): low in
     a bottom corner of the picture, 1.5-3.5 m from the lens, on floor he can't walk (off the lanes),
     and only where it hides him from no shot of the room."""
-    if spec["id"] not in STORIES:
+    if spec["id"] not in STORIES and spec["id"] not in AUTO:
         return spec
     spec["props"] = [p for p in spec["props"] if not p.get(MARK + "_fg")]
     xs, zs, ok = cameras.open_floor(spec)

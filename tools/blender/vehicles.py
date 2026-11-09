@@ -370,7 +370,16 @@ def _tram_profile(hw, h, y0=0.3):
     return [(0.0, y0 - 0.01)] + right + [(0.0, h + 0.01)] + [(-z, y) for z, y in reversed(right)]
 
 
-def tram(root, p, w, h, d):
+def bus(root, p, w, h, d):
+    """A city bus (one body, or "bendy": two and the bellows): the tram's body on wheels in cut arches,
+    white over grey, a tall windscreen, its saloon lit, the doors, the destination display saying
+    where everyone was sent ("board")."""
+    q = dict(p)
+    q.setdefault("board", "EVACUATIE")
+    return tram(root, q, w, h, d, as_bus=True)
+
+
+def tram(root, p, w, h, d, as_bus=False):
     """A low-floor city tram in three sections, length along local x: white, a blue skirt, a band of
     glass with dark pillars and doors, a sloped nose with its windscreen at each end, the roof's
     equipment, a pantograph; the saloon inside (seats, poles, its lights lit or out). "derail": each
@@ -388,8 +397,12 @@ def tram(root, p, w, h, d):
     seat = M({"color": [0.05, 0.08, 0.2], "rough": 0.8, "noise": 0.15, "grime": 1.0})
     pole = M({"color": [0.85, 0.65, 0.05], "rough": 0.3, "metal": 0.4})
     strip = city.emit((1.0, 0.95, 0.85), 6.0, "tram_strip")
-    n, gap = 3, 0.25
+    n, gap = (2 if (w > 14 or p.get("bendy")) else 1, 0.5) if as_bus else (3, 0.25)
     seg = (w - gap * (n - 1)) / n
+    if as_bus:   # white over a grey skirt, and lit the cool white of a bus
+        blue = M({"color": [0.12, 0.13, 0.15], "rough": 0.4, "coat": 0.5, "grime": 1.2, "bevel": 0.0, "streaks": 0.25})
+        inside = builders.emissive("bus_inside2", (0.95, 0.97, 1.0), 0.1)
+        strip = builders.emissive("bus_strip2", (0.95, 0.97, 1.0), 5.0)
     der = p.get("derail", {})
     at = lambda key, i: (der.get(key) or [0.0] * n)[i] if i < len(der.get(key) or []) else 0.0
     dark_secs, smashed = set(p.get("dark", [])), set(p.get("smashed", []))
@@ -454,13 +467,18 @@ def tram(root, p, w, h, d):
         for end, sx in ((nose_b, -1), (nose_f, 1)):   # a cab's face: the wrapped windscreen, the dark bumper under it
             if not end:
                 continue
-            xe = sx * (seg / 2 + 0.065)
+            if as_bus and sx < 0:   # a bus's back: its engine's grille, the lights
+                xe = sx * (seg / 2 + 0.065)
+                lbox(sr, "bus_grille", (xe - 0.02, 0.5, -hw + 0.25), (xe + 0.04, 1.3, hw - 0.25), dark)
+                continue
+            xe = sx * (seg / 2 + 0.115)   # (in front of the body's flat end)
             ws = Acc()
             segs = 10
-            for q in range(segs):   # across the front, curving back at its corners
-                za, zb = -hw * 0.94 + 1.88 * hw * q / segs, -hw * 0.94 + 1.88 * hw * (q + 1) / segs
-                ba, bb = 0.1 * (za / hw) ** 2, 0.1 * (zb / hw) ** 2
-                ws.quad((xe - sx * ba, 1.08, za), (xe - sx * bb, 1.08, zb), (xe - sx * (bb + 0.16), h - 0.5, zb), (xe - sx * (ba + 0.16), h - 0.5, za))
+            top = h - (0.32 if as_bus else 0.5)
+            for q in range(segs):   # across the front, curving back a little at its corners
+                za, zb = -hw * 0.9 + 1.8 * hw * q / segs, -hw * 0.9 + 1.8 * hw * (q + 1) / segs
+                ba, bb = 0.04 * (za / hw) ** 2, 0.04 * (zb / hw) ** 2
+                ws.quad((xe - sx * ba, 0.98 if as_bus else 1.08, za), (xe - sx * bb, 0.98 if as_bus else 1.08, zb), (xe - sx * bb, top, zb), (xe - sx * ba, top, za))
             ws.build("tram_windscreen", glass if not broken else hole, sr, smooth=True)
             lbox(sr, "tram_bumper", (xe - 0.06 if sx > 0 else xe - 0.02, 0.3, -hw + 0.1), (xe + 0.02 if sx > 0 else xe + 0.06, 0.92, hw - 0.1), dark)
         # The saloon: the floor, rows of seats, grab poles, the ceiling's lights (lit or out).
@@ -488,12 +506,32 @@ def tram(root, p, w, h, d):
             ob.parent = sr
             ob.location = g2b((0.0, 2.5, 0.0))
             street.hide_panel(ob)
-        # Under it: the bogies; on it: the roof's equipment, the pantograph on the middle section.
-        for bx in (-seg * 0.3, seg * 0.3):
-            lbox(sr, "bogie", (bx - 0.9, 0.05, -hw + 0.3), (bx + 0.9, 0.32, hw - 0.3), dark)
+        # Under it: the bogies (a bus: wheels in arches cut from the skirt); on it: the roof's equipment,
+        # the pantograph on a tram's middle section.
+        if as_bus:
+            axles = ([seg * 0.32] if nose_f else []) + [-seg * 0.18] if n > 1 else [seg * 0.3, -seg * 0.22]
+            if n > 1 and nose_b:
+                axles = [-seg * 0.2]
+            cut, liner = Acc(), Acc()
+            for ax in axles:
+                _cyl(cut, (ax, 0.52, 0.0), 0.56, d + 0.6, 24)
+                _cyl(liner, (ax, 0.52, 0.0), 0.55, d - 0.14, 20, open_ends=True)
+            cutter = cut.build("arch_cutter", dark, sr, smooth=False)
+            cutter.hide_render = True
+            cutter.display_type = "WIRE"
+            body_ob = [o for o in sr.children if o.name.startswith("tram_body")][-1]
+            bo = body_ob.modifiers.new("arches", "BOOLEAN")
+            bo.operation, bo.solver, bo.object = "DIFFERENCE", "EXACT", cutter
+            liner.build("arch_liner", dark, sr, smooth=True)
+            for ax in axles:
+                for sz in (-1, 1):
+                    _wheel(sr, (ax, 0.5, sz * (hw - 0.16)), 0.5, sz, False)
+        else:
+            for bx in (-seg * 0.3, seg * 0.3):
+                lbox(sr, "bogie", (bx - 0.9, 0.05, -hw + 0.3), (bx + 0.9, 0.32, hw - 0.3), dark)
         kit.soft(sr, "roof_unit", (seg * (0.1 if i == 1 else -0.15), h + 0.14, 0.0), (min(3.2, seg * 0.45), 0.28, d * 0.62),
                  M({"color": [0.6, 0.61, 0.62], "rough": 0.5, "metal": 0.3, "grime": 1.4}), 0.06, 2)
-        if i == 1:
+        if i == 1 and not as_bus:
             arm = Acc()
             up = 1.0 if p.get("pantograph", True) else 0.3
             arm.rod((-0.6, h + 0.12, 0.0), (0.0, h + 0.12 + up * 0.55, 0.0), 0.025, 0.02, 5)
@@ -513,4 +551,80 @@ def tram(root, p, w, h, d):
                          city.emit((1.0, 0.95, 0.85), 30.0, "tram_head") if lit else dark, 0.03, 2)
 
 
-kit.PROPS.update({"vehicle": car, "tram": tram})
+def army_truck(root, p, w, h, d):
+    """An army truck along local x (front +x): a squared cab (lofted, its edges held), a ladder chassis,
+    a cargo bed under a canvas tilt over its hoops, big tyres (twin at the back) in their guards, a
+    spare wheel and jerrycans, olive drab worn through to the steel; the tailgate down."""
+    olive = M({"color": [0.12, 0.135, 0.08], "rough": 0.62, "grime": 1.4, "bevel": 0.0, "streaks": 0.5})
+    canvas = M({"ph": "rough_linen", "mono": 1.5, "tint": [0.3, 0.31, 0.2], "scale": 0.7, "grime": 1.4})
+    dark = M({"color": [0.02, 0.02, 0.02], "rough": 0.6, "bevel": 0.0})
+    glass = M({"color": [0.012, 0.016, 0.02], "rough": 0.05, "metal": 0.8, "bevel": 0.0})
+    cab_l = 2.1
+    x_cab = w / 2 - cab_l / 2
+    # the cab: upright, a short nose, a flat windscreen, square shoulders
+    keys = [(0.0, dict(top=0.97, belt=0.55, hw=0.94, rh=0.9, cab=1.0)), (0.08, dict(top=1.0, belt=0.55, hw=1.0, rh=0.95, cab=1.0)),
+            (0.55, dict(top=1.0, belt=0.55, hw=1.0, rh=0.95, cab=1.0)), (0.62, dict(top=0.94, belt=0.55, hw=1.0, rh=0.95, cab=1.0)),
+            (0.68, dict(top=0.62, belt=0.52, hw=0.98, rh=0.92, cab=0.0)), (1.0, dict(top=0.55, belt=0.48, hw=0.92, rh=0.86, cab=0.0))]
+    ts = [k / 16 for k in range(17)]
+    stations = []
+    ch = h * 0.98
+    for t in ts:
+        k = _lerp_keys(keys, t)
+        stations.append((x_cab - cab_l / 2 + t * cab_l, _profile(d / 2 * k["hw"], 0.62, ch * k["belt"], ch * k["top"], d / 2 * k["rh"], ch * k["belt"] + 0.03)))
+
+    def cab_mat(i, k):
+        if i < 0:
+            return 0
+        tm = (ts[i] + ts[i + 1]) / 2
+        if k in SIDE_GLASS and 0.12 < tm < 0.6:
+            return 1
+        if k in TOP and 0.55 < tm < 0.66:
+            return 1
+        return 0
+    loft("truck_cab", root, stations, [olive, glass], cab_mat, creases={5: 0.9, 14: 0.9, 6: 0.9, 13: 0.9, 8: 0.85, 11: 0.85}, ends=(-0.04, 0.05))
+    # chassis, bed, the tilt over its hoops
+    lbox(root, "chassis", (-w / 2 + 0.3, 0.55, -d * 0.32), (w / 2 - 0.2, 0.78, d * 0.32), dark)
+    bed0, bed1 = -w / 2 + 0.05, w / 2 - cab_l - 0.12
+    lbox(root, "bed_floor", (bed0, 0.85, -d / 2), (bed1, 0.98, d / 2), olive)
+    for sz in (-1, 1):
+        lbox(root, "bed_side", (bed0, 0.98, sz * d / 2 - 0.04), (bed1, 1.45, sz * d / 2 + 0.02), olive)
+    tilt = []
+    for k in range(9):
+        x = bed0 + (bed1 - bed0) * k / 8
+        sag = 0.035 * math.sin(k * 1.7)
+        loop = [(0.0, 1.42)] + [(d / 2 * 1.01, 1.42), (d / 2 * 1.02, 2.1), (d / 2 * 0.98, h - 0.25 - sag), (d / 2 * 0.75, h - 0.04 - sag),
+                                (d / 2 * 0.35, h - sag)] + [(0.0, h + 0.01 - sag)] + [(-d / 2 * 0.35, h - sag), (-d / 2 * 0.75, h - 0.04 - sag),
+                                (-d / 2 * 0.98, h - 0.25 - sag), (-d / 2 * 1.02, 2.1), (-d / 2 * 1.01, 1.42)]
+        tilt.append((x, loop))
+    loft("tilt", root, tilt, [canvas], lambda i, k: 0, subd=2, ends=(-0.03, -0.03))
+    lbox(root, "tailgate", (bed0 - 0.45, 0.62, -d / 2 + 0.05), (bed0 - 0.02, 0.7, d / 2 - 0.05), olive)
+    # wheels: single at the front, twin at the back, in their guards
+    r = 0.52
+    for x, twin in ((x_cab + 0.25, False), (bed0 + (bed1 - bed0) * 0.35, True)):
+        for sz in (-1, 1):
+            _wheel(root, (x, r, sz * (d / 2 - 0.12)), r, sz, False)
+            if twin:
+                _wheel(root, (x, r, sz * (d / 2 - 0.42)), r, sz, False)
+            kit.soft(root, "guard", (x, r + 0.58, sz * (d / 2 - 0.15)), (1.25, 0.08, 0.5), olive, 0.03, 2)
+    kit.soft(root, "spare", (bed1 + 0.06, 1.1, d / 2 - 0.25), (0.2, 0.9, 0.9), dark, 0.2, 2)
+    for k in range(3):
+        kit.soft(root, "jerrycan", (bed1 - 0.25 - k * 0.3, 1.25, -d / 2 - 0.12), (0.18, 0.46, 0.34), M({"color": [0.15, 0.17, 0.1], "rough": 0.6}), 0.02, 2)
+    head = builders.emissive("truck_head", (1.0, 0.95, 0.85), 10.0)
+    for sz in (-1, 1):
+        kit.soft(root, "headlight", (w / 2 - 0.02, 1.05, sz * (d / 2 - 0.3)), (0.1, 0.2, 0.2), head, 0.05, 2)
+    if p.get("door_open"):
+        sz = 1 if p["door_open"] == "left" else -1
+        hinge = builders.empty_at("cab_door", (0.0, 0.0, 0.0), 0.0)
+        hinge.parent = root
+        hinge.location = g2b((x_cab + 0.45, 0.0, sz * d / 2))
+        hinge.rotation_euler[2] = math.radians(-60 * sz)
+        kit.soft(hinge, "cab_door", (-0.55, 1.45, sz * 0.03), (1.1, 1.2, 0.07), olive, 0.03, 2)
+
+
+def _car_or_truck(root, p, w, h, d):
+    if p.get("livery") == "army" and h > 2.5:
+        return army_truck(root, p, w, h, d)
+    return car(root, p, w, h, d)
+
+
+kit.PROPS.update({"vehicle": _car_or_truck, "tram": tram, "bus": bus})
