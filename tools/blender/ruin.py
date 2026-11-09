@@ -224,9 +224,58 @@ def glow(root, p, w, h, d):
     ob.parent = root
 
 
+def blood(root, p, w, h, d):
+    """Blood on the ground, w x d: a pool (dark, wet, ragged at its edge, thinner toward it), or with
+    "smear": a drag mark, long and streaked along local x, fading at its far end."""
+    key = "blood_smear" if p.get("smear") else "blood_pool"
+    m = bpy.data.materials.get(key)
+    if m is None:
+        m = bpy.data.materials.new(key)
+        m.use_nodes = True
+        nt = m.node_tree
+        nt.nodes.clear()
+        out = nt.nodes.new("ShaderNodeOutputMaterial")
+        b = nt.nodes.new("ShaderNodeBsdfPrincipled")
+        b.inputs["Base Color"].default_value = (0.09, 0.004, 0.004, 1.0)
+        b.inputs["Roughness"].default_value = 0.1
+        b.inputs["Coat Weight"].default_value = 0.6
+        tc = nt.nodes.new("ShaderNodeTexCoord")
+        grad = nt.nodes.new("ShaderNodeTexGradient")
+        grad.gradient_type = "SPHERICAL"
+        mp = nt.nodes.new("ShaderNodeMapping")
+        nt.links.new(tc.outputs["UV"], mp.inputs["Vector"])
+        mp.inputs["Location"].default_value = (-0.5, -0.5, 0.0) if not p.get("smear") else (-0.5, -0.5, 0.0)
+        mp.inputs["Scale"].default_value = (2.0, 2.0, 1.0)
+        nt.links.new(mp.outputs["Vector"], grad.inputs["Vector"])
+        nz = nt.nodes.new("ShaderNodeTexNoise")
+        nz.inputs["Scale"].default_value = 4.0 if not p.get("smear") else 9.0
+        nz.inputs["Detail"].default_value = 8.0
+        nt.links.new(tc.outputs["Object"], nz.inputs["Vector"])
+        mix = nt.nodes.new("ShaderNodeMath")
+        mix.operation = "MULTIPLY"
+        nt.links.new(grad.outputs["Fac"], mix.inputs[0])
+        nt.links.new(nz.outputs["Fac"], mix.inputs[1])
+        rr = nt.nodes.new("ShaderNodeMapRange")
+        rr.interpolation_type = "SMOOTHSTEP"
+        rr.inputs["From Min"].default_value, rr.inputs["From Max"].default_value = (0.12, 0.3) if not p.get("smear") else (0.08, 0.24)
+        nt.links.new(mix.outputs[0], rr.inputs["Value"])
+        nt.links.new(rr.outputs["Result"], b.inputs["Alpha"])
+        nt.links.new(b.outputs[0], out.inputs["Surface"])
+    a = Acc()
+    y = p.get("lift", 0.009)
+    a.quad((-w / 2, y, -d / 2), (-w / 2, y, d / 2), (w / 2, y, d / 2), (w / 2, y, -d / 2))
+    ob = a.build("blood", m, root, smooth=False)
+    if ob is not None and ob.data.uv_layers:
+        uv = ob.data.uv_layers.active.data
+        for i, (u, v) in enumerate(((0, 0), (0, 1), (1, 1), (1, 0))):
+            if i < len(uv):
+                uv[i].uv = (u, v)
+        ob.visible_shadow = False
+
+
 def nothing(root, p, w, h, d):
     """Solid for the engine, invisible here (a derailed tram's sections: the tram draws itself)."""
 
 
 kit.PROPS.update({"spray": spray, "boards": boards, "body_bag": body_bag, "wire_down": wire_down, "scorch": scorch, "silt": silt,
-                  "glow": glow, "tram_section": nothing})
+                  "glow": glow, "tram_section": nothing, "blood": blood})

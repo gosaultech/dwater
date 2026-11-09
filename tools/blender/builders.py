@@ -269,7 +269,7 @@ def _wear(nt, b, g, k):
         nt.links.new(P, tall.inputs[0])
         tall.inputs[1].default_value = (6.0, 6.0, 0.28)
         st = _wmath(nt, "MULTIPLY", ss(noise(tall.outputs["Vector"], 1.0, 4.0), 0.52, 0.74), wall)
-        dark = _wmath(nt, "ADD", dark, _wmath(nt, "MULTIPLY", st, 0.85 * g))
+        dark = _wmath(nt, "ADD", dark, _wmath(nt, "MULTIPLY", st, 0.85 * g * k.get("streaks", 1.0)))
     # Splashes: the foot of every wall and thing, up to knee height.
     foot = _wmath(nt, "MULTIPLY", _wmath(nt, "SUBTRACT", 1.0, ss(z, 0.0, 0.65)), noise(P, 3.5, 6.0))
     dark = _wmath(nt, "ADD", dark, _wmath(nt, "MULTIPLY", _wmath(nt, "MULTIPLY", foot, wall), 0.7 * g))
@@ -280,7 +280,7 @@ def _wear(nt, b, g, k):
         rgb.outputs[0].default_value = bc.default_value[:]
         c = rgb.outputs[0]
     c = mix(c, DIRT, _wmath(nt, "MINIMUM", dark, 0.85), "MULTIPLY")
-    if FLOOD > 0:
+    if FLOOD > 0 and not k.get("dry"):
         # Below the line, the silt (its edge wavers a little); at the line, a pale crust.
         wav = _wmath(nt, "ADD", z, _wmath(nt, "MULTIPLY", _wmath(nt, "SUBTRACT", noise(P, 1.3, 3.0), 0.5), 0.09))
         below = _wmath(nt, "SUBTRACT", 1.0, ss(wav, FLOOD - 0.04, FLOOD + 0.01))
@@ -686,6 +686,7 @@ def build_prop(p, room_h):
     import halls  # noqa: F401  (the Beurs's hall: arcades, the glass roof; the mortuary the army made of it)
     import station  # noqa: F401  (Centraal and the metro: shop units, boards, the trackbed, the canopy)
     import ruin  # noqa: F401  (the catastrophe's: paint on the walls, boards, the dead, the silt)
+    import vehicles  # noqa: F401  (cars, vans and trams lofted and smoothed: replaces aftermath's and city's boxes)
     import photos  # noqa: F401  (photographs on cards: the stock on shelves, walls of bottles, tulips)
     if t in kit.PROPS:   # the detailed kit: sofas, kasten, the marble mantel, models...
         return kit.build_prop(p, room_h)

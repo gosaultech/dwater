@@ -72,6 +72,7 @@ void Game::reset_fight() {
         hero_ = Character::make(Kind::Survivor);
     }
     fx_.clear();
+    pool_corpses();   // (the dead in the streets still lie in theirs)
     health_ = 100;
     inv_ = {};
     inv_.add(I_HANDGUN, 1);

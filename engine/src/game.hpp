@@ -363,6 +363,11 @@ private:
     Shader fire_sh_{}, smoke_sh_{}, glow_sh_{};
     int l_fire_[3]{-1, -1, -1}, l_smoke_[3]{-1, -1, -1}, l_glow_[2]{-1, -1}, l_pFxPos_ = -1, l_pFxCol_ = -1;
     std::vector<fxlive::Sparks> sparks_;          // one per "sparks" fx in this room (others unused)
+    // The dead in the streets (the rooms' "dead"): the cast's bodies posed once where they fell, still.
+    struct Corpse { Character body; Vector3 at{}; float blood = 0.55f; };
+    std::vector<Corpse> corpses_;
+    void build_corpses(int storey);
+    void pool_corpses();                          // their blood (again after the floor's been mopped)
     void init_fx();
     void update_fx(float dt);
     void fx_plate();                              // the live lights' change, for the plate shader

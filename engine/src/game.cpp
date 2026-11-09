@@ -1802,6 +1802,8 @@ void Game::render() {
     if (peek_ < 0) hero_.draw(char_mat_);   // (peeking, the camera is his eye at the crack)
     for (const auto& e : enemies_)
         if (e.active) e.body.draw(char_mat_);
+    for (const auto& c : corpses_)   // the dead in the streets, the ones near enough to be seen
+        if (std::hypot(c.at.x - cam_.position.x, c.at.z - cam_.position.z) < 40.0f) c.body.draw(char_mat_);
     fx_.draw(char_mat_);   // blood, brass, what came off
     draw_loot();           // what's lying about to be picked up
     draw_leaves();         // the doors, where they hang now

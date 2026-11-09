@@ -166,8 +166,38 @@ void Game::build_storey(int storey) {
             enemies_.push_back(std::move(e));
         }
     }
+    build_corpses(storey);
     aim_target_ = kick_target_ = -1;
     refresh_loot();
+}
+
+void Game::build_corpses(int storey) {
+    for (auto& c : corpses_) c.body.unload();
+    corpses_.clear();
+    constexpr size_t MOST = 24;   // (on one storey: each is a body to draw)
+    for (const auto& r : rooms_) {
+        if (r.floor != storey) continue;
+        for (const auto& d : r.dead) {
+            if (corpses_.size() >= MOST) break;
+            Corpse c;
+            c.body = Character::make(Kind::Drowned, std::clamp(d.variant, 0, 2));
+            c.at = {d.pos.x, d.pos.y, d.pos.z};   // (y below the street: afloat in a canal, the water over most of it)
+            c.blood = d.blood;
+            c.body.place(c.at, d.yaw);
+            constexpr float DT = 1.0f / 30;
+            if (d.prone)   // (face down: it died crawling)
+                for (int f = 0; f < 20; ++f) c.body.animate(Pose::Crawl, 0.0f, DT);
+            for (int f = 0; f < 75; ++f) c.body.animate(Pose::Dead, 0.0f, DT);
+            c.body.settle();
+            corpses_.push_back(std::move(c));
+        }
+    }
+    pool_corpses();
+}
+
+void Game::pool_corpses() {
+    for (const auto& c : corpses_)
+        if (c.blood > 0) fx_.pool(c.body.joint(J_CHEST), c.blood);
 }
 
 void Game::enter_room(int r) {

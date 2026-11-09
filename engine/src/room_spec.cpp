@@ -93,6 +93,15 @@ RoomSpec RoomSpec::load(const std::string& path) {
         F.seed = f.value("seed", 0);
         r.fx.push_back(F);
     }
+    for (const auto& b : d.value("dead", json::array())) {
+        DeadSpawn D;
+        if (b.contains("pos")) D.pos = v3(b["pos"]);
+        D.yaw = b.value("yaw", 0.0f) * DEG;
+        D.variant = b.value("variant", 0);
+        D.prone = b.value("prone", false);
+        D.blood = b.value("blood", 0.55f);
+        r.dead.push_back(D);
+    }
     for (const auto& e : d.value("enemies", json::array()))
         r.enemies.push_back({e["id"], e.value("kind", "verdronkene"), e.value("requires_flag", ""), v3(e["pos"]),
                              e.value("yaw", 0.0f) * DEG, e.value("emerge", false), e.value("lying", false)});
@@ -157,6 +166,7 @@ void RoomSpec::translate(float dx, float dz) {
     for (auto& [k, s] : spawns) mv(s.pos);
     for (auto& l : lights) { mv(l.pos); mv(l.look_at); }
     for (auto& f : fx) mv(f.pos);
+    for (auto& b : dead) mv(b.pos);
     for (auto& e : enemies) mv(e.pos);
     for (auto& i : interactables) { mv(i.pos); mv(i.peek.pos); mv(i.peek.look_at); }
     for (auto& c : colliders) { c.cx += dx; c.cz += dz; }

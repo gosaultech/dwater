@@ -1704,6 +1704,23 @@
       "catastrophe": true
     },
     {
+      "type": "blood",
+      "pos": [
+        7.75,
+        0.0,
+        44.2
+      ],
+      "yaw": 116.6,
+      "size": [
+        1.57,
+        0.0,
+        0.4
+      ],
+      "smear": true,
+      "collide": false,
+      "catastrophe": true
+    },
+    {
       "type": "crowd_barrier",
       "pos": [
         6.0,
@@ -4939,6 +4956,80 @@
       ],
       "every": 2.4,
       "seed": 5,
+      "catastrophe": true
+    }
+  ],
+  "dead": [
+    {
+      "pos": [
+        7.2,
+        0.0,
+        43.1
+      ],
+      "yaw": 160,
+      "variant": 0,
+      "prone": true,
+      "blood": 0.7,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        11.0,
+        0.0,
+        56.6
+      ],
+      "yaw": 75,
+      "variant": 1,
+      "prone": false,
+      "blood": 0.55,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        24.7,
+        0.0,
+        21.0
+      ],
+      "yaw": 250,
+      "variant": 2,
+      "prone": true,
+      "blood": 0.8,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        3.1,
+        0.0,
+        24.2
+      ],
+      "yaw": 20,
+      "variant": 0,
+      "prone": false,
+      "blood": 0.0,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        20.9,
+        0.0,
+        46.3
+      ],
+      "yaw": 300,
+      "variant": 1,
+      "prone": true,
+      "blood": 0.6,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        -2.6,
+        -1.06,
+        43.5
+      ],
+      "yaw": 120,
+      "variant": 2,
+      "prone": true,
+      "blood": 0.0,
       "catastrophe": true
     }
   ]

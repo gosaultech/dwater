@@ -68,6 +68,18 @@ def boards(x, z, yaw, w, h, y=0.3, x_brace=False, seed=9):
     return {"type": "boards", "pos": [x, y, z], "yaw": yaw, "size": [w, h, 0.05], "collide": False, "x": x_brace, "seed": seed}
 
 
+def dead(x, z, yaw, variant=0, prone=False, blood=0.6, y=0.0):
+    """One of the dead where they fell (the engine poses the cast's bodies: never rising)."""
+    return {"pos": [x, y, z], "yaw": yaw, "variant": variant, "prone": prone, "blood": blood}
+
+
+def drag(x0, z0, x1, z1, width=0.4):
+    """A drag mark in blood from (x0, z0) to (x1, z1) (a decal on the street)."""
+    L = math.hypot(x1 - x0, z1 - z0)
+    return {"type": "blood", "pos": [round((x0 + x1) / 2, 2), 0.0, round((z0 + z1) / 2, 2)], "yaw": round(math.degrees(math.atan2(-(z1 - z0), x1 - x0)), 1),
+            "size": [round(L, 2), 0.0, width], "smear": True, "collide": False}
+
+
 def model(ref, x, z, yaw, y=0.0, tip=None, collide=False, scale=None):
     p = {"type": "model", "model": ref, "pos": [round(x, 2), round(y, 3), round(z, 2)], "yaw": round(yaw, 1), "collide": collide}
     if tip is not None:
@@ -151,7 +163,14 @@ def rokin_zuid(spec):
         {"type": "silt", "pos": [13.0, 0.0, 40.0], "size": [26.0, 0.0, 80.0], "material": dict(SILT), "cover": 0.5, "seed": 71, "collide": False},
     ]
     fx.append({"kind": "sparks", "pos": [10.2, 0.05, 41.8], "every": 2.4, "seed": 5})
-    return props, fx
+    props.append(drag(8.1, 44.9, 7.4, 43.5))
+    the_dead = [dead(7.2, 43.1, 160, 0, prone=True, blood=0.7),     # thrown through the tram's windscreen, crawled a metre
+                dead(11.0, 56.6, 75, 1, blood=0.55),                # by the derailed sections
+                dead(24.7, 21.0, 250, 2, prone=True, blood=0.8),    # under the hotel's boarded windows
+                dead(3.1, 24.2, 20, 0, blood=0.0),                  # pulled out of the water onto the quay
+                dead(20.9, 46.3, 300, 1, prone=True, blood=0.6),    # the taxi's driver, by his door
+                dead(-2.6, 43.5, 120, 2, prone=True, blood=0.0, y=-1.06)]   # face down in the basin
+    return props, fx, the_dead
 
 
 def rokin_noord(spec):
@@ -169,7 +188,6 @@ def rokin_noord(spec):
         {"type": "scorch", "pos": [5.6, 0.0, 16.4], "yaw": 35, "size": [7.0, 0.0, 5.5], "collide": False},
         {"type": "body_bag", "pos": [8.2, 0.0, 26.3], "yaw": 0, "size": [1.85, 0.3, 0.62], "collide": False, "hero": True},
         {"type": "body_bag", "pos": [8.2, 0.0, 27.1], "yaw": 3, "size": [1.85, 0.3, 0.62], "collide": False},
-        {"type": "body_bag", "pos": [8.0, 0.0, 27.9], "yaw": -4, "size": [1.6, 0.28, 0.6], "collide": False},
         spray(25.95, 0.85, 17.0, W, 4.2, 0.9, "NIET NAAR BENEDEN", (0.92, 0.9, 0.86), seed=51),
         spray(25.95, 1.85, 17.4, W, 3.2, 0.55, "ZE ZITTEN IN HET WATER", (0.72, 0.04, 0.03), seed=52),
         poster(25.95, 1.3, 36.2, W, "VERMIST\nAYLA YILMAZ · 16 JAAR\nGROENE JAS\nLAATST GEZIEN: DAM", seed=53),
@@ -184,7 +202,12 @@ def rokin_noord(spec):
            {"kind": "smoke", "pos": [5.6, 1.8, 16.4], "size": 2.2, "seed": 2},
            {"kind": "strobe", "pos": [22.3, 2.45, 46.0], "color": [0.15, 0.35, 1.0], "rate": 1.7, "seed": 3},
            {"kind": "strobe", "pos": [11.0, 2.75, 24.0], "color": [0.15, 0.35, 1.0], "rate": 2.1, "seed": 4}]
-    return props, fx
+    the_dead = [dead(4.6, 9.4, 30, 0, blood=0.65),                   # at the checkpoint, where it was overrun
+                dead(21.4, 6.2, 210, 2, prone=True, blood=0.75),
+                dead(7.8, 18.7, 120, 1, prone=True, blood=0.5),      # by the car that burned
+                dead(25.0, 37.2, 260, 2, blood=0.45),                # under the missing, at the police post
+                dead(13.6, 22.4, 340, 0, prone=True, blood=0.85)]    # in the road by the ambulance
+    return props, fx, the_dead
 
 
 STORIES = {"rokin_zuid": rokin_zuid, "rokin_noord": rokin_noord}
@@ -228,13 +251,13 @@ def apply(spec):
         return spec
     spec["props"] = [p for p in spec.get("props", []) if not p.get(MARK)]
     spec["fx"] = [f for f in spec.get("fx", []) if not f.get(MARK)]
-    props, fx = tell(spec)
-    for p in props:
-        p[MARK] = True
-    for f in fx:
-        f[MARK] = True
+    spec["dead"] = [b for b in spec.get("dead", []) if not b.get(MARK)]
+    props, fx, the_dead = tell(spec)
+    for x in props + fx + the_dead:
+        x[MARK] = True
     spec["props"] += props
     spec["fx"] += fx
+    spec["dead"] += the_dead
     return spec
 
 

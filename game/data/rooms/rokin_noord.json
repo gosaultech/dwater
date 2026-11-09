@@ -1357,22 +1357,6 @@
       "catastrophe": true
     },
     {
-      "type": "body_bag",
-      "pos": [
-        8.0,
-        0.0,
-        27.9
-      ],
-      "yaw": -4,
-      "size": [
-        1.6,
-        0.28,
-        0.6
-      ],
-      "collide": false,
-      "catastrophe": true
-    },
-    {
       "type": "spray",
       "pos": [
         25.95,
@@ -5077,6 +5061,68 @@
       ],
       "rate": 2.1,
       "seed": 4,
+      "catastrophe": true
+    }
+  ],
+  "dead": [
+    {
+      "pos": [
+        4.6,
+        0.0,
+        9.4
+      ],
+      "yaw": 30,
+      "variant": 0,
+      "prone": false,
+      "blood": 0.65,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        21.4,
+        0.0,
+        6.2
+      ],
+      "yaw": 210,
+      "variant": 2,
+      "prone": true,
+      "blood": 0.75,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        7.8,
+        0.0,
+        18.7
+      ],
+      "yaw": 120,
+      "variant": 1,
+      "prone": true,
+      "blood": 0.5,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        25.0,
+        0.0,
+        37.2
+      ],
+      "yaw": 260,
+      "variant": 2,
+      "prone": false,
+      "blood": 0.45,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        13.6,
+        0.0,
+        22.4
+      ],
+      "yaw": 340,
+      "variant": 0,
+      "prone": true,
+      "blood": 0.85,
       "catastrophe": true
     }
   ]

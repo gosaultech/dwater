@@ -21,6 +21,9 @@ struct Light { std::string kind; V3 pos, look_at, dir_from; V3 color{1, 1, 1}; f
 // "flicker" (a failing light). size: a fire's or smoke's width (m); radius: how far its light reaches;
 // amount: how much a flicker dims; rate: a beacon's turns a second; every: seconds between bursts.
 struct Fx { std::string kind; V3 pos; V3 color{1.0f, 0.55f, 0.2f}; float size = 1, radius = 5, amount = 0.4f, rate = 2, every = 2.5f; int seed = 0; };
+// One of the dead, where they fell (the room's "dead"; never rises, unlike a "lying" Drowned): who they
+// were (variant: the cast's bodies), face down or on the back, how far their blood has spread (m).
+struct DeadSpawn { V3 pos; float yaw = 0; int variant = 0; bool prone = false; float blood = 0.55f; };
 constexpr float LAMP_HEAD = 3.27f;   // m: a street lamp's lantern ("outdoor": {"lamps": [[x, z], ...]}; tools/blender/street.py)
 struct EnemySpawn { std::string id, kind, requires_flag; V3 pos; float yaw = 0; bool emerge = false, lying = false; };
 // Something to walk up to and press Interact at. kind: "pickup" (item, count), "note" (title,
@@ -50,6 +53,7 @@ struct RoomSpec {
     std::map<std::string, Spawn> spawns;
     std::vector<Light> lights;
     std::vector<Fx> fx;            // the live layer over the painting: fire, smoke, sparks, beacons, a failing light
+    std::vector<DeadSpawn> dead;   // the dead lying in the street (drawn by the engine, over the painting)
     std::vector<EnemySpawn> enemies;
     std::vector<Interactable> interactables;
     int floor = 0;                 // which storey it's on ("storey": 0 the ground floor, -1 a cellar): for the map

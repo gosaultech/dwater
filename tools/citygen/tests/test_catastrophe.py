@@ -93,6 +93,22 @@ class Catastrophe(unittest.TestCase):
                 if len(pts) and box:
                     self.assertLessEqual(cameras._segment_hits(np.array(s["pos"], float), pts, box).mean(), 0.02, (rid, s["id"]))
 
+    def test_the_dead_lie_in_the_street_not_in_a_wall(self):
+        for rid in catastrophe.STORIES:
+            spec = room(rid)
+            self.assertTrue(spec.get("dead"), rid)
+            xs, zs, ok = cameras.open_floor(spec)
+            (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
+            for b in spec["dead"]:
+                x, y, z = b["pos"]
+                if y < -0.5:   # (afloat: over the water, west of the quay)
+                    self.assertLess(x, bx0 + 0.5, b)
+                    continue
+                self.assertTrue(bx0 < x < bx1 and bz0 < z < bz1, b)
+                i = int(np.argmin(np.abs(xs - x)))
+                k = int(np.argmin(np.abs(zs - z)))
+                self.assertTrue(ok[max(i - 1, 0):i + 2, max(k - 1, 0):k + 2].any(), (rid, b))
+
     def test_its_decals_and_its_fx_are_ones_the_tools_know(self):
         for rid in catastrophe.STORIES:
             spec = room(rid)
