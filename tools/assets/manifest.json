@@ -440,6 +440,20 @@
     434
    ]
   },
+  "compost_bags": {
+   "kind": "model",
+   "name": "Compost Bags",
+   "authors": [
+    "James Ray Cock"
+   ],
+   "license": "CC0",
+   "source": "https://polyhaven.com/a/compost_bags",
+   "dimensions_mm": [
+    1847,
+    946,
+    768
+   ]
+  },
   "concrete_floor_painted": {
    "kind": "texture",
    "name": "Concrete Floor Painted",
