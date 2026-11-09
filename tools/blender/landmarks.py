@@ -431,7 +431,6 @@ def canal_boat(root, p, w, h, d):
         root.location.z -= p["sunk"]
     L, Wd = w, d
     bow = 2.2
-    hull = Acc()   # a box hull with a pointed bow and a rounded stern
     y1 = 0.35
     y0 = y1 - p.get("draught", 1.1)
     door = p.get("door")
@@ -443,12 +442,39 @@ def canal_boat(root, p, w, h, d):
         return [(u, v) for u, v in ((a, door[0] - door[1] / 2), (door[0] + door[1] / 2, b)) if v - u > 0.05]
     xs = -L / 2
     xb = L / 2 - bow
-    hull.box((xs, y0, -Wd / 2), (xb, y1, Wd / 2))
-    hull.quad((xb, y0, -Wd / 2), (L / 2, y0 + 0.4, 0.0), (L / 2, y1 + 0.15, 0.0), (xb, y1, -Wd / 2))
-    hull.quad((xb, y0, Wd / 2), (xb, y1, Wd / 2), (L / 2, y1 + 0.15, 0.0), (L / 2, y0 + 0.4, 0.0))
-    hull.quad((xb, y1, -Wd / 2), (L / 2, y1 + 0.15, 0.0), (L / 2, y1 + 0.15, 0.0), (xb, y1, Wd / 2))
-    hull.build("boat_hull", hull_m, root, smooth=False)
-    lbox(root, "boat_rubbing_strake", (xs - 0.05, y1 - 0.08, -Wd / 2 - 0.06), (xb, y1, Wd / 2 + 0.06), M({"color": [0.25, 0.15, 0.08], "rough": 0.5}))
+    import vehicles
+
+    def shape(x):   # (half-width, keel, deck edge) at x: full amidships, a rounded stern, a bow drawn in like a spoon
+        u = max(0.0, (x - xb) / bow)
+        v = max(0.0, (xs + 0.7 - x) / 0.7)
+        hw_ = Wd / 2 * math.sqrt(max(0.0, 1.0 - min(u, 0.985) ** 2)) * (1.0 - 0.12 * v * v)
+        return hw_, y0 + 0.55 * u * u + 0.15 * v, y1 + 0.16 * u * u + 0.03 * v
+
+    def section(x):
+        hw_, k_, e_ = shape(x)
+        right = [(hw_ * 0.6, k_), (hw_ * 0.9, k_ + 0.06), (hw_ * 0.99, k_ + 0.25 * (e_ - k_)), (hw_, e_ - 0.12), (hw_ * 0.99, e_)]
+        return [(0.0, k_ - 0.01)] + right + [(0.0, e_ + 0.01)] + [(-z, y) for z, y in reversed(right)]
+    xs_ = [xs, xs + 0.15, xs + 0.4, xs + 0.7] + [xs + 0.7 + (xb - xs - 0.7) * k / 4 for k in range(1, 5)] + [xb + bow * u for u in (0.3, 0.55, 0.75, 0.9, 0.97)]
+    vehicles.loft("boat_hull", root, [(x, section(x)) for x in xs_], [hull_m], lambda i, k: 0, subd=2, ends=(-0.03, 0.05))
+    strake = Acc()   # the rubbing strake, round the deck's edge: down each side, round the stem, across the transom
+    pts = [(x,) + shape(x) for x in [xs + (L - 0.05) * k / 60 for k in range(61)]]
+    tip = (L / 2 + 0.03, 0.0, 0.0, pts[-1][3] + 0.01)
+    for sz in (-1, 1):
+        run = [(x, sz * h_, e_) for x, h_, _, e_ in pts] + [(tip[0], 0.0, tip[3])]
+        if sz < 0:
+            run = run[::-1]
+        for (xa, za, ea), (xb_, zb, eb) in zip(run, run[1:]):
+            oa, ob = za + math.copysign(0.06, za or sz), zb + math.copysign(0.06, zb or sz)
+            strake.quad((xa, ea - 0.13, oa), (xb_, eb - 0.13, ob), (xb_, eb + 0.01, ob), (xa, ea + 0.01, oa))
+            strake.quad((xa, ea + 0.01, oa), (xb_, eb + 0.01, ob), (xb_, eb + 0.01, zb), (xa, ea + 0.01, za))
+    h0, e0 = pts[0][1], pts[0][3]
+    strake.quad((xs - 0.06, e0 - 0.13, -h0 - 0.06), (xs - 0.06, e0 - 0.13, h0 + 0.06), (xs - 0.06, e0 + 0.01, h0 + 0.06), (xs - 0.06, e0 + 0.01, -h0 - 0.06))
+    strake.quad((xs - 0.06, e0 + 0.01, -h0 - 0.06), (xs - 0.06, e0 + 0.01, h0 + 0.06), (xs, e0 + 0.01, h0), (xs, e0 + 0.01, -h0))
+    strake.build("boat_rubbing_strake", M({"color": [0.25, 0.15, 0.08], "rough": 0.5}), root, smooth=False)
+    for sx in (-1, 1):   # bollards fore and aft, a mooring line made fast on one
+        bx = xb + 0.5 if sx > 0 else xs + 0.45
+        for sz in (-1, 1):
+            rod(root, "boat_bollard", (bx, shape(bx)[2], sz * (shape(bx)[0] - 0.25)), (bx, shape(bx)[2] + 0.22, sz * (shape(bx)[0] - 0.25)), 0.05, 0.06, M({"color": [0.05, 0.05, 0.05], "rough": 0.4, "metal": 0.6}), seg=10)
     # the cabin: glazed sides, white posts, a roof of glass curving over
     c0, c1, ch = xs + 1.2, xb - 0.4, h
     lbox(root, "cabin_floor", (c0, y1, -Wd / 2 + 0.15), (c1, y1 + 0.05, Wd / 2 - 0.15), M({"color": [0.12, 0.1, 0.09], "rough": 0.6}))
@@ -476,7 +502,16 @@ def canal_boat(root, p, w, h, d):
         za, zb = -r * math.cos(a0), -r * math.cos(a1)
         ya, yb = y1 + ch * 0.62 + 0.45 * math.sin(a0), y1 + ch * 0.62 + 0.45 * math.sin(a1)
         roof.quad((c0, ya, za), (c1, ya, za), (c1, yb, zb), (c0, yb, zb))
-    roof.build("cabin_roof", M({"color": [0.015, 0.02, 0.025], "rough": 0.08, "grime": 0, "bevel": 0}), root, smooth=True)   # tinted glass
+    tinted = M({"color": [0.015, 0.02, 0.025], "rough": 0.08, "grime": 0, "bevel": 0})
+    roof.build("cabin_roof", tinted, root, smooth=True)   # tinted glass
+    for xe in (c0, c1):   # the cabin's ends: a white panel, glass over it, the roof's arch glazed
+        lbox(root, "cabin_end", (xe - 0.03, y1, -Wd / 2 + 0.2), (xe + 0.03, y1 + 0.45, Wd / 2 - 0.2), white)
+        lbox(root, "cabin_end_glass", (xe - 0.01, y1 + 0.45, -Wd / 2 + 0.2), (xe + 0.01, y1 + ch * 0.62, Wd / 2 - 0.2), M("glass"))
+        cap, r, yb0 = Acc(), Wd / 2 - 0.2, y1 + ch * 0.62
+        for k in range(seg):
+            a0, a1 = math.pi * k / seg, math.pi * (k + 1) / seg
+            cap.quad((xe, yb0, 0.0), (xe, yb0 + 0.45 * math.sin(a0), -r * math.cos(a0)), (xe, yb0 + 0.45 * math.sin(a1), -r * math.cos(a1)), (xe, yb0, 0.0))
+        cap.build("cabin_roof_end", tinted, root, smooth=False)
     ribs = Acc()   # the roof's aluminium ribs, one over each pair of posts
     for i in range(n + 1):
         x = c0 + (c1 - c0) * i / n
