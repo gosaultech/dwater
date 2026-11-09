@@ -219,6 +219,7 @@ def depth_material():
     """Emission = planar view depth / DEPTH_MAX. With the Raw view transform the
     number lands in the PNG untouched: this *is* a measuring tape, not a picture."""
     m = bpy.data.materials.new("depth_override")
+    m.cycles.emission_sampling = "NONE"   # a tape measure, not a lamp: else every triangle joins the light tree (GBs)
     if m.node_tree is None:
         m.use_nodes = True
     nt = m.node_tree
@@ -380,6 +381,10 @@ def main():
     shots_wanted = {s for s in a.shots.split(",") if s}
     for room_id in wanted:
         spec = specs[room_id]
+        # The room's weather, before anything is built (builders._wear reads it).
+        builders.FLOOD = spec.get("flood", (spec.get("outdoor") or {}).get("tide", 0.0))
+        builders.OUTDOOR = bool(spec.get("outdoor"))
+        builders.WEAR = spec.get("wear", 1.0)
         s = new_scene(spec, q, res)
         if a.gpu and enable_gpu():
             s.cycles.device = "GPU"

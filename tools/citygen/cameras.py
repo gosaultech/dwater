@@ -78,7 +78,7 @@ TALL = 1.2             # m: a prop this tall hides him (lower ones he's seen ove
 CLEAR = 1.2            # m: a camera keeps this far from anything standing (more from a canopy, a light)
 CANOPIES = {"fair_stall", "aid_post", "kiosk", "tram_stop", "market_stall", "flower_stall", "tent", "schiettent", "carousel", "terrace"}
 NOT_THINGS = {"leaflets", "palace", "gothic_front", "beurs", "station", "munttoren", "runner", "rug", "puddle",
-              "collider"}   # (no footprint on this floor, or nothing to see)
+              "collider", "spray", "boards", "silt", "scorch", "wire_down", "body_bag"}   # (no footprint on this floor, or nothing to see)
 LIGHT_CLEAR = 3.0      # m: from a light (a lamp in the lens blows the picture out)
 LAMP_HEAD = 3.27       # m: a street lamp's lantern (tools/blender/street.py)
 LAMP_CLEAR = 4.0       # m: from a lantern, in 3D

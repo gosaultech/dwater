@@ -17,6 +17,10 @@ struct V3 { float x = 0, y = 0, z = 0; };
 struct Shot { std::string id; V3 pos, look_at; float fov = 55; Rect2 zone{}; int priority = 0; };
 struct Spawn { V3 pos; float yaw = 0; };
 struct Light { std::string kind; V3 pos, look_at, dir_from; V3 color{1, 1, 1}; float energy = 1, range = 6, spot_angle = 60; bool flicker = false; };
+// Something alive over the painting (dw/fxlive.hpp): "fire", "smoke", "sparks", "strobe" (a beacon),
+// "flicker" (a failing light). size: a fire's or smoke's width (m); radius: how far its light reaches;
+// amount: how much a flicker dims; rate: a beacon's turns a second; every: seconds between bursts.
+struct Fx { std::string kind; V3 pos; V3 color{1.0f, 0.55f, 0.2f}; float size = 1, radius = 5, amount = 0.4f, rate = 2, every = 2.5f; int seed = 0; };
 constexpr float LAMP_HEAD = 3.27f;   // m: a street lamp's lantern ("outdoor": {"lamps": [[x, z], ...]}; tools/blender/street.py)
 struct EnemySpawn { std::string id, kind, requires_flag; V3 pos; float yaw = 0; bool emerge = false, lying = false; };
 // Something to walk up to and press Interact at. kind: "pickup" (item, count), "note" (title,
@@ -45,6 +49,7 @@ struct RoomSpec {
     std::vector<Shot> shots;
     std::map<std::string, Spawn> spawns;
     std::vector<Light> lights;
+    std::vector<Fx> fx;            // the live layer over the painting: fire, smoke, sparks, beacons, a failing light
     std::vector<EnemySpawn> enemies;
     std::vector<Interactable> interactables;
     int floor = 0;                 // which storey it's on ("storey": 0 the ground floor, -1 a cellar): for the map

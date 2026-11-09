@@ -22,6 +22,7 @@
 #include "dw/core.hpp"
 #include "dw/doors.hpp"
 #include "dw/framing.hpp"
+#include "dw/fxlive.hpp"
 #include "dw/house.hpp"
 #include "dw/rain.hpp"
 #include "dw/room_spec.hpp"
@@ -358,6 +359,14 @@ private:
     bool establish_ = true;                      // (off for the capture setups, stills and the walk-through)
     float item_push_ = 1;                        // a little closer while a pickup is within reach
     int l_rWin_ = -1, l_sWin_ = -1, l_fill_ = -1;
+    // The live layer over the painting (dw/fxlive.hpp, game_fx.cpp): flames, smoke, sparks, beacons.
+    Shader fire_sh_{}, smoke_sh_{}, glow_sh_{};
+    int l_fire_[3]{-1, -1, -1}, l_smoke_[3]{-1, -1, -1}, l_glow_[2]{-1, -1}, l_pFxPos_ = -1, l_pFxCol_ = -1;
+    std::vector<fxlive::Sparks> sparks_;          // one per "sparks" fx in this room (others unused)
+    void init_fx();
+    void update_fx(float dt);
+    void fx_plate();                              // the live lights' change, for the plate shader
+    void draw_fx() const;
     Vector2 stream_at_{1e9f, 1e9f};                  // where he stood when the plates were last thought about
     HeldFrame frame_;                // the camera directions the stick is read by: kept through cuts while it's held (controls.hpp)
     Vector2 frame_fwd_{0, -1};       // this frame's forward on the floor (x, z), from update_player

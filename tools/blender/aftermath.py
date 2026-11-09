@@ -291,6 +291,12 @@ def vehicle(root, p, w, h, d):
     glass = M({"color": [0.015, 0.02, 0.025], "rough": 0.03, "metal": 0.8})
     dark = M({"color": [0.02, 0.02, 0.02], "rough": 0.6})
     rim_m = M({"color": [0.55, 0.56, 0.58], "rough": 0.25, "metal": 1.0})
+    burnt = p.get("burnt", False)
+    if burnt:   # burned out: the paint gone to scorched steel rusting in the rain, glass to soot, tyres to nothing
+        body = M({"ph": "rusty_metal_02", "tint": [0.32, 0.29, 0.27], "value": 0.55, "rough": 0.92})
+        glass = M({"color": [0.008, 0.008, 0.008], "rough": 0.95})
+        dark = M({"color": [0.012, 0.011, 0.01], "rough": 0.95})
+        rim_m = M({"ph": "rusty_metal_02", "tint": [0.5, 0.42, 0.36], "rough": 0.85})
     van = p.get("van", h > 1.8)
     poly, c, (wsx0, wsy0, wsx1, wsy1) = _profile(w, h, van)
     shell = street.fan_prism(root, "car_body", poly, c, d, body, ((0.0, 0.0, -d / 2), (1, 0, 0), (0, 1, 0), (0, 0, 1)))
@@ -312,13 +318,14 @@ def vehicle(root, p, w, h, d):
         x = sx * (w / 2 - (0.75 if van else 0.72))
         for sz in (-1, 1):
             z = sz * (d / 2 - 0.12)
-            tyre = kit.lathe(root, "tyre", [(0.21, -0.11), (0.31, -0.12), (0.34, -0.06), (0.34, 0.06), (0.31, 0.12), (0.21, 0.11)], dark,
-                             at=(0.0, 0.0, 0.0), segments=20)
-            tyre.rotation_euler[0] = math.radians(90)
-            tyre.location = g2b((x, 0.34, z))
+            if not burnt:
+                tyre = kit.lathe(root, "tyre", [(0.21, -0.11), (0.31, -0.12), (0.34, -0.06), (0.34, 0.06), (0.31, 0.12), (0.21, 0.11)], dark,
+                                 at=(0.0, 0.0, 0.0), segments=20)
+                tyre.rotation_euler[0] = math.radians(90)
+                tyre.location = g2b((x, 0.34, z))
             rim = kit.lathe(root, "rim", [(0.0, -0.06), (0.21, -0.06), (0.21, 0.06), (0.0, 0.07)], rim_m, at=(0.0, 0.0, 0.0), segments=16)
             rim.rotation_euler[0] = math.radians(90)
-            rim.location = g2b((x, 0.34, z + sz * 0.05))
+            rim.location = g2b((x, 0.21 if burnt else 0.34, z + sz * 0.05))
             arch = Acc()   # the wheel's arch: a dark half-ring on the body's side round the tyre
             for k in range(10):
                 a0_, a1_ = math.pi * k / 10, math.pi * (k + 1) / 10
@@ -326,15 +333,15 @@ def vehicle(root, p, w, h, d):
                 arch.quad((x + r0 * math.cos(a0_), 0.34 + r0 * math.sin(a0_), sz * (d / 2 + 0.006)), (x + r1 * math.cos(a0_), 0.34 + r1 * math.sin(a0_), sz * (d / 2 + 0.006)),
                           (x + r1 * math.cos(a1_), 0.34 + r1 * math.sin(a1_), sz * (d / 2 + 0.006)), (x + r0 * math.cos(a1_), 0.34 + r0 * math.sin(a1_), sz * (d / 2 + 0.006)))
             arch.build("arch", dark, root, smooth=False)
-    head = builders.emissive("headlight", (1.0, 0.95, 0.85), 12.0)
-    tail = builders.emissive("taillight", (1.0, 0.05, 0.03), 4.0)
+    head = dark if burnt else builders.emissive("headlight", (1.0, 0.95, 0.85), 12.0)
+    tail = dark if burnt else builders.emissive("taillight", (1.0, 0.05, 0.03), 4.0)
     for sz in (-1, 1):
         lbox(root, "headlight", (w / 2 - 0.01, 0.62, sz * (d / 2 - 0.3) - 0.13), (w / 2 + 0.03, 0.72, sz * (d / 2 - 0.3) + 0.13), head)
         lbox(root, "taillight", (-w / 2 - 0.03, 0.74, sz * (d / 2 - 0.18) - 0.09), (-w / 2 + 0.01, 0.86, sz * (d / 2 - 0.18) + 0.09), tail)
     lbox(root, "bumper_f", (w / 2 - 0.05, 0.32, -d / 2 + 0.05), (w / 2 + 0.05, 0.5, d / 2 - 0.05), dark)
     lbox(root, "bumper_r", (-w / 2 - 0.05, 0.32, -d / 2 + 0.05), (-w / 2 + 0.05, 0.5, d / 2 - 0.05), dark)
     lbox(root, "plate", (w / 2 + 0.05, 0.36, -0.26), (w / 2 + 0.06, 0.47, 0.26), M({"color": [0.85, 0.65, 0.05], "rough": 0.4}))   # Dutch yellow
-    if sa:   # the striping down each side (Battenburg blocks on an ambulance, two bands on police)
+    if sa and not burnt:   # the striping down each side (Battenburg blocks on an ambulance, two bands on police)
         for sz in (-1, 1):
             z = sz * (d / 2 + 0.008)
             n = int((w - 0.6) / 0.5)
@@ -348,7 +355,7 @@ def vehicle(root, p, w, h, d):
             text(root, word, (-0.4 if van else 0.0, belt + 0.25 if van else 0.82, z + sz * 0.006), 0.22,
                  M({"color": [0.05, 0.08, 0.3] if p.get("livery") == "police" else [0.1, 0.4, 0.15], "rough": 0.4}),
                  font="DejaVuSans-Bold.ttf", depth=0.0, yaw=0.0 if sz > 0 else 180.0)
-    if roof:   # the roof light, lit (a taxi's sign, or the blue bar left flashing)
+    if roof and not burnt:   # the roof light, lit (a taxi's sign, or the blue bar left flashing)
         rx = (wsx1 - 0.6) if van else (wsx1 - 0.9)
         lbox(root, "roof_light", (rx - 0.5, h, -0.35), (rx + 0.5, h + 0.12, 0.35), builders.emissive("roof_light_%d" % int(roof[2] * 100), roof, 8.0))
         if word == "TAXI":

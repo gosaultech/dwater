@@ -391,6 +391,9 @@ uniform mat4 u_shadowVP[2]; uniform vec4 u_shadowL[2];   // light position (xyz)
 // (w: 0 point, 1 spot), spot direction + cos(half angle). Black = off.
 uniform vec4 u_dynPos[2]; uniform vec4 u_dynCol[2]; uniform vec4 u_dynDir[2];
 uniform int u_dynShadow[2];   // which shadow map holds each of those lights' shadows (-1: none)
+// The street's live lights (dw/fxlive.hpp): each the difference from the light the painting was
+// rendered with, round its spot (position + reach; colour, + brighter, - darker). Reach 0: off.
+uniform vec4 u_fxPos[4]; uniform vec4 u_fxCol[4];
 out vec4 finalColor;
 float decode(vec2 rg) { return (floor(rg.r * 255.0 + 0.5) * 256.0 + floor(rg.g * 255.0 + 0.5)) / 65535.0; }
 // How much of a light at `lp` a character hides from the point P (0..1, softened over 3x3 texels).
@@ -442,7 +445,66 @@ void main() {
         else if (u_dynShadow[i] == 1) att *= 1.0 - occluded(u_shadow1, u_shadowVP[1], u_dynPos[i].xyz, P);
         add += alb * u_dynCol[i].rgb * att * max(dot(Nf, L), 0.0);
     }
-    finalColor = vec4(col * (1.0 - clamp(dark, 0.0, 0.82)) + add, 1.0);
+    vec3 live = vec3(0.0);
+    for (int i = 0; i < 4; i++) {
+        if (u_fxPos[i].w <= 0.0) continue;
+        vec3 toL = u_fxPos[i].xyz - P;
+        float dist = length(toL);
+        float x = clamp(1.0 - dist / u_fxPos[i].w, 0.0, 1.0);
+        live += u_fxCol[i].rgb * x * x * (0.35 + 0.65 * max(dot(Nf, toL / max(dist, 1e-4)), 0.0));
+    }
+    finalColor = vec4(col * (1.0 - clamp(dark, 0.0, 0.82)) * (vec3(1.0) + min(live, vec3(0.0))) + add + alb * max(live, vec3(0.0)) * 0.5, 1.0);
+})";
+
+// The live layer's sprites (dw/fxlive.hpp; game_fx.cpp draws them on quads that face the camera,
+// upright, depth-tested against the painting). Shared noise:
+#define DW_FX_NOISE \
+    "float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7)) + u_seed * 13.7) * 43758.5453); }\n" \
+    "float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);\n" \
+    "  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y); }\n" \
+    "float fbm(vec2 p) { float v = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; } return v; }\n"
+
+// Flames: a tongue narrowing as it rises, torn by noise climbing through it, deep red at its edges
+// to yellow-white at its heart (added to the picture: light, not paint).
+const char* FIRE_FS = "#version 330\n"
+    "in vec2 fragTexCoord; out vec4 finalColor;\n"
+    "uniform float u_time; uniform float u_seed; uniform float u_power;\n"
+    DW_FX_NOISE
+    R"(void main() {
+    float y = 1.0 - fragTexCoord.y, x = (fragTexCoord.x - 0.5) * 2.0;
+    float n = fbm(vec2(x * 3.2, y * 4.4 - u_time * 3.4) + vec2(0.0, -u_time * 1.2));
+    float width = (1.0 - y) * 0.85 + 0.08;
+    float body = 1.0 - smoothstep(width * 0.5, width, abs(x) + (n - 0.5) * 0.6);
+    float heat = clamp(body * (1.15 - y * 1.1) + (n - 0.45) * 0.6 * body, 0.0, 1.0);
+    vec3 c = mix(vec3(0.6, 0.08, 0.01), vec3(1.0, 0.45, 0.06), smoothstep(0.15, 0.55, heat));
+    c = mix(c, vec3(1.0, 0.85, 0.45), smoothstep(0.6, 0.95, heat));
+    float a = smoothstep(0.05, 0.35, heat) * smoothstep(0.0, 0.08, y) * u_power;
+    finalColor = vec4(c * 1.6, a);
+})";
+
+// Smoke: billows rising and spreading, dark, lit orange from below by what's burning.
+const char* SMOKE_FS = "#version 330\n"
+    "in vec2 fragTexCoord; out vec4 finalColor;\n"
+    "uniform float u_time; uniform float u_seed; uniform float u_power;\n"
+    DW_FX_NOISE
+    R"(void main() {
+    float y = 1.0 - fragTexCoord.y, x = (fragTexCoord.x - 0.5) * 2.0;
+    float n = fbm(vec2(x * 2.4, y * 3.0 - u_time * 0.55) + vec2(u_time * 0.06, 0.0));
+    float spread = 0.3 + y * 0.7;
+    float puff = (1.0 - smoothstep(spread * 0.35, spread, abs(x) + (n - 0.5) * 0.6)) * smoothstep(0.0, 0.2, y) * (1.0 - smoothstep(0.6, 1.0, y));
+    float a = clamp(puff * (n * 1.4 - 0.2), 0.0, 1.0) * 0.6 * u_power;
+    vec3 c = mix(vec3(0.3, 0.13, 0.05), vec3(0.055, 0.055, 0.06), smoothstep(0.0, 0.3, y));
+    finalColor = vec4(c, a);
+})";
+
+// A glow: a lamp's halo (a beacon at its flash, the arc where a wire touches the road).
+const char* GLOW_FS = R"(#version 330
+in vec2 fragTexCoord; out vec4 finalColor;
+uniform vec3 u_color; uniform float u_power;
+void main() {
+    float d = distance(fragTexCoord, vec2(0.5)) * 2.0;
+    float a = (exp(-d * d * 7.0) + exp(-d * 22.0) * 0.8) * u_power;
+    finalColor = vec4(u_color * 1.4, a);
 })";
 
 const char* BLOB_FS = R"(#version 330

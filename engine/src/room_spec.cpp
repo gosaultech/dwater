@@ -80,6 +80,19 @@ RoomSpec RoomSpec::load(const std::string& path) {
         L.range = 11.0f;
         r.lights.push_back(L);
     }
+    for (const auto& f : d.value("fx", json::array())) {
+        Fx F;
+        F.kind = f.value("kind", "");
+        if (f.contains("pos")) F.pos = v3(f["pos"]);
+        if (f.contains("color")) F.color = v3(f["color"]);
+        F.size = f.value("size", 1.0f);
+        F.radius = f.value("radius", 5.0f);
+        F.amount = f.value("amount", 0.4f);
+        F.rate = f.value("rate", 2.0f);
+        F.every = f.value("every", 2.5f);
+        F.seed = f.value("seed", 0);
+        r.fx.push_back(F);
+    }
     for (const auto& e : d.value("enemies", json::array()))
         r.enemies.push_back({e["id"], e.value("kind", "verdronkene"), e.value("requires_flag", ""), v3(e["pos"]),
                              e.value("yaw", 0.0f) * DEG, e.value("emerge", false), e.value("lying", false)});
@@ -143,6 +156,7 @@ void RoomSpec::translate(float dx, float dz) {
     for (auto& s : shots) { mv(s.pos); mv(s.look_at); mr(s.zone); }
     for (auto& [k, s] : spawns) mv(s.pos);
     for (auto& l : lights) { mv(l.pos); mv(l.look_at); }
+    for (auto& f : fx) mv(f.pos);
     for (auto& e : enemies) mv(e.pos);
     for (auto& i : interactables) { mv(i.pos); mv(i.peek.pos); mv(i.peek.look_at); }
     for (auto& c : colliders) { c.cx += dx; c.cz += dz; }

@@ -107,39 +107,60 @@ def tracks(lines):
 def tram(root, p, w, h, d):
     """A city tram in three sections, length along local x, stopped with its lights on: the saloon
     lit inside, the headlights and the destination board (it says it isn't in service), a door open
-    on the platform side (+z), the pantograph up to the wire."""
+    on the platform side (+z), the pantograph up to the wire. "derail": the sections as the night
+    left them, a chain from the first, each turned ("yaw", degrees: off the rails), tipped ("roll")
+    and lifted ("lift", m: up on the kerb) on its own; "dark": sections whose lights are out;
+    "smashed": sections whose windows are gone."""
     body = M(p.get("material", {"color": [0.3, 0.31, 0.31], "rough": 0.45, "noise": 0.1, "noise_scale": 1.5, "coat": 1.0, "grime": 1.0}))
     band = M(p.get("band", {"color": [0.05, 0.12, 0.35], "rough": 0.35, "noise": 0.05}))
     dark = M({"color": [0.015, 0.015, 0.018], "rough": 0.4})
     glass = M("glass")
     inside = emit((1.0, 0.86, 0.68), p.get("inside", 0.16), "tram_inside_%d" % int(p.get("inside", 0.16) * 100))
+    unlit = M({"color": [0.03, 0.028, 0.026], "rough": 0.7})
     every = p.get("doors_open") == "all"   # the far wall of the saloon, lit
     strip = emit((1.0, 0.95, 0.85), 6.0, "tram_strip")      # the ceiling lights
     seat = M({"color": [0.05, 0.09, 0.2], "rough": 0.8, "noise": 0.1})
     pole = M({"color": [0.85, 0.65, 0.05], "rough": 0.3, "metal": 0.4})
-    seats, poles = Acc(), Acc()
     n, gap = 3, 0.25
     seg = (w - gap * (n - 1)) / n
+    der = p.get("derail", {})
+    at = lambda key, i, dflt=0.0: (der.get(key) or [dflt] * n)[i] if i < len(der.get(key) or []) else dflt
+    dark_secs, smashed = set(p.get("dark", [])), set(p.get("smashed", []))
+    # Where each section stands: the first where it is, the others hanging off the joint before.
+    cx, cz, joint = -w / 2 + seg / 2, 0.0, None
+    centres = []
     for i in range(n):
-        x0 = -w / 2 + i * (seg + gap)
-        x1 = x0 + seg
+        a = math.radians(at("yaw", i))
+        if joint is not None:
+            cx, cz = joint[0] + math.cos(a) * (gap / 2 + seg / 2), joint[1] - math.sin(a) * (gap / 2 + seg / 2)
+        centres.append((cx, cz, a))
+        joint = (cx + math.cos(a) * (seg / 2 + gap / 2), cz - math.sin(a) * (seg / 2 + gap / 2))
+    for i in range(n):
+        cx, cz, a = centres[i]
+        sr = builders.empty_at("tram_section", (0.0, 0.0, 0.0), 0.0)
+        sr.parent = root
+        sr.location = g2b((cx, at("lift", i), cz))
+        sr.rotation_euler = (math.radians(at("roll", i)), math.radians(-at("pitch", i)), a)
+        lit = i not in dark_secs
+        saloon = inside if lit else unlit
+        x0, x1 = -seg / 2, seg / 2
+        seats, poles = Acc(), Acc()
         # the body in three: below the windows, the roof over them, and the ends; the window band
         # between is open, glazed, so the lit saloon shows through
-        cx = (x0 + x1) / 2
-        kit.soft(root, "tram_body", (cx, 0.35 + (1.05 - 0.35) / 2, 0.0), (seg, 1.05 - 0.35, d), body, 0.08, 3)
-        kit.soft(root, "tram_roof", (cx, 2.4 + (h - 2.4) / 2, 0.0), (seg, h - 2.4, d), body, 0.12, 3)
+        kit.soft(sr, "tram_body", (0.0, 0.35 + (1.05 - 0.35) / 2, 0.0), (seg, 1.05 - 0.35, d), body, 0.08, 3)
+        kit.soft(sr, "tram_roof", (0.0, 2.4 + (h - 2.4) / 2, 0.0), (seg, h - 2.4, d), body, 0.12, 3)
         for xa, xb, cab in ((x0, x0 + 0.25, i == 0), (x1 - 0.25, x1, i == n - 1)):
             if cab:   # the driver's end: corner posts round the windscreen
                 for za, zb in ((-d / 2, -d / 2 + 0.15), (d / 2 - 0.15, d / 2)):
-                    lbox(root, "tram_end", (xa, 1.0, za), (xb, 2.45, zb), body)
+                    lbox(sr, "tram_end", (xa, 1.0, za), (xb, 2.45, zb), body)
             else:
-                lbox(root, "tram_end", (xa, 1.0, -d / 2), (xb, 2.45, d / 2), body)
-        lbox(root, "tram_skirt", (x0 + 0.05, 0.25, -d / 2 - 0.005), (x1 - 0.05, 0.6, d / 2 + 0.005), band)
+                lbox(sr, "tram_end", (xa, 1.0, -d / 2), (xb, 2.45, d / 2), body)
+        lbox(sr, "tram_skirt", (x0 + 0.05, 0.25, -d / 2 - 0.005), (x1 - 0.05, 0.6, d / 2 + 0.005), band)
         # the saloon: a lit wall down the middle (each side's window looks into its half), the
         # floor, a strip of lights in the ceiling, rows of seats, yellow grab poles
-        lbox(root, "tram_inside", (x0 + (1.6 if i == 0 else 0.3), 0.9, -0.02), (x1 - (1.6 if i == n - 1 else 0.3), 2.5, 0.02), inside)
-        lbox(root, "tram_floor", (x0 + 0.2, 0.36, -d / 2 + 0.08), (x1 - 0.2, 0.4, d / 2 - 0.08), dark)
-        lbox(root, "tram_strip", (x0 + 0.4, 2.5, -0.15), (x1 - 0.4, 2.54, 0.15), strip)
+        lbox(sr, "tram_inside", (x0 + (1.6 if i == 0 else 0.3), 0.9, -0.02), (x1 - (1.6 if i == n - 1 else 0.3), 2.5, 0.02), saloon)
+        lbox(sr, "tram_floor", (x0 + 0.2, 0.36, -d / 2 + 0.08), (x1 - 0.2, 0.4, d / 2 - 0.08), dark)
+        lbox(sr, "tram_strip", (x0 + 0.4, 2.5, -0.15), (x1 - 0.4, 2.54, 0.15), strip if lit else dark)
         for k in range(int((seg - 1.0) / 0.9)):
             xx = x0 + 0.7 + k * 0.9
             for sz in (-1, 1):
@@ -150,53 +171,62 @@ def tram(root, p, w, h, d):
             for sz in (-1, 1):
                 poles.rod((xx, 0.4, sz * 0.4), (xx, 2.5, sz * 0.4), 0.018, 0.018, 6)
         for sz in (-1, 1):
-            lbox(root, "tram_windows", (x0 + 0.25, 1.05, sz * d / 2 - 0.01), (x1 - 0.25, 2.4, sz * d / 2 + 0.01), glass)
+            if i not in smashed:
+                lbox(sr, "tram_windows", (x0 + 0.25, 1.05, sz * d / 2 - 0.01), (x1 - 0.25, 2.4, sz * d / 2 + 0.01), glass)
+            else:   # the glass gone but for a jagged rim in the frames
+                for k in range(int(seg / 1.2)):
+                    xa = x0 + 0.25 + (seg - 0.5) * k / int(seg / 1.2)
+                    lbox(sr, "tram_shard", (xa + 0.04, 1.05, sz * d / 2 - 0.01), (xa + 0.04 + 0.12 * ((k * 7) % 3 + 1) / 3, 1.05 + 0.35 * ((k * 5) % 4 + 1) / 4, sz * d / 2 + 0.01), glass)
             for k in range(int(seg / 1.2) + 1):   # the posts between the windows
                 xx = x0 + 0.25 + (seg - 0.5) * k / int(seg / 1.2)
-                lbox(root, "tram_pillar", (xx - 0.04, 1.05, sz * d / 2 - 0.012), (xx + 0.04, 2.4, sz * d / 2 + 0.012), dark)
+                lbox(sr, "tram_pillar", (xx - 0.04, 1.05, sz * d / 2 - 0.012), (xx + 0.04, 2.4, sz * d / 2 + 0.012), dark)
         unit = M({"color": [0.55, 0.56, 0.56], "rough": 0.5, "metal": 0.3, "noise": 0.2, "grime": 1.2})
-        kit.soft(root, "tram_roof_unit", ((x0 + x1) / 2 + (0.6 if i == 1 else 0.0), h + 0.15, 0.0), (min(2.4, seg * 0.5), 0.3, d * 0.6), unit, 0.04, 2)
+        kit.soft(sr, "tram_roof_unit", ((0.6 if i == 1 else 0.0), h + 0.15, 0.0), (min(2.4, seg * 0.5), 0.3, d * 0.6), unit, 0.04, 2)
         for sz in (-1, 1):   # a pair of sliding doors each side, dark frames round their glass
             xd = x0 + seg * (0.55 if i % 2 else 0.4)
             if sz > 0 and (i == 0 or every):
-                if every:
-                    lbox(root, "door_open", (xd - 0.66, 0.35, d / 2 - 0.02), (xd + 0.66, 2.42, d / 2 + 0.01), inside)
+                lbox(sr, "door_open", (xd - 0.66, 0.35, d / 2 - 0.02), (xd + 0.66, 2.42, d / 2 + 0.01), saloon)
                 continue   # (the platform side's first door stands open)
             for xa, xb in ((xd - 0.66, xd - 0.02), (xd + 0.02, xd + 0.66)):
-                lbox(root, "tram_door", (xa, 0.38, sz * d / 2 - 0.016), (xb, 2.42, sz * d / 2 + 0.016), dark)
-                lbox(root, "tram_door_glass", (xa + 0.07, 1.0, sz * d / 2 - 0.02), (xb - 0.07, 2.3, sz * d / 2 + 0.02), glass)
-        if i < n - 1:   # the bellows between sections
-            lbox(root, "tram_bellows", (x1, 0.4, -d / 2 + 0.12), (x1 + gap, h - 0.15, d / 2 - 0.12), dark)
-        if i == 1 and p.get("pantograph", True):   # the pantograph
+                lbox(sr, "tram_door", (xa, 0.38, sz * d / 2 - 0.016), (xb, 2.42, sz * d / 2 + 0.016), dark)
+                if i not in smashed:
+                    lbox(sr, "tram_door_glass", (xa + 0.07, 1.0, sz * d / 2 - 0.02), (xb - 0.07, 2.3, sz * d / 2 + 0.02), glass)
+        if i < n - 1:   # the bellows to the next section
+            lbox(sr, "tram_bellows", (x1, 0.4, -d / 2 + 0.12), (x1 + gap, h - 0.15, d / 2 - 0.12), dark)
+        if i == 1:   # the pantograph: up to the wire, or folded down off it
             pa = Acc()
+            up = 1.0 if p.get("pantograph", True) else 0.32
             for sx in (-0.5, 0.5):
-                pa.rod(((x0 + x1) / 2 + sx, h + 0.1, -0.4), ((x0 + x1) / 2, h + 1.0, 0.0), 0.02, 0.02, 4)
-                pa.rod(((x0 + x1) / 2 + sx, h + 0.1, 0.4), ((x0 + x1) / 2, h + 1.0, 0.0), 0.02, 0.02, 4)
-            pa.rod(((x0 + x1) / 2, h + 1.0, -0.6), ((x0 + x1) / 2, h + 1.0, 0.6), 0.025, 0.025, 4)
-            pa.build("pantograph", M(STEEL), root)
-    seats.build("tram_seats", seat, root, smooth=False)
-    poles.build("tram_poles_inside", pole, root)
-    if not every:
-        lbox(root, "door_open", (-w / 2 + seg * 0.4, 0.35, d / 2 - 0.02), (-w / 2 + seg * 0.4 + 1.3, h - 0.5, d / 2 + 0.01), inside)
-    if p.get("underframe"):
-        lbox(root, "underframe", (-w / 2 + 0.6, -p["underframe"], -d / 2 + 0.25), (w / 2 - 0.6, 0.3, d / 2 - 0.25), dark)
-    for sx in (-1, 1):   # the cabs: windscreen, headlights, the board over it
-        xe = sx * (w / 2 - 0.02)
-        lbox(root, "windscreen", (xe - 0.03, 1.05, -d / 2 + 0.15), (xe + 0.03, 2.5, d / 2 - 0.15), glass)
-        lbox(root, "dest_board", (xe - 0.03, 2.55, -d / 2 + 0.3), (xe + 0.03, 2.85, d / 2 - 0.3), dark)
-        text(root, p.get("board", "NIET INSTAPPEN"), (xe + sx * 0.04, 2.7, 0.0), 0.16, emit((1.0, 0.6, 0.1), 8.0, "tram_board"),
-             font="DejaVuSansMono-Bold.ttf", depth=0.0, yaw=90.0 * sx)
-        for sz in (-1, 1):
-            ball(root, "headlight", (xe + sx * 0.02, 0.8, sz * (d / 2 - 0.35)), 0.08, emit((1.0, 0.95, 0.85), 30.0, "tram_head"), seg=10)
-    ld = bpy.data.lights.new("tram_glow", "AREA")
-    ld.shape, ld.size, ld.size_y = "RECTANGLE", w * 0.8, 1.2
-    ld.energy, ld.color = p.get("power", 300.0), (1.0, 0.92, 0.8)
-    ob = bpy.data.objects.new("tram_glow", ld)
-    bpy.context.scene.collection.objects.link(ob)
-    ob.parent = root
-    ob.location = g2b((0.0, 1.7, d / 2 + 0.05))
-    ob.rotation_euler = (math.radians(-90), 0.0, 0.0)
-    street.hide_panel(ob)
+                pa.rod((sx, h + 0.1, -0.4), (0.0, h + up, 0.0), 0.02, 0.02, 4)
+                pa.rod((sx, h + 0.1, 0.4), (0.0, h + up, 0.0), 0.02, 0.02, 4)
+            pa.rod((0.0, h + up, -0.6), (0.0, h + up, 0.6), 0.025, 0.025, 4)
+            pa.build("pantograph", M(STEEL), sr)
+        seats.build("tram_seats", seat, sr, smooth=False)
+        poles.build("tram_poles_inside", pole, sr)
+        if p.get("underframe"):
+            lbox(sr, "underframe", (x0 + 0.3, -p["underframe"], -d / 2 + 0.25), (x1 - 0.3, 0.3, d / 2 - 0.25), dark)
+        for end, sx in ((i == 0, -1), (i == n - 1, 1)):   # the cabs: windscreen, headlights, the board over it
+            if not end:
+                continue
+            xe = sx * (seg / 2 - 0.02)
+            lbox(sr, "windscreen", (xe - 0.03, 1.05, -d / 2 + 0.15), (xe + 0.03, 2.5, d / 2 - 0.15), glass)
+            lbox(sr, "dest_board", (xe - 0.03, 2.55, -d / 2 + 0.3), (xe + 0.03, 2.85, d / 2 - 0.3), dark)
+            if lit:
+                text(sr, p.get("board", "NIET INSTAPPEN"), (xe + sx * 0.04, 2.7, 0.0), 0.16, emit((1.0, 0.6, 0.1), 8.0, "tram_board"),
+                     font="DejaVuSansMono-Bold.ttf", depth=0.0, yaw=90.0 * sx)
+            for sz in (-1, 1):
+                ball(sr, "headlight", (xe + sx * 0.02, 0.8, sz * (d / 2 - 0.35)), 0.08,
+                     emit((1.0, 0.95, 0.85), 30.0, "tram_head") if lit else dark, seg=10)
+        if lit:
+            ld = bpy.data.lights.new("tram_glow", "AREA")
+            ld.shape, ld.size, ld.size_y = "RECTANGLE", seg * 0.8, 1.2
+            ld.energy, ld.color = p.get("power", 300.0) / n, (1.0, 0.92, 0.8)
+            ob = bpy.data.objects.new("tram_glow", ld)
+            bpy.context.scene.collection.objects.link(ob)
+            ob.parent = sr
+            ob.location = g2b((0.0, 1.7, d / 2 + 0.05))
+            ob.rotation_euler = (math.radians(-90), 0.0, 0.0)
+            street.hide_panel(ob)
 
 
 ADS = [("MUSEUMNACHT", "ZATERDAG 7 NOV", (0.08, 0.1, 0.25), (1.0, 0.8, 0.2)),

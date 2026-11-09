@@ -6,6 +6,9 @@ namespace dw::shaders {
 extern const char* CHAR_VS;
 extern const char* CHAR_FS;
 extern const char* PLATE_FS;
+extern const char* FIRE_FS;    // the live layer (dw/fxlive.hpp): flames,
+extern const char* SMOKE_FS;   // smoke,
+extern const char* GLOW_FS;    // and a lamp's halo
 extern const char* BLOB_FS;
 extern const char* POST_FS;
 extern const char* RAIN_FS;

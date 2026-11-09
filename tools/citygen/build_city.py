@@ -46,11 +46,15 @@ def main(argv=None):
         f.write_text(json.dumps(spec, indent=2, ensure_ascii=True) + "\n")
     import barricades
     import cameras
+    import catastrophe
     for rid in list(barricades.LANES) + [r for r in cameras.ROOMS if r not in barricades.LANES]:
-        f = Path(common.R) / f"{rid}.json"   # the cordons through the wide rooms, then the cameras that film them
-        spec = json.loads(f.read_text())
+        f = Path(common.R) / f"{rid}.json"   # the cordons through the wide rooms, what the night did there,
+        spec = json.loads(f.read_text())    # the cameras that film them, and something by each lens
+        catastrophe.apply(spec)
         barricades.apply(spec)
+        catastrophe.leavings(spec)
         cameras.apply(spec)
+        catastrophe.foreground(spec)
         f.write_text(json.dumps(spec, indent=2, ensure_ascii=True) + "\n")
 
 

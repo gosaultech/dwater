@@ -182,8 +182,18 @@ def _brick(nt, vec, c1, c2, mortar, width, row, mortar_size, offset=0.5, bias=0.
 _DRY = {"glass", "water", "canal_water", "soot"}
 
 
+# The rendered room's weather (render_rooms sets these before it builds anything).
+FLOOD = 0.0      # m: how high the water came up everything (the room's "flood", or its "outdoor" tide); 0: dry
+OUTDOOR = False  # under the sky: rain has run down the walls from every ledge
+WEAR = 1.0       # how worn and dirty it all is (the room's "wear")
+DIRT = (0.32, 0.27, 0.21)    # what grime darkens toward
+MUD = (0.24, 0.21, 0.16)     # the flood's silt, wet
+CRUST = (0.52, 0.49, 0.42)   # the dried line the water left at its height
+RUST = (0.28, 0.12, 0.05)
+
+
 def weather(m, key):
-    """Rounded edges (a render-time bevel) and dirt worked into the creases (ambient occlusion)."""
+    """Rounded edges (a render-time bevel) and the city's wear (_wear)."""
     k = key if isinstance(key, dict) else {}
     if (isinstance(key, str) and key in _DRY) or "emit" in k or "room" in k:
         return
@@ -201,30 +211,109 @@ def weather(m, key):
             if nin.is_linked:
                 nt.links.new(nin.links[0].from_socket, bv.inputs["Normal"])
             nt.links.new(bv.outputs["Normal"], nin)
-        g = k.get("grime", 0.7)
-        if g <= 0:
-            continue
-        ao = nt.nodes.new("ShaderNodeAmbientOcclusion")
-        ao.samples = 6
-        ao.inputs["Distance"].default_value = k.get("grime_reach", 0.4)
-        tc = nt.nodes.new("ShaderNodeTexCoord")
-        nz = nt.nodes.new("ShaderNodeTexNoise")
-        nz.inputs["Scale"].default_value = 2.2
-        nz.inputs["Detail"].default_value = 8.0
-        nt.links.new(tc.outputs["Object"], nz.inputs["Vector"])
-        inv = _wmath(nt, "SUBTRACT", 1.0, ao.outputs["AO"])
-        patch = _wmath(nt, "MULTIPLY", inv, nz.outputs["Fac"])
-        fac = _wmath(nt, "MULTIPLY", patch, g * 2.0, clamp=True)
-        mx = nt.nodes.new("ShaderNodeMixRGB")
-        mx.blend_type = "MULTIPLY"
-        mx.inputs["Color2"].default_value = (0.3, 0.26, 0.21, 1.0)
-        nt.links.new(fac, mx.inputs["Fac"])
-        bc = b.inputs["Base Color"]
-        if bc.is_linked:
-            nt.links.new(bc.links[0].from_socket, mx.inputs["Color1"])
-        else:
-            mx.inputs["Color1"].default_value = bc.default_value[:]
-        nt.links.new(mx.outputs["Color"], bc)
+        g = k.get("grime", 0.7) * WEAR
+        if g > 0:
+            _wear(nt, b, g, k)
+
+
+def _wear(nt, b, g, k):
+    """Dirt worked into the creases (ambient occlusion); streaks run down the walls from every ledge
+    (outdoors); splashes along the foot of everything; rust on bare metal; below the flood line the
+    silt the water left, a dried crust at the line itself; on the ground, silt drifted against the
+    walls, kerbs and anything standing. Like a set painter's breakdown pass: the same dirt, laid by
+    the same weather, on every flat on the stage."""
+    def node(kind, **props):
+        n = nt.nodes.new(kind)
+        for a, v in props.items():
+            setattr(n, a, v)
+        return n
+
+    def ss(x, a, b_):   # smoothstep from a to b_
+        n = node("ShaderNodeMapRange", interpolation_type="SMOOTHSTEP", clamp=True)
+        nt.links.new(x, n.inputs["Value"])
+        n.inputs["From Min"].default_value, n.inputs["From Max"].default_value = a, b_
+        return n.outputs["Result"]
+
+    def noise(vec, scale, detail=6.0):
+        n = node("ShaderNodeTexNoise")
+        n.inputs["Scale"].default_value, n.inputs["Detail"].default_value = scale, detail
+        nt.links.new(vec, n.inputs["Vector"])
+        return n.outputs["Fac"]
+
+    def mix(c, color, fac, blend="MIX"):
+        n = node("ShaderNodeMixRGB", blend_type=blend)
+        nt.links.new(fac, n.inputs["Fac"]) if not isinstance(fac, (int, float)) else None
+        if isinstance(fac, (int, float)):
+            n.inputs["Fac"].default_value = fac
+        nt.links.new(c, n.inputs["Color1"])
+        n.inputs["Color2"].default_value = (*color, 1.0)
+        return n.outputs["Color"]
+
+    geo = node("ShaderNodeNewGeometry")
+    P = geo.outputs["Position"]
+    pos = node("ShaderNodeSeparateXYZ")
+    nt.links.new(P, pos.inputs[0])
+    nrm = node("ShaderNodeSeparateXYZ")
+    nt.links.new(geo.outputs["Normal"], nrm.inputs[0])
+    z, up = pos.outputs["Z"], nrm.outputs["Z"]
+    upa = _wmath(nt, "ABSOLUTE", up, 0.0)
+    wall = _wmath(nt, "SUBTRACT", 1.0, ss(upa, 0.35, 0.75))          # 1 on upright faces
+    ground = ss(up, 0.6, 0.9)                                           # 1 on faces looking up
+    # Creases: dirt where the light can't reach (as before, stronger with the wear).
+    ao = node("ShaderNodeAmbientOcclusion", samples=6)
+    ao.inputs["Distance"].default_value = k.get("grime_reach", 0.4)
+    crease = _wmath(nt, "MULTIPLY", _wmath(nt, "SUBTRACT", 1.0, ao.outputs["AO"]), noise(P, 2.2, 8.0))
+    dark = _wmath(nt, "MULTIPLY", crease, g * 2.0)
+    if OUTDOOR:   # streaks: the noise stretched tall, on upright faces
+        tall = node("ShaderNodeVectorMath", operation="MULTIPLY")
+        nt.links.new(P, tall.inputs[0])
+        tall.inputs[1].default_value = (6.0, 6.0, 0.28)
+        st = _wmath(nt, "MULTIPLY", ss(noise(tall.outputs["Vector"], 1.0, 4.0), 0.52, 0.74), wall)
+        dark = _wmath(nt, "ADD", dark, _wmath(nt, "MULTIPLY", st, 0.6 * g))
+    # Splashes: the foot of every wall and thing, up to knee height.
+    foot = _wmath(nt, "MULTIPLY", _wmath(nt, "SUBTRACT", 1.0, ss(z, 0.0, 0.65)), noise(P, 3.5, 6.0))
+    dark = _wmath(nt, "ADD", dark, _wmath(nt, "MULTIPLY", _wmath(nt, "MULTIPLY", foot, wall), 0.7 * g))
+    bc = b.inputs["Base Color"]
+    c = bc.links[0].from_socket if bc.is_linked else None
+    if c is None:
+        rgb = node("ShaderNodeRGB")
+        rgb.outputs[0].default_value = bc.default_value[:]
+        c = rgb.outputs[0]
+    c = mix(c, DIRT, _wmath(nt, "MINIMUM", dark, 0.85), "MULTIPLY")
+    if FLOOD > 0:
+        # Below the line, the silt (its edge wavers a little); at the line, a pale crust.
+        wav = _wmath(nt, "ADD", z, _wmath(nt, "MULTIPLY", _wmath(nt, "SUBTRACT", noise(P, 1.3, 3.0), 0.5), 0.09))
+        below = _wmath(nt, "SUBTRACT", 1.0, ss(wav, FLOOD - 0.04, FLOOD + 0.01))
+        mud = _wmath(nt, "MULTIPLY", below, _wmath(nt, "ADD", 0.45, _wmath(nt, "MULTIPLY", noise(P, 5.0, 8.0), 0.45)))
+        mud = _wmath(nt, "MULTIPLY", mud, wall)                         # (the ground's silt is below)
+        c = mix(c, MUD, _wmath(nt, "MULTIPLY", mud, min(1.0, 0.8 * WEAR)))
+        line = _wmath(nt, "SUBTRACT", ss(wav, FLOOD - 0.07, FLOOD - 0.015), ss(wav, FLOOD - 0.015, FLOOD + 0.03))
+        crust = _wmath(nt, "MULTIPLY", _wmath(nt, "MAXIMUM", line, 0.0), wall)
+        c = mix(c, CRUST, _wmath(nt, "MULTIPLY", crust, 0.75))
+        # The ground: silt in patches, thickest against whatever stands (a wide ambient occlusion).
+        near = node("ShaderNodeAmbientOcclusion", samples=4)
+        near.inputs["Distance"].default_value = 1.4
+        drift = _wmath(nt, "ADD", _wmath(nt, "MULTIPLY", _wmath(nt, "SUBTRACT", 1.0, near.outputs["AO"]), 1.6),
+                       _wmath(nt, "MULTIPLY", ss(noise(P, 0.35, 4.0), 0.55, 0.75), 0.6))
+        silt = _wmath(nt, "MULTIPLY", _wmath(nt, "MULTIPLY", ss(drift, 0.25, 0.9), ground), _wmath(nt, "SUBTRACT", 1.0, ss(z, FLOOD * 0.5, FLOOD)))
+        silt = _wmath(nt, "MULTIPLY", silt, _wmath(nt, "ADD", 0.5, _wmath(nt, "MULTIPLY", noise(P, 6.0, 8.0), 0.5)))
+        c = mix(c, MUD, _wmath(nt, "MULTIPLY", silt, min(1.0, 0.85 * WEAR)))
+    metal = b.inputs["Metallic"]
+    if not metal.is_linked and metal.default_value > 0.5:   # bare metal rusts, worst low down and in the creases
+        rust = ss(_wmath(nt, "ADD", noise(P, 3.0, 8.0), _wmath(nt, "MULTIPLY", crease, 0.8)), 0.58, 0.8)
+        if FLOOD > 0:
+            rust = _wmath(nt, "MAXIMUM", rust, _wmath(nt, "MULTIPLY", _wmath(nt, "SUBTRACT", 1.0, ss(z, FLOOD - 0.1, FLOOD + 0.1)), 0.7))
+        rust = _wmath(nt, "MULTIPLY", rust, min(1.0, 0.8 * WEAR))
+        c = mix(c, RUST, rust)
+        mt = _wmath(nt, "MULTIPLY", _wmath(nt, "SUBTRACT", 1.0, rust), metal.default_value)
+        nt.links.new(mt, metal)
+        rough = b.inputs["Roughness"]
+        if not rough.is_linked:
+            rr = node("ShaderNodeMapRange", clamp=True)
+            nt.links.new(rust, rr.inputs["Value"])
+            rr.inputs["To Min"].default_value, rr.inputs["To Max"].default_value = rough.default_value, 0.9
+            nt.links.new(rr.outputs["Result"], rough)
+    nt.links.new(c, bc)
 
 
 def _wmath(nt, op, a, b, clamp=False):
@@ -596,6 +685,7 @@ def build_prop(p, room_h):
     import church  # noqa: F401  (the Nieuwe Kerk inside: piers, arcades, the vault, the organ)
     import halls  # noqa: F401  (the Beurs's hall: arcades, the glass roof; the mortuary the army made of it)
     import station  # noqa: F401  (Centraal and the metro: shop units, boards, the trackbed, the canopy)
+    import ruin  # noqa: F401  (the catastrophe's: paint on the walls, boards, the dead, the silt)
     import photos  # noqa: F401  (photographs on cards: the stock on shelves, walls of bottles, tulips)
     if t in kit.PROPS:   # the detailed kit: sofas, kasten, the marble mantel, models...
         return kit.build_prop(p, room_h)

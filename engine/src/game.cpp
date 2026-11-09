@@ -78,6 +78,7 @@ bool Game::init(const std::string& room_id) {
     l_rWin_ = GetShaderLocation(rain_sh_, "u_win");
     l_sWin_ = GetShaderLocation(splash_sh_, "u_win");
     l_fill_ = GetShaderLocation(char_, "u_fill");
+    init_fx();
     post_ = LoadShaderFromMemory(nullptr, shaders::POST_FS);
     l_time_ = GetShaderLocation(post_, "u_time");
     l_res_ = GetShaderLocation(post_, "u_res");
@@ -506,6 +507,7 @@ void Game::update(float dt) {
     if (wake_t_ >= 0 && (wake_t_ -= g) < 0) wake(wake_flag_);
     update_enemies(g);
     fx_.update(g);
+    update_fx(g);   // (the street's fires, sparks and beacons: they pause with the game)
     for (Vector3 at; fx_.landed(at);) sfx_.play_at("mag_drop", at, ear(), ear_right(), 0.9f, 0.08f);   // an empty magazine on the floor
     sfx_.update();
     // Through a doorway into the next room: no loading, just a cut to its camera.
@@ -1781,6 +1783,7 @@ void Game::render() {
     SetShaderValue(plate_, l_near_, &near_, SHADER_UNIFORM_FLOAT);
     SetShaderValue(plate_, l_far_, &far_, SHADER_UNIFORM_FLOAT);
     SetShaderValue(plate_, l_dmax_, &dmax, SHADER_UNIFORM_FLOAT);
+    fx_plate();
     const float pw = float(plate.first.width), ph = float(plate.first.height);
     DrawTexturePro(plate.first, {win_.x0() * pw, win_.y0() * ph, win_.h * pw, win_.h * ph}, {0, 0, float(W), float(H)}, {0, 0}, 0, WHITE);
     EndShaderMode();
@@ -1821,6 +1824,7 @@ void Game::render() {
     if (peek_ < 0) blob(hero_, player_);
     for (const auto& e : enemies_)
         if (e.active) blob(e.body, e.a);
+    draw_fx();
     if (spec_.rain) draw_rain();
     EndBlendMode();
     rlEnableDepthMask();

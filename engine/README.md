@@ -65,6 +65,15 @@ dark, and a press goes back to the title screen. (Like a play's last scene: the 
   lines today, so a 2x window is soft; plates rendered bigger (step 2) make it sharp. Like a
   photographer standing still on a balcony with a zoom lens: zoomed in on you as you cross the
   square, wide for a moment when you first arrive.
+- **The live layer** (`dw/fxlive.hpp`, `src/game_fx.cpp`; a room's `"fx"`). The painting lives:
+  fires burn on upright cards facing the camera (procedural flames torn by noise climbing through
+  them) and breathe their light on the walls round them; smoke rises and spreads, lit orange from
+  below; a beacon flashes its double flash and sweeps the street blue; a snapped tram wire throws
+  sparks that fall, skip on the wet road and cool from white to red; a tram's last tube flickers
+  and dies. Each one's light is the change from the light the painting was rendered with (the
+  plate shader adds it round its spot, brighter or darker), and all of it is depth-tested against
+  the painted depth, so a wall still hides a fire. Like the stagehands behind a painted backdrop:
+  one waving a torch behind the cut-out flames, one working the blue lamp, one striking sparks.
 - **The fill.** A soft light from the camera's side on the characters, as much as the room's own
   lights leave him in the dark and none where a lamp is on him, so he never goes black against a
   dark painting (the Beurs' back wall). Like a reflector held just out of shot.
@@ -507,6 +516,17 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   `python3 tools/citygen/cameras.py report` prints every shot's numbers; the tests
   (`tools/citygen/tests/test_cameras.py`) check them all. Like a crew blocking a walk-and-talk: not
   one camera on a rooftop, but one every ten metres, each looking the way the actor walks.
+- **The catastrophe pass** (`tools/citygen/catastrophe.py`; the brief is `docs/city_aftermath.md`).
+  What the night did to each street in its `STORIES` (Rokin first): set pieces (the derailed tram,
+  a burned-out car, the dead by an ambulance, shops boarded and written on), the room's live
+  effects (`"fx"`), the flood's debris drifted against whatever stands (scanned CC0 models from
+  Poly Haven), and something close to each shot's lens to look past, never where it hides him.
+  Blender's side is `tools/blender/ruin.py` (decals, boards, body bags, a snapped wire, soot, the
+  silt) and `builders._wear` (a tide line, silt, streaks, splashes and rust on every material, set
+  per room from its flood height); the words on the walls are drawn by `tools/assets/decals.py`
+  (`make`, into the asset cache). Tested (`tools/citygen/tests/test_catastrophe.py`,
+  `tools/assets/tests/test_decals.py`). Like a crime-scene photographer's list: what's where, and
+  why, street by street, before the cameras roll.
 - **The whole floor at once.** To render a room, Blender builds every room on its storey at its
   origin (`tools/pipeline/house.py` agrees with the engine on the floor plan), so an open doorway
   shows the real room beyond. A shared wall is built half by each room; a door the game swings is
@@ -774,6 +794,8 @@ other). Run it under `xvfb-run` like `--capture`. Classic tank controls are in t
 | `src/shaders.cpp` | All GLSL, embedded. |
 | `src/game.cpp` | Room, cameras, input, AI, and render order. |
 | `include/dw/framing.hpp` | The following view: the window over a shot's background that follows him, its frustum, the establishing view and the push-ins. Pure, unit-tested. |
+| `include/dw/fxlive.hpp` | The live layer's timing: a fire's breath, a beacon, a failing tube, a wire's sparks. Pure, unit-tested. |
+| `src/game_fx.cpp` | The live layer drawn over the painting (flames, smoke, sparks, halos) and its light on the plate. |
 | `src/game_view.cpp` | The game's side of the following view: him, his target, a threat and a pickup as the shot sees them; each shot's starting zoom. |
 | `src/main.cpp` | Entry point, capture mode, and telemetry. |
 
