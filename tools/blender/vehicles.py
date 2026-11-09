@@ -386,8 +386,11 @@ def tram(root, p, w, h, d, as_bus=False):
     section turned ("yaw"), tipped ("roll"), lifted ("lift") off the one before (city.py's chain);
     "dark": sections whose lights are out; "smashed": sections whose windows are gone."""
     import city
-    white = M({"color": [0.78, 0.79, 0.8], "rough": 0.34, "coat": 0.8, "grime": 1.2, "bevel": 0.0, "streaks": 0.25})
-    blue = M({"color": [0.04, 0.1, 0.32], "rough": 0.35, "coat": 0.6, "grime": 1.2, "bevel": 0.0, "streaks": 0.25})
+    white = M(dict({"color": [0.78, 0.79, 0.8], "rough": 0.34, "coat": 0.8, "grime": 1.2, "streaks": 0.25},
+                   **{k: v for k, v in p.get("material", {}).items() if k in ("color", "rough", "grime")}, bevel=0.0))
+    blue = M(dict({"color": [0.04, 0.1, 0.32], "rough": 0.35, "coat": 0.6, "grime": 1.2, "streaks": 0.25},
+                  **{k: v for k, v in p.get("band", {}).items() if k in ("color", "rough")}, bevel=0.0))
+    doors_open = p.get("doors_open")   # "all": every door on the platform side (+z) stands open
     glass = M({"color": [0.012, 0.016, 0.02], "rough": 0.04, "metal": 0.85, "grime": 0.6, "bevel": 0.0})
     dark = M({"color": [0.02, 0.02, 0.022], "rough": 0.45, "grime": 1.0, "bevel": 0.0})
     door = M({"color": [0.05, 0.06, 0.07], "rough": 0.35, "grime": 1.2, "bevel": 0.0})
@@ -450,6 +453,8 @@ def tram(root, p, w, h, d, as_bus=False):
             if end < 0.75 and (band or (above and kk in (7, 8, 9, 10, 11, 12) and end < 0.55)):
                 return 1 if not broken else 4   # the windscreen, wrapped round the nose
             if any(abs(xm - dx) < 0.66 for dx in door_x) and kk in (1, 2, 3, 4, 5, 13, 14, 15, 16, 17):
+                if doors_open == "all" and kk <= 5:
+                    return 4   # (open: the lit car seen through the doorway)
                 return (1 if not broken else 4) if kk in (5, 13) else 3   # a door: glass above, its dark leaf below
             if band:
                 if any(abs(xm - px) < 0.05 for px in pillars):
@@ -481,6 +486,8 @@ def tram(root, p, w, h, d, as_bus=False):
                 ws.quad((xe - sx * ba, 0.98 if as_bus else 1.08, za), (xe - sx * bb, 0.98 if as_bus else 1.08, zb), (xe - sx * bb, top, zb), (xe - sx * ba, top, za))
             ws.build("tram_windscreen", glass if not broken else hole, sr, smooth=True)
             lbox(sr, "tram_bumper", (xe - 0.06 if sx > 0 else xe - 0.02, 0.3, -hw + 0.1), (xe + 0.02 if sx > 0 else xe + 0.06, 0.92, hw - 0.1), dark)
+        if p.get("underframe"):   # (a metro car stands higher: its frame down into the trackbed)
+            lbox(sr, "underframe", (-seg / 2 + 0.4, -p["underframe"], -hw + 0.25), (seg / 2 - 0.4, 0.33, hw - 0.25), dark)
         # The saloon: the floor, rows of seats, grab poles, the ceiling's lights (lit or out).
         lbox(sr, "tram_floor", (-seg / 2 + 0.3, 0.36, -hw + 0.12), (seg / 2 - 0.3, 0.4, hw - 0.12), dark)
         lbox(sr, "tram_ceiling", (-seg / 2 + 0.4, 2.62, -hw + 0.2), (seg / 2 - 0.4, 2.66, hw - 0.2), inside if lit else unlit)

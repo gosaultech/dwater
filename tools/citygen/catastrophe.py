@@ -36,6 +36,7 @@ DEBRIS = [("ph:can_rusted", 90, False), ("ph:plastic_bottle_gallon", 90, False),
           ("ph:plastic_jerrycan", 90, False), ("ph:metal_jerrycan", 90, False), ("ph:cement_bag", None, False),
           ("ph:old_tyre", 90, True), ("ph:wooden_crate_02", 20, True), ("ph:plastic_monobloc_chair_01", 90, True),
           ("ph:metal_trash_can", 90, True), ("ph:plastic_crate_03", None, True), ("ph:wooden_military_crate", None, True)]
+OUTSIDE_ONLY = {"ph:bark_debris_01", "ph:dry_branches_medium_01", "ph:old_tyre", "ph:cement_bag", "ph:compost_bag_02"}   # (not under a roof)
 # What can stand close to a lens without telling a different story from the street's.
 FOREGROUND = [("ph:trashbag", None), ("ph:old_tyre", 90), ("ph:plastic_crate_02", None), ("ph:metal_trash_can", 90),
               ("ph:wooden_crate_02", 20), ("ph:compost_bags", None), ("ph:plastic_monobloc_chair_01", 90)]
@@ -294,7 +295,8 @@ def auto_story(spec, rng):
     xs, zs, ok = cameras.open_floor(spec)
     cells = [(float(xs[i]), float(zs[k])) for i in range(len(xs)) for k in range(len(zs)) if ok[i, k]]
     (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
-    want = int(min(7, max(2, (bx1 - bx0) * (bz1 - bz0) / 450)))
+    area = (bx1 - bx0) * (bz1 - bz0)
+    want = int(min(7, max(2, area / 450))) if o else int(min(5, max(1, area / 160)))   # (indoors: fewer, by the room's size)
     for _ in range(400):
         if len(the_dead) >= want or not cells:
             break
@@ -309,10 +311,54 @@ def auto_story(spec, rng):
     return props, fx, the_dead
 
 
-STORIES = {"rokin_zuid": rokin_zuid, "rokin_noord": rokin_noord}
+def dam(spec):
+    """The evacuation point, overrun: the queues for the buses broke where they stood; the field
+    hospital's dead under blankets and a row of bags beside it; the last bus dark, its windows in."""
+    props, fx, the_dead = auto_story(spec, np.random.default_rng(907))
+    for p in spec["props"]:
+        if p["type"] == "aid_post":
+            p["covered"] = 3
+        elif p["type"] == "bus" and p.get("board") == "NIET INSTAPPEN":
+            p.update({"smashed": [0, 1], "dark": [1], "hero": True})
+    props += [{"type": "body_bag", "pos": [69.6, 0.0, 29.6 + 1.25 * k], "yaw": 90 + (k % 3 - 1) * 4, "size": [1.85, 0.3, 0.62],
+               "collide": False, "hero": k == 0} for k in range(6)]
+    the_dead += [dead(76.2, 22.5, 200, 0, prone=True, blood=0.7), dead(77.4, 30.8, 20, 2, blood=0.5),
+                 dead(75.6, 49.2, 290, 1, prone=True, blood=0.85), dead(78.0, 56.6, 110, 0, blood=0.6),
+                 dead(73.8, 35.6, 160, 2, prone=True, blood=0.65)]
+    return props, fx, the_dead
+
+
+def stationsplein(spec):
+    """The crush at Centraal: they fell in front of the doors when the doors were shut; prams and cases
+    left in heaps; the dead in bags by the aid tent; a bus with its windows in, dark; a car run into the
+    barriers and burned, still burning."""
+    props, fx, the_dead = auto_story(spec, np.random.default_rng(911))
+    for p in spec["props"]:
+        if p["type"] == "bus" and p["pos"][0] > 40:
+            p.update({"smashed": [0], "dark": [0], "hero": True})
+    props += [{"type": "vehicle", "pos": [8.0, 0.0, 40.0], "yaw": 60, "size": [4.4, 1.45, 1.8], "livery": "car", "burnt": True, "collide": True, "hero": True},
+              {"type": "scorch", "pos": [8.0, 0.0, 40.0], "yaw": 60, "size": [7.0, 0.0, 5.5], "collide": False},
+              {"type": "glow", "pos": [8.0, 0.9, 40.0], "color": [1.0, 0.45, 0.12], "power": 700.0, "radius": 0.6, "collide": False}]
+    props += [{"type": "body_bag", "pos": [65.0, 0.0, 22.5 + 1.2 * k], "yaw": 90 + (k % 2) * 5, "size": [1.85, 0.3, 0.62], "collide": False}
+              for k in range(5)]
+    fx += [{"kind": "fire", "pos": [8.0, 0.75, 40.0], "size": 1.3, "seed": 21}, {"kind": "smoke", "pos": [8.0, 1.8, 40.0], "size": 2.2, "seed": 22}]
+    the_dead += [dead(29.5, 6.5, 170, 0, prone=True, blood=0.5), dead(31.2, 8.4, 40, 1, blood=0.4),
+                 dead(39.6, 6.0, 300, 2, prone=True, blood=0.6), dead(41.8, 9.2, 120, 0, prone=True, blood=0.45),
+                 dead(26.8, 10.8, 250, 2, blood=0.55), dead(44.5, 12.6, 80, 1, prone=True, blood=0.5)]
+    return props, fx, the_dead
+
+
 # The streets told by rule (auto_story), as their backgrounds are re-rendered (so a room's cameras and
 # its pictures always agree): add a room here in the same commit as its new plates.
 AUTO = set()
+
+
+STORIES = {"rokin_zuid": rokin_zuid, "rokin_noord": rokin_noord, "dam": dam, "stationsplein": stationsplein}
+ACTIVE = {"rokin_zuid", "rokin_noord"}   # the hand-told streets whose plates are rendered (others wait for theirs)
+# DW_STORIES=a,b,...: tell these too (a build of the next rooms to render, into a scratch DW_ROOMS)
+for _r in filter(None, __import__("os").environ.get("DW_STORIES", "").split(",")):
+    (ACTIVE if _r in STORIES else AUTO).add(_r)
+
 
 
 def drift(spec, rng, n):
@@ -339,7 +385,8 @@ def drift(spec, rng, n):
     for k in picks:
         i, j = divmod(int(k), len(zs))
         x, z = float(xs[i]) + rng.uniform(-0.1, 0.1), float(zs[j]) + rng.uniform(-0.1, 0.1)
-        choices = [d for d in DEBRIS if not (d[2] and lanes[i, j])]
+        pool = DEBRIS if spec.get("outdoor") else [d_ for d_ in DEBRIS if d_[0] not in OUTSIDE_ONLY]
+        choices = [d for d in pool if not (d[2] and lanes[i, j])]
         ref, tip, _ = choices[rng.integers(len(choices))]
         out.append(model(ref, x, z, float(rng.uniform(0, 360)), tip=tip if tip is None or rng.random() < 0.8 else None))
     return out
@@ -348,7 +395,7 @@ def drift(spec, rng, n):
 def apply(spec):
     """The street's story: its set pieces and its live effects (before the cordons, so their barriers
     fence what now stands where, and before the cameras, which plan round it)."""
-    tell = STORIES.get(spec["id"])
+    tell = STORIES.get(spec["id"]) if spec["id"] in ACTIVE else None
     if tell is None and spec["id"] in AUTO:
         rng0 = np.random.default_rng(sum(map(ord, spec["id"])) + 7)
         tell = lambda sp: auto_story(sp, rng0)
@@ -366,10 +413,14 @@ def apply(spec):
     return spec
 
 
-def leavings(spec, n=180):
-    """The flood's leavings, drifted (after the cordons: round their barriers too)."""
-    if spec["id"] not in STORIES and spec["id"] not in AUTO:
+def leavings(spec, n=None):
+    """The flood's leavings, drifted (after the cordons: round their barriers too): about one thing
+    for every eleven square metres of floor, a dozen at least, 180 at most."""
+    if spec["id"] not in ACTIVE and spec["id"] not in AUTO:
         return spec
+    if n is None:
+        (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
+        n = int(min(180, max(12, (bx1 - bx0) * (bz1 - bz0) * 0.09)))
     spec["props"] = [p for p in spec["props"] if not p.get(MARK + "_drift")]
     rng = np.random.default_rng(sum(map(ord, spec["id"])))   # (the same street, the same mess, every run)
     for p in drift(spec, rng, n):
@@ -382,7 +433,7 @@ def foreground(spec, per_shot=1):
     """Something close to each shot's lens to look past (RE's cameras almost always have it): low in
     a bottom corner of the picture, 1.5-3.5 m from the lens, on floor he can't walk (off the lanes),
     and only where it hides him from no shot of the room."""
-    if spec["id"] not in STORIES and spec["id"] not in AUTO:
+    if spec["id"] not in ACTIVE and spec["id"] not in AUTO:
         return spec
     spec["props"] = [p for p in spec["props"] if not p.get(MARK + "_fg")]
     xs, zs, ok = cameras.open_floor(spec)

@@ -344,7 +344,16 @@ def _frame(cams, feet, heads):
     return f, tan_v, tall
 
 
-def plan_shot(spec, zone, kind, travel, prefer_side=0):
+def _halves(z):
+    """A zone cut across its longer side, the halves overlapping (as plan_room films one it can't)."""
+    if z[2] - z[0] >= z[3] - z[1]:
+        m = (z[0] + z[2]) / 2
+        return [(z[0], z[1], m + OVERLAP, z[3]), (m - OVERLAP, z[1], z[2], z[3])]
+    m = (z[1] + z[3]) / 2
+    return [(z[0], z[1], z[2], m + OVERLAP), (z[0], m - OVERLAP, z[2], z[3])]
+
+
+def plan_shot(spec, zone, kind, travel, prefer_side=0, _probe=False):
     """The best camera for one zone. Returns (shot, stats) or (None, reason)."""
     xs, zs, mask = floor_grid(spec)
     X, Z = np.meshgrid(xs, zs, indexing="ij")
@@ -472,8 +481,12 @@ def plan_shot(spec, zone, kind, travel, prefer_side=0):
             break
     if best is None or not np.isfinite(best_cost):
         return None, "no camera frames it within the standard"
-    if story and best_cost >= 1e9 and max(x1 - x0, z1 - z0) >= 6.0:   # (none sees him: film it in halves, if it's big enough)
-        return None, "no camera sees him across it"
+    if _probe and best_cost >= 1e9:
+        return None, "none sees him"
+    if story and best_cost >= 1e9 and max(x1 - x0, z1 - z0) >= 6.0 and not _probe:
+        # None sees him across it: film it in halves, if each half has a camera that does.
+        if all(plan_shot(spec, h, kind, travel, prefer_side, _probe=True)[0] is not None for h in _halves(zone)):
+            return None, "no camera sees him across it"
     c = best
     look = cams[c] + f[c] * 6.0
     shot = {"pos": [round(float(v), 2) for v in cams[c]], "look_at": [round(float(v), 2) for v in look],
@@ -503,12 +516,7 @@ def plan_room(spec):
         if shot is None:   # nothing frames it all: film its two halves
             if max(z[2] - z[0], z[3] - z[1]) < 3.0:
                 raise RuntimeError(f"{spec['id']}: zone {z}: {st}")
-            if z[2] - z[0] >= z[3] - z[1]:
-                m = (z[0] + z[2]) / 2
-                halves = [(z[0], z[1], m + OVERLAP, z[3]), (m - OVERLAP, z[1], z[2], z[3])]
-            else:
-                m = (z[1] + z[3]) / 2
-                halves = [(z[0], z[1], z[2], m + OVERLAP), (z[0], m - OVERLAP, z[2], z[3])]
+            halves = _halves(z)
             halves.sort(key=lambda h: -(((h[0] + h[2]) / 2) * travel[0] + ((h[1] + h[3]) / 2) * travel[1]))
             zs = halves + zs
             continue

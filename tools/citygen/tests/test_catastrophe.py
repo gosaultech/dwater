@@ -33,7 +33,7 @@ def in_lane(x, z, rid, grow=0.0):
 
 class Catastrophe(unittest.TestCase):
     def test_it_runs_twice_to_the_same_street_and_leaves_the_others(self):
-        for rid in catastrophe.STORIES:
+        for rid in sorted(catastrophe.ACTIVE | catastrophe.AUTO):
             spec = room(rid)
             again = catastrophe.foreground(cameras.apply(catastrophe.leavings(barricades.apply(catastrophe.apply(copy.deepcopy(spec))))))
             self.assertEqual(json.dumps(spec, sort_keys=True), json.dumps(again, sort_keys=True), rid)
@@ -61,7 +61,7 @@ class Catastrophe(unittest.TestCase):
 
     def test_debris_lies_on_open_floor_and_the_big_pieces_off_the_lanes(self):
         big = {ref for ref, _, b in catastrophe.DEBRIS if b}
-        for rid in catastrophe.STORIES:
+        for rid in sorted(catastrophe.ACTIVE | catastrophe.AUTO):
             spec = room(rid)
             xs, zs, ok = cameras.open_floor({**spec, "props": [p for p in spec["props"] if not p.get("catastrophe")]})
             x0, z0 = xs[0], zs[0]
@@ -78,7 +78,7 @@ class Catastrophe(unittest.TestCase):
             self.assertGreater(n, 80, rid)
 
     def test_nothing_by_a_lens_hides_him(self):
-        for rid in catastrophe.STORIES:
+        for rid in sorted(catastrophe.ACTIVE | catastrophe.AUTO):
             spec = room(rid)
             fg = [p for p in spec["props"] if p.get("catastrophe_fg")]
             for p in fg:
@@ -94,7 +94,7 @@ class Catastrophe(unittest.TestCase):
                     self.assertLessEqual(cameras._segment_hits(np.array(s["pos"], float), pts, box).mean(), 0.02, (rid, s["id"]))
 
     def test_the_dead_lie_in_the_street_not_in_a_wall(self):
-        for rid in catastrophe.STORIES:
+        for rid in sorted(catastrophe.ACTIVE | catastrophe.AUTO):
             spec = room(rid)
             self.assertTrue(spec.get("dead"), rid)
             xs, zs, ok = cameras.open_floor(spec)
@@ -110,7 +110,7 @@ class Catastrophe(unittest.TestCase):
                 self.assertTrue(ok[max(i - 1, 0):i + 2, max(k - 1, 0):k + 2].any(), (rid, b))
 
     def test_its_decals_and_its_fx_are_ones_the_tools_know(self):
-        for rid in catastrophe.STORIES:
+        for rid in sorted(catastrophe.ACTIVE | catastrophe.AUTO):
             spec = room(rid)
             for p in spec["props"]:
                 if "decal" in p:

@@ -208,9 +208,10 @@ def make(cache: Path = CACHE, rooms: Path = ROOMS) -> int:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="the paint and paper on the walls, as textures")
     ap.add_argument("cmd", choices=["make"])
+    ap.add_argument("--rooms", default=str(ROOMS), help="the RoomSpecs to read (default: the game's)")
     a = ap.parse_args(argv)
     if a.cmd == "make":
-        print(f"decals: {make()} drawn into {CACHE}")
+        print(f"decals: {make(rooms=Path(a.rooms))} drawn into {CACHE}")
     return 0
 
 
