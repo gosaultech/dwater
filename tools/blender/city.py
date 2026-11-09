@@ -316,14 +316,48 @@ def statue(root, p, w, h, d):
 
 
 def kiosk(root, p, w, h, d):
-    """An eight-sided kiosk, its hatch open and lit, its name round the top."""
-    green = M({"color": [0.05, 0.14, 0.09], "rough": 0.45, "noise": 0.15})
+    """An eight-sided Amsterdam kiosk: a stone plinth, green faces between gilt-capped posts, posters
+    under glass and framed panels round its flanks and back, its hatch open and lit under a hood with
+    the papers racked in it, a moulded cornice with its name in neon, a flared roof up to a finial."""
+    green = M({"color": [0.05, 0.14, 0.09], "rough": 0.45, "noise": 0.15, "grime": 1.2, "streaks": 0.5})
+    gilt = M({"color": [0.72, 0.58, 0.28], "rough": 0.3, "metal": 0.8, "grime": 1.0})
     r = w / 2
-    prof = [(0.0, 0.0), (r, 0.0), (r, h * 0.8), (r * 1.15, h * 0.82), (r * 0.2, h), (0.0, h)]
-    kit.lathe(root, "kiosk", prof, green, segments=8, smooth=False).rotation_euler[2] = math.radians(22.5)   # a face to the front
-    z = r * math.cos(math.pi / 8) + 0.012
+    ap = r * math.cos(math.pi / 8)
+    yb = h * 0.7
+
+    def octagon(name, prof, m):   # a lathe of eight sides, a face to the front
+        kit.lathe(root, name, prof, m, segments=8, smooth=False).rotation_euler[2] = math.radians(22.5)
+    octagon("kiosk_plinth", [(0.0, 0.0), (r * 1.06, 0.0), (r * 1.06, 0.15), (0.0, 0.15)], M({"color": [0.45, 0.44, 0.42], "rough": 0.8, "noise": 0.3}))
+    octagon("kiosk", [(0.0, 0.15), (r, 0.15), (r, yb), (0.0, yb)], green)
+    octagon("kiosk_cornice", [(0.0, yb), (r * 1.08, yb), (r * 1.1, yb + 0.12), (r * 1.06, yb + 0.3), (r * 1.14, yb + 0.36), (0.0, yb + 0.36)], green)
+    octagon("kiosk_roof", [(0.0, yb + 0.36), (r * 1.22, yb + 0.36), (r * 1.18, yb + 0.42), (r * 0.42, h * 0.95), (r * 0.32, h * 0.96),
+                           (r * 0.32, h), (0.0, h)], green)
+    ball(root, "kiosk_finial", (0.0, h + 0.1, 0.0), 0.1, gilt)
+    rod(root, "kiosk_spike", (0.0, h + 0.18, 0.0), (0.0, h + 0.45, 0.0), 0.02, 0.004, gilt)
+    for k in range(8):   # the posts at its corners, gilt-capped
+        phi = math.pi / 8 + math.pi * k / 4
+        x, z = r * 1.01 * math.cos(phi), -r * 1.01 * math.sin(phi)
+        rod(root, "kiosk_post", (x, 0.15, z), (x, yb, z), 0.035, 0.035, green, seg=6)
+        ball(root, "kiosk_cap", (x, yb + 0.03, z), 0.05, gilt)
+    side = 2 * r * math.sin(math.pi / 8)
+    for k in range(8):   # round the flanks and back: posters under glass, or a framed panel
+        yaw = math.pi / 4 + math.pi * k / 4 + math.pi / 2
+        if abs(math.sin(yaw / 2)) < 0.05:
+            continue   # (the front: the hatch)
+        face = builders.empty_at("kiosk_face", (0.0, 0.0, 0.0), 0.0)
+        face.parent = root
+        face.rotation_euler[2] = yaw
+        u = side / 2 - 0.1
+        if k % 2:
+            ad_face(face, -u, u, 0.95, 2.0, ap + 0.006, "z", 0.6, (k + p.get("ad", 2)) % len(ADS))
+        else:
+            lbox(face, "kiosk_frame", (-u, 0.95, ap - 0.005), (u, 2.0, ap + 0.012), gilt)
+            lbox(face, "kiosk_panel", (-u + 0.04, 0.99, ap + 0.012), (u - 0.04, 1.96, ap + 0.016), green)
+        lbox(face, "kiosk_rail", (-side / 2, 0.55, ap - 0.005), (side / 2, 0.6, ap + 0.02), gilt)
+    z = ap + 0.012
     lbox(root, "hatch", (-0.6, 1.0, z - 0.012), (0.6, 1.9, z - 0.006), emit((1.0, 0.82, 0.55), 1.2, "kiosk_hatch"))
     lbox(root, "hatch_ledge", (-0.62, 0.98, z - 0.02), (0.62, 1.02, z + 0.12), green)
+    kit.soft(root, "hatch_hood", (0.0, 2.02, z + 0.2), (1.4, 0.04, 0.45), green, 0.01, 2, rot_x=-14.0)
     rng = random.Random(p.get("seed", 4))
     mags = [Acc() for _ in ADS]
     for row, y in enumerate((1.08, 1.4)):   # the papers and magazines racked in the hatch
@@ -334,8 +368,7 @@ def kiosk(root, p, w, h, d):
             x += mw + 0.015
     for acc, (_, _, bg, ink) in zip(mags, ADS):
         acc.build("magazines", M({"color": [c * 0.8 + 0.08 for c in bg], "rough": 0.35}), root, smooth=False)
-    ad_face(root, -0.55, 0.55, 1.0, 2.1, -z, "-z", 0.6, p.get("ad", 2))
-    neon_text(root, p.get("name", "KIOSK"), (0.0, h * 0.74, r + 0.02), 0.28, (1.0, 0.85, 0.5), 10.0, font="DejaVuSerif-Bold.ttf")
+    neon_text(root, p.get("name", "KIOSK"), (0.0, yb + 0.19, r * 1.08 * math.cos(math.pi / 8) + 0.03), 0.2, (1.0, 0.85, 0.5), 10.0, font="DejaVuSerif-Bold.ttf")
 
 
 def windbreak(root, p, w, h, d):
