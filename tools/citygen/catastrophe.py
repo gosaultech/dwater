@@ -110,8 +110,9 @@ def rokin_zuid(spec):
         if p["type"] == "tram":
             p.update({"derail": {"yaw": [0.0, 9.0, 24.0], "roll": [0.0, 2.0, 6.5], "lift": [0.0, 0.0, 0.1]},
                       "dark": [2], "smashed": [1, 2], "pantograph": False, "board": "", "collide": False, "power": 170.0})
-            for k, (x, z, yaw, seg) in enumerate(tram_sections(p)):
-                props.append({"type": "collider", "pos": [round(x, 2), 0.0, round(z, 2)], "yaw": round(yaw, 1), "size": [round(seg, 2), 3.4, 2.4]})
+            for k, (x, z, yaw, seg) in enumerate(tram_sections(p)):   # (solid, and something the cameras keep clear of and show)
+                props.append({"type": "tram_section", "pos": [round(x, 2), 0.0, round(z, 2)], "yaw": round(yaw, 1), "size": [round(seg, 2), 3.4, 2.4],
+                              "hero": k > 0})
                 if k == 1:
                     fx.append({"kind": "flicker", "pos": [round(x, 2), 1.8, round(z, 2)], "radius": 4.5, "amount": 0.45, "seed": 3})
         elif p["type"] == "canal_boat" and p.get("name") == "RONDVAART 7":
@@ -119,7 +120,7 @@ def rokin_zuid(spec):
     W = -90   # the fronts at x 26 face west: a decal's +z is -x
     props += [
         # the wire down across the road, arcing where it touches
-        {"type": "wire_down", "pos": [10.2, 0.0, 41.8], "yaw": 0, "from": [3.8, 5.8, 4.6], "sag": 0.7, "slack": 3.2, "seed": 4, "collide": False},
+        {"type": "wire_down", "pos": [10.2, 0.0, 41.8], "yaw": 0, "from": [3.8, 5.8, 4.6], "sag": 0.7, "slack": 3.2, "seed": 4, "collide": False, "hero": True},
         # the café: its windows boarded, its chairs piled against its door
         boards(25.9, 43.4, W, 2.3, 2.3, seed=11), boards(25.9, 48.7, W, 2.3, 2.3, seed=12),
         spray(25.86, 1.0, 43.4, W, 2.1, 0.8, "GEEN ETEN", (0.92, 0.9, 0.86), seed=13),
@@ -163,9 +164,10 @@ def rokin_noord(spec):
             p["covered"] = 2
     W = -90
     props += [
-        {"type": "vehicle", "pos": [5.6, 0.0, 16.4], "yaw": 35, "size": [4.4, 1.45, 1.8], "livery": "car", "burnt": True, "collide": True},
+        {"type": "vehicle", "pos": [5.6, 0.0, 16.4], "yaw": 35, "size": [4.4, 1.45, 1.8], "livery": "car", "burnt": True, "collide": True, "hero": True},
+        {"type": "glow", "pos": [5.6, 0.9, 16.4], "color": [1.0, 0.45, 0.12], "power": 700.0, "radius": 0.6, "collide": False},   # the fire's light, as the painting has it
         {"type": "scorch", "pos": [5.6, 0.0, 16.4], "yaw": 35, "size": [7.0, 0.0, 5.5], "collide": False},
-        {"type": "body_bag", "pos": [8.2, 0.0, 26.3], "yaw": 0, "size": [1.85, 0.3, 0.62], "collide": False},
+        {"type": "body_bag", "pos": [8.2, 0.0, 26.3], "yaw": 0, "size": [1.85, 0.3, 0.62], "collide": False, "hero": True},
         {"type": "body_bag", "pos": [8.2, 0.0, 27.1], "yaw": 3, "size": [1.85, 0.3, 0.62], "collide": False},
         {"type": "body_bag", "pos": [8.0, 0.0, 27.9], "yaw": -4, "size": [1.6, 0.28, 0.6], "collide": False},
         spray(25.95, 0.85, 17.0, W, 4.2, 0.9, "NIET NAAR BENEDEN", (0.92, 0.9, 0.86), seed=51),
@@ -236,7 +238,7 @@ def apply(spec):
     return spec
 
 
-def leavings(spec, n=110):
+def leavings(spec, n=180):
     """The flood's leavings, drifted (after the cordons: round their barriers too)."""
     if spec["id"] not in STORIES:
         return spec

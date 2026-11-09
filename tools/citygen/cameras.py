@@ -75,6 +75,7 @@ PASSAGE_REACH = 3.5    # m: how far out through a passage, into the next street,
 TREES = {"plane_tree", "elm"}
 TREE_CLEAR = 4.5       # m: from a tree's trunk, a camera above its first limbs is among the branches
 TALL = 1.2             # m: a prop this tall hides him (lower ones he's seen over)
+HERO = 0.5             # how much a shot is worth that also shows one of the street's set pieces ("hero": true; up to two)
 CLEAR = 1.2            # m: a camera keeps this far from anything standing (more from a canopy, a light)
 CANOPIES = {"fair_stall", "aid_post", "kiosk", "tram_stop", "market_stall", "flower_stall", "tent", "schiettent", "carousel", "terrace"}
 NOT_THINGS = {"leaflets", "palace", "gothic_front", "beurs", "station", "munttoren", "runner", "rug", "puddle",
@@ -438,6 +439,18 @@ def plan_shot(spec, zone, kind, travel, prefer_side=0):
             + np.abs(pitch + 15) / 20
             + np.maximum(0, fov - 56) / 8 + np.maximum(0, 46 - fov) / 6
             + (side == -prefer_side) * (0.3 if prefer_side else 0))
+    heroes = [p["pos"] for p in spec.get("props", []) if p.get("hero")]
+    if heroes:   # the street's story (catastrophe.py): a shot that shows it as well as him is worth more
+        Hp = np.array([[x, max(y, 0.0) + 1.0, z] for x, y, z in heroes])
+        rr = np.cross(f, [0.0, 1.0, 0.0])
+        rr /= np.maximum(np.linalg.norm(rr, axis=1, keepdims=True), 1e-9)
+        uu = np.cross(rr, f)
+        v = Hp[None, :, :] - cams[:, None, :]
+        dep = np.einsum("chk,ck->ch", v, f)
+        hx = np.einsum("chk,ck->ch", v, rr) / np.maximum(dep, 1e-3) / (tan_v[:, None] * ASPECT)
+        hy = np.einsum("chk,ck->ch", v, uu) / np.maximum(dep, 1e-3) / tan_v[:, None]
+        seen_h = (dep > 1.5) & (dep < 28.0) & (np.abs(hx) < 0.85) & (np.abs(hy) < 0.85)
+        cost = cost - HERO * np.minimum(seen_h.sum(axis=1), 2)
     lens = kind.get("lens", LENS)
     bad = ((fov > lens[1]) | (fov < lens[0]) | (p05 < S["p05"]) | (med < S["floor"]) | (pitch > 2) | (pitch < -48)
            | ~np.isfinite(cost))

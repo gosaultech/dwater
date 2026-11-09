@@ -214,4 +214,19 @@ def silt(root, p, w, h, d):
         ob.visible_shadow = False   # (a skin of mud: it shades nothing)
 
 
-kit.PROPS.update({"spray": spray, "boards": boards, "body_bag": body_bag, "wire_down": wire_down, "scorch": scorch, "silt": silt})
+def glow(root, p, w, h, d):
+    """A light the street's live layer has here (a fire), at its average: the engine breathes it."""
+    ld = bpy.data.lights.new("fx_glow", "POINT")
+    ld.energy, ld.color = p.get("power", 500.0), tuple(p.get("color", (1.0, 0.45, 0.12)))
+    ld.shadow_soft_size = p.get("radius", 0.5)
+    ob = bpy.data.objects.new("fx_glow", ld)
+    bpy.context.scene.collection.objects.link(ob)
+    ob.parent = root
+
+
+def nothing(root, p, w, h, d):
+    """Solid for the engine, invisible here (a derailed tram's sections: the tram draws itself)."""
+
+
+kit.PROPS.update({"spray": spray, "boards": boards, "body_bag": body_bag, "wire_down": wire_down, "scorch": scorch, "silt": silt,
+                  "glow": glow, "tram_section": nothing})

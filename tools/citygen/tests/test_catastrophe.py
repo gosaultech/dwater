@@ -55,8 +55,9 @@ class Catastrophe(unittest.TestCase):
                     cx = x + sx * seg * math.cos(a) + sz * 2.4 * math.sin(a)
                     cz = z - sx * seg * math.sin(a) + sz * 2.4 * math.cos(a)
                     self.assertFalse(in_lane(cx, cz, "rokin_zuid", grow=-0.05), (x, z, cx, cz))
-        colliders = [p for p in spec["props"] if p["type"] == "collider" and p.get("catastrophe")]
-        self.assertEqual(len(colliders), 3)
+        sections = [p for p in spec["props"] if p["type"] == "tram_section" and p.get("catastrophe")]
+        self.assertEqual(len(sections), 3)
+        self.assertTrue(all(p.get("collide", True) for p in sections))
 
     def test_debris_lies_on_open_floor_and_the_big_pieces_off_the_lanes(self):
         big = {ref for ref, _, b in catastrophe.DEBRIS if b}
