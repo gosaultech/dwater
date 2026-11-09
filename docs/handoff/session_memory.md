@@ -40,6 +40,30 @@ colours on a spooky night), modelled tulips, a basic title screen. Everything up
 into `claude/inspiring-turing-gl0kys`. All backgrounds are preview quality at 1280x720 (Cycles on
 the container's CPU).
 
+## The catastrophe pass (2026-11-09, the user asleep: "keep building, professional game polish")
+- The user's direction: "lived in, dirty, run down, like a real catastrophic event happened";
+  RE3's Raccoon City; vehicles must not be blocks; "bodies in the pre-rendered environments do a
+  lot of story telling". Brief: `docs/city_aftermath.md` ("The night itself").
+- Rokin is the hand-told slice (`catastrophe.rokin_zuid/noord`); the Dam and Stationsplein are
+  hand-told on top of `auto_story`; every other street and hall is told by rule (`auto_story`).
+- **Commit rule:** a room joins `catastrophe.ACTIVE` (hand-told) or `AUTO` (by rule) in the same
+  commit as its re-rendered plates, so a room's cameras and pictures always agree. The overnight
+  queue renders from a scratch copy built with `DW_ROOMS=<scratch>/rooms_next/ DW_STORIES=<ids>`
+  and copies each room's spec into `game/data/rooms` beside its packed plates
+  (scratchpad `tools/qcity.sh`, `qcity.txt`, `qcity.log`).
+- Renders are now 2048x1152 (the following view's step 2), about 6 minutes a shot on the
+  container: the whole city is about a day.
+- **Vehicles:** `tools/blender/vehicles.py` (cars, vans, bus, army truck, trams, the metro);
+  Poly Haven has no vehicles; Sketchfab has CC BY ones but downloading needs the user's API token
+  (a network secret for api.sketchfab.com on the "dwater" environment): not asked overnight.
+- **The dead** are engine bodies (the room's "dead"), not Blender figures: the skin-modifier
+  figures in `characters.py` looked like inflated mannequins.
+- **Lessons:** the depth pass's emission override made every triangle a light (a street's
+  light tree went past 12 GB and was killed): its emission sampling is off now. The camera
+  planner took the least-bad camera when none of its cheapest sixty saw him (a shot with 0%
+  visible); story streets now look further and split only when both halves can be filmed.
+  Building a room file from a story must happen before the cordons (barriers fence what stands).
+
 ## Merged PRs (gosaultech/dwater, base `claude/inspiring-turing-gl0kys`)
 1. #1: the city route from the canal house to Damrak, the realism pass, rain, the ending.
 2. #2: the route to its end (the Stationsplein, Centraal's hall, metro line 52, Station Noord),

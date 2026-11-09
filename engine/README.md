@@ -527,6 +527,17 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   (`make`, into the asset cache). Tested (`tools/citygen/tests/test_catastrophe.py`,
   `tools/assets/tests/test_decals.py`). Like a crime-scene photographer's list: what's where, and
   why, street by street, before the cameras roll.
+- **The vehicles** (`tools/blender/vehicles.py`; look-development in `tools/blender/vehicle_studio.py`).
+  Cars, vans, the bus, the army truck and the trams are modelled the way a car designer's clay is:
+  cross-sections along the body (sill, shoulder, window line, roof), lofted and smoothed with the
+  character lines held sharp, the glass, pillars, doors and livery laid on the body's own faces,
+  wheels (tyre, rim, brake) in arches cut out of it, lights, Dutch plates, mirrors, a taxi's sign,
+  a light bar, Battenburg blocks; burned out on request. Like slicing a loaf of bread into the
+  car's shape, lining the slices up, and stretching a skin over them.
+- **The dead** (a room's `"dead"`; `Game::build_corpses`). The cast's own bodies, posed where they
+  fell (face down or on the back), never rising (unlike a `"lying"` Drowned, which does: from the
+  doorway you can't tell which is which), their blood spread under them; drawn over the painting
+  within 40 m of the camera. Placed by the catastrophe pass, clear of every door.
 - **The whole floor at once.** To render a room, Blender builds every room on its storey at its
   origin (`tools/pipeline/house.py` agrees with the engine on the floor plan), so an open doorway
   shows the real room beyond. A shared wall is built half by each room; a door the game swings is
