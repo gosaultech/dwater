@@ -634,4 +634,149 @@ def _car_or_truck(root, p, w, h, d):
     return car(root, p, w, h, d)
 
 
-kit.PROPS.update({"vehicle": _car_or_truck, "tram": tram, "bus": bus})
+def _ring(acc, c, R, r, axis, n=12):
+    """A ring of rod (a lifting eye, a tow eye) round c, in the plane across `axis` ("x" or "z")."""
+    pts = []
+    for k in range(n + 1):
+        a = 2 * math.pi * k / n
+        u, v = R * math.cos(a), R * math.sin(a)
+        pts.append((c[0] + u, c[1] + v, c[2]) if axis == "z" else (c[0], c[1] + v, c[2] + u))
+    for a, b in zip(pts, pts[1:]):
+        acc.rod(a, b, r, r, 6)
+
+
+def light_tower(root, p, w, h, d):
+    """A mobile lighting tower along local x (drawbar +x), its lamps facing +z: a lofted canopy with
+    doors, handles, louvres, an exhaust and a lifting eye; a telescopic mast at the back (four
+    sections, their collars, a coiled cable beside it, the winch at its foot); four floodlights on a
+    bar, each tipped and turned at what it lights (its light is a real light); outriggers wound down
+    onto pads; wheels in their guards; the A-frame, tow eye and jockey wheel. Yellow, worked hard."""
+    L, hw = w, d / 2
+    yellow = M({"color": [0.78, 0.56, 0.04], "rough": 0.42, "noise": 0.12, "coat": 0.4, "grime": 1.2, "streaks": 0.5, "bevel": 0.0})
+    steel = M({"color": [0.62, 0.63, 0.64], "rough": 0.35, "metal": 0.9, "grime": 1.2, "bevel": 0.0})
+    dark = M({"color": [0.03, 0.03, 0.032], "rough": 0.6, "metal": 0.3, "bevel": 0.0})
+    black = M({"color": [0.012, 0.012, 0.014], "rough": 0.7, "bevel": 0.0})
+    y0, y1 = 0.5, 1.6
+
+    def section(cr):   # the canopy round (z across, y up): flat sides, small radii, a crowned roof
+        right = [(hw * 0.6, y0), (hw - 0.035, y0 + 0.004), (hw, y0 + 0.045), (hw, y1 - 0.07), (hw - 0.02, y1 - 0.016),
+                 (hw - 0.075, y1 + cr * 0.4), (hw * 0.5, y1 + cr)]
+        return [(0.0, y0 - 0.004)] + right + [(0.0, y1 + cr * 1.2)] + [(-z, y) for z, y in reversed(right)]
+    xs = [-L / 2, -L / 2 + 0.05, -L / 4, 0.0, L / 4, L / 2 - 0.05, L / 2]
+    loft("lt_canopy", root, [(x, section(0.035)) for x in xs], [yellow], lambda i, k: 0, subd=2, ends=(-0.03, -0.03))
+    for sz in (-1, 1):   # two doors a side, their handles; a louvred intake low on the front one
+        for xa, xb in ((-L / 2 + 0.42, -0.03), (0.03, L / 2 - 0.1)):
+            kit.soft(root, "lt_door", ((xa + xb) / 2, (y0 + y1) / 2 + 0.01, sz * (hw + 0.006)), (xb - xa, y1 - y0 - 0.2, 0.024), yellow, 0.012, 2)
+            hx = xb - 0.12 if xa < 0 else xa + 0.12
+            lbox(root, "lt_handle", (hx - 0.07, 1.02, sz * (hw + 0.017) - 0.006), (hx + 0.07, 1.07, sz * (hw + 0.017) + 0.006), black)
+        gx0, gx1 = 0.22, L / 2 - 0.26
+        lbox(root, "lt_grille", (gx0, 0.66, sz * (hw + 0.019) - 0.003), (gx1, 0.98, sz * (hw + 0.019) + 0.003), black)
+        slats = Acc()
+        for k in range(7):
+            yy = 0.69 + k * 0.042
+            slats.box((gx0 + 0.02, yy, sz * (hw + 0.02) - 0.008), (gx1 - 0.02, yy + 0.014, sz * (hw + 0.02) + 0.008))
+        slats.build("lt_slats", yellow, root, smooth=False)
+        text(root, "LT %02d" % (int(p.get("seed", abs(p["pos"][0] * 7 + p["pos"][2] * 3))) % 40 + 1),
+             (-L / 4 + 0.1, 1.36, sz * (hw + 0.022)), 0.11, black, depth=0.0, yaw=0.0 if sz > 0 else 180.0)
+    xe = L / 2 + 0.034   # the radiator end: a grille of slats
+    lbox(root, "lt_end_grille", (xe - 0.004, 0.72, -hw * 0.6), (xe + 0.004, 1.38, hw * 0.6), black)
+    sl = Acc()
+    for k in range(12):
+        yy = 0.75 + k * 0.052
+        sl.box((xe - 0.012, yy, -hw * 0.6 + 0.03), (xe + 0.012, yy + 0.016, hw * 0.6 - 0.03))
+    sl.build("lt_end_slats", yellow, root, smooth=False)
+    xb = -L / 2 - 0.036   # the control end: a smoked window over the panel, the red stop, a label
+    lbox(root, "lt_ctrl_window", (xb - 0.005, 0.98, -0.32), (xb + 0.005, 1.36, 0.1), M({"color": [0.02, 0.025, 0.03], "rough": 0.08, "metal": 0.5, "bevel": 0.0}))
+    street.rod(root, "lt_estop", (xb, 1.18, 0.28), (xb - 0.045, 1.18, 0.28), 0.045, 0.045, M({"color": [0.7, 0.03, 0.02], "rough": 0.4, "bevel": 0.0}), seg=12)
+    lbox(root, "lt_label", (xb - 0.003, 0.82, -0.32), (xb + 0.003, 0.92, 0.1), M({"color": [0.85, 0.85, 0.82], "rough": 0.5, "bevel": 0.0}))
+    street.rod(root, "lt_exhaust", (L / 2 - 0.35, y1, -hw * 0.45), (L / 2 - 0.35, y1 + 0.3, -hw * 0.45), 0.035, 0.035, black, seg=10)
+    eye = Acc()
+    _ring(eye, (0.1, y1 + 0.11, 0.0), 0.07, 0.013, "z")
+    eye.build("lt_eye", steel, root)
+    # the mast: four sections telescoped, a collar at each joint, clamped through the roof
+    xm = -L / 2 + 0.26
+    for a, b, r in ((0.45, h * 0.36, 0.085), (h * 0.33, h * 0.6, 0.068), (h * 0.57, h * 0.82, 0.054), (h * 0.79, h - 0.1, 0.042)):
+        street.rod(root, "lt_mast", (xm, a, 0.0), (xm, b, 0.0), r, r, steel, seg=8)
+        street.rod(root, "lt_collar", (xm, b - 0.07, 0.0), (xm, b + 0.01, 0.0), r + 0.016, r + 0.016, dark, seg=8)
+    kit.soft(root, "lt_clamp", (xm, y1 + 0.08, 0.0), (0.28, 0.16, 0.28), yellow, 0.02, 2)
+    street.rod(root, "lt_winch", (xm + 0.2, y1 + 0.3, -0.09), (xm + 0.2, y1 + 0.3, 0.09), 0.07, 0.07, dark, seg=12)
+    street.rod(root, "lt_winch_handle", (xm + 0.2, y1 + 0.3, 0.09), (xm + 0.2, y1 + 0.16, 0.2), 0.012, 0.012, steel)
+    coil, prev = Acc(), None   # the curly cable up beside it
+    ya, yb = y1 + 0.45, h * 0.8
+    n = int((yb - ya) / 0.09 * 8)
+    for k in range(n + 1):
+        a = 2 * math.pi * k / 8
+        pt = (xm + 0.055 * math.cos(a), ya + (yb - ya) * k / n, -0.16 + 0.055 * math.sin(a))
+        if prev:
+            coil.rod(prev, pt, 0.01, 0.01, 5)
+        prev = pt
+    coil.build("lt_cable", black, root)
+    # the lamps: a bar, four heads on their yokes, each tipped and turned at what it lights
+    yt = h - 0.1
+    street.rod(root, "lt_bar", (xm - 0.98, yt, 0.06), (xm + 0.98, yt, 0.06), 0.035, 0.035, steel, seg=8)
+    lbox(root, "lt_bar_plate", (xm - 0.1, yt - 0.12, -0.06), (xm + 0.1, yt + 0.06, 0.1), dark)
+    tgt = p.get("aim", [0.0, 0.0, 8.0])
+    lens = builders.emissive("lt_lens", (0.95, 0.97, 1.0), 30.0)
+    housing = M({"color": [0.08, 0.085, 0.09], "rough": 0.45, "metal": 0.6, "bevel": 0.0})
+    for sx in (-0.74, -0.25, 0.25, 0.74):
+        hx = xm + sx
+        dist = max(1.0, math.hypot(tgt[0] - hx, tgt[2] - 0.12))
+        pitch = max(12.0, min(55.0, math.degrees(math.atan2(yt - tgt[1], dist))))
+        turn = max(-35.0, min(35.0, math.degrees(math.atan2(tgt[0] - hx, max(0.5, tgt[2] - 0.12)))))
+        piv = builders.empty_at("lt_head", (0.0, 0.0, 0.0), 0.0)
+        piv.parent = root
+        piv.location = g2b((hx, yt, 0.12))
+        piv.rotation_euler = (math.radians(pitch), 0.0, math.radians(turn))
+        kit.soft(piv, "lt_housing", (0.0, 0.0, 0.07), (0.44, 0.36, 0.14), housing, 0.025, 2)
+        lbox(piv, "lt_lens", (-0.19, -0.15, 0.141), (0.19, 0.15, 0.145), lens)
+        for fx in (-1, 1):
+            lbox(piv, "lt_yoke", (fx * 0.235 - 0.012, -0.03, -0.02), (fx * 0.235 + 0.012, 0.09, 0.1), steel)
+        fins = Acc()
+        for j in range(6):
+            xx = -0.18 + j * 0.072
+            fins.box((xx - 0.006, -0.15, -0.035), (xx + 0.006, 0.15, 0.0))
+        fins.build("lt_fins", housing, piv, smooth=False)
+    import landmarks
+    landmarks.spot(root, (xm, h - 0.2, 0.4), tuple(tgt), p.get("power", 4000.0), (0.95, 0.97, 1.0), size=70.0)
+    # outriggers swung out and wound down onto their pads
+    pad = M({"color": [0.05, 0.05, 0.05], "rough": 0.8, "bevel": 0.0})
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            a = (sx * (L / 2 - 0.25), 0.44, sz * 0.4)
+            b = (sx * (L / 2 + 0.15), 0.44, sz * (hw + 0.5))
+            street.rod(root, "lt_outrigger", a, b, 0.045, 0.045, yellow, seg=4)
+            street.rod(root, "lt_jack", (b[0], 0.04, b[2]), (b[0], 0.78, b[2]), 0.032, 0.032, yellow, seg=8)
+            street.rod(root, "lt_jack_screw", (b[0], 0.78, b[2]), (b[0], 0.9, b[2]), 0.012, 0.012, steel)
+            street.rod(root, "lt_jack_crank", (b[0], 0.9, b[2]), (b[0] + 0.14, 0.9, b[2]), 0.01, 0.01, steel)
+            street.rod(root, "lt_pad", (b[0], 0.0, b[2]), (b[0], 0.04, b[2]), 0.13, 0.13, pad, seg=12)
+    # the running gear: rails, axle, wheels in their guards; the A-frame, its eye, the jockey wheel
+    for sz in (-1, 1):
+        lbox(root, "lt_rail", (-L / 2 - 0.04, 0.36, sz * 0.42 - 0.04), (L / 2 + 0.04, 0.5, sz * 0.42 + 0.04), dark)
+    lbox(root, "lt_axle", (0.08, 0.27, -hw - 0.05), (0.2, 0.33, hw + 0.05), dark)
+    r = 0.3
+    for sz in (-1, 1):
+        _wheel(root, (0.14, r, sz * (hw + 0.13)), r, sz, False)
+        g = Acc()
+        R = r + 0.07
+        for k in range(10):
+            a0, a1 = math.radians(15 + 15 * k), math.radians(15 + 15 * (k + 1))
+            z0, z1 = sz * hw, sz * (hw + 0.27)
+            g.quad((0.14 + R * math.cos(a0), r + R * math.sin(a0), z0), (0.14 + R * math.cos(a1), r + R * math.sin(a1), z0),
+                   (0.14 + R * math.cos(a1), r + R * math.sin(a1), z1), (0.14 + R * math.cos(a0), r + R * math.sin(a0), z1))
+        g.build("lt_guard", black, root, smooth=True)
+    xa = L / 2 + 1.0
+    for sz in (-1, 1):
+        street.rod(root, "lt_drawbar", (L / 2 - 0.1, 0.44, sz * 0.42), (xa - 0.12, 0.47, 0.0), 0.04, 0.04, dark, seg=6)
+    street.rod(root, "lt_coupling", (xa - 0.15, 0.47, 0.0), (xa + 0.04, 0.47, 0.0), 0.045, 0.045, dark, seg=8)
+    tow = Acc()
+    _ring(tow, (xa + 0.1, 0.47, 0.0), 0.055, 0.015, "z")
+    tow.build("lt_tow_eye", steel, root)
+    jx, jz = L / 2 + 0.55, 0.15
+    street.rod(root, "lt_jockey", (jx, 0.16, jz), (jx, 0.78, jz), 0.03, 0.03, steel, seg=8)
+    street.rod(root, "lt_jockey_crank", (jx, 0.78, jz), (jx + 0.12, 0.8, jz), 0.01, 0.01, steel)
+    jw = kit.lathe(root, "lt_jockey_wheel", [(0.0, -0.03), (0.09, -0.03), (0.09, 0.03), (0.0, 0.03)], black, segments=14)
+    jw.rotation_euler[0] = math.radians(90)
+    jw.location = g2b((jx, 0.09, jz))
+
+
+kit.PROPS.update({"vehicle": _car_or_truck, "tram": tram, "bus": bus, "light_tower": light_tower})
