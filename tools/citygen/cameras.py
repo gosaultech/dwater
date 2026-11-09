@@ -455,19 +455,25 @@ def plan_shot(spec, zone, kind, travel, prefer_side=0):
     bad = ((fov > lens[1]) | (fov < lens[0]) | (p05 < S["p05"]) | (med < S["floor"]) | (pitch > 2) | (pitch < -48)
            | ~np.isfinite(cost))
     cost[bad] = np.inf
-    order = np.argsort(cost)[:60]
+    order = np.argsort(cost)
     best, best_cost, best_seen = None, np.inf, 0.0
     targets = np.stack([fx, np.full_like(fx, 1.45), fz], axis=1)   # his chest and head, seen from the camera
     boxes = boxes + [b for b, _ in things if b[6] >= TALL]          # (anything standing hides him, solid or not)
-    for c in order:
-        if not np.isfinite(cost[c]):
+    story = bool(heroes)   # (a street with a story: its set pieces pull cameras behind them, so look further)
+    for start in range(0, min(len(order), 600 if story else 60), 60):   # the cheapest sixty first; more only if none of them sees him
+        for c in order[start:start + 60]:
+            if not np.isfinite(cost[c]):
+                break
+            seen = 1.0 - _segment_hits(cams[c], targets, boxes).mean()
+            total = cost[c] + (1 - seen) * 12 + (1e9 if seen < 0.82 else 0)
+            if total < best_cost:
+                best, best_cost, best_seen = c, total, seen
+        if best_cost < 1e9:
             break
-        seen = 1.0 - _segment_hits(cams[c], targets, boxes).mean()
-        total = cost[c] + (1 - seen) * 12 + (1e9 if seen < 0.82 else 0)
-        if total < best_cost:
-            best, best_cost, best_seen = c, total, seen
     if best is None or not np.isfinite(best_cost):
         return None, "no camera frames it within the standard"
+    if story and best_cost >= 1e9 and max(x1 - x0, z1 - z0) >= 6.0:   # (none sees him: film it in halves, if it's big enough)
+        return None, "no camera sees him across it"
     c = best
     look = cams[c] + f[c] * 6.0
     shot = {"pos": [round(float(v), 2) for v in cams[c]], "look_at": [round(float(v), 2) for v in look],
