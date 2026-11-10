@@ -70,6 +70,15 @@ the container's CPU).
   are committed, `test_catastrophe` fails on rokin_noord (its committed shots predate the rule).
   The rule also covers the Kalverstraat's garlands (only their hanging lights) and the
   Bloemenmarkt's stalls (their glasshouse stands behind their spot).
+- **The dead, polished (engine-side, no re-render):** face-down bodies lie flat (they did
+  push-ups: the face-up limb pose on a prone root); half are mirrored; one or two a street sit
+  slumped against a shop front or a vehicle (`catastrophe.slumped`, the pipeline's last pass, it
+  touches no props); every body lies on its pavement's height (`ground_y`); their blood is pooled
+  when you arrive. The fire shader churns, tears into licks and throws embers.
+- **Committing a rendered room:** scratchpad `tools/commit_room.py <room> "<line>"` adds it to
+  `catastrophe.ACTIVE` (hand-told) or `AUTO`, runs the story and camera tests, commits its
+  plates, spec and the set, and pushes. `test_catastrophe` uses muntplein as the room left alone:
+  change that when muntplein is committed.
 - **Container restarts** (one at 01:23 on 2026-11-10, mid-Dam) kill the queue and the render in
   flight. The queue (`qcity.sh`) now resumes a room it started and never finished: it renders only
   the shots missing a colour or depth file (`--shots`), and logs `<room> resume [ids]`. To restart:
