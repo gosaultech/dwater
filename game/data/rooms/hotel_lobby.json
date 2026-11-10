@@ -903,6 +903,247 @@
         0.5,
         0.6
       ]
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.15,
+        0.0,
+        1.83
+      ],
+      "yaw": 23.6,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        6.58,
+        0.0,
+        0.96
+      ],
+      "yaw": 207.2,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        7.68,
+        0.0,
+        12.9
+      ],
+      "yaw": 332.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        5.07,
+        0.0,
+        11.28
+      ],
+      "yaw": 59.8,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        5.55,
+        0.0,
+        4.41
+      ],
+      "yaw": 103.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        11.06,
+        0.0,
+        5.17
+      ],
+      "yaw": 170.4,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:rubber_boots",
+      "pos": [
+        1.6,
+        0.0,
+        12.03
+      ],
+      "yaw": 358.8,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_container",
+      "pos": [
+        7.82,
+        0.0,
+        6.97
+      ],
+      "yaw": 36.0,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        11.4,
+        0.0,
+        0.93
+      ],
+      "yaw": 304.4,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        6.34,
+        0.0,
+        14.44
+      ],
+      "yaw": 347.8,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        10.38,
+        0.0,
+        12.21
+      ],
+      "yaw": 287.2,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_monobloc_chair_01",
+      "pos": [
+        5.89,
+        0.0,
+        10.18
+      ],
+      "yaw": 129.3,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        11.56,
+        0.0,
+        10.9
+      ],
+      "yaw": 37.7,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_military_crate",
+      "pos": [
+        11.21,
+        0.0,
+        7.56
+      ],
+      "yaw": 337.4,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        1.86,
+        0.0,
+        12.03
+      ],
+      "yaw": 299.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        2.16,
+        0.0,
+        14.66
+      ],
+      "yaw": 265.2,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        0.62,
+        0.0,
+        8.62
+      ],
+      "yaw": 246.4,
+      "collide": false,
+      "catastrophe_fg": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_crate_02",
+      "pos": [
+        0.62,
+        0.0,
+        6.62
+      ],
+      "yaw": 136.3,
+      "collide": false,
+      "tip": 20,
+      "catastrophe_fg": true
     }
   ],
   "lights": [
@@ -1121,6 +1362,21 @@
         5.074999999999999
       ],
       "yaw": -90
+    }
+  ],
+  "fx": [],
+  "dead": [
+    {
+      "pos": [
+        5.12,
+        0.0,
+        5.88
+      ],
+      "yaw": 27,
+      "variant": 1,
+      "prone": false,
+      "blood": 0.53,
+      "catastrophe": true
     }
   ]
 }
