@@ -180,9 +180,9 @@ void Effects::gib(const MeshData& piece, Vector3 centre, Vector3 push) {
     gibs_.push_back(g);
 }
 
-void Effects::pool(Vector3 at, float radius) {
+void Effects::pool(Vector3 at, float radius, bool spread) {   // (at.y: the floor it lies on)
     if (splats_.size() >= MAX_SPLATS) splats_.erase(splats_.begin());
-    splats_.push_back({{at.x, 0, at.z}, 0.05f, rnd() * 2 * PI, int(rnd() * 2.99f), radius});
+    splats_.push_back({{at.x, at.y, at.z}, spread ? radius : 0.05f, rnd() * 2 * PI, int(rnd() * 2.99f), radius});
 }
 
 void Effects::flash(Vector3 at, Vector3 dir, bool shotgun) {
@@ -284,7 +284,7 @@ void Effects::update(float dt) {
 void Effects::draw(const Material& m) const {
     for (const auto& s : splats_)
         DrawMesh(splat_mesh_[s.shape], m, MatrixMultiply(MatrixMultiply(MatrixScale(s.r, 1, s.r), MatrixRotateY(s.yaw)),
-                                                        MatrixTranslate(s.p.x, 0.0035f + s.r * 0.004f, s.p.z)));
+                                                        MatrixTranslate(s.p.x, s.p.y + 0.0035f + s.r * 0.004f, s.p.z)));
     for (const auto& d : drops_) {
         const float stretch = 1 + 0.35f * Vector3Length(d.v);
         DrawMesh(drop_mesh_, m, MatrixMultiply(MatrixScale(d.r, d.r * stretch, d.r), MatrixTranslate(d.p.x, d.p.y, d.p.z)));

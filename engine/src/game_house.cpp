@@ -197,8 +197,11 @@ void Game::build_corpses(int storey) {
 }
 
 void Game::pool_corpses() {
-    for (const auto& c : corpses_)
-        if (c.blood > 0) fx_.pool(c.body.joint(J_CHEST), c.blood);
+    for (const auto& c : corpses_)   // (pooled long since, on the floor it lies on: a pavement, the road)
+        if (c.blood > 0) {
+            const Vector3 chest = c.body.joint(J_CHEST);
+            fx_.pool({chest.x, c.at.y, chest.z}, c.blood, true);
+        }
 }
 
 void Game::enter_room(int r) {

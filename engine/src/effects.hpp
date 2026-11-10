@@ -35,7 +35,7 @@ public:
     void magazine(const Matrix& at, Vector3 v);
     bool landed(Vector3& at);   // a magazine hit the floor since last asked: where (for its clatter)
     void gib(const MeshData& piece, Vector3 centre, Vector3 push);       // a limb that came away
-    void pool(Vector3 at, float radius);                                 // blood spreading under a body
+    void pool(Vector3 at, float radius, bool spread = false);             // blood spreading under a body (spread: long since)
     void flash(Vector3 at, Vector3 dir, bool shotgun);                   // the muzzle flash, for a frame or three
     void follow_flash(Vector3 at, Vector3 dir) { if (flash_t_ > 0) { flash_at_ = at; flash_dir_ = Vector3Normalize(dir); } }
     void update(float dt);

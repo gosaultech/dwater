@@ -854,8 +854,9 @@ void Game::update_enemies(float dt) {
             a.speed = 0;
             if (!e.pooled && e.dead_t > 0.9f) {   // it has hit the floor: the blood spreads out under it
                 e.pooled = true;
-                fx_.pool(e.body.joint(J_CHEST), 0.55f);
-                if (e.damage.head_gone()) fx_.pool(e.body.joint(J_NECK), 0.35f);
+                const Vector3 chest = e.body.joint(J_CHEST), neck = e.body.joint(J_NECK);
+                fx_.pool({chest.x, 0.0f, chest.z}, 0.55f);
+                if (e.damage.head_gone()) fx_.pool({neck.x, 0.0f, neck.z}, 0.35f);
             }
             collide(a.x, a.z, ENEMY_R);
             continue;

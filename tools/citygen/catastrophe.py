@@ -74,6 +74,13 @@ def dead(x, z, yaw, variant=0, prone=False, blood=0.6, y=0.0):
     return {"pos": [x, y, z], "yaw": yaw, "variant": variant, "prone": prone, "blood": blood}
 
 
+def ground_y(spec, x, z):
+    """The street's surface at (x, z): the pavement or quay it's on (up its kerb), else the road (0)."""
+    ys = [g.get("y", 0.0) for g in spec.get("outdoor", {}).get("ground", [])
+          if g["min"][0] <= x <= g["max"][0] and g["min"][1] <= z <= g["max"][1]]
+    return max(ys) if ys else 0.0
+
+
 def drag(x0, z0, x1, z1, width=0.4):
     """A drag mark in blood from (x0, z0) to (x1, z1) (a decal on the street)."""
     L = math.hypot(x1 - x0, z1 - z0)
@@ -405,6 +412,9 @@ def apply(spec):
     spec["fx"] = [f for f in spec.get("fx", []) if not f.get(MARK)]
     spec["dead"] = [b for b in spec.get("dead", []) if not b.get(MARK)]
     props, fx, the_dead = tell(spec)
+    for b in the_dead:   # (lying on the pavement or the quay it fell on, not sunk into it)
+        if b["pos"][1] == 0.0:
+            b["pos"][1] = round(ground_y(spec, b["pos"][0], b["pos"][2]), 3)
     for x in props + fx + the_dead:
         x[MARK] = True
     spec["props"] += props

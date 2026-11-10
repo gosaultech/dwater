@@ -108,6 +108,7 @@ class Catastrophe(unittest.TestCase):
                 i = int(np.argmin(np.abs(xs - x)))
                 k = int(np.argmin(np.abs(zs - z)))
                 self.assertTrue(ok[max(i - 1, 0):i + 2, max(k - 1, 0):k + 2].any(), (rid, b))
+                self.assertAlmostEqual(y, catastrophe.ground_y(spec, x, z), 3, (rid, b))   # on its pavement, not sunk in it
 
     def test_its_decals_and_its_fx_are_ones_the_tools_know(self):
         for rid in sorted(catastrophe.ACTIVE | catastrophe.AUTO):
