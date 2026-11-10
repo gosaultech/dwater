@@ -893,7 +893,9 @@
         1.85
       ],
       "livery": "taxi",
-      "door_open": "right"
+      "door_open": "right",
+      "burnt": true,
+      "hero": true
     },
     {
       "type": "luggage",
@@ -1152,6 +1154,356 @@
       "junk": true
     },
     {
+      "type": "boards",
+      "pos": [
+        0.1,
+        0.3,
+        1.12
+      ],
+      "yaw": 90.0,
+      "size": [
+        1.85,
+        2.3,
+        0.05
+      ],
+      "collide": false,
+      "x": false,
+      "seed": 4586,
+      "catastrophe": true
+    },
+    {
+      "type": "spray",
+      "pos": [
+        0.14,
+        0.9,
+        1.12
+      ],
+      "yaw": 90.0,
+      "size": [
+        1.65,
+        0.8,
+        0.01
+      ],
+      "collide": false,
+      "out": 0.012,
+      "decal": {
+        "style": "spray",
+        "text": "WAAR IS IEDEREEN?",
+        "color": [
+          0.92,
+          0.9,
+          0.86
+        ],
+        "aspect": 2.06,
+        "seed": 16620,
+        "id": "55434193f091"
+      },
+      "catastrophe": true
+    },
+    {
+      "type": "spray",
+      "pos": [
+        0.16,
+        1.25,
+        1.84
+      ],
+      "yaw": 90.0,
+      "size": [
+        0.42,
+        0.5915492957746479,
+        0.01
+      ],
+      "collide": false,
+      "out": 0.006,
+      "decal": {
+        "style": "poster",
+        "text": "VERMIST\nBRAM SMIT \u00b7 11 JAAR\nVOETBALSHIRT\nZIE CENTRAAL",
+        "photo": true,
+        "seed": 47018,
+        "id": "d4bb6df40243"
+      },
+      "catastrophe": true
+    },
+    {
+      "type": "boards",
+      "pos": [
+        0.1,
+        0.3,
+        7.88
+      ],
+      "yaw": 90.0,
+      "size": [
+        1.85,
+        2.3,
+        0.05
+      ],
+      "collide": false,
+      "x": false,
+      "seed": 24266,
+      "catastrophe": true
+    },
+    {
+      "type": "boards",
+      "pos": [
+        0.1,
+        0.3,
+        15.68
+      ],
+      "yaw": 90.0,
+      "size": [
+        2.25,
+        2.3,
+        0.05
+      ],
+      "collide": false,
+      "x": false,
+      "seed": 5528,
+      "catastrophe": true
+    },
+    {
+      "type": "spray",
+      "pos": [
+        0.14,
+        0.9,
+        15.68
+      ],
+      "yaw": 90.0,
+      "size": [
+        2.05,
+        0.8,
+        0.01
+      ],
+      "collide": false,
+      "out": 0.012,
+      "decal": {
+        "style": "spray",
+        "text": "WAAR IS IEDEREEN?",
+        "color": [
+          0.92,
+          0.9,
+          0.86
+        ],
+        "aspect": 2.56,
+        "seed": 47516,
+        "id": "76da2b35ea55"
+      },
+      "catastrophe": true
+    },
+    {
+      "type": "boards",
+      "pos": [
+        0.1,
+        0.3,
+        23.68
+      ],
+      "yaw": 90.0,
+      "size": [
+        2.25,
+        2.3,
+        0.05
+      ],
+      "collide": false,
+      "x": false,
+      "seed": 42070,
+      "catastrophe": true
+    },
+    {
+      "type": "boards",
+      "pos": [
+        0.1,
+        0.3,
+        34.17
+      ],
+      "yaw": 90.0,
+      "size": [
+        1.84,
+        2.3,
+        0.05
+      ],
+      "collide": false,
+      "x": false,
+      "seed": 31217,
+      "catastrophe": true
+    },
+    {
+      "type": "spray",
+      "pos": [
+        0.14,
+        0.9,
+        34.17
+      ],
+      "yaw": 90.0,
+      "size": [
+        1.64,
+        0.8,
+        0.01
+      ],
+      "collide": false,
+      "out": 0.012,
+      "decal": {
+        "style": "spray",
+        "text": "SCHIET OP HET HOOFD",
+        "color": [
+          0.92,
+          0.9,
+          0.86
+        ],
+        "aspect": 2.05,
+        "seed": 61263,
+        "id": "13f7b1282043"
+      },
+      "catastrophe": true
+    },
+    {
+      "type": "boards",
+      "pos": [
+        0.1,
+        0.3,
+        40.88
+      ],
+      "yaw": 90.0,
+      "size": [
+        1.84,
+        2.3,
+        0.05
+      ],
+      "collide": false,
+      "x": false,
+      "seed": 60869,
+      "catastrophe": true
+    },
+    {
+      "type": "spray",
+      "pos": [
+        0.14,
+        0.9,
+        40.88
+      ],
+      "yaw": 90.0,
+      "size": [
+        1.64,
+        0.8,
+        0.01
+      ],
+      "collide": false,
+      "out": 0.012,
+      "decal": {
+        "style": "spray",
+        "text": "3 LEVEND\nNAAR NOORD",
+        "color": [
+          0.72,
+          0.04,
+          0.03
+        ],
+        "aspect": 2.05,
+        "seed": 31488,
+        "id": "15057da5c19a"
+      },
+      "catastrophe": true
+    },
+    {
+      "type": "boards",
+      "pos": [
+        0.1,
+        0.3,
+        48.67
+      ],
+      "yaw": 90.0,
+      "size": [
+        2.25,
+        2.3,
+        0.05
+      ],
+      "collide": false,
+      "x": false,
+      "seed": 32181,
+      "catastrophe": true
+    },
+    {
+      "type": "spray",
+      "pos": [
+        0.14,
+        0.9,
+        48.67
+      ],
+      "yaw": 90.0,
+      "size": [
+        2.05,
+        0.8,
+        0.01
+      ],
+      "collide": false,
+      "out": 0.012,
+      "decal": {
+        "style": "spray",
+        "text": "GEEN ETEN",
+        "color": [
+          0.92,
+          0.9,
+          0.86
+        ],
+        "aspect": 2.56,
+        "seed": 44456,
+        "id": "e19782986655"
+      },
+      "catastrophe": true
+    },
+    {
+      "type": "scorch",
+      "pos": [
+        5.6,
+        0.0,
+        47.0
+      ],
+      "yaw": 95,
+      "size": [
+        7.0,
+        0.0,
+        4.85
+      ],
+      "collide": false,
+      "catastrophe": true
+    },
+    {
+      "type": "glow",
+      "pos": [
+        5.6,
+        0.9,
+        47.0
+      ],
+      "color": [
+        1.0,
+        0.45,
+        0.12
+      ],
+      "power": 700.0,
+      "radius": 0.6,
+      "collide": false,
+      "catastrophe": true
+    },
+    {
+      "type": "silt",
+      "pos": [
+        10.0,
+        0.0,
+        35.0
+      ],
+      "size": [
+        20.0,
+        0.0,
+        70.0
+      ],
+      "material": {
+        "ph": "brown_mud_02",
+        "wet": 0.75,
+        "puddles": 0.3
+      },
+      "cover": 0.5,
+      "seed": 630,
+      "collide": false,
+      "catastrophe": true
+    },
+    {
       "type": "crowd_barrier",
       "pos": [
         11.0,
@@ -1286,6 +1638,1726 @@
       "seed": 707,
       "tape": false,
       "barricade": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        4.9,
+        0.0,
+        0.28
+      ],
+      "yaw": 242.1,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        19.16,
+        0.0,
+        20.69
+      ],
+      "yaw": 55.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        14.7,
+        0.0,
+        54.67
+      ],
+      "yaw": 209.1,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        10.39,
+        0.0,
+        38.92
+      ],
+      "yaw": 157.7,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        14.64,
+        0.0,
+        8.84
+      ],
+      "yaw": 244.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:compost_bag_02",
+      "pos": [
+        16.95,
+        0.0,
+        0.3
+      ],
+      "yaw": 117.2,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:rubber_boots",
+      "pos": [
+        9.84,
+        0.0,
+        10.87
+      ],
+      "yaw": 34.1,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        13.43,
+        0.0,
+        12.66
+      ],
+      "yaw": 234.3,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        19.68,
+        0.0,
+        67.08
+      ],
+      "yaw": 316.5,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        19.4,
+        0.0,
+        7.3
+      ],
+      "yaw": 123.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cement_bag",
+      "pos": [
+        0.88,
+        0.0,
+        18.07
+      ],
+      "yaw": 29.9,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:rubber_boots",
+      "pos": [
+        3.55,
+        0.0,
+        68.17
+      ],
+      "yaw": 21.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:dry_branches_medium_01",
+      "pos": [
+        2.45,
+        0.0,
+        66.14
+      ],
+      "yaw": 213.6,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cement_bag",
+      "pos": [
+        18.46,
+        0.0,
+        22.13
+      ],
+      "yaw": 114.9,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bark_debris_01",
+      "pos": [
+        1.85,
+        0.0,
+        48.44
+      ],
+      "yaw": 333.6,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_jerrycan",
+      "pos": [
+        9.89,
+        0.0,
+        25.62
+      ],
+      "yaw": 100.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:compost_bag_02",
+      "pos": [
+        4.59,
+        0.0,
+        64.13
+      ],
+      "yaw": 201.1,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:dry_branches_medium_01",
+      "pos": [
+        6.62,
+        0.0,
+        50.55
+      ],
+      "yaw": 62.7,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bark_debris_01",
+      "pos": [
+        5.68,
+        0.0,
+        53.53
+      ],
+      "yaw": 250.8,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        1.92,
+        0.0,
+        33.55
+      ],
+      "yaw": 124.4,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_jerrycan",
+      "pos": [
+        0.31,
+        0.0,
+        49.36
+      ],
+      "yaw": 238.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        1.59,
+        0.0,
+        61.19
+      ],
+      "yaw": 175.8,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_jerrycan",
+      "pos": [
+        19.36,
+        0.0,
+        51.6
+      ],
+      "yaw": 340.2,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        14.66,
+        0.0,
+        31.83
+      ],
+      "yaw": 202.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        8.61,
+        0.0,
+        61.84
+      ],
+      "yaw": 178.4,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        13.42,
+        0.0,
+        22.08
+      ],
+      "yaw": 201.2,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        13.15,
+        0.0,
+        7.37
+      ],
+      "yaw": 174.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        0.69,
+        0.0,
+        9.64
+      ],
+      "yaw": 247.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        16.42,
+        0.0,
+        54.8
+      ],
+      "yaw": 217.1,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        3.21,
+        0.0,
+        44.45
+      ],
+      "yaw": 326.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        8.21,
+        0.0,
+        68.13
+      ],
+      "yaw": 285.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        12.79,
+        0.0,
+        62.61
+      ],
+      "yaw": 255.7,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        3.8,
+        0.0,
+        45.53
+      ],
+      "yaw": 57.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        12.44,
+        0.0,
+        5.67
+      ],
+      "yaw": 211.0,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        0.81,
+        0.0,
+        41.86
+      ],
+      "yaw": 240.3,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        3.07,
+        0.0,
+        63.64
+      ],
+      "yaw": 253.2,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_jerrycan",
+      "pos": [
+        0.3,
+        0.0,
+        23.12
+      ],
+      "yaw": 223.8,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        1.36,
+        0.0,
+        40.21
+      ],
+      "yaw": 201.0,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bark_debris_01",
+      "pos": [
+        2.06,
+        0.0,
+        43.4
+      ],
+      "yaw": 50.3,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:dry_branches_medium_01",
+      "pos": [
+        0.93,
+        0.0,
+        25.57
+      ],
+      "yaw": 72.8,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        9.08,
+        0.0,
+        5.8
+      ],
+      "yaw": 311.4,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        13.05,
+        0.0,
+        20.55
+      ],
+      "yaw": 199.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_container",
+      "pos": [
+        0.43,
+        0.0,
+        56.2
+      ],
+      "yaw": 171.9,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.32,
+        0.0,
+        28.96
+      ],
+      "yaw": 45.6,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        16.21,
+        0.0,
+        60.64
+      ],
+      "yaw": 39.0,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:rubber_boots",
+      "pos": [
+        7.96,
+        0.0,
+        46.05
+      ],
+      "yaw": 326.8,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        16.37,
+        0.0,
+        32.94
+      ],
+      "yaw": 26.4,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cement_bag",
+      "pos": [
+        2.68,
+        0.0,
+        68.11
+      ],
+      "yaw": 59.3,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        10.17,
+        0.0,
+        1.15
+      ],
+      "yaw": 126.7,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        0.46,
+        0.0,
+        6.59
+      ],
+      "yaw": 49.3,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        19.28,
+        0.0,
+        1.57
+      ],
+      "yaw": 357.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bark_debris_01",
+      "pos": [
+        1.11,
+        0.0,
+        39.14
+      ],
+      "yaw": 217.5,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:dry_branches_medium_01",
+      "pos": [
+        17.94,
+        0.0,
+        60.05
+      ],
+      "yaw": 190.4,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        13.88,
+        0.0,
+        16.21
+      ],
+      "yaw": 88.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_container",
+      "pos": [
+        12.03,
+        0.0,
+        3.95
+      ],
+      "yaw": 25.0,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        18.11,
+        0.0,
+        51.1
+      ],
+      "yaw": 316.3,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cement_bag",
+      "pos": [
+        15.36,
+        0.0,
+        67.17
+      ],
+      "yaw": 273.7,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        12.69,
+        0.0,
+        0.72
+      ],
+      "yaw": 8.6,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:dry_branches_medium_01",
+      "pos": [
+        11.43,
+        0.0,
+        49.19
+      ],
+      "yaw": 134.3,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:dry_branches_medium_01",
+      "pos": [
+        14.28,
+        0.0,
+        49.31
+      ],
+      "yaw": 128.4,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        9.85,
+        0.0,
+        19.35
+      ],
+      "yaw": 81.8,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        3.96,
+        0.0,
+        15.04
+      ],
+      "yaw": 88.9,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:compost_bag_02",
+      "pos": [
+        13.11,
+        0.0,
+        19.63
+      ],
+      "yaw": 41.8,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        7.71,
+        0.0,
+        20.84
+      ],
+      "yaw": 147.5,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        8.22,
+        0.0,
+        0.6
+      ],
+      "yaw": 25.3,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        16.89,
+        0.0,
+        56.62
+      ],
+      "yaw": 118.2,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_container",
+      "pos": [
+        0.44,
+        0.0,
+        16.72
+      ],
+      "yaw": 173.3,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        17.92,
+        0.0,
+        56.54
+      ],
+      "yaw": 227.3,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        14.55,
+        0.0,
+        34.61
+      ],
+      "yaw": 288.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        0.62,
+        0.0,
+        5.37
+      ],
+      "yaw": 214.2,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_crate_02",
+      "pos": [
+        18.41,
+        0.0,
+        28.78
+      ],
+      "yaw": 97.1,
+      "collide": false,
+      "tip": 20,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        10.6,
+        0.0,
+        62.79
+      ],
+      "yaw": 189.5,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        14.08,
+        0.0,
+        66.65
+      ],
+      "yaw": 24.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        18.3,
+        0.0,
+        33.28
+      ],
+      "yaw": 144.3,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        9.79,
+        0.0,
+        17.64
+      ],
+      "yaw": 292.1,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        0.66,
+        0.0,
+        15.93
+      ],
+      "yaw": 147.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        10.78,
+        0.0,
+        54.94
+      ],
+      "yaw": 74.8,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        13.17,
+        0.0,
+        32.84
+      ],
+      "yaw": 82.5,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bark_debris_01",
+      "pos": [
+        5.29,
+        0.0,
+        50.34
+      ],
+      "yaw": 347.6,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        18.8,
+        0.0,
+        1.64
+      ],
+      "yaw": 194.5,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cement_bag",
+      "pos": [
+        0.59,
+        0.0,
+        29.62
+      ],
+      "yaw": 96.1,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        15.22,
+        0.0,
+        44.66
+      ],
+      "yaw": 121.7,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        10.4,
+        0.0,
+        1.44
+      ],
+      "yaw": 43.2,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        9.83,
+        0.0,
+        39.6
+      ],
+      "yaw": 278.2,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        3.08,
+        0.0,
+        39.87
+      ],
+      "yaw": 354.8,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        14.36,
+        0.0,
+        24.72
+      ],
+      "yaw": 22.2,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        18.59,
+        0.0,
+        5.38
+      ],
+      "yaw": 168.5,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cement_bag",
+      "pos": [
+        1.12,
+        0.0,
+        14.83
+      ],
+      "yaw": 353.4,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        2.45,
+        0.0,
+        66.72
+      ],
+      "yaw": 71.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cement_bag",
+      "pos": [
+        9.81,
+        0.0,
+        22.69
+      ],
+      "yaw": 115.3,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.71,
+        0.0,
+        19.86
+      ],
+      "yaw": 263.4,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        10.42,
+        0.0,
+        6.29
+      ],
+      "yaw": 280.5,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:old_tyre",
+      "pos": [
+        13.82,
+        0.0,
+        7.17
+      ],
+      "yaw": 126.6,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        0.34,
+        0.0,
+        0.35
+      ],
+      "yaw": 107.0,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_container",
+      "pos": [
+        2.3,
+        0.0,
+        13.91
+      ],
+      "yaw": 252.0,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        14.41,
+        0.0,
+        68.06
+      ],
+      "yaw": 43.8,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        19.34,
+        0.0,
+        15.8
+      ],
+      "yaw": 278.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_jerrycan",
+      "pos": [
+        19.66,
+        0.0,
+        41.63
+      ],
+      "yaw": 152.8,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:rubber_boots",
+      "pos": [
+        1.15,
+        0.0,
+        12.58
+      ],
+      "yaw": 279.4,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        18.29,
+        0.0,
+        25.89
+      ],
+      "yaw": 274.1,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        8.68,
+        0.0,
+        44.41
+      ],
+      "yaw": 262.5,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        13.94,
+        0.0,
+        34.68
+      ],
+      "yaw": 5.3,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_jerrycan",
+      "pos": [
+        10.41,
+        0.0,
+        42.53
+      ],
+      "yaw": 312.0,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        3.53,
+        0.0,
+        66.53
+      ],
+      "yaw": 317.0,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        19.66,
+        0.0,
+        36.58
+      ],
+      "yaw": 308.0,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        4.15,
+        0.0,
+        67.35
+      ],
+      "yaw": 215.0,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        16.82,
+        0.0,
+        38.34
+      ],
+      "yaw": 132.4,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        7.12,
+        0.0,
+        49.68
+      ],
+      "yaw": 130.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_crate_02",
+      "pos": [
+        12.83,
+        0.0,
+        62.38
+      ],
+      "yaw": 259.7,
+      "collide": false,
+      "tip": 20,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        15.85,
+        0.0,
+        44.63
+      ],
+      "yaw": 313.2,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_container",
+      "pos": [
+        1.61,
+        0.0,
+        4.29
+      ],
+      "yaw": 236.2,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        8.39,
+        0.0,
+        47.16
+      ],
+      "yaw": 46.8,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        14.28,
+        0.0,
+        45.07
+      ],
+      "yaw": 125.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:old_tyre",
+      "pos": [
+        18.63,
+        0.0,
+        13.9
+      ],
+      "yaw": 243.1,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        1.2,
+        0.0,
+        32.1
+      ],
+      "yaw": 356.1,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cement_bag",
+      "pos": [
+        13.62,
+        0.0,
+        63.43
+      ],
+      "yaw": 48.7,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bark_debris_01",
+      "pos": [
+        1.79,
+        0.0,
+        4.12
+      ],
+      "yaw": 122.9,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        0.56,
+        0.0,
+        63.67
+      ],
+      "yaw": 328.0,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cement_bag",
+      "pos": [
+        13.2,
+        0.0,
+        15.59
+      ],
+      "yaw": 141.8,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        0.87,
+        0.0,
+        20.47
+      ],
+      "yaw": 353.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:rubber_boots",
+      "pos": [
+        16.39,
+        0.0,
+        23.55
+      ],
+      "yaw": 209.2,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        7.36,
+        0.0,
+        48.67
+      ],
+      "yaw": 294.5,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_jerrycan",
+      "pos": [
+        19.54,
+        0.0,
+        2.89
+      ],
+      "yaw": 159.2,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_monobloc_chair_01",
+      "pos": [
+        19.57,
+        0.0,
+        16.56
+      ],
+      "yaw": 25.8,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        9.85,
+        0.0,
+        34.03
+      ],
+      "yaw": 247.7,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_jerrycan",
+      "pos": [
+        9.06,
+        0.0,
+        12.92
+      ],
+      "yaw": 243.5,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_02",
+      "pos": [
+        12.62,
+        0.0,
+        58.38
+      ],
+      "yaw": 208.9,
+      "collide": false,
+      "catastrophe_fg": true
+    },
+    {
+      "type": "model",
+      "model": "ph:compost_bags",
+      "pos": [
+        12.88,
+        0.0,
+        62.12
+      ],
+      "yaw": 269.2,
+      "collide": false,
+      "catastrophe_fg": true
     }
   ],
   "walls": {
@@ -1764,7 +3836,102 @@
         0.0,
         60.0
       ],
-      "yaw": 10
+      "yaw": 10,
+      "pos0": [
+        12.0,
+        0.0,
+        62.0
+      ]
+    }
+  ],
+  "fx": [
+    {
+      "kind": "fire",
+      "pos": [
+        5.6,
+        0.75,
+        47.0
+      ],
+      "size": 1.3,
+      "seed": 22,
+      "catastrophe": true
+    },
+    {
+      "kind": "smoke",
+      "pos": [
+        5.6,
+        1.8,
+        47.0
+      ],
+      "size": 2.2,
+      "seed": 18,
+      "catastrophe": true
+    }
+  ],
+  "dead": [
+    {
+      "pos": [
+        9.12,
+        0.0,
+        5.38
+      ],
+      "yaw": 241,
+      "variant": 2,
+      "prone": true,
+      "blood": 0.45,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        8.12,
+        0.0,
+        36.62
+      ],
+      "yaw": 198,
+      "variant": 2,
+      "prone": true,
+      "blood": 0.5,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        17.88,
+        0.06,
+        38.62
+      ],
+      "yaw": 301,
+      "variant": 1,
+      "prone": false,
+      "blood": 0.53,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        0.38,
+        0.06,
+        40.35
+      ],
+      "yaw": 90.0,
+      "variant": 2,
+      "prone": false,
+      "sitting": true,
+      "blood": 0.35,
+      "catastrophe": true,
+      "catastrophe_sat": true
+    },
+    {
+      "pos": [
+        14.35,
+        0.0,
+        45.55
+      ],
+      "yaw": 92.0,
+      "variant": 1,
+      "prone": false,
+      "sitting": true,
+      "blood": 0.35,
+      "catastrophe": true,
+      "catastrophe_sat": true
     }
   ]
 }
