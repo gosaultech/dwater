@@ -94,5 +94,39 @@ class CameraPassTests(unittest.TestCase):
             self.assertEqual(json.dumps(spec["shots"]), before, rid)
 
 
+class OccluderTests(unittest.TestCase):
+    """What hides him is judged by its shape: a tent by its roof, the monument by its pillar, lions and wall."""
+
+    def test_a_tent_hides_him_only_by_its_roof(self):
+        tent = (0.0, 0.0, 3.0, 3.0, 0.0, 0.0, 3.4, "aid_post")
+        boxes = cameras._occluders(tent)
+        under = np.array([[0.0, 1.45, 0.0]])   # his chest and head, under the middle of it
+        self.assertFalse(cameras._segment_hits(np.array([0.0, 1.7, 9.0]), under, boxes)[0])   # seen from low, outside
+        self.assertTrue(cameras._segment_hits(np.array([0.0, 9.0, 1.0]), under, boxes)[0])    # not through the roof
+
+    def test_the_monument_hides_him_by_its_pillar_not_its_steps(self):
+        mon = (0.0, 0.0, 8.0, 8.0, 0.0, 0.0, 22.0, "monument")
+        boxes = cameras._occluders(mon)
+        cam = np.array([0.0, 3.0, 14.0])   # in front of it (the wall is behind, at -z)
+        on_steps = np.array([[5.0, 1.45, 5.0]])
+        behind = np.array([[0.0, 1.45, -4.0]])
+        self.assertFalse(cameras._segment_hits(cam, on_steps, boxes)[0])
+        self.assertTrue(cameras._segment_hits(cam, behind, boxes)[0])
+        beyond_wall = np.array([[0.0, 1.45, -11.0]])
+        self.assertTrue(cameras._segment_hits(np.array([0.0, 1.7, -6.0]), beyond_wall, boxes)[0])   # the curved wall
+
+    def test_a_garland_hides_nothing_below_its_lights(self):
+        garland = (4.0, 20.0, 4.0, 0.05, 0.0, 0.0, 6.4, "garland")   # 8 m across the street, hung at 6.4 m
+        beyond = np.array([[4.0, 1.45, 14.0]])
+        self.assertFalse(cameras._segment_hits(np.array([4.0, 3.5, 26.0]), beyond, cameras._occluders(garland))[0])
+
+    def test_a_flower_stall_stands_behind_its_spot(self):
+        stall = (0.0, 0.0, 3.5, 2.25, 0.0, 0.0, 4.0, "flower_stall")   # its open front on its spot, facing +z
+        on_quay = np.array([[0.0, 1.45, 1.0]])
+        self.assertFalse(cameras._segment_hits(np.array([-8.0, 2.5, 1.5]), on_quay, cameras._occluders(stall))[0])
+        inside = np.array([[0.0, 1.45, -2.0]])
+        self.assertTrue(cameras._segment_hits(np.array([-8.0, 2.5, -2.0]), inside, cameras._occluders(stall))[0])
+
+
 if __name__ == "__main__":
     unittest.main()

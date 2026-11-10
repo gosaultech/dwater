@@ -58,6 +58,18 @@ the container's CPU).
   (a network secret for api.sketchfab.com on the "dwater" environment): not asked overnight.
 - **The dead** are engine bodies (the room's "dead"), not Blender figures: the skin-modifier
   figures in `characters.py` looked like inflated mannequins.
+- **Props remodelled overnight** (studio-tested: `vehicle_studio.py --set plant|boats`): the
+  lighting tower (`vehicles.light_tower`), the kermis stalls (`fair.stall`), the canal boats'
+  hull (`landmarks.canal_boat`), the kiosk (`city.kiosk`). Rooms rendered before a remodel keep
+  the old model in their plates (Rokin zuid's three boats).
+- **Camera occluders by shape** (`cameras._occluders`): a tent or a platform canopy hides him only
+  by its roof, the National Monument by its pillar, lions and curved wall. This fixed Dam shot l
+  (16% seen), Station Noord (every shot "0% seen" under its canopy) and moved Rokin noord e and g
+  and Stationsplein l. Rokin noord's e and g are re-rendered after its run (scratchpad
+  `tools/qafter.sh` pauses the queue, renders them, restarts it); until its new spec and plates
+  are committed, `test_catastrophe` fails on rokin_noord (its committed shots predate the rule).
+  The rule also covers the Kalverstraat's garlands (only their hanging lights) and the
+  Bloemenmarkt's stalls (their glasshouse stands behind their spot).
 - **Lessons:** the depth pass's emission override made every triangle a light (a street's
   light tree went past 12 GB and was killed): its emission sampling is off now. The camera
   planner took the least-bad camera when none of its cheapest sixty saw him (a shot with 0%

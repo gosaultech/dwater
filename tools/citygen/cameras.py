@@ -83,6 +83,42 @@ NOT_THINGS = {"leaflets", "palace", "gothic_front", "beurs", "station", "munttor
 LIGHT_CLEAR = 3.0      # m: from a light (a lamp in the lens blows the picture out)
 LAMP_HEAD = 3.27       # m: a street lamp's lantern (tools/blender/street.py)
 LAMP_CLEAR = 4.0       # m: from a lantern, in 3D
+OPEN_UNDER = {"aid_post": (1.85, 0.0), "canopy": (None, 0.35), "garland": (-2.0, 0.0)}   # seen through below their eaves:
+#   (eaves: up from the foot, down from the top if negative, or None for the top; roof above the top)
+BACK_HALF = {"flower_stall"}   # drawn from its spot back to -d (its open front on its spot), not centred on it
+
+
+def _occluders(b):
+    """What of a standing thing hides him, as boxes: a tent or a platform canopy only its roof, a
+    garland over the street only its hanging lights; a flower stall its glasshouse (behind its
+    spot); the National Monument its pillar, its lions and the curved wall behind (its steps he is
+    seen over); anything else its whole box."""
+    cx, cz, hx, hz, a, y0, y1, kind = b
+    if kind in OPEN_UNDER:
+        eaves, above = OPEN_UNDER[kind]
+        lo = y1 if eaves is None else (y1 + eaves if eaves < 0 else y0 + eaves)
+        return [(cx, cz, hx, hz, a, lo, y1 + above, kind)]
+    c, s = math.cos(a), math.sin(a)
+    if kind in BACK_HALF:
+        return [(cx - hz * s, cz - hz * c, hx, hz, a, y0, y1, kind)]
+    if kind != "monument":
+        return [b]
+
+    def world(lx, lz):   # (the inverse of _in_box's frame)
+        return cx + lx * c + lz * s, cz - lx * s + lz * c
+    out = [(cx, cz, 2.6, 2.6, a, y0, y1, kind)]
+    for sx in (-1, 1):   # (landmarks.monument: lions on pedestals at r - 2 either side)
+        out.append(world(sx * (hx - 2.0), 0.0) + (0.8, 0.8, a, y0, y0 + 3.8, kind))
+    R, n = hx + 1.0, 8
+    for k in range(n):   # the wall behind: an arc 2.6 m high
+        a0, a1 = math.pi * (0.15 + 0.7 * k / n), math.pi * (0.15 + 0.7 * (k + 1) / n)
+        p0, p1 = (R * math.cos(a0), -R * math.sin(a0)), (R * math.cos(a1), -R * math.sin(a1))
+        (wx0, wz0), (wx1, wz1) = world(*p0), world(*p1)
+        out.append(((wx0 + wx1) / 2, (wz0 + wz1) / 2, math.hypot(wx1 - wx0, wz1 - wz0) / 2, 0.25,
+                    math.atan2(-(wz1 - wz0), wx1 - wx0), y0, y0 + 2.6, kind))
+    return out
+
+
 GLARE = {"vehicle", "bus", "tram", "light_tower", "work_light"}   # headlights, floodlights: keep GLARE_CLEAR off them
 GLARE_CLEAR = 3.0
 # Spots a render showed to be bad (a dark wall filling half the picture, poles across it): (x, z, radius).
@@ -467,7 +503,7 @@ def plan_shot(spec, zone, kind, travel, prefer_side=0, _probe=False):
     order = np.argsort(cost)
     best, best_cost, best_seen = None, np.inf, 0.0
     targets = np.stack([fx, np.full_like(fx, 1.45), fz], axis=1)   # his chest and head, seen from the camera
-    boxes = boxes + [b for b, _ in things if b[6] >= TALL]          # (anything standing hides him, solid or not)
+    boxes = boxes + [o for b, _ in things if b[6] >= TALL for o in _occluders(b)]   # (anything standing hides him, solid or not)
     story = bool(heroes)   # (a street with a story: its set pieces pull cameras behind them, so look further)
     for start in range(0, min(len(order), 600 if story else 60), 60):   # the cheapest sixty first; more only if none of them sees him
         for c in order[start:start + 60]:

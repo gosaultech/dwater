@@ -512,7 +512,9 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   never under 17 percent typically, and wholly in the picture anywhere in the zone. The cameras look
   the way he travels through the room, so "forward" stays forward on the stick across a cut; from a
   little above (about 20 degrees down) with the game's lenses (40 to 60 degrees), alternating sides;
-  never in a tree, a lamp, an awning or a prop, and with a clear view of the floor they hold.
+  never in a tree, a lamp, an awning or a prop, and with a clear view of the floor they hold. What
+  hides him is judged by shape, not by footprint: a tent or a platform canopy only by its roof (he
+  is seen beneath it), the National Monument by its pillar, lions and curved wall (not its steps).
   `python3 tools/citygen/cameras.py report` prints every shot's numbers; the tests
   (`tools/citygen/tests/test_cameras.py`) check them all. Like a crew blocking a walk-and-talk: not
   one camera on a rooftop, but one every ten metres, each looking the way the actor walks.
@@ -533,7 +535,11 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   character lines held sharp, the glass, pillars, doors and livery laid on the body's own faces,
   wheels (tyre, rim, brake) in arches cut out of it, lights, Dutch plates, mirrors, a taxi's sign,
   a light bar, Battenburg blocks; burned out on request. Like slicing a loaf of bread into the
-  car's shape, lining the slices up, and stretching a skin over them.
+  car's shape, lining the slices up, and stretching a skin over them. The site's lighting towers are
+  built the same way (a lofted canopy with its doors and louvres, a telescopic mast, floodlights
+  turned at what they light, outriggers on pads), and the Dam's kermis stalls (`fair.py`) have
+  arched crests of bulbs, scalloped awnings, soft toys on strings, targets, claw machines lit inside.
+  The studio's sets: `--set vehicles|heavy|trams|plant`.
 - **The dead** (a room's `"dead"`; `Game::build_corpses`). The cast's own bodies, posed where they
   fell (face down or on the back), never rising (unlike a `"lying"` Drowned, which does: from the
   doorway you can't tell which is which), their blood spread under them; drawn over the painting
