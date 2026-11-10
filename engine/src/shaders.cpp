@@ -464,22 +464,33 @@ void main() {
     "  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y); }\n" \
     "float fbm(vec2 p) { float v = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; } return v; }\n"
 
-// Flames: a tongue narrowing as it rises, torn by noise climbing through it, deep red at its edges
-// to yellow-white at its heart (added to the picture: light, not paint).
+// Flames: a tongue narrowing as it rises, the air round it churning (domain-warped noise), its top
+// torn into licks and wisps, deep red at its edges to yellow-white at its heart, embers carried up
+// out of it and winking out (added to the picture: light, not paint).
 const char* FIRE_FS = "#version 330\n"
     "in vec2 fragTexCoord; out vec4 finalColor;\n"
     "uniform float u_time; uniform float u_seed; uniform float u_power;\n"
     DW_FX_NOISE
     R"(void main() {
-    float y = 1.0 - fragTexCoord.y, x = (fragTexCoord.x - 0.5) * 2.0;
-    float n = fbm(vec2(x * 3.2, y * 4.4 - u_time * 3.4) + vec2(0.0, -u_time * 1.2));
-    float width = (1.0 - y) * 0.85 + 0.08;
-    float body = 1.0 - smoothstep(width * 0.5, width, abs(x) + (n - 0.5) * 0.6);
-    float heat = clamp(body * (1.15 - y * 1.1) + (n - 0.45) * 0.6 * body, 0.0, 1.0);
-    vec3 c = mix(vec3(0.6, 0.08, 0.01), vec3(1.0, 0.45, 0.06), smoothstep(0.15, 0.55, heat));
-    c = mix(c, vec3(1.0, 0.85, 0.45), smoothstep(0.6, 0.95, heat));
-    float a = smoothstep(0.05, 0.35, heat) * smoothstep(0.0, 0.08, y) * u_power;
-    finalColor = vec4(c * 1.6, a);
+    float y = 1.0 - fragTexCoord.y, x = (fragTexCoord.x - 0.5) * 2.0, t = u_time;
+    vec2 p = vec2(x * 2.6, y * 3.2 - t * 2.6);
+    vec2 q = vec2(fbm(p + vec2(0.0, t * 0.4)), fbm(p + vec2(5.2, 1.3) - vec2(0.0, t * 0.3)));
+    float n = fbm(p + 1.8 * q);
+    float lick = fbm(vec2(x * 6.0, y * 2.2 - t * 4.2) + 3.1 * q);
+    float width = (1.0 - y) * 0.9 + 0.06;
+    float body = 1.0 - smoothstep(width * 0.45, width, abs(x) + (n - 0.5) * 0.75);
+    body *= 1.0 - smoothstep(0.35, 0.95, y + (lick - 0.5) * 0.9 * y);
+    float heat = clamp(body * (1.25 - y * 1.25) + (n - 0.45) * 0.7 * body, 0.0, 1.0);
+    vec3 c = mix(vec3(0.45, 0.04, 0.0), vec3(0.95, 0.32, 0.03), smoothstep(0.08, 0.45, heat));
+    c = mix(c, vec3(1.0, 0.72, 0.25), smoothstep(0.45, 0.8, heat));
+    c = mix(c, vec3(1.0, 0.95, 0.8), smoothstep(0.85, 1.0, heat));
+    float a = smoothstep(0.03, 0.3, heat) * smoothstep(0.0, 0.06, y) * u_power;
+    vec2 g = vec2(x * 7.0, y * 9.0 - t * 3.0), cell = floor(g), f = fract(g) - 0.5;
+    vec2 off = (vec2(hash(cell + 3.0), hash(cell + 9.0)) - 0.5) * 0.5;
+    float ember = step(0.93, hash(cell + 17.0)) * smoothstep(0.12, 0.0, length(f + off))
+                * smoothstep(1.0, 0.45, y) * smoothstep(0.25, 0.5, y) * step(0.5, fract(hash(cell + 5.0) + t * 0.7));
+    c += vec3(1.0, 0.6, 0.2) * ember * 2.0;
+    finalColor = vec4(c * 1.5, max(a, ember * u_power));
 })";
 
 // Smoke: billows rising and spreading, dark, lit orange from below by what's burning.

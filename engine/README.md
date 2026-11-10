@@ -66,8 +66,9 @@ dark, and a press goes back to the title screen. (Like a play's last scene: the 
   photographer standing still on a balcony with a zoom lens: zoomed in on you as you cross the
   square, wide for a moment when you first arrive.
 - **The live layer** (`dw/fxlive.hpp`, `src/game_fx.cpp`; a room's `"fx"`). The painting lives:
-  fires burn on upright cards facing the camera (procedural flames torn by noise climbing through
-  them) and breathe their light on the walls round them; smoke rises and spreads, lit orange from
+  fires burn on upright cards facing the camera (procedural flames in churning air, their tops torn
+  into licks and wisps, white-hot at the root, embers carried up out of them) and breathe their
+  light on the walls round them; smoke rises and spreads, lit orange from
   below; a beacon flashes its double flash and sweeps the street blue; a snapped tram wire throws
   sparks that fall, skip on the wet road and cool from white to red; a tram's last tube flickers
   and dies. Each one's light is the change from the light the painting was rendered with (the
