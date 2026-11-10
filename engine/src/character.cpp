@@ -767,7 +767,10 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     }
     float tp = 0, tv = 0, tl = 0;
     if (mode == BACK) { tp = kPi / 2; tv = 0; tl = thickness_; }
-    if (mode == PRONE) { tp = -kPi / 2 + 0.12f; tv = pelvis_h_; tl = -(pelvis_h_ - thickness_ - 0.04f); }
+    if (mode == PRONE) {   // (crawling, the chest held up off the floor; dead, flat on it)
+        const bool flat = pose == Pose::Dead;
+        tp = -kPi / 2 + (flat ? 0.02f : 0.12f); tv = pelvis_h_; tl = -(pelvis_h_ - thickness_ - (flat ? 0.0f : 0.04f));
+    }
     root_k_ = std::min(1.0f, root_k_ + dt * (mode == STAND ? 1.25f : 2.1f));
     const float e = mode == STAND ? root_k_ * root_k_ * (3 - 2 * root_k_) : std::pow(root_k_, 2.2f);   // falls accelerate
     pitch_ = Lerp(from_pitch_, tp, e);
@@ -1175,6 +1178,23 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         }
         case Pose::Floored:
         case Pose::Dead: {   // on its back: arms flung out, knees fallen apart, head rolled to one side
+            if (pose == Pose::Dead && root_mode_ == PRONE) {   // face down where it fell crawling: flat on its
+                T[J_SPINE] = {-0.04f, 0.1f, 0.05f};             // front, one arm reaching on along the ground,
+                T[J_CHEST] = {-0.02f, 0.08f, 0};                // the other along its side, the face turned
+                T[J_NECK] = {0, 0.35f, 0};                      // to the side, cheek to the street
+                T[J_HEAD] = {0.05f, 1.0f, 0.1f};
+                T[J_JAW] = {-0.35f, 0, 0};
+                T[J_SHO_L] = {2.95f, 0, -0.35f};
+                T[J_ELB_L] = {0.15f, 0, 0};
+                T[J_SHO_R] = {0.12f, 0, 0.18f};
+                T[J_ELB_R] = {0.1f, 0, 0};
+                T[J_HIP_L] = {0.04f, 0, -0.14f};
+                T[J_HIP_R] = {0.02f, 0, 0.1f};
+                T[J_KNE_L] = {-0.2f, 0, 0};
+                T[J_KNE_R] = {-0.45f, 0, 0};
+                if (mirror) mirror_targets(T);
+                break;
+            }
             const float writhe = pose == Pose::Floored ? std::sin(t_ * 5.0f) : 0.0f;
             T[J_SPINE] = {0.05f, 0, 0.05f};
             T[J_CHEST] = {0.05f, 0, 0};
@@ -1189,6 +1209,7 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
             T[J_HIP_R] = {0.25f + writhe * 0.15f, 0, 0.2f};
             T[J_KNE_L] = {-0.35f, 0, 0};
             T[J_KNE_R] = {-0.6f, 0, 0};
+            if (pose == Pose::Dead && mirror) mirror_targets(T);
             break;
         }
         case Pose::Crawl:

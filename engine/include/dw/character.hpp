@@ -17,6 +17,7 @@
 #include <array>
 #include <cmath>
 #include <string>
+#include <utility>
 #include <vector>
 #include "dw/anatomy.hpp"
 #include "dw/clearance.hpp"
@@ -41,6 +42,15 @@ enum Joint : int {
     J_RING1_R, J_RING2_R, J_RING3_R, J_LITTLE1_R, J_LITTLE2_R, J_LITTLE3_R,
     J_COUNT
 };
+
+// A pose the other way round: left and right limbs trade targets, and every turn and lean to one
+// side goes to the other (a body lying dead, sprawled the other way). T: J_COUNT joint targets.
+inline void mirror_targets(Vector3* T) {
+    for (auto [l, r] : {std::pair{J_SHO_L, J_SHO_R}, {J_ELB_L, J_ELB_R}, {J_WRI_L, J_WRI_R}, {J_HIP_L, J_HIP_R}, {J_KNE_L, J_KNE_R}})
+        std::swap(T[l], T[r]);
+    for (int k = 0; k < J_COUNT; ++k) { T[k].y = -T[k].y; T[k].z = -T[k].z; }
+}
+
 enum Finger : int { F_THUMB, F_INDEX, F_MIDDLE, F_RING, F_LITTLE };
 // Finger f's joint k (0 the knuckle or the thumb's root, 1 the middle, 2 by the nail) on one hand.
 constexpr int finger_joint(bool right, int f, int k) { return (right ? J_THUMB1_R : J_THUMB1_L) + f * 3 + k; }
@@ -76,6 +86,7 @@ public:
     Vector3 head_point() const { return Vector3Transform(head_c_, W_[J_HEAD]); }        // centre of the skull
     Vector3 face_dir() const { return Vector3Normalize({-W_[J_HEAD].m8, -W_[J_HEAD].m9, -W_[J_HEAD].m10}); }
     Kind kind = Kind::Survivor;
+    bool mirror = false;   // lying dead: sprawled the other way round (the other arm reaching, the face turned the other way)
 
     // ── Combat: being hit, and coming apart ──
     // Capsules round each body region still attached, for the shot rays (combat.hpp).

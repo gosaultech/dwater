@@ -184,6 +184,7 @@ void Game::build_corpses(int storey) {
             c.at = {d.pos.x, d.pos.y, d.pos.z};   // (y below the street: afloat in a canal, the water over most of it)
             c.blood = d.blood;
             c.body.place(c.at, d.yaw);
+            c.body.mirror = (int(std::floor(d.pos.x * 7.0f + d.pos.z * 3.0f)) & 1) != 0;   // (not every body sprawled alike)
             constexpr float DT = 1.0f / 30;
             if (d.prone)   // (face down: it died crawling)
                 for (int f = 0; f < 20; ++f) c.body.animate(Pose::Crawl, 0.0f, DT);
