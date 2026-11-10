@@ -231,6 +231,199 @@
         0.1
       ],
       "collide": false
+    },
+    {
+      "type": "silt",
+      "pos": [
+        10.4,
+        0.0,
+        1.7
+      ],
+      "size": [
+        20.8,
+        0.0,
+        3.4
+      ],
+      "material": {
+        "ph": "brown_mud_02",
+        "wet": 0.75,
+        "puddles": 0.3
+      },
+      "cover": 0.5,
+      "seed": 804,
+      "collide": false,
+      "catastrophe": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        7.11,
+        0.0,
+        2.9
+      ],
+      "yaw": 64.6,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_military_crate",
+      "pos": [
+        16.08,
+        0.0,
+        1.83
+      ],
+      "yaw": 356.4,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:compost_bag_02",
+      "pos": [
+        2.32,
+        0.0,
+        2.88
+      ],
+      "yaw": 357.5,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        12.63,
+        0.0,
+        0.87
+      ],
+      "yaw": 311.0,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        12.7,
+        0.0,
+        1.04
+      ],
+      "yaw": 72.1,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        8.1,
+        0.0,
+        0.71
+      ],
+      "yaw": 353.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        1.39,
+        0.0,
+        0.84
+      ],
+      "yaw": 293.3,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        15.66,
+        0.0,
+        2.54
+      ],
+      "yaw": 109.4,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_container",
+      "pos": [
+        3.63,
+        0.0,
+        2.92
+      ],
+      "yaw": 76.4,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        14.11,
+        0.0,
+        2.92
+      ],
+      "yaw": 77.6,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        4.18,
+        0.0,
+        1.53
+      ],
+      "yaw": 242.9,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_03",
+      "pos": [
+        0.95,
+        0.0,
+        2.88
+      ],
+      "yaw": 168.0,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:old_tyre",
+      "pos": [
+        20.38,
+        0.0,
+        0.38
+      ],
+      "yaw": 93.8,
+      "collide": false,
+      "tip": 90,
+      "catastrophe_fg": true
     }
   ],
   "walls": {
@@ -360,5 +553,32 @@
       "text": "A kitchen's back door, propped open. A pan still on the flame inside, burned black. Nobody turned it off."
     }
   ],
-  "enemies": []
+  "enemies": [],
+  "fx": [],
+  "dead": [
+    {
+      "pos": [
+        1.88,
+        0.0,
+        2.12
+      ],
+      "yaw": 91,
+      "variant": 0,
+      "prone": true,
+      "blood": 0.47,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        11.88,
+        0.0,
+        1.62
+      ],
+      "yaw": 358,
+      "variant": 1,
+      "prone": false,
+      "blood": 0.75,
+      "catastrophe": true
+    }
+  ]
 }
