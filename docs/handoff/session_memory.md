@@ -9,7 +9,9 @@ Amsterdam to Station Noord, where a "to be continued" card returns to a new titl
 session of 2026-11-08 answered the user's playtest ("controls reverse at room transitions"; "the
 camera shots outside and in the big halls are way too wide; think RE3's city"):
 - **Controls:** a held stick never turns him round at a cut (`HeldFrame`, `controls.hpp`);
-  `--walkthrough` proves it on every doorway and staircase (255 tries, none turn back).
+  `--walkthrough <report.txt>` proves it on every doorway and staircase (255 tries, none turn
+  back). Without the report file it starts the game and waits for input forever. On the whole
+  city at 2048x1152 (2026-11-10): 255 trials, 0 failed, 65 flips on a re-press.
 - **The wide rooms are cordoned** (user's choice, over "keep open with ~430 shots"): crowd-barrier
   lanes through the Dam, Stationsplein, Rembrandtplein, Muntplein, Thorbeckeplein, Rokin and
   Damrak (`tools/citygen/barricades.py`).
