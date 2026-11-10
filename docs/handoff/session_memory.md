@@ -70,6 +70,10 @@ the container's CPU).
   are committed, `test_catastrophe` fails on rokin_noord (its committed shots predate the rule).
   The rule also covers the Kalverstraat's garlands (only their hanging lights) and the
   Bloemenmarkt's stalls (their glasshouse stands behind their spot).
+- **Container restarts** (one at 01:23 on 2026-11-10, mid-Dam) kill the queue and the render in
+  flight. The queue (`qcity.sh`) now resumes a room it started and never finished: it renders only
+  the shots missing a colour or depth file (`--shots`), and logs `<room> resume [ids]`. To restart:
+  put the room back at the head of `qcity.txt` and launch `setsid nohup bash tools/qcity.sh`.
 - **Lessons:** the depth pass's emission override made every triangle a light (a street's
   light tree went past 12 GB and was killed): its emission sampling is off now. The camera
   planner took the least-bad camera when none of its cheapest sixty saw him (a shot with 0%
