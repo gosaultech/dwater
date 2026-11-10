@@ -59,25 +59,33 @@ class Catastrophe(unittest.TestCase):
         self.assertEqual(len(sections), 3)
         self.assertTrue(all(p.get("collide", True) for p in sections))
 
-    def test_debris_lies_on_open_floor_and_the_big_pieces_off_the_lanes(self):
-        big = {ref for ref, _, b in catastrophe.DEBRIS if b}
-        for rid in sorted(catastrophe.ACTIVE | catastrophe.AUTO):
+    def test_what_the_night_left_lies_where_it_has_a_reason(self):
+        """Not a scatter: on open floor, nothing on anything else, no street litter indoors, nothing put
+        by a lens for its own sake, and every bin by a lamp or against something the water hit."""
+        street = {"ph:bark_debris_01", "ph:dry_branches_medium_01", "ph:old_tyre", "ph:compost_bag_02", "ph:cement_bag"}
+        for rid in sorted(catastrophe.DRESSED):
             spec = room(rid)
             xs, zs, ok = cameras.open_floor({**spec, "props": [p for p in spec["props"] if not p.get("catastrophe")]})
-            x0, z0 = xs[0], zs[0]
-            n = 0
-            for p in spec["props"]:
-                if not p.get("catastrophe") or p["type"] != "model" or p["pos"][1] < -0.5:   # (what floats in the basin)
-                    continue
+            left = [p for p in spec["props"] if p.get("catastrophe_drift")]
+            self.assertFalse([p for p in spec["props"] if p.get("catastrophe_fg")], rid)
+            if spec.get("outdoor"):
+                self.assertTrue(left, rid)
+            stops = [(p["pos"][0], p["pos"][2], p["size"][0] / 2, p["size"][2] / 2, math.radians(p.get("yaw", 0.0)))
+                     for p in spec["props"] if p["type"] in catastrophe.STOPS and "size" in p]
+            lamps = (spec.get("outdoor") or {}).get("lamps", [])
+            for n, p in enumerate(left):
                 x, _, z = p["pos"]
-                i = min(max(int(round((x - x0) / cameras.CELL)), 0), len(xs) - 1)
-                k = min(max(int(round((z - z0) / cameras.CELL)), 0), len(zs) - 1)
-                if p.get("model") in big and p.get("catastrophe_fg") is None:
-                    self.assertFalse(in_lane(x, z, rid, grow=-0.1), (rid, p))
-                n += 1
-            (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
-            leave = min(180, max(12, (bx1 - bx0) * (bz1 - bz0) * 0.09))   # (what leavings() drifts, by the floor's size)
-            self.assertGreater(n, min(80, 0.8 * leave), rid)
+                i = int(np.argmin(np.abs(xs - x)))
+                k = int(np.argmin(np.abs(zs - z)))
+                self.assertTrue(ok[i, k], (rid, p))
+                for q in left[n + 1:]:
+                    self.assertGreater(math.hypot(x - q["pos"][0], z - q["pos"][2]), 0.35, (rid, p, q))
+                if not spec.get("outdoor"):
+                    self.assertNotIn(p["model"], street, (rid, p))
+                if p["model"] == "ph:metal_trash_can":
+                    by_lamp = any(math.hypot(x - lx, z - lz) < 1.6 for lx, lz in lamps)
+                    by_stop = any(cameras._in_box(np.array([x]), np.array([z]), b, 1.6)[0] for b in stops)
+                    self.assertTrue(by_lamp or by_stop, (rid, p))
 
     def test_nothing_by_a_lens_hides_him(self):
         for rid in sorted(catastrophe.ACTIVE | catastrophe.AUTO):

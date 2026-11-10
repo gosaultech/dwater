@@ -363,14 +363,17 @@ AUTO = {"apotheek", "beurs_zaal", "bioscoop", "bloemenmarkt", "centraal_hal", "d
 
 STORIES = {"rokin_zuid": rokin_zuid, "rokin_noord": rokin_noord, "dam": dam, "stationsplein": stationsplein}
 ACTIVE = {"dam", "rokin_noord", "rokin_zuid", "stationsplein"}   # the hand-told streets whose plates are rendered (others wait for theirs)
+DRESSED = set()   # the rooms whose plates show dress() (the night's leavings by what each place was), not the old scatter
+for _r in filter(None, __import__("os").environ.get("DW_DRESSED", "").split(",")):
+    DRESSED.add(_r)
 # DW_STORIES=a,b,...: tell these too (a build of the next rooms to render, into a scratch DW_ROOMS)
 for _r in filter(None, __import__("os").environ.get("DW_STORIES", "").split(",")):
     (ACTIVE if _r in STORIES else AUTO).add(_r)
 
 
 
-def drift(spec, rng, n):
-    """The flood's leavings: n things from DEBRIS dropped where the water slowed, against whatever
+def _scatter(spec, rng, n):
+    """(The old leavings, for a room not yet re-dressed: n things from DEBRIS dropped where the water slowed, against whatever
     stands (most within a metre of a wall, a kerb, the railing, a car), some out in the open; the big
     ones only off the lanes he walks."""
     xs, zs, ok = cameras.open_floor(spec)
@@ -424,29 +427,179 @@ def apply(spec):
     return spec
 
 
+# ── What the night left, placed by what each place was ───────────────────────────────────────────
+# Not a scatter: the water's line of litter along the walls and kerbs it reached, in clumps; heaps
+# against what stood in its way; each place's own things knocked over where they stood (a café's
+# chairs, a shop's stock, the bin by a lamp); what people dropped on the way out; indoors, what the
+# night's use of the hall left by its beds and counters. Big things only where they belong.
+WRACK = ["ph:bark_debris_01", "ph:dry_branches_medium_01", "ph:can_rusted", "ph:plastic_bottle_gallon", "ph:bleach_bottle",
+         "ph:plastic_container", "ph:trashbag", "ph:cardboard_box_01"]
+WRACK_IN = ["ph:can_rusted", "ph:plastic_bottle_gallon", "ph:bleach_bottle", "ph:plastic_container", "ph:cardboard_box_01"]
+BELONGINGS = [("ph:vintage_suitcase", None), ("ph:vintage_suitcase", 90), ("ph:trashbag", None), ("ph:rubber_boots", 90),
+              ("ph:wicker_basket_01", 90), ("ph:plastic_jerrycan", None)]
+CAFES = {"cafe", "snack", "restaurant", "bar", "ijs", "club"}
+INDOORS = {   # a hall's or a shop's use that night: what it leaves, and next to what
+    "shelter": ({"camp_bed", "trestle_table", "counter", "bench", "luggage", "shop_unit", "ticket_machine"},
+                BELONGINGS + [("ph:russian_food_cans_01", None), ("ph:plastic_bottle_gallon", 90), ("ph:medical_box", None)]),
+    "shop": ({"shelving", "display_case", "clothes_rail", "counter"},
+             [("ph:cardboard_box_01", None), ("ph:cardboard_box_01", 90), ("ph:bleach_bottle", 90), ("ph:multi_cleaner_bottle", 90),
+              ("ph:lubricant_spray", 90), ("ph:plastic_container", None)]),
+    "lobby": ({"counter", "ticket_booth", "stanchions"},
+              [("ph:vintage_suitcase", None), ("ph:vintage_suitcase", 90), ("ph:trashbag", None), ("ph:wooden_stool_01", 90)]),
+    "bar": ({"counter"}, [("ph:wine_bottles_01", None), ("ph:wooden_stool_01", 90), ("ph:dining_chair_02", 90)]),
+}
+USE = {"nieuwe_kerk": "shelter", "centraal_hal": "shelter", "beurs_zaal": "shelter", "metro_centraal": "shelter",
+       "metro_rokin": "shelter", "warenhuis": "shop", "apotheek": "shop", "bioscoop": "lobby", "hotel_lobby": "lobby",
+       "hotel_bar": "bar", "rondvaartboot": "shelter"}
+STOPS = {"vehicle", "bus", "tram", "tram_section", "light_tower", "evac_board", "kiosk", "bench", "sandbags", "aid_post"}
+SETTLE = {"model", "bike", "luggage", "leaflets", "broken_glass", "body_bag", "sandbags", "blood", "scorch", "evac_board",
+          "fire_pump", "boards", "trestle_table"}   # things that rest on the street: on the pavement where they stand
+
+
+def dress(spec, rng):
+    """The night's leavings in this room (see above): a list of models, none on another, all on open floor."""
+    xs, zs, ok = cameras.open_floor(spec)
+    outdoor = bool(spec.get("outdoor"))
+    placed, out = [], []
+
+    def cell(x, z):
+        return int(np.argmin(np.abs(xs - x))), int(np.argmin(np.abs(zs - z)))
+
+    def put(ref, x, z, r=0.25, tip=None, yaw=None):
+        i, k = cell(x, z)
+        if not ok[i, k] or any(math.hypot(x - a, z - b) < r + c for a, b, c in placed):
+            return False
+        y = ground_y(spec, x, z) if outdoor else 0.0
+        out.append(model(ref, x, z, float(rng.uniform(0, 360)) if yaw is None else yaw, y=y, tip=tip))
+        placed.append((x, z, r))
+        return True
+
+    def clump(x, z, things, n, spread):
+        for _ in range(n * 3):
+            if n <= 0:
+                break
+            ref, tip = things[int(rng.integers(len(things)))] if isinstance(things[0], tuple) else (things[int(rng.integers(len(things)))], None)
+            a, d = rng.uniform(0, 2 * math.pi), spread * math.sqrt(rng.uniform(0, 1))
+            if put(ref, x + d * math.cos(a), z + d * math.sin(a), 0.2, tip=tip):
+                n -= 1
+    # 1. the water's line: clumps of litter at the foot of the facades and along the quay's railings it
+    #    reached, one every ~10 m (outdoors: indoors the halls were swept by people, not by the water)
+    if outdoor:
+        runs = []
+        for fa in spec["outdoor"].get("facades", []):
+            fx, fz = FACING.get(fa.get("facing"), (0.0, 0.0))
+            if fx or fz:
+                lo, hi = (fa["z0"], fa["z1"]) if fx else (fa["x0"], fa["x1"])
+                runs.append((lambda t, fa=fa, fx=fx, fz=fz: (fa["x"] + fx * 0.45, t) if fx else (t, fa["z"] + fz * 0.45), lo, hi))
+        for p in spec["props"]:
+            if p["type"] == "railing" and "size" in p:
+                a, L = math.radians(p.get("yaw", 0.0)), p["size"][0]
+                runs.append((lambda t, p=p, a=a: (p["pos"][0] + t * math.cos(a), p["pos"][2] - t * math.sin(a)), -L / 2, L / 2))
+        for at, lo, hi in runs:
+            t = lo + float(rng.uniform(1.0, 9.0))
+            while t < hi - 0.5:
+                x, z = at(t)
+                clump(x, z, WRACK, int(rng.integers(2, 4)), 0.5)
+                t += float(rng.uniform(8.0, 13.0))
+    if outdoor:
+        o = spec["outdoor"]
+        # 2. heaps against what stood in the water's way: a car, a tram, a stall, a lamp's foot
+        stops = [(p["pos"][0], p["pos"][2], p["size"][0] / 2, p["size"][2] / 2, math.radians(p.get("yaw", 0.0)))
+                 for p in spec["props"] if p["type"] in STOPS and "size" in p]
+        stops += [(x, z, 0.15, 0.15, 0.0) for x, z in o.get("lamps", [])]
+        (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
+        heaps = min(6, max(1, int((bx1 - bx0) * (bz1 - bz0) / 350)))
+        for j in rng.permutation(len(stops))[:heaps * 2]:
+            if heaps <= 0:
+                break
+            cx, cz, hx, hz, a = stops[int(j)]
+            side = rng.uniform(0, 2 * math.pi)
+            lx, lz = math.cos(side) * (hx + 0.6), math.sin(side) * (hz + 0.6)
+            x, z = cx + lx * math.cos(a) + lz * math.sin(a), cz - lx * math.sin(a) + lz * math.cos(a)
+            i, k = cell(x, z)
+            if not ok[i, k]:
+                continue
+            if rng.random() < 0.5:
+                put("ph:metal_trash_can", x, z, 0.35, tip=90)
+            clump(x, z, WRACK, int(rng.integers(5, 9)), 0.9)
+            heaps -= 1
+        # 3. the street's own things, knocked over where they stood: a café's chairs, a shop's stock, a bin by a lamp
+        for fa in o.get("facades", []):
+            fx, fz = FACING.get(fa.get("facing"), (0.0, 0.0))
+            shop = fa.get("shop") or {}
+            if (fx == 0 and fz == 0) or not shop:
+                continue
+            lo, hi = (fa["z0"], fa["z1"]) if fx else (fa["x0"], fa["x1"])
+            t = float(rng.uniform(lo + 1.0, max(lo + 1.1, hi - 1.0)))
+            d = float(rng.uniform(1.2, 2.2))
+            x, z = (fa["x"] + fx * d, t) if fx else (t, fa["z"] + fz * d)
+            if shop.get("kind") in CAFES and rng.random() < 0.7:
+                put("ph:round_wooden_table_01", x, z, 0.45, tip=90 if rng.random() < 0.5 else None)
+                for _ in range(int(rng.integers(1, 4))):
+                    a = rng.uniform(0, 2 * math.pi)
+                    put("ph:dining_chair_02", x + 0.8 * math.cos(a), z + 0.8 * math.sin(a), 0.3, tip=90 if rng.random() < 0.6 else None)
+            elif rng.random() < 0.3:   # (looted: its stock dropped on the way out of the door)
+                clump(x, z, [("ph:cardboard_box_01", None), ("ph:cardboard_box_01", 90), ("ph:plastic_container", None)], int(rng.integers(2, 4)), 0.8)
+        for x, z in o.get("lamps", []):
+            if rng.random() < 0.2:
+                a = rng.uniform(0, 2 * math.pi)
+                if put("ph:metal_trash_can", x + 0.55 * math.cos(a), z + 0.55 * math.sin(a), 0.35, tip=90):
+                    put("ph:trashbag", x + 1.1 * math.cos(a), z + 1.1 * math.sin(a), 0.3)
+    else:
+        # 5. indoors: what the night's use of the hall left by its beds, tables and counters
+        near, things = INDOORS.get(USE.get(spec["id"], ""), (set(), []))
+        use = USE.get(spec["id"], "")
+        for p in spec["props"]:
+            if p["type"] in near and "size" in p and rng.random() < (0.75 if use == "shelter" else 0.5):
+                a = math.radians(p.get("yaw", 0.0))
+                ref, tip = things[int(rng.integers(len(things)))]
+                for _ in range(4):   # (a side of it with floor to stand a thing on)
+                    side = rng.uniform(0, 2 * math.pi)
+                    lx, lz = math.cos(side) * (p["size"][0] / 2 + 0.7), math.sin(side) * (p["size"][2] / 2 + 0.7)
+                    if put(ref, p["pos"][0] + lx * math.cos(a) + lz * math.sin(a), p["pos"][2] - lx * math.sin(a) + lz * math.cos(a), 0.3, tip=tip):
+                        break
+    # 4. what people dropped on their way out: belongings near the doors they left by
+    exits = [(i["pos"][0], i["pos"][2]) for i in spec.get("interactables", []) if i.get("kind") in ("door", "end")]
+    for ex, ez in exits:
+        if rng.random() < (0.5 if outdoor else 0.35):
+            a = rng.uniform(0, 2 * math.pi)
+            d = rng.uniform(2.5, 6.0)
+            clump(ex + d * math.cos(a), ez + d * math.sin(a), BELONGINGS, int(rng.integers(1, 3)), 1.2)
+    return out
+
+
 def leavings(spec, n=None):
-    """The flood's leavings, drifted (after the cordons: round their barriers too): about one thing
-    for every eleven square metres of floor, a dozen at least, 180 at most."""
+    """What the night left (dress()), after the cordons: round their barriers too."""
     if spec["id"] not in ACTIVE and spec["id"] not in AUTO:
         return spec
-    if n is None:
-        (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
-        n = int(min(180, max(12, (bx1 - bx0) * (bz1 - bz0) * 0.09)))
     spec["props"] = [p for p in spec["props"] if not p.get(MARK + "_drift")]
     rng = np.random.default_rng(sum(map(ord, spec["id"])))   # (the same street, the same mess, every run)
-    for p in drift(spec, rng, n):
+    if spec["id"] in DRESSED:
+        for p in spec["props"]:   # (what stands on a pavement or the quay stands on it, not sunk into it)
+            if p["type"] in SETTLE and p["pos"][1] == 0.0:
+                p["pos"][1] = round(ground_y(spec, p["pos"][0], p["pos"][2]), 3)
+        left = dress(spec, rng)
+    else:   # (not re-rendered yet: the old scatter its plates show)
+        (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
+        left = _scatter(spec, rng, int(min(180, max(12, (bx1 - bx0) * (bz1 - bz0) * 0.09))) if n is None else n)
+    for p in left:
         p[MARK] = p[MARK + "_drift"] = True
         spec["props"].append(p)
     return spec
 
 
-def foreground(spec, per_shot=1):
-    """Something close to each shot's lens to look past (RE's cameras almost always have it): low in
-    a bottom corner of the picture, 1.5-3.5 m from the lens, on floor he can't walk (off the lanes),
-    and only where it hides him from no shot of the room."""
+def foreground(spec, per_shot=0):
+    """Something close to each shot's lens to look past: low in a bottom corner of the picture, 1.5-3.5 m
+    from the lens, off the lanes, hiding him from no shot. Off (per_shot 0): a bin or a crate put by
+    every lens for its own sake was clutter, not the street's story; what stands by a lens now is
+    what the place left there (dress())."""
     if spec["id"] not in ACTIVE and spec["id"] not in AUTO:
         return spec
     spec["props"] = [p for p in spec["props"] if not p.get(MARK + "_fg")]
+    if spec["id"] not in DRESSED:
+        per_shot = max(per_shot, 1)   # (not re-rendered yet: the lens props its plates show)
+    if per_shot <= 0:
+        return spec
     xs, zs, ok = cameras.open_floor(spec)
     X, Z = np.meshgrid(xs, zs, indexing="ij")
     lanes = barricades.in_lanes(barricades.LANES.get(spec["id"], []), X, Z)

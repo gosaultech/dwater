@@ -321,6 +321,7 @@ def fireplace_classic(root, p, w, h, d):
 
 _MODELS = {}   # a model already imported, by asset and look: its objects, to copy
 _BOUNDS = {}   # and its measured size
+_GROUPS = {}   # and its separate pieces (_pieces), for knocking it over
 
 
 def _import(a, look):
@@ -348,6 +349,45 @@ def _import(a, look):
 def reset_models():
     _MODELS.clear()
     _BOUNDS.clear()
+    _GROUPS.clear()
+
+
+def _base(name):
+    return name.rsplit(".", 1)[0] if name.rsplit(".", 1)[-1].isdigit() else name
+
+
+def _pieces(objs):
+    """A model's separate pieces in its import frame: the top objects whose meshes touch go together
+    (a can, its handles and its lid), as [(top-object base names, lo, hi), ...]."""
+    tops = [o for o in objs if o.parent is None or o.parent not in objs]
+    boxes = []
+    for t in tops:
+        lo, hi = [1e9] * 3, [-1e9] * 3
+        stack = [t]
+        while stack:
+            o = stack.pop()
+            stack.extend(c for c in o.children if c in objs)
+            if o.type == "MESH":
+                for c in o.bound_box:
+                    w = o.matrix_world @ surfaces_vec(c)
+                    for i in range(3):
+                        lo[i], hi[i] = min(lo[i], w[i]), max(hi[i], w[i])
+        if lo[0] < 1e8:
+            boxes.append(({_base(t.name)}, lo, hi))
+    merged = True
+    while merged:   # (join touching boxes until none touch)
+        merged = False
+        for i in range(len(boxes)):
+            for j in range(i + 1, len(boxes)):
+                (ni, li, hi_), (nj, lj, hj) = boxes[i], boxes[j]
+                if all(li[k] <= hj[k] + 0.01 and lj[k] <= hi_[k] + 0.01 for k in range(3)):
+                    boxes[i] = (ni | nj, [min(li[k], lj[k]) for k in range(3)], [max(hi_[k], hj[k]) for k in range(3)])
+                    del boxes[j]
+                    merged = True
+                    break
+            if merged:
+                break
+    return boxes
 
 
 def model(root, p, w, h, d):
@@ -397,13 +437,28 @@ def model(root, p, w, h, d):
     holder.location = (-cx * k, -cy * k, -lo[2] * k)
     if p.get("yaw_model"):
         holder.rotation_euler[2] = math.radians(p["yaw_model"])
-    if p.get("tip"):   # lying on its side, resting on the floor
-        from mathutils import Matrix, Vector
+    if p.get("tip"):   # knocked over: each separate piece on its side where it stood, resting on the floor
+        from mathutils import Matrix, Vector   # (a pair of bins is two bins lying side by side, not one stood on the other)
+        if look not in _GROUPS:
+            bpy.context.view_layer.update()
+            _GROUPS[look] = _pieces(new)
         R = Matrix.Rotation(math.radians(p["tip"]), 3, "Y")
-        holder.rotation_euler = R.to_euler()
-        rc = R @ Vector((cx * k, cy * k, (lo[2] + hi[2]) / 2 * k))
-        zmin = min((R @ Vector((x * k, y * k, z * k))).z for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2]))
-        holder.location = (-rc.x, -rc.y, -zmin)
+        for names, glo, ghi in _GROUPS[look]:
+            gc = Vector(((glo[0] + ghi[0]) / 2, (glo[1] + ghi[1]) / 2, (glo[2] + ghi[2]) / 2))
+            zs = [(R @ (Vector((x, y, z)) - gc)).z for x in (glo[0], ghi[0]) for y in (glo[1], ghi[1]) for z in (glo[2], ghi[2])]
+            if (max(zs) - min(zs)) * k > max(0.8, 1.3 * (ghi[2] - glo[2]) * k):
+                continue   # (a heap of pieces that would stand on end: it stays as it lies)
+            zmin = min(zs)
+            piece = bpy.data.objects.new("piece", None)
+            bpy.context.scene.collection.objects.link(piece)
+            piece.parent = holder
+            piece.location = (gc.x, gc.y, lo[2] - zmin)   # (its middle where it stood; its lowest point on the floor)
+            piece.rotation_euler = R.to_euler()
+            for o in tops:
+                if _base(o.name) in names:
+                    o.parent = piece
+                    o.matrix_parent_inverse = Matrix.Translation(-gc)
+        tops = [o for o in tops if o.parent is None]
     for o in tops:
         o.parent = holder
     if p.get("shadow", True) is False:   # a lamp's own glass and frame must not swallow its light

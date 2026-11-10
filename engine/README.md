@@ -522,8 +522,15 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
 - **The catastrophe pass** (`tools/citygen/catastrophe.py`; the brief is `docs/city_aftermath.md`).
   What the night did to each street in its `STORIES` (Rokin first): set pieces (the derailed tram,
   a burned-out car, the dead by an ambulance, shops boarded and written on), the room's live
-  effects (`"fx"`), the flood's debris drifted against whatever stands (scanned CC0 models from
-  Poly Haven), and something close to each shot's lens to look past, never where it hides him.
+  effects (`"fx"`), and what the night left, placed by what each place was (`dress()`, scanned CC0
+  models from Poly Haven): the water's line of litter at the facades' foot and along the quay
+  railings, heaps against what stood in its way (a car, a tram, a lamp's foot), a café's chairs and
+  tables knocked over in front of it, a looted shop's stock dropped by its door, a bin toppled by a
+  lamp, belongings dropped near the doors people left by; indoors, what the hall's use that night
+  left by its beds, counters and shelves. Never a scatter, never one thing on another, never street
+  litter in a church. Like a set dresser's notes: every object answers "why is this here?".
+  (A model knocked over falls piece by piece where it stood: `kit.model`'s "tip" lays a pair of
+  bins side by side, never one stood on the other.)
   Blender's side is `tools/blender/ruin.py` (decals, boards, body bags, a snapped wire, soot, the
   silt) and `builders._wear` (a tide line, silt, streaks, splashes and rust on every material, set
   per room from its flood height); the words on the walls are drawn by `tools/assets/decals.py`
