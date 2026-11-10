@@ -2525,9 +2525,9 @@
       "type": "model",
       "model": "ph:plastic_monobloc_chair_01",
       "pos": [
-        15.12,
+        7.62,
         0.0,
-        33.38
+        34.88
       ],
       "yaw": 342.0,
       "collide": false,
@@ -2538,25 +2538,12 @@
       "type": "model",
       "model": "ph:compost_bags",
       "pos": [
-        9.12,
-        0.0,
-        33.62
-      ],
-      "yaw": 320.6,
-      "collide": false,
-      "catastrophe_fg": true
-    },
-    {
-      "type": "model",
-      "model": "ph:metal_trash_can",
-      "pos": [
         12.62,
         0.0,
         35.38
       ],
-      "yaw": 56.3,
+      "yaw": 320.6,
       "collide": false,
-      "tip": 90,
       "catastrophe_fg": true
     }
   ],
@@ -3086,16 +3073,16 @@
     },
     {
       "pos": [
-        13.46,
-        2.7,
-        36.53
+        11.96,
+        4.4,
+        35.03
       ],
       "look_at": [
-        17.99,
-        0.98,
-        32.99
+        16.7,
+        1.73,
+        32.48
       ],
-      "fov": 44.4,
+      "fov": 40.5,
       "zone": {
         "min": [
           17.0,
@@ -3111,16 +3098,16 @@
     },
     {
       "pos": [
-        10.46,
-        2.7,
-        36.86
+        11.21,
+        4.4,
+        34.61
       ],
       "look_at": [
-        6.06,
-        0.91,
-        33.19
+        6.72,
+        1.22,
+        32.22
       ],
-      "fov": 44.4,
+      "fov": 47.1,
       "zone": {
         "min": [
           0.0,

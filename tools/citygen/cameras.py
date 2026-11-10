@@ -127,6 +127,8 @@ AVOID = {
     "stationsplein": [(27.6, 58.6, 3.5), (40.7, 66.2, 3.5)],      # tram poles and the square's darkest corner
     "rembrandtplein": [(30.4, 53.4, 3.5)],                       # out through the passage, over Thorbeckeplein's kiosk
     "metro_centraal": [(12.25, 11.87, 3.5)],                     # looking into the platform's unlit end: him a shadow in it
+    "centraal_hal": [(10.46, 36.86, 2.0), (13.46, 36.53, 2.0)],   # tucked by a brick pier: it fills half the frame
+    "nieuwe_kerk": [(10.9, 13.77, 2.0)],                          # a pier standing in the middle of the picture
 }
 
 
