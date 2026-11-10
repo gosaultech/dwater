@@ -79,15 +79,13 @@ the container's CPU).
   `catastrophe.ACTIVE` (hand-told) or `AUTO`, runs the story and camera tests, commits its
   plates, spec and the set, and pushes. (`test_catastrophe`'s room left alone is the canal
   house's voorkamer.)
-- **Rendered and committed (2048x1152), all 25 told rooms:** Rokin zuid and noord, the Dam,
-  Stationsplein (ACTIVE); every other street, hall and shop of the waves (AUTO). The queue then
-  re-renders the 16 untold interiors (bathroom, cellar, canal house rooms, shops); commit each
-  with `commit_room.py <room> "<line>" --plain` (plates and spec only). Re-check a room's stills in-engine with scratchpad `tools/rk_stills.py <tag> <room>`.
+- **The whole city is at 2048x1152 (finished 2026-11-10 17:54):** the 25 told rooms (Rokin zuid
+  and noord, the Dam, Stationsplein ACTIVE; every other street, hall and shop AUTO) and the 16
+  untold interiors (their plates only: `commit_room.py <room> "<line>" --plain`). Re-check a room's stills in-engine with scratchpad `tools/rk_stills.py <tag> <room>`.
 - **Known, left as is:** some rule-placed dead on the Dam lie where no shot sees them (moving them
   would shift the silt's seed and the plates with it); Rokin zuid's canal boats keep the old hull;
-  the walk-through was not re-run after the night's engine changes (the capture was); Centraal
-  hall's shot o (and n) stands by a brick pillar that fills half the picture, the Nieuwe Kerk's
-  b has a pier mid-frame (add them to `cameras.AVOID` and re-render those shots).
+  Centraal hall's shots m and p look over a low wall at their floor (they see it; not pretty).
+  (Fixed: Centraal hall's n and o, the Nieuwe Kerk's b, by `cameras.AVOID`.)
 - **Container restarts** (one at 01:23 on 2026-11-10, mid-Dam) kill the queue and the render in
   flight. The queue (`qcity.sh`) now resumes a room it started and never finished: it renders only
   the shots missing a colour or depth file (`--shots`), and logs `<room> resume [ids]`. To restart:
