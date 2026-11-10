@@ -297,9 +297,10 @@ def auto_story(spec, rng):
                        {"kind": "smoke", "pos": [x, 1.8, z], "size": 2.2, "seed": int(rng.integers(100))}]
                 props.append({"type": "glow", "pos": [x, 0.9, z], "color": [1.0, 0.45, 0.12], "power": 700.0, "radius": 0.6, "collide": False})
     # The dead: where people fell, never near a door, a spawn, a thing to pick up or a Drowned.
-    keep_off = [(i["pos"][0], i["pos"][2]) for i in spec.get("interactables", [])] + \
-               [(sp["pos"][0], sp["pos"][2]) for sp in spec.get("spawns", {}).values()] + [(e["pos"][0], e["pos"][2]) for e in spec.get("enemies", [])]
-    xs, zs, ok = cameras.open_floor(spec)
+    at = lambda t: t.get("pos0") or t["pos"]   # (as the street stood before its cordon: a rebuild tells it the same way)
+    keep_off = [(at(i)[0], at(i)[2]) for i in spec.get("interactables", [])] + \
+               [(at(sp)[0], at(sp)[2]) for sp in spec.get("spawns", {}).values()] + [(at(e)[0], at(e)[2]) for e in spec.get("enemies", [])]
+    xs, zs, ok = cameras.open_floor({**spec, "props": [p for p in spec["props"] if not p.get("barricade")]})
     cells = [(float(xs[i]), float(zs[k])) for i in range(len(xs)) for k in range(len(zs)) if ok[i, k]]
     (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
     area = (bx1 - bx0) * (bz1 - bz0)
@@ -331,7 +332,7 @@ def dam(spec):
                "collide": False, "hero": k == 0} for k in range(6)]
     the_dead += [dead(76.2, 22.5, 200, 0, prone=True, blood=0.7), dead(77.4, 30.8, 20, 2, blood=0.5),
                  dead(75.6, 49.2, 290, 1, prone=True, blood=0.85), dead(78.0, 56.6, 110, 0, blood=0.6),
-                 dead(73.8, 35.6, 160, 2, prone=True, blood=0.65)]
+                 dead(67.6, 41.2, 160, 2, prone=True, blood=0.65)]   # (at the monument's foot, off its steps)
     return props, fx, the_dead
 
 
@@ -361,7 +362,7 @@ AUTO = set()
 
 
 STORIES = {"rokin_zuid": rokin_zuid, "rokin_noord": rokin_noord, "dam": dam, "stationsplein": stationsplein}
-ACTIVE = {"rokin_zuid", "rokin_noord"}   # the hand-told streets whose plates are rendered (others wait for theirs)
+ACTIVE = {"dam", "rokin_noord", "rokin_zuid"}   # the hand-told streets whose plates are rendered (others wait for theirs)
 # DW_STORIES=a,b,...: tell these too (a build of the next rooms to render, into a scratch DW_ROOMS)
 for _r in filter(None, __import__("os").environ.get("DW_STORIES", "").split(",")):
     (ACTIVE if _r in STORIES else AUTO).add(_r)

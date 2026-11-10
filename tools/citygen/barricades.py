@@ -120,6 +120,7 @@ def apply(spec):
         for key, item in (things.items() if isinstance(things, dict) else ((t["id"], t) for t in things)):
             if key in moves:
                 x, z = moves[key]
+                item.setdefault("pos0", list(item["pos"]))   # (where it stood before the cordon: the story's rules go by that)
                 item["pos"] = [x, item["pos"][1], z]
     spec["props"] += barriers(cordon_lines(spec, LANES[rid]))
     return spec
