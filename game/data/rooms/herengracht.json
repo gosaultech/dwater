@@ -1488,6 +1488,715 @@
       "count": 10,
       "after": true,
       "collide": false
+    },
+    {
+      "type": "spray",
+      "pos": [
+        -10.03,
+        0.85,
+        0.04
+      ],
+      "yaw": 0.0,
+      "size": [
+        1.05,
+        1.05,
+        0.01
+      ],
+      "collide": false,
+      "out": 0.012,
+      "decal": {
+        "style": "xcode",
+        "top": "8/11 03:50",
+        "left": "BRW-3",
+        "right": "-",
+        "bottom": "0 DOOD",
+        "color": [
+          0.95,
+          0.45,
+          0.02
+        ],
+        "seed": 4209,
+        "id": "85fb2916d926"
+      },
+      "catastrophe": true
+    },
+    {
+      "type": "spray",
+      "pos": [
+        4.99,
+        0.85,
+        0.04
+      ],
+      "yaw": 0.0,
+      "size": [
+        1.05,
+        1.05,
+        0.01
+      ],
+      "collide": false,
+      "out": 0.012,
+      "decal": {
+        "style": "xcode",
+        "top": "8/11 02:25",
+        "left": "BRW-6",
+        "right": "INSTORT",
+        "bottom": "2",
+        "color": [
+          0.95,
+          0.45,
+          0.02
+        ],
+        "seed": 31205,
+        "id": "88d32a9dd089"
+      },
+      "catastrophe": true
+    },
+    {
+      "type": "spray",
+      "pos": [
+        20.12,
+        1.25,
+        0.16
+      ],
+      "yaw": 0.0,
+      "size": [
+        0.42,
+        0.5915492957746479,
+        0.01
+      ],
+      "collide": false,
+      "out": 0.006,
+      "decal": {
+        "style": "poster",
+        "text": "VERMIST\nKEES DE BOER \u00b7 52 JAAR\nBLAUWE OVERALL\nZIE CENTRAAL",
+        "photo": true,
+        "seed": 44868,
+        "id": "fe804732c374"
+      },
+      "catastrophe": true
+    },
+    {
+      "type": "spray",
+      "pos": [
+        31.36,
+        0.85,
+        0.04
+      ],
+      "yaw": 0.0,
+      "size": [
+        1.05,
+        1.05,
+        0.01
+      ],
+      "collide": false,
+      "out": 0.012,
+      "decal": {
+        "style": "xcode",
+        "top": "8/11 02:51",
+        "left": "BRW-2",
+        "right": "GAS",
+        "bottom": "2 DOOD",
+        "color": [
+          0.95,
+          0.45,
+          0.02
+        ],
+        "seed": 59049,
+        "id": "983e3b5f4cfe"
+      },
+      "catastrophe": true
+    },
+    {
+      "type": "spray",
+      "pos": [
+        37.43,
+        1.25,
+        0.16
+      ],
+      "yaw": 0.0,
+      "size": [
+        0.42,
+        0.5915492957746479,
+        0.01
+      ],
+      "collide": false,
+      "out": 0.006,
+      "decal": {
+        "style": "poster",
+        "text": "VERMIST\nKEES DE BOER \u00b7 52 JAAR\nBLAUWE OVERALL\nZIE CENTRAAL",
+        "photo": true,
+        "seed": 26902,
+        "id": "5bafdb492bc5"
+      },
+      "catastrophe": true
+    },
+    {
+      "type": "boards",
+      "pos": [
+        40.97,
+        0.3,
+        0.1
+      ],
+      "yaw": 0.0,
+      "size": [
+        1.61,
+        2.3,
+        0.05
+      ],
+      "collide": false,
+      "x": false,
+      "seed": 44456,
+      "catastrophe": true
+    },
+    {
+      "type": "boards",
+      "pos": [
+        42.98,
+        0.3,
+        0.1
+      ],
+      "yaw": 0.0,
+      "size": [
+        1.61,
+        2.3,
+        0.05
+      ],
+      "collide": false,
+      "x": false,
+      "seed": 14814,
+      "catastrophe": true
+    },
+    {
+      "type": "spray",
+      "pos": [
+        42.98,
+        0.9,
+        0.14
+      ],
+      "yaw": 0.0,
+      "size": [
+        1.41,
+        0.8,
+        0.01
+      ],
+      "collide": false,
+      "out": 0.012,
+      "decal": {
+        "style": "spray",
+        "text": "BESMET",
+        "color": [
+          0.92,
+          0.9,
+          0.86
+        ],
+        "aspect": 1.76,
+        "seed": 61001,
+        "id": "57e2d6149752"
+      },
+      "catastrophe": true
+    },
+    {
+      "type": "spray",
+      "pos": [
+        45.64,
+        1.25,
+        0.16
+      ],
+      "yaw": 0.0,
+      "size": [
+        0.42,
+        0.5915492957746479,
+        0.01
+      ],
+      "collide": false,
+      "out": 0.006,
+      "decal": {
+        "style": "poster",
+        "text": "VERMIST\nKEES DE BOER \u00b7 52 JAAR\nBLAUWE OVERALL\nZIE CENTRAAL",
+        "photo": true,
+        "seed": 52585,
+        "id": "980a415f3879"
+      },
+      "catastrophe": true
+    },
+    {
+      "type": "spray",
+      "pos": [
+        52.67,
+        0.85,
+        0.04
+      ],
+      "yaw": 0.0,
+      "size": [
+        1.05,
+        1.05,
+        0.01
+      ],
+      "collide": false,
+      "out": 0.012,
+      "decal": {
+        "style": "xcode",
+        "top": "8/11 05:35",
+        "left": "BRW-5",
+        "right": "WATER",
+        "bottom": "5",
+        "color": [
+          0.95,
+          0.45,
+          0.02
+        ],
+        "seed": 59985,
+        "id": "5ca38f1e3e0d"
+      },
+      "catastrophe": true
+    },
+    {
+      "type": "silt",
+      "pos": [
+        20.0,
+        0.0,
+        4.35
+      ],
+      "size": [
+        40.0,
+        0.0,
+        8.7
+      ],
+      "material": {
+        "ph": "brown_mud_02",
+        "wet": 0.75,
+        "puddles": 0.3
+      },
+      "cover": 0.5,
+      "seed": 656,
+      "collide": false,
+      "catastrophe": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        10.14,
+        0.0,
+        0.82
+      ],
+      "yaw": 35.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        36.03,
+        0.0,
+        1.3
+      ],
+      "yaw": 65.0,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        28.85,
+        0.0,
+        0.64
+      ],
+      "yaw": 7.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        18.84,
+        0.0,
+        5.93
+      ],
+      "yaw": 71.0,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_crate_02",
+      "pos": [
+        28.28,
+        0.0,
+        4.71
+      ],
+      "yaw": 297.8,
+      "collide": false,
+      "tip": 20,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        31.88,
+        0.0,
+        3.44
+      ],
+      "yaw": 266.5,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        17.13,
+        0.0,
+        7.41
+      ],
+      "yaw": 81.5,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:rubber_boots",
+      "pos": [
+        24.84,
+        0.0,
+        2.34
+      ],
+      "yaw": 284.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:old_tyre",
+      "pos": [
+        39.69,
+        0.0,
+        8.17
+      ],
+      "yaw": 305.0,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        37.16,
+        0.0,
+        0.94
+      ],
+      "yaw": 162.1,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cement_bag",
+      "pos": [
+        3.13,
+        0.0,
+        1.67
+      ],
+      "yaw": 99.8,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        8.7,
+        0.0,
+        3.04
+      ],
+      "yaw": 261.8,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        7.12,
+        0.0,
+        3.07
+      ],
+      "yaw": 308.2,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cement_bag",
+      "pos": [
+        34.06,
+        0.0,
+        6.37
+      ],
+      "yaw": 21.2,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:compost_bag_02",
+      "pos": [
+        6.37,
+        0.0,
+        1.91
+      ],
+      "yaw": 66.9,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        17.66,
+        0.0,
+        1.21
+      ],
+      "yaw": 353.4,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:old_tyre",
+      "pos": [
+        9.94,
+        0.0,
+        7.6
+      ],
+      "yaw": 177.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_jerrycan",
+      "pos": [
+        11.72,
+        0.0,
+        6.82
+      ],
+      "yaw": 283.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        10.89,
+        0.0,
+        5.93
+      ],
+      "yaw": 129.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_container",
+      "pos": [
+        6.45,
+        0.0,
+        0.3
+      ],
+      "yaw": 236.0,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        1.06,
+        0.0,
+        5.79
+      ],
+      "yaw": 32.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        5.84,
+        0.0,
+        8.22
+      ],
+      "yaw": 346.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:dry_branches_medium_01",
+      "pos": [
+        37.85,
+        0.0,
+        8.4
+      ],
+      "yaw": 209.1,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        28.66,
+        0.0,
+        1.33
+      ],
+      "yaw": 243.1,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        14.31,
+        0.0,
+        0.87
+      ],
+      "yaw": 265.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        25.14,
+        0.0,
+        2.72
+      ],
+      "yaw": 204.2,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        23.11,
+        0.0,
+        6.96
+      ],
+      "yaw": 124.3,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        1.88,
+        0.0,
+        0.41
+      ],
+      "yaw": 4.7,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_jerrycan",
+      "pos": [
+        31.55,
+        0.0,
+        0.34
+      ],
+      "yaw": 165.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        7.79,
+        0.0,
+        2.12
+      ],
+      "yaw": 284.8,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        13.66,
+        0.0,
+        1.42
+      ],
+      "yaw": 104.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
     }
   ],
   "lights": [
@@ -1809,5 +2518,46 @@
       0.7,
       1.0
     ]
-  }
+  },
+  "fx": [],
+  "dead": [
+    {
+      "pos": [
+        1.88,
+        0.0,
+        6.62
+      ],
+      "yaw": 176,
+      "variant": 1,
+      "prone": false,
+      "blood": 0.62,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        5.88,
+        0.0,
+        1.38
+      ],
+      "yaw": 177,
+      "variant": 2,
+      "prone": true,
+      "blood": 0.58,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        21.32,
+        0.0,
+        0.38
+      ],
+      "yaw": 0.0,
+      "variant": 1,
+      "prone": false,
+      "sitting": true,
+      "blood": 0.35,
+      "catastrophe": true,
+      "catastrophe_sat": true
+    }
+  ]
 }
