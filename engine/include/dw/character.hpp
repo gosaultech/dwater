@@ -87,6 +87,7 @@ public:
     Vector3 face_dir() const { return Vector3Normalize({-W_[J_HEAD].m8, -W_[J_HEAD].m9, -W_[J_HEAD].m10}); }
     Kind kind = Kind::Survivor;
     bool mirror = false;   // lying dead: sprawled the other way round (the other arm reaching, the face turned the other way)
+    bool sit = false;      // dead: sat slumped against a wall or a car, not lying (Pose::Dead)
 
     // ── Combat: being hit, and coming apart ──
     // Capsules round each body region still attached, for the shot rays (combat.hpp).

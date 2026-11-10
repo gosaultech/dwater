@@ -5062,6 +5062,34 @@
       "prone": true,
       "blood": 0.85,
       "catastrophe": true
+    },
+    {
+      "pos": [
+        9.74,
+        0.0,
+        25.62
+      ],
+      "yaw": -85.0,
+      "variant": 0,
+      "prone": false,
+      "sitting": true,
+      "blood": 0.35,
+      "catastrophe": true,
+      "catastrophe_sat": true
+    },
+    {
+      "pos": [
+        25.62,
+        0.06,
+        9.9
+      ],
+      "yaw": -90.0,
+      "variant": 0,
+      "prone": false,
+      "sitting": true,
+      "blood": 0.35,
+      "catastrophe": true,
+      "catastrophe_sat": true
     }
   ]
 }

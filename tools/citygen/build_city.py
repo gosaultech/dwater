@@ -55,6 +55,7 @@ def main(argv=None):
         catastrophe.leavings(spec)
         cameras.apply(spec)
         catastrophe.foreground(spec)
+        catastrophe.slumped(spec)
         f.write_text(json.dumps(spec, indent=2, ensure_ascii=True) + "\n")
 
 

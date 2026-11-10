@@ -32,7 +32,7 @@ constexpr std::array<int, J_COUNT> make_parents() {
     return p;
 }
 constexpr std::array<int, J_COUNT> PARENT = make_parents();
-enum RootMode { STAND = 0, BACK = 1, PRONE = 2 };
+enum RootMode { STAND = 0, BACK = 1, PRONE = 2, SIT = 3 };
 
 float frand(unsigned& s) {   // xorshift: deterministic per character, no global RNG state
     s ^= s << 13; s ^= s >> 17; s ^= s << 5;
@@ -760,6 +760,7 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     const bool prone_pose = pose == Pose::Crawl || pose == Pose::CrawlWindup || pose == Pose::CrawlStrike;
     int mode = prone_pose ? PRONE : (pose == Pose::Floored || pose == Pose::Dead) ? BACK : STAND;
     if (pose == Pose::Dead && root_mode_ == PRONE) mode = PRONE;   // a crawler dies face-down
+    if (pose == Pose::Dead && sit) mode = SIT;                       // (slumped against a wall where it died)
     if (mode != root_mode_) {
         root_mode_ = mode;
         from_pitch_ = pitch_; from_pivot_ = pivot_; from_lift_ = lift_;
@@ -767,6 +768,7 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     }
     float tp = 0, tv = 0, tl = 0;
     if (mode == BACK) { tp = kPi / 2; tv = 0; tl = thickness_; }
+    if (mode == SIT) { tp = 0.25f; tv = pelvis_h_; tl = -(pelvis_h_ - 0.12f); }   // sat on the ground, leaning back on the wall
     if (mode == PRONE) {   // (crawling, the chest held up off the floor; dead, flat on it)
         const bool flat = pose == Pose::Dead;
         tp = -kPi / 2 + (flat ? 0.02f : 0.12f); tv = pelvis_h_; tl = -(pelvis_h_ - thickness_ - (flat ? 0.0f : 0.04f));
@@ -1178,6 +1180,23 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         }
         case Pose::Floored:
         case Pose::Dead: {   // on its back: arms flung out, knees fallen apart, head rolled to one side
+            if (pose == Pose::Dead && sit) {   // sat against a wall or a car where it died: slumped, the head
+                T[J_SPINE] = {-0.08f, 0.05f, 0.06f};   // fallen forward and aside, one hand in its lap, the
+                T[J_CHEST] = {-0.18f, 0.06f, 0};       // other on the street, one leg out, the knee of
+                T[J_NECK] = {-0.35f, 0.15f, 0.1f};     // the other drawn up
+                T[J_HEAD] = {-0.45f, 0.3f, 0.35f};
+                T[J_JAW] = {-0.4f, 0, 0};
+                T[J_SHO_L] = {0.3f, 0, -0.18f};
+                T[J_ELB_L] = {0.35f, 0, 0};
+                T[J_SHO_R] = {0.65f, 0, 0.1f};
+                T[J_ELB_R] = {1.2f, 0, 0};
+                T[J_HIP_L] = {1.3f, 0, -0.12f};
+                T[J_KNE_L] = {-0.12f, 0, 0};
+                T[J_HIP_R] = {1.9f, 0, 0.15f};
+                T[J_KNE_R] = {-1.7f, 0, 0};
+                if (mirror) mirror_targets(T);
+                break;
+            }
             if (pose == Pose::Dead && root_mode_ == PRONE) {   // face down where it fell crawling: flat on its
                 T[J_SPINE] = {-0.04f, 0.1f, 0.05f};             // front, one arm reaching on along the ground,
                 T[J_CHEST] = {-0.02f, 0.08f, 0};                // the other along its side, the face turned

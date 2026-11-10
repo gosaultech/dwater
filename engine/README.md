@@ -542,8 +542,10 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   arched crests of bulbs, scalloped awnings, soft toys on strings, targets, claw machines lit inside.
   The studio's sets: `--set vehicles|heavy|trams|plant`.
 - **The dead** (a room's `"dead"`; `Game::build_corpses`). The cast's own bodies, posed where they
-  fell (face down, flat, an arm reaching on and the cheek to the street; or on the back, arms flung
-  out), half of them sprawled the other way round (`mirror_targets`, tested in `test_pose.cpp`), never rising (unlike a `"lying"` Drowned, which does: from the
+  fell (face down, flat, an arm reaching on and the cheek to the street; on the back, arms flung
+  out; or sat slumped against a shop front or a car's flank, the head fallen aside, one knee drawn
+  up: `"sitting"`, placed by `catastrophe.slumped` clear of doors and props and where a shot sees
+  them), half of them sprawled the other way round (`mirror_targets`, tested in `test_pose.cpp`), never rising (unlike a `"lying"` Drowned, which does: from the
   doorway you can't tell which is which), their blood spread under them; drawn over the painting
   within 40 m of the camera. Placed by the catastrophe pass, clear of every door.
 - **The whole floor at once.** To render a room, Blender builds every room on its storey at its

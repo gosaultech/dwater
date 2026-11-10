@@ -99,6 +99,7 @@ RoomSpec RoomSpec::load(const std::string& path) {
         D.yaw = b.value("yaw", 0.0f) * DEG;
         D.variant = b.value("variant", 0);
         D.prone = b.value("prone", false);
+        D.sitting = b.value("sitting", false);
         D.blood = b.value("blood", 0.55f);
         r.dead.push_back(D);
     }

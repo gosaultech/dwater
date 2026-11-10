@@ -492,3 +492,94 @@ def foreground(spec, per_shot=1):
                 break
     spec["props"] += added
     return spec
+
+
+FACING = {"west": (-1.0, 0.0), "east": (1.0, 0.0), "south": (0.0, 1.0), "north": (0.0, -1.0)}   # a facade's front
+FLAT = {"boards", "spray", "poster", "xcode", "silt", "scorch", "blood", "leaflets", "puddle", "glow", "wire_down", "rug", "runner"}
+SAT = MARK + "_sat"
+
+
+def _seen(spec, x, y, z):
+    """Is (x, y, z) well inside some shot's picture, 3 to 22 m from its lens?"""
+    for s in spec.get("shots", []):
+        p, look = np.array(s["pos"], float), np.array(s["look_at"], float)
+        f = look - p
+        f /= np.linalg.norm(f)
+        r = np.cross(f, [0.0, 1.0, 0.0])
+        r /= np.linalg.norm(r)
+        u = np.cross(r, f)
+        d = np.array([x, y, z]) - p
+        depth = d @ f
+        tv = math.tan(math.radians(s["fov"]) / 2)
+        if 3.0 < depth < 22.0 and abs((d @ r) / depth / (tv * 16 / 9)) < 0.8 and abs((d @ u) / depth / tv) < 0.8:
+            return True
+    return False
+
+
+def slumped(spec, most=2):
+    """The dead sat against a wall or a car where they died, slumped (RE's corpses against the
+    walls): one or two a street, against a facade clear of its doors or a vehicle's flank, never in a
+    prop, never on top of another of the dead, and only where a shot sees them. The engine poses them
+    ("sitting"); nothing here touches the props, so the cameras and the pictures are unchanged."""
+    if spec["id"] not in ACTIVE and spec["id"] not in AUTO:
+        return spec
+    spec["dead"] = [b for b in spec.get("dead", []) if not b.get(SAT)]
+    rng = np.random.default_rng(sum(map(ord, spec["id"])) * 31 + 5)
+    spots = []   # (x, z, facing x, facing z)
+    for fa in spec.get("outdoor", {}).get("facades", []):
+        fx, fz = FACING.get(fa.get("facing"), (0.0, 0.0))
+        if (fx == 0.0 and fz == 0.0) or fa.get("stoop", 0.0) > 0.0:   # (a stoop's steps out front: no wall to sit against)
+            continue
+        lo, hi = (fa["z0"], fa["z1"]) if fx else (fa["x0"], fa["x1"])
+        bays = max(1, fa.get("bays", 1))
+        bw = (hi - lo) / bays
+        door = (fa.get("shop") or {}).get("door_bay", fa.get("door_bay"))
+        t = lo + 0.8
+        while t < hi - 0.8:
+            k = int((t - lo) / bw)
+            if door is None or (k != door and k != bays - 1 - door):
+                spots.append((fa["x"] + fx * 0.38, t, fx, fz) if fx else (t, fa["z"] + fz * 0.38, fx, fz))
+            t += 1.3
+    for p in spec.get("props", []):   # a vehicle's flank
+        if p["type"] not in ("vehicle", "bus") or p.get("burnt") or "size" not in p:
+            continue
+        a = math.radians(p.get("yaw", 0.0))
+        w, _, d = p["size"]
+        for side in (-1.0, 1.0):
+            for lx in (-w * 0.25, w * 0.15):
+                lz = side * (d / 2 + 0.35)
+                x = p["pos"][0] + lx * math.cos(a) + lz * math.sin(a)
+                z = p["pos"][2] - lx * math.sin(a) + lz * math.cos(a)
+                spots.append((x, z, side * math.sin(a), side * math.cos(a)))
+    if not spots:
+        return spec
+    xs, zs, ok = cameras.open_floor(spec)
+    (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
+    solid = [(p["pos"][0], p["pos"][2], p["size"][0] / 2, p["size"][2] / 2, math.radians(p.get("yaw", 0.0)))
+             for p in spec.get("props", []) if "size" in p and p["type"] not in FLAT and p["type"] not in ("vehicle", "bus")]
+    doors = [(i["pos"][0], i["pos"][2]) for i in spec.get("interactables", []) if i.get("kind") in ("door", "end")]
+    taken = [(b["pos"][0], b["pos"][2]) for b in spec["dead"]]
+    order = rng.permutation(len(spots))
+    want = int(rng.integers(1, most + 1))
+    out = []
+    for i in order:
+        x, z, fx, fz = spots[int(i)]
+        if not (bx0 + 0.3 < x < bx1 - 0.3 and bz0 + 0.3 < z < bz1 - 0.3):
+            continue
+        ci, ck = int(np.argmin(np.abs(xs - x))), int(np.argmin(np.abs(zs - z)))
+        if not ok[ci, ck]:
+            continue
+        if any(cameras._in_box(np.array([x]), np.array([z]), (cx, cz, hx, hz, a), 0.55)[0] for cx, cz, hx, hz, a in solid):
+            continue
+        if any(math.hypot(x - dx, z - dz) < 2.2 for dx, dz in doors) or any(math.hypot(x - tx, z - tz) < 5.0 for tx, tz in taken):
+            continue
+        y = ground_y(spec, x, z)
+        if not _seen(spec, x, y + 0.6, z):
+            continue
+        out.append({"pos": [round(x, 2), round(y, 3), round(z, 2)], "yaw": round(math.degrees(math.atan2(fx, fz)), 1),
+                    "variant": int(rng.integers(3)), "prone": False, "sitting": True, "blood": 0.35, MARK: True, SAT: True})
+        taken.append((x, z))
+        if len(out) >= want:
+            break
+    spec["dead"] += out
+    return spec

@@ -35,7 +35,7 @@ class Catastrophe(unittest.TestCase):
     def test_it_runs_twice_to_the_same_street_and_leaves_the_others(self):
         for rid in sorted(catastrophe.ACTIVE | catastrophe.AUTO):
             spec = room(rid)
-            again = catastrophe.foreground(cameras.apply(catastrophe.leavings(barricades.apply(catastrophe.apply(copy.deepcopy(spec))))))
+            again = catastrophe.slumped(catastrophe.foreground(cameras.apply(catastrophe.leavings(barricades.apply(catastrophe.apply(copy.deepcopy(spec)))))))
             self.assertEqual(json.dumps(spec, sort_keys=True), json.dumps(again, sort_keys=True), rid)
         other = room("muntplein")
         self.assertEqual(json.dumps(catastrophe.apply(copy.deepcopy(other)), sort_keys=True), json.dumps(other, sort_keys=True))
@@ -109,6 +109,25 @@ class Catastrophe(unittest.TestCase):
                 k = int(np.argmin(np.abs(zs - z)))
                 self.assertTrue(ok[max(i - 1, 0):i + 2, max(k - 1, 0):k + 2].any(), (rid, b))
                 self.assertAlmostEqual(y, catastrophe.ground_y(spec, x, z), 3, (rid, b))   # on its pavement, not sunk in it
+
+    def test_the_seated_dead_sit_against_a_wall_or_a_car_facing_away(self):
+        seated = 0
+        for rid in sorted(catastrophe.ACTIVE | catastrophe.AUTO):
+            spec = room(rid)
+            for b in [b for b in spec.get("dead", []) if b.get("sitting")]:
+                seated += 1
+                x, y, z = b["pos"]
+                fx, fz = math.sin(math.radians(b["yaw"])), math.cos(math.radians(b["yaw"]))
+                behind = (x - fx * 0.45, z - fz * 0.45)   # what its back rests on
+                walls = [fa for fa in spec.get("outdoor", {}).get("facades", [])
+                         if (fa.get("facing") in ("west", "east") and abs(behind[0] - fa["x"]) < 0.15 and fa["z0"] <= z <= fa["z1"])
+                         or (fa.get("facing") in ("north", "south") and abs(behind[1] - fa["z"]) < 0.15 and fa["x0"] <= x <= fa["x1"])]
+                cars = [p for p in spec["props"] if p["type"] in ("vehicle", "bus") and "size" in p and cameras._in_box(
+                    np.array([behind[0]]), np.array([behind[1]]),
+                    (p["pos"][0], p["pos"][2], p["size"][0] / 2, p["size"][2] / 2, math.radians(p.get("yaw", 0.0))), 0.15)[0]]
+                self.assertTrue(walls or cars, (rid, b))
+                self.assertTrue(catastrophe._seen(spec, x, y + 0.6, z), (rid, b))
+        self.assertGreater(seated, 0)
 
     def test_its_decals_and_its_fx_are_ones_the_tools_know(self):
         for rid in sorted(catastrophe.ACTIVE | catastrophe.AUTO):
