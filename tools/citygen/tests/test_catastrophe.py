@@ -137,7 +137,8 @@ class Catastrophe(unittest.TestCase):
                     self.assertEqual(p["decal"]["id"], decals.decal_id(p["decal"]))
                     self.assertIn(p["decal"]["style"], decals.STYLES)
             kinds = [f["kind"] for f in spec.get("fx", [])]
-            self.assertTrue(kinds)
+            if rid in catastrophe.ACTIVE:   # (a hand-told street has its live effects; one told by rule has them where it left a beacon or a fire)
+                self.assertTrue(kinds, rid)
             self.assertTrue(set(kinds) <= FX, kinds)
 
 
