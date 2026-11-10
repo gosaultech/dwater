@@ -1,7 +1,7 @@
 <!-- damned_waters/docs/handoff/session_memory.md -->
 <!-- Purpose: the memory between sessions: where the work stands, how it is made, what was learned, what is open. Update it at the end of each session. -->
 
-# Where Damned Waters stands (last updated 2026-11-08)
+# Where Damned Waters stands (last updated 2026-11-10)
 
 ## In one paragraph
 The route runs end to end on pre-rendered backgrounds, from the canal house through central
@@ -77,8 +77,15 @@ the container's CPU).
   when you arrive. The fire shader churns, tears into licks and throws embers.
 - **Committing a rendered room:** scratchpad `tools/commit_room.py <room> "<line>"` adds it to
   `catastrophe.ACTIVE` (hand-told) or `AUTO`, runs the story and camera tests, commits its
-  plates, spec and the set, and pushes. `test_catastrophe` uses muntplein as the room left alone:
-  change that when muntplein is committed.
+  plates, spec and the set, and pushes. (`test_catastrophe`'s room left alone is the canal
+  house's voorkamer.)
+- **Rendered and committed overnight (2048x1152):** Rokin zuid and noord, the Dam, Stationsplein
+  (ACTIVE); Damrak zuid and noord (AUTO). The queue runs on through `qcity.txt` (muntplein,
+  kalverstraat, rembrandtplein, thorbeckeplein, ...; about 18 more hours); each room is committed
+  as it lands. Re-check a room's stills in-engine with scratchpad `tools/rk_stills.py <tag> <room>`.
+- **Known, left as is:** some rule-placed dead on the Dam lie where no shot sees them (moving them
+  would shift the silt's seed and the plates with it); Rokin zuid's canal boats keep the old hull;
+  the walk-through was not re-run after the night's engine changes (the capture was).
 - **Container restarts** (one at 01:23 on 2026-11-10, mid-Dam) kill the queue and the render in
   flight. The queue (`qcity.sh`) now resumes a room it started and never finished: it renders only
   the shots missing a colour or depth file (`--shots`), and logs `<room> resume [ids]`. To restart:
