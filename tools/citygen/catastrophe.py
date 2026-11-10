@@ -438,15 +438,19 @@ WRACK_IN = ["ph:can_rusted", "ph:plastic_bottle_gallon", "ph:bleach_bottle", "ph
 BELONGINGS = [("ph:vintage_suitcase", None), ("ph:vintage_suitcase", 90), ("ph:trashbag", None), ("ph:rubber_boots", 90),
               ("ph:wicker_basket_01", 90), ("ph:plastic_jerrycan", None)]
 CAFES = {"cafe", "snack", "restaurant", "bar", "ijs", "club"}
-INDOORS = {   # a hall's or a shop's use that night: what it leaves, and next to what
-    "shelter": ({"camp_bed", "trestle_table", "counter", "bench", "luggage", "shop_unit", "ticket_machine"},
-                BELONGINGS + [("ph:russian_food_cans_01", None), ("ph:plastic_bottle_gallon", 90), ("ph:medical_box", None)]),
-    "shop": ({"shelving", "display_case", "clothes_rail", "counter"},
-             [("ph:cardboard_box_01", None), ("ph:cardboard_box_01", 90), ("ph:bleach_bottle", 90), ("ph:multi_cleaner_bottle", 90),
-              ("ph:lubricant_spray", 90), ("ph:plastic_container", None)]),
-    "lobby": ({"counter", "ticket_booth", "stanchions"},
-              [("ph:vintage_suitcase", None), ("ph:vintage_suitcase", 90), ("ph:trashbag", None), ("ph:wooden_stool_01", 90)]),
-    "bar": ({"counter"}, [("ph:wine_bottles_01", None), ("ph:wooden_stool_01", 90), ("ph:dining_chair_02", 90)]),
+INDOORS = {   # a hall's or a shop's use that night: by which of its things, what it leaves, and how often
+    "shelter": [({"camp_bed", "bench", "luggage", "shop_unit", "ticket_machine"},
+                 [("ph:vintage_suitcase", None), ("ph:vintage_suitcase", 90), ("ph:wicker_basket_01", None), ("ph:rubber_boots", None),
+                  ("ph:plastic_bottle_gallon", None), ("ph:jug_01", None), ("ph:vintage_oil_lamp", None), ("ph:russian_food_cans_01", None),
+                  ("ph:trashbag", None), ("ph:wooden_stool_01", 90)], 0.7),
+                ({"trestle_table", "counter"}, [("ph:medical_box", None), ("ph:clipboard", None), ("ph:vintage_crutches_01", 90),
+                                                ("ph:wheelchair_01", None), ("ph:plastic_jerrycan", None)], 0.9)],
+    "shop": [({"shelving", "display_case", "clothes_rail", "counter"},
+              [("ph:cardboard_box_01", None), ("ph:cardboard_box_01", 90), ("ph:bleach_bottle", 90), ("ph:multi_cleaner_bottle", 90),
+               ("ph:lubricant_spray", 90), ("ph:plastic_container", None)], 0.5)],
+    "lobby": [({"counter", "ticket_booth", "stanchions"},
+               [("ph:vintage_suitcase", None), ("ph:vintage_suitcase", 90), ("ph:trashbag", None), ("ph:wooden_stool_01", 90)], 0.5)],
+    "bar": [({"counter"}, [("ph:wine_bottles_01", None), ("ph:wooden_stool_01", 90), ("ph:dining_chair_02", 90)], 0.5)],
 }
 USE = {"nieuwe_kerk": "shelter", "centraal_hal": "shelter", "beurs_zaal": "shelter", "metro_centraal": "shelter",
        "metro_rokin": "shelter", "warenhuis": "shop", "apotheek": "shop", "bioscoop": "lobby", "hotel_lobby": "lobby",
@@ -469,6 +473,8 @@ def dress(spec, rng):
         i, k = cell(x, z)
         if not ok[i, k] or any(math.hypot(x - a, z - b) < r + c for a, b, c in placed):
             return False
+        if ref not in WRACK and any(q["model"] == ref and math.hypot(x - q["pos"][0], z - q["pos"][2]) < 3.0 for q in out):
+            return False   # (not the same thing twice side by side: a set dresser varies what's dropped)
         y = ground_y(spec, x, z) if outdoor else 0.0
         out.append(model(ref, x, z, float(rng.uniform(0, 360)) if yaw is None else yaw, y=y, tip=tip))
         placed.append((x, z, r))
@@ -496,11 +502,11 @@ def dress(spec, rng):
                 a, L = math.radians(p.get("yaw", 0.0)), p["size"][0]
                 runs.append((lambda t, p=p, a=a: (p["pos"][0] + t * math.cos(a), p["pos"][2] - t * math.sin(a)), -L / 2, L / 2))
         for at, lo, hi in runs:
-            t = lo + float(rng.uniform(1.0, 9.0))
+            t = lo + float(rng.uniform(1.0, 7.0))
             while t < hi - 0.5:
                 x, z = at(t)
-                clump(x, z, WRACK, int(rng.integers(2, 4)), 0.5)
-                t += float(rng.uniform(8.0, 13.0))
+                clump(x, z, WRACK, int(rng.integers(2, 5)), 0.55)
+                t += float(rng.uniform(6.0, 10.0))
     if outdoor:
         o = spec["outdoor"]
         # 2. heaps against what stood in the water's way: a car, a tram, a stall, a lamp's foot
@@ -508,7 +514,7 @@ def dress(spec, rng):
                  for p in spec["props"] if p["type"] in STOPS and "size" in p]
         stops += [(x, z, 0.15, 0.15, 0.0) for x, z in o.get("lamps", [])]
         (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
-        heaps = min(6, max(1, int((bx1 - bx0) * (bz1 - bz0) / 350)))
+        heaps = min(8, max(1, int((bx1 - bx0) * (bz1 - bz0) / 300)))
         for j in rng.permutation(len(stops))[:heaps * 2]:
             if heaps <= 0:
                 break
@@ -547,10 +553,10 @@ def dress(spec, rng):
                     put("ph:trashbag", x + 1.1 * math.cos(a), z + 1.1 * math.sin(a), 0.3)
     else:
         # 5. indoors: what the night's use of the hall left by its beds, tables and counters
-        near, things = INDOORS.get(USE.get(spec["id"], ""), (set(), []))
-        use = USE.get(spec["id"], "")
         for p in spec["props"]:
-            if p["type"] in near and "size" in p and rng.random() < (0.75 if use == "shelter" else 0.5):
+            for near, things, often in INDOORS.get(USE.get(spec["id"], ""), []):
+                if p["type"] not in near or "size" not in p or rng.random() >= often:
+                    continue
                 a = math.radians(p.get("yaw", 0.0))
                 ref, tip = things[int(rng.integers(len(things)))]
                 for _ in range(4):   # (a side of it with floor to stand a thing on)
