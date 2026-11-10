@@ -617,6 +617,209 @@
       "rough": 0.7,
       "lift": 0.5,
       "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_crate_02",
+      "pos": [
+        1.87,
+        0.0,
+        1.34
+      ],
+      "yaw": 202.7,
+      "collide": false,
+      "tip": 20,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        7.13,
+        0.0,
+        4.8
+      ],
+      "yaw": 39.5,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_military_crate",
+      "pos": [
+        5.81,
+        0.0,
+        9.1
+      ],
+      "yaw": 342.7,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_trash_can",
+      "pos": [
+        1.03,
+        0.0,
+        3.9
+      ],
+      "yaw": 159.1,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        7.33,
+        0.0,
+        6.78
+      ],
+      "yaw": 303.2,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_jerrycan",
+      "pos": [
+        2.44,
+        0.0,
+        9.6
+      ],
+      "yaw": 23.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:metal_jerrycan",
+      "pos": [
+        2.95,
+        0.0,
+        8.63
+      ],
+      "yaw": 239.0,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        4.1,
+        0.0,
+        1.14
+      ],
+      "yaw": 222.5,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        12.56,
+        0.0,
+        6.33
+      ],
+      "yaw": 299.6,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:can_rusted",
+      "pos": [
+        13.14,
+        0.0,
+        9.41
+      ],
+      "yaw": 326.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_military_crate",
+      "pos": [
+        12.94,
+        0.0,
+        0.63
+      ],
+      "yaw": 145.2,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        14.71,
+        0.0,
+        6.69
+      ],
+      "yaw": 122.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_crate_01",
+      "pos": [
+        14.95,
+        0.0,
+        2.83
+      ],
+      "yaw": 183.2,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_container",
+      "pos": [
+        1.11,
+        0.0,
+        3.28
+      ],
+      "yaw": 148.2,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:compost_bags",
+      "pos": [
+        5.88,
+        0.0,
+        9.62
+      ],
+      "yaw": 284.6,
+      "collide": false,
+      "catastrophe_fg": true
     }
   ],
   "lights": [
@@ -765,6 +968,21 @@
         8.549999999999999
       ],
       "yaw": 160
+    }
+  ],
+  "fx": [],
+  "dead": [
+    {
+      "pos": [
+        11.62,
+        0.0,
+        4.12
+      ],
+      "yaw": 207,
+      "variant": 1,
+      "prone": false,
+      "blood": 0.44,
+      "catastrophe": true
     }
   ]
 }

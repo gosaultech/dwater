@@ -358,7 +358,7 @@ def stationsplein(spec):
 
 # The streets told by rule (auto_story), as their backgrounds are re-rendered (so a room's cameras and
 # its pictures always agree): add a room here in the same commit as its new plates.
-AUTO = {"apotheek", "beurs_zaal", "bioscoop", "bloemenmarkt", "centraal_hal", "damrak_noord", "damrak_zuid", "herengracht", "hotel_bar", "hotel_lobby", "kalversteeg", "kalverstraat", "kalverstraat_noord", "metro_centraal", "muntplein", "nieuwe_kerk", "reguliersbreestraat", "rembrandtplein", "rondvaartboot", "station_noord", "thorbeckeplein", "warenhuis"}
+AUTO = {"apotheek", "beurs_zaal", "bioscoop", "bloemenmarkt", "centraal_hal", "damrak_noord", "damrak_zuid", "herengracht", "hotel_bar", "hotel_lobby", "kalversteeg", "kalverstraat", "kalverstraat_noord", "metro_centraal", "metro_rokin", "muntplein", "nieuwe_kerk", "reguliersbreestraat", "rembrandtplein", "rondvaartboot", "station_noord", "thorbeckeplein", "warenhuis"}
 
 
 STORIES = {"rokin_zuid": rokin_zuid, "rokin_noord": rokin_noord, "dam": dam, "stationsplein": stationsplein}
