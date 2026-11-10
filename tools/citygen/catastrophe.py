@@ -350,8 +350,8 @@ def stationsplein(spec):
     props += [{"type": "body_bag", "pos": [65.0, 0.0, 22.5 + 1.2 * k], "yaw": 90 + (k % 2) * 5, "size": [1.85, 0.3, 0.62], "collide": False}
               for k in range(5)]
     fx += [{"kind": "fire", "pos": [8.0, 0.75, 40.0], "size": 1.3, "seed": 21}, {"kind": "smoke", "pos": [8.0, 1.8, 40.0], "size": 2.2, "seed": 22}]
-    the_dead += [dead(29.5, 6.5, 170, 0, prone=True, blood=0.5), dead(31.2, 8.4, 40, 1, blood=0.4),
-                 dead(39.6, 6.0, 300, 2, prone=True, blood=0.6), dead(41.8, 9.2, 120, 0, prone=True, blood=0.45),
+    the_dead += [dead(30.1, 7.1, 170, 0, prone=True, blood=0.5), dead(31.2, 8.4, 40, 1, blood=0.4),   # (clear of the cordon)
+                 dead(39.1, 6.4, 300, 2, prone=True, blood=0.6), dead(41.8, 9.2, 120, 0, prone=True, blood=0.45),
                  dead(26.8, 10.8, 250, 2, blood=0.55), dead(44.5, 12.6, 80, 1, prone=True, blood=0.5)]
     return props, fx, the_dead
 
@@ -362,7 +362,7 @@ AUTO = set()
 
 
 STORIES = {"rokin_zuid": rokin_zuid, "rokin_noord": rokin_noord, "dam": dam, "stationsplein": stationsplein}
-ACTIVE = {"dam", "rokin_noord", "rokin_zuid"}   # the hand-told streets whose plates are rendered (others wait for theirs)
+ACTIVE = {"dam", "rokin_noord", "rokin_zuid", "stationsplein"}   # the hand-told streets whose plates are rendered (others wait for theirs)
 # DW_STORIES=a,b,...: tell these too (a build of the next rooms to render, into a scratch DW_ROOMS)
 for _r in filter(None, __import__("os").environ.get("DW_STORIES", "").split(",")):
     (ACTIVE if _r in STORIES else AUTO).add(_r)
