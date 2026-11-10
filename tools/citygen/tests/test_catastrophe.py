@@ -75,7 +75,9 @@ class Catastrophe(unittest.TestCase):
                 if p.get("model") in big and p.get("catastrophe_fg") is None:
                     self.assertFalse(in_lane(x, z, rid, grow=-0.1), (rid, p))
                 n += 1
-            self.assertGreater(n, 80, rid)
+            (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
+            leave = min(180, max(12, (bx1 - bx0) * (bz1 - bz0) * 0.09))   # (what leavings() drifts, by the floor's size)
+            self.assertGreater(n, min(80, 0.8 * leave), rid)
 
     def test_nothing_by_a_lens_hides_him(self):
         for rid in sorted(catastrophe.ACTIVE | catastrophe.AUTO):
