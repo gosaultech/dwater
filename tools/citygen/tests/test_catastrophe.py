@@ -37,7 +37,7 @@ class Catastrophe(unittest.TestCase):
             spec = room(rid)
             again = catastrophe.slumped(catastrophe.foreground(cameras.apply(catastrophe.leavings(barricades.apply(catastrophe.apply(copy.deepcopy(spec)))))))
             self.assertEqual(json.dumps(spec, sort_keys=True), json.dumps(again, sort_keys=True), rid)
-        other = room("muntplein")
+        other = room("voorkamer")   # (the canal house: no story, ever)
         self.assertEqual(json.dumps(catastrophe.apply(copy.deepcopy(other)), sort_keys=True), json.dumps(other, sort_keys=True))
         self.assertNotIn("fx", other)
 
