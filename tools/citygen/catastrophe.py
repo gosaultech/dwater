@@ -363,7 +363,7 @@ AUTO = {"apotheek", "beurs_zaal", "bioscoop", "bloemenmarkt", "centraal_hal", "d
 
 STORIES = {"rokin_zuid": rokin_zuid, "rokin_noord": rokin_noord, "dam": dam, "stationsplein": stationsplein}
 ACTIVE = {"dam", "rokin_noord", "rokin_zuid", "stationsplein"}   # the hand-told streets whose plates are rendered (others wait for theirs)
-DRESSED = {"dam", "damrak_zuid", "rokin_noord", "rokin_zuid", "stationsplein"}   # the rooms whose plates show dress() (the night's leavings by what each place was), not the old scatter
+DRESSED = {"dam", "damrak_noord", "damrak_zuid", "rokin_noord", "rokin_zuid", "stationsplein"}   # the rooms whose plates show dress() (the night's leavings by what each place was), not the old scatter
 for _r in filter(None, __import__("os").environ.get("DW_DRESSED", "").split(",")):
     DRESSED.add(_r)
 # DW_STORIES=a,b,...: tell these too (a build of the next rooms to render, into a scratch DW_ROOMS)
