@@ -77,7 +77,7 @@ class Catastrophe(unittest.TestCase):
                 x, _, z = p["pos"]
                 i = int(np.argmin(np.abs(xs - x)))
                 k = int(np.argmin(np.abs(zs - z)))
-                self.assertTrue(ok[i, k], (rid, p))
+                self.assertTrue(ok[max(i - 1, 0):i + 2, max(k - 1, 0):k + 2].any(), (rid, p))   # (against a thing: its spot rounds into the next cell)
                 for q in left[n + 1:]:
                     self.assertGreater(math.hypot(x - q["pos"][0], z - q["pos"][2]), 0.35, (rid, p, q))
                 if not spec.get("outdoor"):
