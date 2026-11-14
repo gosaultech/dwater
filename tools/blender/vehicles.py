@@ -628,6 +628,13 @@ def army_truck(root, p, w, h, d):
         kit.soft(hinge, "cab_door", (-0.55, 1.45, sz * 0.03), (1.1, 1.2, 0.07), olive, 0.03, 2)
 
 
+def _tram(root, p, w, h, d):
+    """A street's tram is Amsterdam's own (combino.py); the metro's cars keep the plain body ("plain":
+    the plain body on a street, for a before/after)."""
+    import combino
+    return tram(root, p, w, h, d) if (p.get("underframe") or p.get("plain")) else combino.build(root, p, w, h, d)
+
+
 def _car_or_truck(root, p, w, h, d):
     if p.get("livery") == "army" and h > 2.5:
         return army_truck(root, p, w, h, d)
@@ -779,4 +786,4 @@ def light_tower(root, p, w, h, d):
     jw.location = g2b((jx, 0.09, jz))
 
 
-kit.PROPS.update({"vehicle": _car_or_truck, "tram": tram, "bus": bus, "light_tower": light_tower})
+kit.PROPS.update({"vehicle": _car_or_truck, "tram": _tram, "bus": bus, "light_tower": light_tower})

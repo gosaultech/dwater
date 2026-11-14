@@ -4,7 +4,7 @@
 # moon, a little sky), the flood's line on everything, rendered from a few angles in seconds rather
 # than the minutes a whole street takes. A tool for judging and iterating a model, not a game asset.
 #
-#   blender -b --factory-startup -P tools/blender/vehicle_studio.py -- --out DIR [--set vehicles|trams|dead]
+#   blender -b --factory-startup -P tools/blender/vehicle_studio.py -- --out DIR [--set vehicles|trams|...] [--day] [--views 0,2]
 #
 # ELI5: the photo booth at a car show: one car at a time under the same lights, so you judge the car,
 # not the street it's parked in.
@@ -40,6 +40,11 @@ SETS = {
         {"type": "tram", "pos": [0.0, 0.0, 9.0], "yaw": 0, "size": [30.0, 3.4, 2.4], "board": "", "power": 170.0, "pantograph": False,
          "derail": {"yaw": [0.0, 9.0, 24.0], "roll": [0.0, 2.0, 6.5], "lift": [0.0, 0.0, 0.1]}, "dark": [2], "smashed": [1, 2]},
     ],
+    "trams_before": [   # the plain three-section body the streets had before combino.py (kept for the metro): for a before/after
+        {"type": "tram", "pos": [0.0, 0.0, 0.0], "yaw": 0, "size": [30.0, 3.4, 2.4], "board": "CENTRAAL", "power": 300.0, "plain": True},
+        {"type": "tram", "pos": [0.0, 0.0, 9.0], "yaw": 0, "size": [30.0, 3.4, 2.4], "board": "", "power": 170.0, "pantograph": False, "plain": True,
+         "derail": {"yaw": [0.0, 9.0, 24.0], "roll": [0.0, 2.0, 6.5], "lift": [0.0, 0.0, 0.1]}, "dark": [2], "smashed": [1, 2]},
+    ],
     "plant": [   # the site's things: a lighting tower, the fair's stalls
         {"type": "light_tower", "pos": [0.0, 0.0, 0.0], "yaw": 20, "size": [2.2, 8.5, 1.4], "aim": [4.0, 0.0, 14.0], "power": 1500.0, "seed": 7},
         {"type": "fair_stall", "pos": [7.0, 0.0, 1.0], "yaw": -10, "size": [5.0, 2.8, 2.6], "kind": "oliebollen", "seed": 1},
@@ -54,7 +59,8 @@ SETS = {
 VIEWS = {   # (camera position, look at) in the Godot frame
     "vehicles": [((9.0, 2.4, -8.0), (4.0, 0.8, 0.0)), ((24.0, 3.0, -9.0), (16.0, 1.0, 0.0)), ((26.5, 2.2, 6.0), (25.0, 0.6, 0.0)), ((-4.0, 2.6, 9.0), (8.0, 0.8, 0.0))],
     "heavy": [((7.0, 2.8, -9.0), (1.0, 1.2, 0.0)), ((22.0, 3.5, -11.0), (14.0, 1.4, 2.0)), ((-6.0, 2.6, 9.0), (4.0, 1.2, 2.0))],
-    "trams": [((-22.0, 3.0, 12.0), (-4.0, 1.6, 3.0)), ((20.0, 4.5, 17.0), (6.0, 1.4, 5.0)), ((2.0, 2.4, 15.5), (6.0, 1.6, 9.0))],
+    "trams": [((20.5, 1.7, 5.2), (13.0, 1.75, 0.3)), ((6.0, 1.8, 13.0), (6.0, 1.7, 0.0)), ((-21.0, 2.6, -7.5), (-9.0, 1.6, 0.0)),
+              ((24.0, 6.5, 22.0), (4.0, 1.4, 6.0)), ((9.0, 1.7, 5.0), (9.5, 1.6, 0.0))],
     "plant": [((8.0, 4.5, 16.0), (-0.5, 4.2, 0.0)), ((3.2, 1.6, 4.0), (0.0, 1.0, 0.0)), ((10.0, 2.6, 10.0), (11.0, 2.0, 0.0)),
               ((21.0, 2.0, 8.0), (20.5, 1.8, 0.0)), ((-3.0, 2.0, 8.5), (-6.0, 1.8, 2.0)), ((-10.5, 2.4, -2.5), (-6.0, 1.8, 2.0))],
     "boats": [((16.0, 3.0, 9.0), (6.0, 1.0, 0.0)), ((-16.0, 2.4, 7.0), (-6.0, 1.0, 0.0))],
@@ -68,6 +74,8 @@ def main():
     ap.add_argument("--set", default="vehicles", choices=list(SETS))
     ap.add_argument("--res", default="960x540")
     ap.add_argument("--samples", type=int, default=16)
+    ap.add_argument("--day", action="store_true", help="an overcast day instead of the night: to judge a shape against a photograph")
+    ap.add_argument("--views", default="", help="which of the set's views to render (comma-separated numbers; all if empty)")
     a = ap.parse_args(argv)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     builders.reset_material_cache()
@@ -82,6 +90,9 @@ def main():
     world.use_nodes = True
     world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.02, 0.025, 0.035, 1)
     world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.6
+    if a.day:
+        world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.75, 0.8, 0.9, 1)
+        world.node_tree.nodes["Background"].inputs["Strength"].default_value = 1.1
     s.world = world
     ground = builders.material({"ph": "herringbone_brick", "tint": [0.55, 0.42, 0.42], "wet": 0.8, "puddles": 0.4})
     builders.box_aabb("ground", (-40.0, -0.4, -30.0), (60.0, 0.0, 30.0), ground)
@@ -100,7 +111,10 @@ def main():
         builders.build_prop(p, 10.0)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
-    for i, (eye, look) in enumerate(VIEWS.get(a.set, [])):
+    only = {int(v) for v in a.views.split(",") if v}
+    for i, (eye, look) in enumerate(VIEWS.get(a.set, VIEWS.get(a.set.split("_")[0], []))):
+        if only and i not in only:
+            continue
         cd = bpy.data.cameras.new("cam")
         cd.lens_unit, cd.angle = "FOV", math.radians(48)
         cam = bpy.data.objects.new("cam", cd)

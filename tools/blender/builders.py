@@ -286,10 +286,10 @@ def _wear(nt, b, g, k):
         below = _wmath(nt, "SUBTRACT", 1.0, ss(wav, FLOOD - 0.04, FLOOD + 0.01))
         mud = _wmath(nt, "MULTIPLY", below, _wmath(nt, "ADD", 0.45, _wmath(nt, "MULTIPLY", noise(P, 5.0, 8.0), 0.45)))
         mud = _wmath(nt, "MULTIPLY", mud, wall)                         # (the ground's silt is below)
-        c = mix(c, MUD, _wmath(nt, "MULTIPLY", mud, min(1.0, 0.92 * WEAR)))
+        c = mix(c, MUD, _wmath(nt, "MULTIPLY", mud, min(1.0, 0.92 * WEAR) * k.get("silt", 1.0)))   # ("silt": how much of it a surface holds; gloss paint sheds most)
         line = _wmath(nt, "SUBTRACT", ss(wav, FLOOD - 0.07, FLOOD - 0.015), ss(wav, FLOOD - 0.015, FLOOD + 0.03))
         crust = _wmath(nt, "MULTIPLY", _wmath(nt, "MAXIMUM", line, 0.0), wall)
-        c = mix(c, CRUST, _wmath(nt, "MULTIPLY", crust, 0.9))
+        c = mix(c, CRUST, _wmath(nt, "MULTIPLY", crust, 0.9 * min(1.0, k.get("silt", 1.0) + 0.35)))
         # The ground: silt in patches, thickest against whatever stands (a wide ambient occlusion).
         near = node("ShaderNodeAmbientOcclusion", samples=4)
         near.inputs["Distance"].default_value = 1.4
