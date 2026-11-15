@@ -374,6 +374,10 @@ def bus(root, p, w, h, d):
     """A city bus (one body, or "bendy": two and the bellows): the tram's body on wheels in cut arches,
     white over grey, a tall windscreen, its saloon lit, the doors, the destination display saying
     where everyone was sent ("board")."""
+    import licensed
+    if w <= 14 and not p.get("lofted") and licensed.available("bus_town"):   # a licensed city bus, for the rigid ones (the bendy ones keep ours)
+        licensed.place(root, "bus_town", w, d * 1.04)
+        return None
     q = dict(p)
     q.setdefault("board", "EVACUATIE")
     return tram(root, q, w, h, d, as_bus=True)
