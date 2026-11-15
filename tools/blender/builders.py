@@ -303,7 +303,7 @@ def _wear(nt, b, g, k):
         rust = ss(_wmath(nt, "ADD", noise(P, 3.0, 8.0), _wmath(nt, "MULTIPLY", crease, 0.8)), 0.58, 0.8)
         if FLOOD > 0:
             rust = _wmath(nt, "MAXIMUM", rust, _wmath(nt, "MULTIPLY", _wmath(nt, "SUBTRACT", 1.0, ss(z, FLOOD - 0.1, FLOOD + 0.1)), 0.7))
-        rust = _wmath(nt, "MULTIPLY", rust, min(1.0, 0.8 * WEAR))
+        rust = _wmath(nt, "MULTIPLY", rust, min(1.0, 0.8 * WEAR) * k.get("rust", 1.0))   # ("rust": less on alloy and chrome than on bare steel)
         c = mix(c, RUST, rust)
         mt = _wmath(nt, "MULTIPLY", _wmath(nt, "SUBTRACT", 1.0, rust), metal.default_value)
         nt.links.new(mt, metal)

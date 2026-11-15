@@ -45,6 +45,15 @@ SETS = {
         {"type": "tram", "pos": [0.0, 0.0, 9.0], "yaw": 0, "size": [30.0, 3.4, 2.4], "board": "", "power": 170.0, "pantograph": False, "plain": True,
          "derail": {"yaw": [0.0, 9.0, 24.0], "roll": [0.0, 2.0, 6.5], "lift": [0.0, 0.0, 0.1]}, "dark": [2], "smashed": [1, 2]},
     ],
+    "lineup": [   # every licensed vehicle side by side, noses to +x: to check scale, facing, paint and badges
+        dict({"type": "vehicle", "pos": [0.0, 0.0, i * 3.6], "yaw": 0, "size": [L, H, 1.9], "model": m}, **extra)
+        for i, (m, L, H, extra) in enumerate([
+            ("car_punto", 3.8, 1.45, {"color": [0.22, 0.02, 0.02]}), ("car_focus", 4.4, 1.45, {"color": [0.3, 0.31, 0.32]}),
+            ("car_octavia", 4.5, 1.45, {"color": [0.012, 0.012, 0.014], "livery": "taxi"}), ("car_yaris", 3.6, 1.5, {"color": [0.02, 0.04, 0.12]}),
+            ("car_v70", 4.7, 1.47, {"color": [0.72, 0.73, 0.74], "livery": "police"}), ("van_sprinter", 5.9, 2.6, {"color": [0.85, 0.62, 0.02], "livery": "ambulance"}),
+            ("van_euro", 5.3, 2.4, {"color": [0.5, 0.42, 0.3]}), ("truck_army", 5.7, 2.7, {"livery": "army"}),
+            ("burnt_car_a", 4.5, 1.4, {}), ("burnt_car_b", 4.5, 1.4, {}), ("wreck_gutted", 4.6, 1.4, {}), ("wreck_crashed", 4.6, 1.7, {})])
+    ],
     "street": [   # licensed street furniture, each on its own (licensed.py's PIECES)
         {"type": "licensed", "model": m, "pos": [i * 2.6, 0.0, 0.0], "yaw": 20, "size": [L, 1.0, 1.0]}
         for i, (m, L) in enumerate([("bin_blue", 0.75), ("bin_green", 0.75), ("dumpster", 1.9), ("crowd_barrier", 2.3), ("crowd_barrier_bent", 2.3),
@@ -68,6 +77,10 @@ VIEWS = {   # (camera position, look at) in the Godot frame
     "trams": [((20.5, 1.7, 5.2), (13.0, 1.75, 0.3)), ((6.0, 1.8, 13.0), (6.0, 1.7, 0.0)), ((-21.0, 2.6, -7.5), (-9.0, 1.6, 0.0)),
               ((24.0, 6.5, 22.0), (4.0, 1.4, 6.0)), ((9.0, 1.7, 5.0), (9.5, 1.6, 0.0))],
     "street": [((8.0, 2.6, 8.5), (8.0, 0.6, 0.0)), ((30.0, 2.6, 8.5), (30.0, 0.6, 0.0))],
+    "lineup": [((7.5, 1.2, 3.6), (0.0, 0.75, 3.6)), ((7.5, 1.2, 10.8), (0.0, 0.75, 10.8)), ((9.0, 1.5, 19.8), (0.0, 1.0, 19.8)),
+               ((-7.5, 1.2, 3.6), (0.0, 0.75, 3.6)), ((-7.5, 1.2, 10.8), (0.0, 0.75, 10.8)), ((-9.0, 1.5, 19.8), (0.0, 1.0, 19.8)),
+               ((11.0, 1.9, 5.4), (0.0, 0.8, 5.4)), ((11.0, 1.9, 19.8), (0.0, 0.8, 19.8)), ((13.0, 2.4, 35.0), (0.0, 0.9, 34.2)),
+               ((-11.0, 1.9, 5.4), (0.0, 0.8, 5.4)), ((-11.0, 1.9, 19.8), (0.0, 0.8, 19.8)), ((-13.0, 2.4, 35.0), (0.0, 0.9, 34.2))],
     "plant": [((8.0, 4.5, 16.0), (-0.5, 4.2, 0.0)), ((3.2, 1.6, 4.0), (0.0, 1.0, 0.0)), ((10.0, 2.6, 10.0), (11.0, 2.0, 0.0)),
               ((21.0, 2.0, 8.0), (20.5, 1.8, 0.0)), ((-3.0, 2.0, 8.5), (-6.0, 1.8, 2.0)), ((-10.5, 2.4, -2.5), (-6.0, 1.8, 2.0))],
     "boats": [((16.0, 3.0, 9.0), (6.0, 1.0, 0.0)), ((-16.0, 2.4, 7.0), (-6.0, 1.0, 0.0))],
@@ -102,7 +115,7 @@ def main():
         world.node_tree.nodes["Background"].inputs["Strength"].default_value = 1.1
     s.world = world
     ground = builders.material({"ph": "herringbone_brick", "tint": [0.55, 0.42, 0.42], "wet": 0.8, "puddles": 0.4})
-    builders.box_aabb("ground", (-40.0, -0.4, -30.0), (60.0, 0.0, 30.0), ground)
+    builders.box_aabb("ground", (-40.0, -0.4, -30.0), (60.0, 0.0, 60.0), ground)
     for pos, power, col in (((4.0, 6.5, 6.0), 2500.0, (1.0, 0.75, 0.5)), ((18.0, 6.5, 7.0), 2500.0, (1.0, 0.75, 0.5)), ((-6.0, 6.5, 6.0), 1500.0, (1.0, 0.75, 0.5))):
         ld = bpy.data.lights.new("lamp", "POINT")
         ld.energy, ld.color, ld.shadow_soft_size = power, col, 0.3

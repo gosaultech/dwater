@@ -21,15 +21,21 @@ import builders
 
 CACHE = Path(__file__).resolve().parents[2] / "pipeline_out" / "assets" / "sketchfab"
 # A model as it comes: which way its length runs ("x"/"y") and which end is its nose (+1/-1); the
-# body paint's material ("paint": named, or found as the biggest painted surface); what to throw away.
+# body paint's material ("paint": named, or found as the biggest painted surface); its real length;
+# where its maker's marks are, read off flat elevations: (end, metres across from the middle, metres
+# up from the road, radius in metres).
 MODELS = {
-    "car_punto": {"axis": "y", "front": -1, "paint": ["gt_body"], "plate": ["gt_license"]},
-    "car_focus": {"axis": "y", "front": -1},
-    "car_octavia": {"axis": "y", "front": -1, "paint": ["primary"]},
-    "car_yaris": {"axis": "y", "front": -1, "paint": ["WCCARBODY"]},
-    "car_v70": {"axis": "x", "front": 1, "paint": ["green"]},
-    "van_sprinter": {"axis": "y", "front": -1, "paint": ["Carrosserie"]},
-    "van_euro": {"axis": "y", "front": -1, "paint": ["van_european_delivery_body_shd"]},
+    "car_punto": {"axis": "y", "front": -1, "paint": ["gt_body"], "length": 3.76,
+                  "badges": [("front", 0.0, 0.62, 0.065), ("rear", 0.44, 0.90, 0.1), ("rear", -0.44, 0.90, 0.1)]},
+    "car_focus": {"axis": "y", "front": -1, "length": 4.38,
+                  "badges": [("front", 0.0, 0.66, 0.07), ("rear", 0.0, 1.01, 0.07), ("rear", 0.44, 0.93, 0.1), ("rear", -0.44, 0.93, 0.1)]},
+    "car_octavia": {"axis": "y", "front": -1, "paint": ["primary"], "length": 4.51,
+                    "badges": [("front", 0.0, 0.72, 0.06), ("rear", 0.0, 0.99, 0.06), ("rear", 0.38, 0.95, 0.09), ("rear", -0.38, 0.95, 0.09)]},
+    "car_yaris": {"axis": "y", "front": -1, "paint": ["WCCARBODY"], "length": 3.61, "badges": [("front", 0.0, 0.79, 0.065), ("rear", 0.0, 0.935, 0.065)]},
+    "car_v70": {"axis": "x", "front": 1, "paint": ["green"], "length": 4.71, "badges": [("front", 0.0, 0.66, 0.055)]},
+    "van_sprinter": {"axis": "y", "front": -1, "paint": ["Carrosserie"], "length": 5.91,
+                     "badges": [("front", 0.0, 0.865, 0.11), ("rear", 0.0, 1.28, 0.09)]},
+    "van_euro": {"axis": "y", "front": -1, "paint": ["van_european_delivery_body_shd"], "length": 5.3},
     "truck_army": {"axis": "y", "front": -1, "paint": []},
     "wreck_crashed": {"axis": "y", "front": -1, "paint": []},
     "wreck_gutted": {"axis": "x", "front": 1, "paint": []},
@@ -62,7 +68,7 @@ PIECES = {
 NOT_PAINT = ("glass", "window", "vitre", "black", "rubber", "tire", "tyre", "reifen", "interior", "interrieur", "chrome", "shadow", "wheel", "rim",
              "light", "phare", "amber", "grey", "gray", "default", "material", "sitze", "plastik", "schwarz", "chassis", "trim", "undercarriage")
 GLASS = ("glass", "window", "vitre")
-THROW = ("shadow", "hemi")
+THROW = ("shadow",)   # a painted-on shadow under a car: thrown away if it is a flat sheet (the set casts its own)
 CARS = ["car_punto", "car_focus", "car_octavia", "car_yaris", "car_v70"]
 COLOURS = [(0.012, 0.012, 0.014), (0.30, 0.31, 0.32), (0.55, 0.56, 0.57), (0.02, 0.04, 0.12), (0.22, 0.02, 0.02), (0.02, 0.08, 0.05),
            (0.12, 0.13, 0.15), (0.45, 0.40, 0.30), (0.03, 0.10, 0.14)]   # what a Dutch street is parked full of: black, greys, silver, dark blue, a red, a green
@@ -78,6 +84,7 @@ def available(key):
 def reset():
     _LIB.clear()
     _TINTED.clear()
+    _TREES.clear()
 
 
 def _base(name):
@@ -118,25 +125,117 @@ def _load(model):
         meshes = [o for o in bpy.data.objects if o not in before and o.type == "MESH"]
         bpy.context.view_layer.update()
     glass = combino._glass("licensed_glass", (0.16, 0.18, 0.19), 0.2)
-    done = set()
+    done, keep = set(), []
     for o in meshes:
+        lo, hi = _bounds([o])
+        names = [s.material.name for s in o.material_slots if s.material]
+        if names and all(_is(n, THROW) for n in names) and hi.z - lo.z < 0.03 * max(hi.x - lo.x, hi.y - lo.y):
+            o.hide_render = True
+            continue   # (left out of the library: not even its outline for the ground's silt to drift against)
+        keep.append(o)
         for s in o.material_slots:
             m = s.material
             if m is None:
                 continue
-            if _is(m.name, THROW):
-                s.material = _hole()
-            elif _is(m.name, GLASS):
+            if _is(m.name, GLASS):
                 s.material = glass
             elif m.name not in done:
                 done.add(m.name)
-                builders.weather(m, {"grime": 1.1, "streaks": 0.5, "silt": 0.5, "bevel": 0.0})
+                _tint_node(m)
+                builders.weather(m, {"grime": 1.1, "streaks": 0.5, "silt": 0.5, "rust": 0.2, "bevel": 0.0})
         o.hide_render = True
         o.hide_viewport = True
+    meshes = keep
+    if MODELS[model].get("badges"):
+        meshes = meshes + _debadge(model, meshes)
     for o in new:
         o.hide_render = True
     _LIB[model] = meshes
     return meshes
+
+
+_TREES = {}     # a mesh -> its faces as a search tree, in the library's space (for dropping points onto it)
+
+
+def _strike(meshes, origin, direction):
+    """The first surface a ray meets among the meshes (all in the library's space): (distance, where,
+    the mesh, the face), or None."""
+    from mathutils.bvhtree import BVHTree
+    best = None
+    for o in meshes:
+        tree = _TREES.get(o.name)
+        if tree is None:
+            tree = _TREES[o.name] = BVHTree.FromPolygons([o.matrix_world @ v.co for v in o.data.vertices], [tuple(p.vertices) for p in o.data.polygons])
+        loc, _n, face, dist = tree.ray_cast(origin, direction.normalized())
+        if loc is not None and (best is None or dist < best[0]):
+            best = (dist, loc, o, face)
+    return best
+
+
+def _debadge(model, meshes):
+    """A maker's badge is not ours to show: over each one a small flat cap, its rim pressed onto the
+    body (dropped onto the surface along the car's length), in the paint of the panel beside it -
+    what a de-badged car looks like. Returns the caps, to travel with the model's meshes."""
+    spec = MODELS[model]
+    lo, hi = _bounds(meshes)
+    ax = 0 if spec["axis"] == "x" else 1
+    side = 1 - ax
+    unit = (hi[ax] - lo[ax]) / spec["length"]           # the library's units per metre
+    mid = (lo[side] + hi[side]) / 2
+    paint = _paint_of(model, meshes)
+    caps = []
+    for end, across, height, radius in spec["badges"]:
+        sign = spec["front"] if end == "front" else -spec["front"]   # which way out of the car this end faces
+        aim = Vector((0.0, 0.0, 0.0))
+        aim[ax] = -sign
+
+        def start(da, dz):
+            p = Vector((0.0, 0.0, lo.z + (height + dz) * unit))
+            p[ax] = (hi[ax] if sign > 0 else lo[ax]) + sign * 0.5 * unit
+            p[side] = mid + (across + da) * unit
+            return p
+        seg = 14
+        ring = [(math.cos(2 * math.pi * q / seg), math.sin(2 * math.pi * q / seg)) for q in range(seg)]
+        hits = [_strike(meshes, start(c * radius, s_ * radius), aim) for c, s_ in ring]
+        inner = [_strike(meshes, start(c * radius * f_, s_ * radius * f_), aim) for f_ in (0.0, 0.5) for c, s_ in ring[::2]]
+        found = [h for h in hits + inner if h]
+        if not found:
+            continue
+        proud = min(h[0] for h in found)                 # the nearest any of it comes: the badge's own face
+        # the cap's paint: the body's if any of the rim stands on it, else what most of the rim stands on
+        mats = []
+        for h in [h for h in hits if h]:
+            o, poly = h[2], h[2].data.polygons[h[3]]
+            m = o.material_slots[poly.material_index].material if o.material_slots else None
+            uv = o.data.uv_layers.active.data[poly.loop_indices[0]].uv[:] if o.data.uv_layers.active else (0.0, 0.0)
+            mats.append((m, uv))
+        on_paint = [mu for mu in mats if mu[0] is not None and _base(mu[0].name) in paint]
+        names = [mu[0].name for mu in mats if mu[0] is not None]
+        mat, uv = on_paint[0] if on_paint else next((mu for mu in mats if mu[0] is not None and mu[0].name == max(set(names), key=names.count)), (None, (0.0, 0.0)))
+
+        def at(c, s_, f_, depth):
+            p = start(c * radius * f_, s_ * radius * f_)
+            return p + aim.normalized() * depth
+        verts = [at(0.0, 0.0, 0.0, proud - 0.005 * unit)]
+        verts += [at(c, s_, 0.8, proud - 0.005 * unit) for c, s_ in ring]
+        verts += [at(c, s_, 1.0, min(h[0] if h else proud, proud + 0.03 * unit) - 0.002 * unit) for (c, s_), h in zip(ring, hits)]
+        faces = []
+        for q in range(seg):
+            faces.append((0, 1 + q, 1 + (q + 1) % seg))
+            faces.append((1 + q, 1 + seg + q, 1 + seg + (q + 1) % seg, 1 + (q + 1) % seg))
+        me = bpy.data.meshes.new("debadge")
+        me.from_pydata(verts, [], faces)
+        layer = me.uv_layers.new(name="UVMap")
+        for l in layer.data:
+            l.uv = uv
+        if mat is not None:
+            me.materials.append(mat)
+        cap = bpy.data.objects.new("debadge", me)
+        bpy.context.scene.collection.objects.link(cap)
+        cap.hide_render = cap.hide_viewport = True
+        caps.append(cap)
+    bpy.context.view_layer.update()
+    return caps
 
 
 def _bounds(objs):
@@ -203,6 +302,43 @@ def _paint_of(model, objs):
     return {max(area, key=area.get)} if area else set()
 
 
+def _tint_node(m):
+    """A respray point in a material, put in before the weather: a mix node between the paint's own
+    colour (or texture) and the surface, passing it straight through until a copy is tinted."""
+    nt = m.node_tree
+    for b in [n for n in nt.nodes if n.type == "BSDF_PRINCIPLED"]:
+        bc = b.inputs["Base Color"]
+        mx = nt.nodes.new("ShaderNodeMixRGB")
+        mx.name, mx.blend_type = "dw_tint", "MIX"
+        mx.inputs["Fac"].default_value = 0.0
+        if bc.is_linked:
+            nt.links.new(bc.links[0].from_socket, mx.inputs["Color1"])
+            mx["textured"] = 1
+        else:
+            mx.inputs["Color1"].default_value = bc.default_value[:]
+            mx["textured"] = 0
+        nt.links.new(mx.outputs["Color"], bc)
+        return
+
+
+def _brightness(sock, depth=0):
+    """How bright the picture feeding a socket is on average (0..1), or None if no picture does."""
+    if not sock.is_linked or depth > 6:
+        return None
+    n = sock.links[0].from_node
+    if n.type == "TEX_IMAGE" and n.image is not None and n.image.size[0] > 0:
+        import numpy as np
+        px = np.empty(n.image.size[0] * n.image.size[1] * 4, dtype=np.float32)
+        n.image.pixels.foreach_get(px)
+        rgb = px.reshape(-1, 4)[::97, :3]
+        return float((rgb @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)).mean())
+    for inp in n.inputs:
+        v = _brightness(inp, depth + 1)
+        if v is not None:
+            return v
+    return None
+
+
 def _tinted(m, color):
     """A copy of a paint in another colour: a plain paint takes the colour; a painted texture keeps
     its lights and darks (its dirt, its panel lines) and takes the hue."""
@@ -211,25 +347,20 @@ def _tinted(m, color):
         return _TINTED[key]
     c = m.copy()
     nt = c.node_tree
-    for b in [n for n in nt.nodes if n.type == "BSDF_PRINCIPLED"]:
-        tex = [n for n in nt.nodes if n.type == "TEX_IMAGE" and any(l.to_node.type in ("MIX_RGB", "MIX", "BSDF_PRINCIPLED") or True for l in n.outputs["Color"].links)]
-        for n in [n for n in nt.nodes if n.type == "RGB"]:   # (the weather read a plain colour into an RGB node)
-            n.outputs[0].default_value = (*color, 1.0)
-        if not b.inputs["Base Color"].is_linked:
-            b.inputs["Base Color"].default_value = (*color, 1.0)
-        for t in tex[:1] if not [n for n in nt.nodes if n.type == "RGB"] else []:
-            if not t.outputs["Color"].links:
-                continue
+    mx = nt.nodes.get("dw_tint")
+    if mx is not None:
+        lum = _brightness(mx.inputs["Color1"]) if mx.get("textured") else None
+        if lum is None:   # a plain paint (or one coloured by its vertices): the new colour outright
+            mx.inputs["Fac"].default_value = 1.0
+            mx.inputs["Color2"].default_value = (*color, 1.0)
+        else:             # a texture: its grey, times the colour, brought back up to the colour's own brightness
             bw = nt.nodes.new("ShaderNodeRGBToBW")
-            mx = nt.nodes.new("ShaderNodeMixRGB")
+            nt.links.new(mx.inputs["Color1"].links[0].from_socket, bw.inputs[0])
+            nt.links.new(bw.outputs[0], mx.inputs["Color1"])
             mx.blend_type = "MULTIPLY"
             mx.inputs["Fac"].default_value = 1.0
-            mx.inputs["Color2"].default_value = (*(min(1.0, v * 2.4) for v in color), 1.0)
-            targets = [l.to_socket for l in t.outputs["Color"].links]
-            nt.links.new(t.outputs["Color"], bw.inputs[0])
-            nt.links.new(bw.outputs[0], mx.inputs["Color1"])
-            for s in targets:
-                nt.links.new(mx.outputs["Color"], s)
+            g = 1.0 / max(lum, 0.15)
+            mx.inputs["Color2"].default_value = (*(v * g for v in color), 1.0)
     _TINTED[key] = c
     return c
 
@@ -282,10 +413,12 @@ def place(root, key, length, width=None, color=None, yaw=0.0, lift=0.0):
 
 def vehicle(root, p, w, h, d):
     """A "vehicle" prop as a licensed model, if the cache has one for it: returns True when placed."""
-    rng = random.Random(hash((round(p["pos"][0], 2), round(p["pos"][2], 2))) & 0xFFFF)
+    rng = random.Random(int(p["pos"][0] * 100) * 7919 + int(p["pos"][2] * 100))   # (the same car on the same spot, every render)
     liv = p.get("livery", "car")
     color = p.get("color")
-    if p.get("burnt"):
+    if p.get("model"):
+        key = p["model"]
+    elif p.get("burnt"):
         key = rng.choice(["burnt_car_a", "burnt_car_b", "wreck_gutted"])
         color = None
     elif liv == "army":
@@ -300,7 +433,7 @@ def vehicle(root, p, w, h, d):
     elif liv == "taxi":
         key, color = "car_octavia", (0.012, 0.012, 0.014)
     else:
-        key = p.get("model") or rng.choice(CARS)
+        key = rng.choice(CARS)
         color = color or rng.choice(COLOURS)
     if not available(key):
         return False
