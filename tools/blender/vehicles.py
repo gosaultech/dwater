@@ -636,7 +636,9 @@ def _tram(root, p, w, h, d):
     """A street's tram is Amsterdam's own (combino.py); the metro's cars keep the plain body ("plain":
     the plain body on a street, for a before/after)."""
     import combino
-    return tram(root, p, w, h, d) if (p.get("underframe") or p.get("plain")) else combino.build(root, p, w, h, d)
+    if p.get("plain"):
+        return tram(root, p, w, h, d)
+    return combino.metro(root, p, w, h, d) if p.get("underframe") else combino.build(root, p, w, h, d)
 
 
 def _car_or_truck(root, p, w, h, d):

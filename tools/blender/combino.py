@@ -169,11 +169,12 @@ def _disc(acc, c, r, n=18):
 
 
 def _paints(p):
-    """The car's paints and stuffs ("silt": gloss paint and glass shed most of what the flood left)."""
+    """The car's paints and stuffs ("silt": gloss paint and glass shed most of what the flood left).
+    A prop's "material" and "band" colours repaint the body and the skirt (the metro: white and red)."""
     paint = {"rough": 0.28, "coat": 0.9, "grime": 1.25, "streaks": 0.45, "silt": 0.45, "bevel": 0.0}
     return {
-        "white": M(dict(paint, color=[0.80, 0.81, 0.82])),
-        "blue": M(dict(paint, color=[0.004, 0.075, 0.30])),
+        "white": M(dict(paint, color=list(p.get("material", {}).get("color", [0.80, 0.81, 0.82])))),
+        "blue": M(dict(paint, color=list(p.get("band", {}).get("color", [0.004, 0.075, 0.30])))),
         "glass": _glass("combino_glass", (0.11, 0.125, 0.13), 0.13),
         "black": M({"color": [0.012, 0.013, 0.015], "rough": 0.06, "coat": 1.0, "grime": 0.9, "streaks": 0.3, "silt": 0.4, "bevel": 0.0}),
         "rubber": M({"color": [0.05, 0.05, 0.052], "rough": 0.72, "noise": 0.15, "noise_scale": 40.0, "grime": 1.3, "bevel": 0.004}),
@@ -190,11 +191,37 @@ def _paints(p):
     }
 
 
-def _section(sr, kind, L, k, hw, mats, rng, o):
+def _panels(Ls, doors, cab):
+    """A car's side laid out round doors at given places (metres from its back end): walls beside
+    each door, windows between in panes no wider than 1.7 m, the cab's window at the front."""
+    out, x = [("end", 0.0, 0.08)], 0.08
+    stops = [(c - 0.7, c + 0.7) for c in sorted(doors)] + [(Ls - (0.95 if cab else 0.08), Ls)]
+    for i, (a, b) in enumerate(stops):
+        last = i == len(stops) - 1
+        a0 = a - 0.12
+        if a0 - x > 0.5:   # windows up to the wall before this door (or the cab's window, or the end)
+            n = max(1, math.ceil((a0 - x) / 1.7))
+            wpane = (a0 - x - 0.06 * (n - 1)) / n
+            for q in range(n):
+                out.append(("window", x, x + wpane))
+                x += wpane
+                if q < n - 1:
+                    out.append(("pillar", x, x + 0.06))
+                    x += 0.06
+        out.append(("wall", x, a))
+        if last:
+            out.append(("cabwin" if cab else "end", a, b))
+        else:
+            out += [("door", a, b), ("wall", b, b + 0.12)]
+            x = b + 0.12
+    return out
+
+
+def _section(sr, kind, L, k, hw, mats, rng, o, panels=None):
     """One section in its own frame: x from its back end (0) to its front (L; a cab's nose tip)."""
     y = [r * k for r in ROWS]
     Ls = L - NOSE if kind == "cab" else L
-    panels = _fit(LAYOUT[kind], Ls)
+    panels = panels or _fit(LAYOUT[kind], Ls)
     skin_mats = [mats["white"], mats["blue"], mats["glass"], mats["black"], mats["seal"], mats["roof"], mats["rubber"]]
     skin = Skin()
     parts = defaultdict(Acc)       # flat things, by stuff
@@ -288,7 +315,7 @@ def _section(sr, kind, L, k, hw, mats, rng, o):
     # The saloon: floor, ceiling and its lights, seats where there are windows, poles at the doors.
     xin = Ls + (0.45 if kind == "cab" else 0.0)
     parts["floor"].box((0.02, y[1] - 0.01, -hw + 0.02), (xin, y[1] + 0.03, hw - 0.02))
-    parts["dark"].box((0.25, 0.09 * k, -hw + 0.16), (Ls - 0.1, y[1] - 0.01, hw - 0.16))
+    parts["dark"].box((0.25, 0.09 * k - o.get("underframe", 0.0), -hw + 0.16), (Ls - 0.1, y[1] - 0.01, hw - 0.16))   # (a metro: its frame down to the rails)
     parts["lining"].box((0.02, y[8] + 0.03, -hw + 0.02), (xin, y[8] + 0.07, hw - 0.02))
     for sz in (1, -1):
         parts["strip_on" if o["lit"] else "dark"].box((0.3, y[8] + 0.015, sz * 0.42 - 0.05), (Ls - 0.3, y[8] + 0.031, sz * 0.42 + 0.05))
@@ -307,11 +334,11 @@ def _section(sr, kind, L, k, hw, mats, rng, o):
             for xx in (xa - 0.03, xb + 0.03):
                 for sz in (1, -1):
                     rods["yellow"].rod((xx, y[1], sz * (hw - 0.42)), (xx, y[8] + 0.03, sz * (hw - 0.42)), 0.017, 0.017, 6)
-    if kind in ("cab", "mid"):   # the wheels, what shows of them under the skirt
-        for bx in ((Ls * 0.42, Ls * 0.42 + 1.8) if kind == "cab" else (L / 2 - 0.9, L / 2 + 0.9)):
+    if kind in ("cab", "mid") or o.get("underframe"):   # the wheels, what shows of them under the skirt (a metro's car: a bogie at each end)
+        for bx in ((2.0, 3.8, Ls - 3.8, Ls - 2.0) if o.get("underframe") else (Ls * 0.42, Ls * 0.42 + 1.8) if kind == "cab" else (L / 2 - 0.9, L / 2 + 0.9)):
             for sz in (1, -1):
-                rods["steel"].rod((bx, 0.3 * k, sz * 0.66), (bx, 0.3 * k, sz * 0.8), 0.3 * k, 0.3 * k, 18)
-            parts["dark"].box((bx - 0.12, 0.2 * k, -0.66), (bx + 0.12, 0.4 * k, 0.66))
+                rods["steel"].rod((bx, 0.3 * k - o.get("underframe", 0.0), sz * 0.66), (bx, 0.3 * k - o.get("underframe", 0.0), sz * 0.8), 0.3 * k, 0.3 * k, 18)
+            parts["dark"].box((bx - 0.12, 0.2 * k - o.get("underframe", 0.0), -0.66), (bx + 0.12, 0.4 * k - o.get("underframe", 0.0), 0.66))
     if kind == "cab":
         _nose(sr, Ls, k, hw, y, skin, parts, rods, mats, o)
         parts["lining"].box((panels[-1][1] - 0.05, y[1], -hw + 0.03), (panels[-1][1] - 0.01, y[8] + 0.03, hw - 0.03))   # the cab's back wall
@@ -495,5 +522,57 @@ def build(root, p, w, h, d):
                 col.append(tuple(va.lerp(vb, t)))
             cols.append(col)
         bel.sheet(cols, lambda c, r: 0)
+        bel.build("tram_bellows", [mats["rubber"]], root, smooth=False, blender_space=True)
+    return root
+
+
+def metro(root, p, w, h, d):
+    """The metro's train, built the way the tram is (flat sheets, see-through glass, plug doors, a
+    lit saloon) in three long cars with a cab at each end: white with the band's colour for its skirt
+    and cab caps. Its doors stand where the platform's doorways are ("doors_at": metres along the
+    train from its middle; by default where the station's own are), with more between them."""
+    k, hw = h / 3.4, d / 2
+    mats = _paints(p)
+    rng = random.Random(p.get("seed", 7))
+    gap, n = tram_layout.GAP, 3
+    L = (w - gap * (n - 1)) / n
+    want = [x * w / 48.0 for x in p.get("doors_at", [-17.67, 0.79, 14.5])]
+    stood = []
+    for i in range(n):
+        c = -w / 2 + L / 2 + i * (L + gap)
+        back, cab = i == 0, i in (0, n - 1)
+        sr = builders.empty_at("tram_section", (c, 0.0, 0.0), 0.0)
+        sr.parent = root
+        mr = builders.empty_at("tram_module", (L / 2 if back else -L / 2, 0.0, 0.0), 180.0 if back else 0.0)
+        mr.parent = sr
+        Ls = L - NOSE if cab else L
+        canon = lambda x: (c + L / 2) - x if back else x - (c - L / 2)   # noqa: E731  (the train's metres -> this car's own)
+        mine = [canon(x) for x in want if c - L / 2 <= x <= c + L / 2]
+        doors = [x for x in mine if 0.9 < x < Ls - 1.8]
+        for x in list(doors) or [Ls / 2]:   # more doors along the car, four metres and a half apart
+            for step in (-4.6, 4.6, -9.2, 9.2):
+                if 0.9 < x + step < Ls - 1.8 and all(abs(x + step - q) > 3.0 for q in doors):
+                    doors.append(x + step)
+        o = {"lit": True, "smashed": False, "doors_open": p.get("doors_open") == "all", "side": -1 if back else 1, "front": i == n - 1,
+             "fleet": str(p.get("fleet", 100 + rng.randrange(60))), "board": p.get("board", ""), "line": str(p.get("line", "")),
+             "pantograph": False, "underframe": p.get("underframe", 0.0)}
+        _section(mr, "cab" if cab else "doors", L, k, hw, mats, rng, o, panels=_panels(Ls, doors, cab))
+        ld = bpy.data.lights.new("tram_glow", "AREA")
+        ld.shape, ld.size, ld.size_y = "RECTANGLE", L * 0.8, d * 0.55
+        ld.energy, ld.color = p.get("power", 300.0) / n, (0.95, 0.97, 1.0)
+        ob = bpy.data.objects.new("tram_glow", ld)
+        bpy.context.scene.collection.objects.link(ob)
+        ob.parent = sr
+        ob.location = g2b((0.0, 2.6 * k, 0.0))
+        street.hide_panel(ob)
+        stood.append((sr, L))
+    ring = [(0.3 * k, hw - 0.07, 0), (3.0 * k, hw - 0.07, 0), (3.25 * k, hw - 0.3, 1), (3.25 * k, -(hw - 0.3), 1), (3.0 * k, -(hw - 0.07), 0), (0.3 * k, -(hw - 0.07), 0)]
+    for (sa, la), (sb, lb) in zip(stood, stood[1:]):
+        bel, cols = Skin(), []
+        for q in range(9):
+            t, pinch = q / 8, (0.0 if q % 2 == 0 else 0.06)
+            cols.append([tuple((sa.matrix_basis @ Vector(g2b((la / 2, yy - pinch * on_top, zz - math.copysign(pinch, zz) * (1 - on_top))))).lerp(
+                sb.matrix_basis @ Vector(g2b((-lb / 2, yy - pinch * on_top, zz - math.copysign(pinch, zz) * (1 - on_top)))), t)) for yy, zz, on_top in ring])
+        bel.sheet(cols, lambda c_, r_: 0)
         bel.build("tram_bellows", [mats["rubber"]], root, smooth=False, blender_space=True)
     return root
