@@ -45,7 +45,7 @@ def _decal_material(dc):
     else:
         print(f"[ruin] missing decal {path} (run tools/assets/decals.py make)")
         b.inputs["Alpha"].default_value = 0.0
-    b.inputs["Roughness"].default_value = 0.8 if dc.get("style") == "poster" else 0.38
+    b.inputs["Roughness"].default_value = 0.8 if dc.get("style") == "poster" else 0.55   # (matt spray paint: the wall's own shine, not a sticker's)
     nt.links.new(b.outputs[0], out.inputs["Surface"])
     _DECAL_MATS[key] = m
     return m
