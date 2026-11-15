@@ -601,6 +601,11 @@ def leavings(spec, n=None):
     if spec["id"] not in ACTIVE and spec["id"] not in AUTO:
         return spec
     spec["props"] = [p for p in spec["props"] if not p.get(MARK + "_drift")]
+    if spec["id"] in LOOK2:   # the street's own dustbins too: what the city puts out, by where each stands
+        for p in spec["props"]:
+            if p.get("model") == "ph:metal_trash_can":
+                p["model"] = BINS[int(abs(p["pos"][0] * 31 + p["pos"][2] * 17)) % len(BINS)]
+                p.pop("scale", None)
     rng = np.random.default_rng(sum(map(ord, spec["id"])))   # (the same street, the same mess, every run)
     if spec["id"] in DRESSED:
         for p in spec["props"]:   # (what stands on a pavement or the quay stands on it, not sunk into it)
