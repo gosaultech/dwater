@@ -336,6 +336,24 @@ void main() {
         albedo *= 1.0 - (thick ? 0.3 : 0.22) * vAux;
         spec = mix(spec, thick ? 0.06 : 0.16, vAux); gloss = mix(gloss, thick ? 14.0 : 28.0, vAux); bk *= 1.0 - 0.4 * vAux;
     }
+    // Folds: what tells cloth from rubber at any distance. Cloth hangs and bunches in creases a few
+    // centimetres across: long ones down the drape, short ones across it where it gathers (elbows,
+    // knees, the waist: where the baked occlusion is deep). Thin raised ridges of warped noise in the
+    // garment's own space (so they move with it), darker in their valleys, and bumped a few
+    // millimetres so every light picks them out. Leather folds too, broader and shallower.
+    if (cloth || mat == 7) {
+        bool heavy = mat == 4 || mat == 28 || mat == 7;
+        float warp = fbm(p * 5.0);
+        vec3 qd = vec3(p.x * 13.0, p.y * 4.2, p.z * 13.0) + warp * 2.6;          // down the drape
+        vec3 qa = vec3(p.x * 5.0, p.y * 19.0, p.z * 5.0) + warp * 2.2 + 11.3;    // across it
+        float gather = smoothstep(0.98, 0.55, vAo);
+        float fd = pow(ridge(qd), 4.0), fa = pow(ridge(qa), 4.0);
+        float fold = mix(fd * 0.55, max(fd * 0.55, fa), gather) * (heavy ? 0.6 : 1.0);
+        float px = length(fwidth(p)) * 13.0;                                   // (creases finer than a pixel fade out, not shimmer)
+        fold *= clamp(1.6 - px * 2.2, 0.0, 1.0);
+        albedo *= 1.0 - 0.2 * (mix(0.35, 1.0, gather) - fold) * (heavy ? 0.6 : 1.0);
+        N = bumpN(N, fold, heavy ? 0.006 : 0.009);
+    }
     if (bk > 0.0) N = bumpN(N, h, bk);
 
     vec3 col = albedo * mix(u_ambBottom, u_ambTop, N.y * 0.5 + 0.5) * vAo;
@@ -532,6 +550,11 @@ void main() {
     vec2 d = fragTexCoord - 0.5;
     vec2 ca = d * dot(d, d) * 0.006;                              // lens fringe toward the corners
     vec3 c = vec3(texture(texture0, fragTexCoord + ca).r, texture(texture0, fragTexCoord).g, texture(texture0, fragTexCoord - ca).b);
+    vec2 t = 1.0 / u_res;                                         // a lens that is in focus: each pixel pushed away from its neighbours' average
+    vec3 mid = texture(texture0, fragTexCoord).rgb;
+    vec3 soft = (texture(texture0, fragTexCoord + vec2(t.x, 0.0)).rgb + texture(texture0, fragTexCoord - vec2(t.x, 0.0)).rgb +
+                 texture(texture0, fragTexCoord + vec2(0.0, t.y)).rgb + texture(texture0, fragTexCoord - vec2(0.0, t.y)).rgb) * 0.25;
+    c += clamp((mid - soft) * 0.55, -0.08, 0.08);                 // (held back at hard edges: no halos round a lamp)
     c = clamp(c, 0.0, 1.0);
     float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
     c = mix(vec3(l), c, 1.05);                                    // the city's own colours, a touch richer
