@@ -198,6 +198,11 @@ def aid_post(root, p, w, h, d):
         sub = builders.empty_at("covered", (x, 0.0, 0.2), 0.0)
         sub.parent = root
         sub.location = g2b((x, 0.0, 0.2))
+        import licensed
+        bag = "bodybag_" + "abcde"[(k + int(abs(p["pos"][0] * 3))) % 5]
+        if licensed.available(bag):   # a real sheet's folds over a real shape (the bag's scan, pale): three rounded boxes read as a jerrycan
+            licensed.place(sub, bag, 1.9, color=(0.6, 0.6, 0.57), yaw=90.0)
+            continue
         sheet = M({"color": [0.75, 0.75, 0.72], "rough": 0.9, "noise": 0.2})
         kit.soft(sub, "covered_body", (0.0, 0.14, 0.0), (0.55, 0.28, 1.75), sheet, 0.12, 4)
         kit.soft(sub, "covered_head", (0.0, 0.16, -0.75), (0.32, 0.3, 0.3), sheet, 0.12, 3)

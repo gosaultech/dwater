@@ -42,7 +42,7 @@ MODELS = {
     "wrecks_burnt": {"pca": True, "paint": []},
     "bike_classic": {"axis": "y", "front": -1},
     "moped": {"axis": "y", "front": -1, "paint": []},
-    "bodybags": {"axis": "x", "front": 1, "paint": [], "loose": True},
+    "bodybags": {"axis": "x", "front": 1, "loose": True},
     "sandbags": {"axis": "x", "front": 1, "paint": []},
     "street_props": {"axis": "x", "front": 1, "paint": []},
     "street_pack": {"axis": "x", "front": 1, "paint": []},
