@@ -45,8 +45,9 @@ class Catastrophe(unittest.TestCase):
         spec = room("rokin_zuid")
         tram = next(p for p in spec["props"] if p["type"] == "tram")
         self.assertFalse(tram.get("collide", True))   # (its sections stand in for it)
-        secs = catastrophe.tram_sections(tram)
-        self.assertEqual(len(secs), 3)
+        secs = catastrophe.tram_sections(tram, "rokin_zuid" in catastrophe.LOOK2)
+        n = 5 if "rokin_zuid" in catastrophe.LOOK2 else 3   # (the Amsterdam car's five sections once its plates show them)
+        self.assertEqual(len(secs), n)
         self.assertAlmostEqual(secs[0][0], tram["pos"][0], places=3)   # the back still on the rails
         for x, z, yaw, seg in secs[1:]:   # (the back section is where the tram always stood)
             a = math.radians(yaw)
@@ -56,7 +57,7 @@ class Catastrophe(unittest.TestCase):
                     cz = z - sx * seg * math.sin(a) + sz * 2.4 * math.cos(a)
                     self.assertFalse(in_lane(cx, cz, "rokin_zuid", grow=-0.05), (x, z, cx, cz))
         sections = [p for p in spec["props"] if p["type"] == "tram_section" and p.get("catastrophe")]
-        self.assertEqual(len(sections), 3)
+        self.assertEqual(len(sections), n)
         self.assertTrue(all(p.get("collide", True) for p in sections))
 
     def test_what_the_night_left_lies_where_it_has_a_reason(self):
@@ -82,7 +83,7 @@ class Catastrophe(unittest.TestCase):
                     self.assertGreater(math.hypot(x - q["pos"][0], z - q["pos"][2]), 0.35, (rid, p, q))
                 if not spec.get("outdoor"):
                     self.assertNotIn(p["model"], street, (rid, p))
-                if p["model"] == "ph:metal_trash_can":
+                if p["model"] == "ph:metal_trash_can" or p["model"] in catastrophe.BINS:
                     by_lamp = any(math.hypot(x - lx, z - lz) < 1.6 for lx, lz in lamps)
                     by_stop = any(cameras._in_box(np.array([x]), np.array([z]), b, 1.6)[0] for b in stops)
                     self.assertTrue(by_lamp or by_stop, (rid, p))

@@ -22,8 +22,10 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parents[0] / "assets"))
+sys.path.insert(0, str(HERE.parents[0] / "pipeline"))
 import barricades  # noqa: E402
 import cameras  # noqa: E402
+import tram_layout  # noqa: E402
 import decals  # noqa: E402
 
 MARK = "catastrophe"
@@ -97,21 +99,28 @@ def model(ref, x, z, yaw, y=0.0, tip=None, collide=False, scale=None):
     return p
 
 
-def tram_sections(tram):
-    """Where a derailed tram's sections stand (city.tram's chain, in the room's frame): (x, z, yaw
-    degrees, length) each; the engine's colliders and the camera planner go by these."""
-    w, h, d = tram["size"]
-    n, gap = 3, 0.25
-    seg = (w - gap * (n - 1)) / n
-    der = tram.get("derail", {})
-    yaws = der.get("yaw", [0.0] * n)
-    cx, cz, joint, out = -w / 2 + seg / 2, 0.0, None, []
+def tram_sections(tram, five=False):
+    """Where a derailed tram's sections stand, in the room's frame: (x, z, yaw degrees, length) each;
+    the engine's colliders and the camera planner go by these. `five`: the five sections of the
+    Amsterdam car (tram_layout's chain, which the Blender model stands on too); otherwise the three
+    of the plain body the older plates show."""
+    w = tram["size"][0]
+    yaws = tram.get("derail", {}).get("yaw", [])
     ty = math.radians(tram.get("yaw", 0.0))
-    for i in range(n):
-        a = math.radians(yaws[i] if i < len(yaws) else 0.0)
-        if joint is not None:
-            cx, cz = joint[0] + math.cos(a) * (gap / 2 + seg / 2), joint[1] - math.sin(a) * (gap / 2 + seg / 2)
-        joint = (cx + math.cos(a) * (seg / 2 + gap / 2), cz - math.sin(a) * (seg / 2 + gap / 2))
+    if five:
+        chain = tram_layout.chain(w, yaws)
+    else:
+        n, gap = 3, 0.25
+        seg = (w - gap * (n - 1)) / n
+        cx, cz, joint, chain = -w / 2 + seg / 2, 0.0, None, []
+        for i in range(n):
+            a = math.radians(yaws[i] if i < len(yaws) else 0.0)
+            if joint is not None:
+                cx, cz = joint[0] + math.cos(a) * (gap / 2 + seg / 2), joint[1] - math.sin(a) * (gap / 2 + seg / 2)
+            joint = (cx + math.cos(a) * (seg / 2 + gap / 2), cz - math.sin(a) * (seg / 2 + gap / 2))
+            chain.append((cx, cz, a, seg))
+    out = []
+    for cx, cz, a, seg in chain:
         # the prop's own turn: local (x, z) -> room (x cos + z sin, -x sin + z cos)
         X = tram["pos"][0] + cx * math.cos(ty) + cz * math.sin(ty)
         Z = tram["pos"][2] - cx * math.sin(ty) + cz * math.cos(ty)
@@ -130,10 +139,11 @@ def rokin_zuid(spec):
         if p["type"] == "tram":
             p.update({"derail": {"yaw": [0.0, 9.0, 24.0], "roll": [0.0, 2.0, 6.5], "lift": [0.0, 0.0, 0.1]},
                       "dark": [2], "smashed": [1, 2], "pantograph": False, "board": "", "collide": False, "power": 170.0})
-            for k, (x, z, yaw, seg) in enumerate(tram_sections(p)):   # (solid, and something the cameras keep clear of and show)
+            five = spec["id"] in LOOK2
+            for k, (x, z, yaw, seg) in enumerate(tram_sections(p, five)):   # (solid, and something the cameras keep clear of and show)
                 props.append({"type": "tram_section", "pos": [round(x, 2), 0.0, round(z, 2)], "yaw": round(yaw, 1), "size": [round(seg, 2), 3.4, 2.4],
                               "hero": k > 0})
-                if k == 1:
+                if k == (2 if five else 1):
                     fx.append({"kind": "flicker", "pos": [round(x, 2), 1.8, round(z, 2)], "radius": 4.5, "amount": 0.45, "seed": 3})
         elif p["type"] == "canal_boat" and p.get("name") == "RONDVAART 7":
             p.update({"yaw": 78, "list": 5.0, "pos": [-3.9, -0.95, p["pos"][2]]})   # torn off its pier against the quay
@@ -366,6 +376,13 @@ ACTIVE = {"dam", "rokin_noord", "rokin_zuid", "stationsplein"}   # the hand-told
 DRESSED = {"dam", "damrak_noord", "damrak_zuid", "kalverstraat", "rokin_noord", "rokin_zuid", "stationsplein"}   # the rooms whose plates show dress() (the night's leavings by what each place was), not the old scatter
 for _r in filter(None, __import__("os").environ.get("DW_DRESSED", "").split(",")):
     DRESSED.add(_r)
+# The rooms whose plates show the second look (2026-11): the Amsterdam tram's five sections, wheelie
+# bins for dustbins. A room joins in the commit that brings its re-rendered plates. DW_LOOK2=a,b,...
+# adds rooms for a build of the next ones to render (into a scratch DW_ROOMS).
+LOOK2 = set()
+for _r in filter(None, __import__("os").environ.get("DW_LOOK2", "").split(",")):
+    LOOK2.add(_r)
+BINS = ["sf:bin_green", "sf:bin_blue", "sf:bin_orange"]   # licensed models (tools/assets/models.json): what Amsterdam puts out, not a film's dustbin
 # DW_STORIES=a,b,...: tell these too (a build of the next rooms to render, into a scratch DW_ROOMS)
 for _r in filter(None, __import__("os").environ.get("DW_STORIES", "").split(",")):
     (ACTIVE if _r in STORIES else AUTO).add(_r)
@@ -464,6 +481,7 @@ def dress(spec, rng):
     """The night's leavings in this room (see above): a list of models, none on another, all on open floor."""
     xs, zs, ok = cameras.open_floor(spec)
     outdoor = bool(spec.get("outdoor"))
+    look2 = spec["id"] in LOOK2
     placed, out = [], []
 
     def cell(x, z):
@@ -526,7 +544,10 @@ def dress(spec, rng):
             if not ok[i, k]:
                 continue
             if rng.random() < 0.5:
-                put("ph:metal_trash_can", x, z, 0.35, tip=90)
+                if look2:
+                    put(BINS[int(rng.integers(len(BINS)))], x, z, 0.45, tip=90 if rng.random() < 0.6 else None)
+                else:
+                    put("ph:metal_trash_can", x, z, 0.35, tip=90)
             clump(x, z, WRACK, int(rng.integers(5, 9)), 0.9)
             heaps -= 1
         # 3. the street's own things, knocked over where they stood: a café's chairs, a shop's stock, a bin by a lamp
@@ -549,7 +570,8 @@ def dress(spec, rng):
         for x, z in o.get("lamps", []):
             if rng.random() < 0.2:
                 a = rng.uniform(0, 2 * math.pi)
-                if put("ph:metal_trash_can", x + 0.55 * math.cos(a), z + 0.55 * math.sin(a), 0.35, tip=90):
+                if put(BINS[int(rng.integers(len(BINS)))] if look2 else "ph:metal_trash_can", x + 0.55 * math.cos(a), z + 0.55 * math.sin(a), 0.4 if look2 else 0.35,
+                       tip=None if look2 and rng.random() < 0.5 else 90):
                     put("ph:trashbag", x + 1.1 * math.cos(a), z + 1.1 * math.sin(a), 0.3)
     else:
         # 5. indoors: what the night's use of the hall left by its beds, tables and counters
