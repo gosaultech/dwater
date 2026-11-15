@@ -78,6 +78,7 @@ bool Game::init(const std::string& room_id) {
     l_rWin_ = GetShaderLocation(rain_sh_, "u_win");
     l_sWin_ = GetShaderLocation(splash_sh_, "u_win");
     l_fill_ = GetShaderLocation(char_, "u_fill");
+    l_wet_ = GetShaderLocation(char_, "u_wet");
     init_fx();
     post_ = LoadShaderFromMemory(nullptr, shaders::POST_FS);
     l_time_ = GetShaderLocation(post_, "u_time");
@@ -394,6 +395,8 @@ void Game::upload_lights() {
     const float k = std::clamp(lit / FILL_LIT, 0.0f, 1.0f), f = FILL * (1.0f - k * k * (3 - 2 * k));
     const float fill[3] = {0.82f * f, 0.9f * f, 1.0f * f};
     SetShaderValue(char_, l_fill_, fill, SHADER_UNIFORM_VEC3);
+    const float wet = spec_.rain ? 1.0f : 0.0f;   // out in the rain, whatever faces the sky is wet (CHAR_FS)
+    SetShaderValue(char_, l_wet_, &wet, SHADER_UNIFORM_FLOAT);
 }
 
 void Game::collide(float& x, float& z, float r) const {

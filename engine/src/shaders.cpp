@@ -51,6 +51,7 @@ uniform int u_hidden;   // a bit per body region that has been shot away: its sk
 uniform vec3 u_camPos; uniform int u_lightCount;
 uniform vec4 u_lightPos[8]; uniform vec4 u_lightCol[8]; uniform vec4 u_lightDir[8];
 uniform vec3 u_fill;   // a soft light from the camera's side, where the room leaves him dark
+uniform float u_wet;   // 1 out in the rain: whatever faces the sky is wet
 uniform vec3 u_ambTop; uniform vec3 u_ambBottom; uniform vec3 u_rim; uniform vec3 u_fog; uniform vec2 u_fogRange;
 // What bare metal mirrors: the surroundings as a gradient from the floor (bottom) to the ceiling (top).
 uniform vec3 u_envTop; uniform vec3 u_envBottom;
@@ -351,12 +352,50 @@ void main() {
         float fold = mix(fd * 0.55, max(fd * 0.55, fa), gather) * (heavy ? 0.6 : 1.0);
         float px = length(fwidth(p)) * 13.0;                                   // (creases finer than a pixel fade out, not shimmer)
         fold *= clamp(1.6 - px * 2.2, 0.0, 1.0);
-        albedo *= 1.0 - 0.2 * (mix(0.35, 1.0, gather) - fold) * (heavy ? 0.6 : 1.0);
-        N = bumpN(N, fold, heavy ? 0.006 : 0.009);
+        albedo *= 1.0 - 0.3 * (mix(0.35, 1.0, gather) - fold) * (heavy ? 0.7 : 1.0);
+        N = bumpN(N, fold, heavy ? 0.011 : 0.015);
     }
     if (bk > 0.0) N = bumpN(N, h, bk);
 
-    vec3 col = albedo * mix(u_ambBottom, u_ambTop, N.y * 0.5 + 0.5) * vAo;
+    // The street on him: what a doll fresh from the box lacks. (p is the garment's own space, metres, feet at 0.)
+    bool garment = cloth || mat == 7;
+    float fuzz = 0.0;
+    if (garment) {
+        // Wear: cloth is never one colour. Faded where it rubs, darker where it is damp or dirty, in patches a hand wide.
+        albedo *= mix(0.76, 1.1, fbm(p * 7.0)) * mix(0.9, 1.06, fbm(p * 2.2 + 3.1));
+        // The flood's mud up the legs: thick at the hem, gone by the knee, dried paler at its edge.
+        float splash = (1.0 - smoothstep(0.04, 0.46, p.y)) * (0.35 + 0.65 * fbm(vec3(p.x * 16.0, p.y * 7.0, p.z * 16.0)));
+        albedo = mix(albedo, vec3(0.045, 0.038, 0.03), clamp(splash * 0.75, 0.0, 0.7));
+        spec = mix(spec, 0.02, splash); 
+        if (mat == 6) {    // denim wears pale where it bends and rubs: the thighs, the knees, the seat; dark in the seams
+            float rub = smoothstep(0.3, 0.75, fbm(vec3(p.x * 9.0, p.y * 4.0, p.z * 9.0) + 4.0)) * smoothstep(0.2, 0.5, p.y) * (1.0 - smoothstep(0.85, 1.0, p.y));
+            albedo = mix(albedo, albedo * 1.9 + vec3(0.012, 0.016, 0.024), rub * 0.6);
+        }
+        wrap *= 0.45;      // a harder edge between lit and unlit: soft wrap-round light is what makes cloth look moulded
+        fuzz = mat == 7 ? 0.12 : 0.32;   // the nap of cloth catching light at grazing angles
+    }
+    if (mat == 31 || mat == 7) {   // boots and soles: mud
+        float muck = (1.0 - smoothstep(0.0, 0.2, p.y)) * (0.4 + 0.6 * fbm(p * 30.0));
+        albedo = mix(albedo, vec3(0.05, 0.042, 0.033), clamp(muck, 0.0, 0.8));
+    }
+    if (mat == 1) {   // living skin: uneven as skin is (ruddier and paler in patches), and a harder light on it
+        albedo *= mix(0.88, 1.08, fbm(p * 11.0)) * mix(vec3(1.0), vec3(1.06, 0.95, 0.93), smoothstep(0.45, 0.7, fbm(p * 5.0 + 9.0)));
+        wrap = 0.3;
+    }
+    // Rain: whatever faces the sky is wet. Cloth darkens and takes a dull sheen, skin and hair shine,
+    // and single drops catch the lamps. A little damp everywhere: the air is full of it.
+    if (u_wet > 0.0) {
+        float up = smoothstep(0.1, 0.75, Ng.y);
+        float w = u_wet * clamp(0.22 + up * (0.55 + 0.45 * fbm(p * 9.0)), 0.0, 1.0);
+        float drops = pow(noise(p * 700.0), 9.0) * up * u_wet;
+        if (garment) { albedo *= 1.0 - 0.32 * w; spec = mix(spec, 0.2, w); gloss = mix(gloss, 34.0, w); fuzz *= 1.0 - 0.6 * w; }
+        else if (mat == 1 || mat == 29) { spec += 0.22 * w; gloss = mix(gloss, 60.0, w); }
+        else if (mat == 8 || mat == 35 || mat == 37) { albedo *= 1.0 - 0.25 * w; spec += 0.2 * w; gloss = mix(gloss, 50.0, w); }
+        spec += drops * 1.5; gloss = mix(gloss, 180.0, clamp(drops * 3.0, 0.0, 1.0));
+    }
+    float ao = mix(vAo, vAo * vAo, 0.55);   // deeper in the creases and under the arms than the bake alone
+
+    vec3 col = albedo * mix(u_ambBottom, u_ambTop, N.y * 0.5 + 0.5) * ao;
     for (int i = 0; i < 8; i++) {
         if (i >= u_lightCount) break;
         vec3 L; float att = 1.0;
@@ -372,25 +411,26 @@ void main() {
         if (i == u_shadowLight[0]) lc *= 0.06 + 0.94 * shadowIn(texture1, u_shadowVP[0], vWorld + Ng * 0.012);
         else if (i == u_shadowLight[1]) lc *= 0.06 + 0.94 * shadowIn(texture2, u_shadowVP[1], vWorld + Ng * 0.012);
         float ndl = dot(N, L);
-        col += albedo * max((ndl + wrap) / (1.0 + wrap), 0.0) * lc * vAo;
+        col += albedo * max((ndl + wrap) / (1.0 + wrap), 0.0) * lc * ao;
         col += sss * (0.5 - 0.5 * ndl) * lc * 0.35;                                  // light bleeding through flesh
-        col += spec * pow(max(dot(N, normalize(L + V)), 0.0), gloss) * lc * step(0.0, ndl) * vAo;
+        if (fuzz > 0.0) col += fuzz * albedo * pow(1.0 - max(dot(N, V), 0.0), 3.0) * max(ndl * 0.5 + 0.5, 0.0) * lc * ao;   // cloth's nap
+        col += spec * pow(max(dot(N, normalize(L + V)), 0.0), gloss) * lc * step(0.0, ndl) * ao;
         if (metal > 0.0 && u_softbox > 0.0)   // the softbox itself, mirrored: a broad patch with soft edges
-            col += metal * u_softbox * smoothstep(0.72, 0.93, dot(reflect(-V, N), L)) * lc * vAo;
+            col += metal * u_softbox * smoothstep(0.72, 0.93, dot(reflect(-V, N), L)) * lc * ao;
         if (aniso > 0.0) {   // a band of sheen across hair, tinted by the hair's own colour
             float th = dot(strand, normalize(L + V));
-            col += aniso * pow(sqrt(max(1.0 - th * th, 0.0)), 48.0) * lc * step(0.0, ndl) * vAo * (vec3(0.2) + albedo * 4.0);
+            col += aniso * pow(sqrt(max(1.0 - th * th, 0.0)), 48.0) * lc * step(0.0, ndl) * ao * (vec3(0.2) + albedo * 4.0);
         }
     }
-    col += albedo * u_fill * (0.35 + 0.65 * max(dot(N, V), 0.0)) * vAo;   // the fill, from the camera's side
+    col += albedo * u_fill * (0.35 + 0.65 * max(dot(N, V), 0.0)) * ao;   // the fill, from the camera's side
     if (metal > 0.0) {   // bare metal mirrors its surroundings, tinted by its own colour (strongest at grazing angles)
         vec3 R = reflect(-V, N);
         vec3 env = mix(u_envBottom, u_envTop, smoothstep(-0.15, 0.55, R.y));
         float fres = mix(1.0, 1.5, pow(1.0 - max(dot(N, V), 0.0), 5.0));
         vec3 tint = mix(vec3(1.0), albedo / max(max(albedo.r, max(albedo.g, albedo.b)), 0.02), 0.25);
-        col += env * metal * fres * tint * vAo;
+        col += env * metal * fres * tint * ao;
     }
-    col += pow(1.0 - max(dot(N, V), 0.0), 4.0) * rim * u_rim * vAo;
+    col += pow(1.0 - max(dot(N, V), 0.0), 4.0) * rim * u_rim * ao;
     col = mix(col, u_fog, fogf * 0.6);
     finalColor = vec4(pow(filmic(max(col, 0.0)), vec3(1.0 / 2.2)), 1.0);
 })";

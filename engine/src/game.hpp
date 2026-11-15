@@ -358,7 +358,7 @@ private:
     bool view_establish_ = false;                // ... or opens wide (the first time in a big space)
     bool establish_ = true;                      // (off for the capture setups, stills and the walk-through)
     float item_push_ = 1;                        // a little closer while a pickup is within reach
-    int l_rWin_ = -1, l_sWin_ = -1, l_fill_ = -1;
+    int l_rWin_ = -1, l_sWin_ = -1, l_fill_ = -1, l_wet_ = -1;
     // The live layer over the painting (dw/fxlive.hpp, game_fx.cpp): flames, smoke, sparks, beacons.
     Shader fire_sh_{}, smoke_sh_{}, glow_sh_{};
     int l_fire_[3]{-1, -1, -1}, l_smoke_[3]{-1, -1, -1}, l_glow_[2]{-1, -1}, l_pFxPos_ = -1, l_pFxCol_ = -1;
