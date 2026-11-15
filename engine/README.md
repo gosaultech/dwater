@@ -661,6 +661,30 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   flat is not the set; the room built behind it is). The Damrak shops' pieces are `shops.py`'s
   (clogs, cheeses, the exchange's board of rates, the cashiers' glass, the safe), and a tour boat
   can be boarded (`canal_boat`'s `"door"`, `"aisle"` and `"draught"`).
+- **The second look (2026-11): flat and sharp reads as metal, round and soft reads as rubber.** The
+  streets' own vehicles were lofted and smoothed, which is why they looked like soap. Three changes:
+  - **The tram is Amsterdam's** (`tools/blender/combino.py`): the five-section low-floor car, built
+    hard and square from flat sheets like the real one, measured off CC BY photographs (reference
+    only: no photo pixels). White, a blue skirt, the blue roof line that steps up to a blue cap over
+    the cab, one black band of see-through glass with the lit saloon behind it, plug doors, pleated
+    bellows, roof gear, a pantograph, an amber display. The operator's name is invented.
+    `tools/pipeline/tram_layout.py` is the one tape measure for the model and the colliders.
+  - **Vehicles and street furniture are hired, not home-made** (`tools/blender/licensed.py`,
+    `tools/assets/sketchfab.py`, `tools/assets/models.json`, `docs/model_credits.md`): CC BY models
+    from Sketchfab (a licence gate lets in CC0 and CC BY only). Each "vehicle" prop gets a real car,
+    van, army truck or burnt wreck: nose to the prop's front, scaled to its footprint, resprayed,
+    its windows swapped for the set's glass, the set's weather laid over its own materials. Makers'
+    badges are capped (a small flat cap in the neighbouring paint, pressed onto the body); police
+    and ambulance vans get Dutch striping, lettering and a roof bar pressed on the same way (each
+    point dropped onto the body along a ray, like a sticker smoothed on by hand). Bins, crowd
+    barriers, body bags and bicycles come out of packs by material name (`"model": "sf:bin_green"`).
+  - **Paint from a can** (`tools/assets/decals.py`, `tools/assets/fonts/`): the words on the walls
+    are written in real hand lettering (OFL/Apache fonts) and put through a spray pass: a soft-edged
+    core, thinner where the hand moved fast, a mist flecked with droplets, runs where it went on
+    thick.
+  - A room joins the second look (`catastrophe.LOOK2`) in the commit that brings its re-rendered
+    plates, as rooms joined the stories before it. Look-dev: `vehicle_studio.py --set
+    trams|vehicles|lineup|street [--day] [--views 0,2]`; `model_probe.py` measures a new download.
 - **The next district down the street.** Rendering a district also builds the streets of the
   districts beside it (within 40 m), so the end of a street shows the city going on, not a void.
 - **One ground per street.** Rooms on one storey are built together, and each room's lights only

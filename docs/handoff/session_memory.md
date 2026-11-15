@@ -28,14 +28,30 @@ this look like an Amsterdam tram... it will look goofy and out of place otherwis
   - `tools/assets/sketchfab.py` (search, licence gate, fetch, credits, SQLite run log),
     `tools/assets/models.json` (23 CC BY models), `docs/model_credits.md`,
     `tools/blender/model_probe.py` (measure and photograph a model).
-- **Not done yet (the tram):** `catastrophe.tram_sections` still lays three sections. Point it at
-  `tram_layout.chain` (import it; the flicker fx goes on section 2; the test expects 5), rebuild
-  `rokin_zuid`'s spec, and commit that together with its re-rendered plates (the two catastrophe
-  tests compare the committed spec with a rebuild, so spec and generator must change together).
-  Trams stand in `damrak_zuid`, `rembrandtplein`, `rokin_zuid`, `stationsplein`.
-- **Not done yet (vehicles):** a Blender import path for the ledger's models (scale, facing, which
-  piece of a pack, de-badge, invented liveries, our weathering on their materials), behind the
-  existing `"vehicle"` prop so room specs don't change.
+- **Also done and pushed (2026-11-15):**
+  - `tools/blender/licensed.py`: the `"vehicle"` prop takes a licensed model when the cache has one
+    (`"lofted": true` keeps the old body): cars (Punto, Focus, Octavia, Yaris, V70), a Sprinter van
+    (ambulance yellow / police white, with projected Dutch striping, lettering, roof bar), a
+    delivery van, an army Unimog, two burnt shells and two wrecks. De-badge caps at positions read
+    off flat elevations (in metres: `MODELS[...]["badges"]`). `"model": "sf:<key>"` in the kit's
+    model prop places a pack piece at its real size (`REAL`), `"tip"` knocks it over. Bikes and
+    single body bags use the licensed models. Gotchas: a turned object's `bound_box` over-reaches,
+    so sizes come from the vertices (`_extent`); packs' things touch, so pieces are picked by
+    material name; `ray_cast` fails on hidden objects, so projection uses `BVHTree.FromPolygons`.
+  - `catastrophe.LOOK2` (empty so far) + `DW_LOOK2`: five-section tram colliders
+    (`tram_sections(tram, five)`) and wheelie bins (`BINS`) for rooms in it. Scratch build:
+    `DW_ROOMS=<dir>/ DW_LOOK2=rokin_noord,rokin_zuid python3 tools/citygen/build_city.py`.
+  - `tools/assets/decals.py`: sprayed words in real hands through a can (`HANDS`, `_sprayed`);
+    `DRAWN` bumps redraw the cache without renaming decals.
+  - Engine: cloth folds in `CHAR_FS` (after the soaked-cloth block), an unsharp pass in `POST_FS`.
+  - `tools/dev/render_queue.sh <specs dir> <queue file>`: restart-safe queue (renders only missing
+    shots, packs, copies the spec in). `render_rooms.py --samples N --filter W` for look-dev.
+- **Next:** review the Rokin test shots (new look vs old plates; 12 vs 32 samples, filter 1.5 vs
+  1.0), settle render settings, then queue rokin_noord + rokin_zuid with `DW_LOOK2`, add them to
+  `LOOK2` with their plates, show the user, and roll out to the other streets (which also finishes
+  the re-dress, #18). Still open: sharper ground/facade textures (2k), lamp posts and leaflets look
+  flat, Dutch number plates, the Beurs mortuary's rows of bags, a licensed bus and metro car,
+  characters beyond folds (faces, lighting contrast).
 - **Lesson, the hard way:** after a long idle the container is replaced: everything uncommitted,
   the scratchpad and /opt are gone (a whole tram model was lost once). Commit and push work in
   progress as soon as it stands up; keep tools in the repo, not the scratchpad. The environment
