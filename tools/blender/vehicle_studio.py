@@ -54,12 +54,14 @@ SETS = {
             ("van_euro", 5.3, 2.4, {"color": [0.5, 0.42, 0.3]}), ("truck_army", 5.7, 2.7, {"livery": "army"}),
             ("burnt_car_a", 4.5, 1.4, {}), ("burnt_car_b", 4.5, 1.4, {}), ("wreck_gutted", 4.6, 1.4, {}), ("wreck_crashed", 4.6, 1.7, {})])
     ],
-    "street": [   # licensed street furniture, each on its own (licensed.py's PIECES)
-        {"type": "licensed", "model": m, "pos": [i * 2.6, 0.0, 0.0], "yaw": 20, "size": [L, 1.0, 1.0]}
-        for i, (m, L) in enumerate([("bin_blue", 0.75), ("bin_green", 0.75), ("dumpster", 1.9), ("crowd_barrier", 2.3), ("crowd_barrier_bent", 2.3),
-                                    ("water_barrier", 1.9), ("jersey", 2.4), ("fence_panel", 2.4), ("cone", 0.4), ("rubbish_bag", 0.7),
-                                    ("box_large", 0.8), ("bodybag_a", 2.1), ("bodybag_c", 2.1), ("bike_classic", 1.85), ("moped", 1.75), ("sandbags", 3.0)])
-    ],
+    "street": [   # licensed street furniture, each on its own (licensed.py's PIECES), and two things knocked over
+        dict({"type": "model", "model": "sf:" + m, "pos": [(i % 8) * 2.6, 0.0, (i // 8) * 3.2], "yaw": 20}, **extra)
+        for i, (m, extra) in enumerate([("bin_blue", {}), ("bin_green", {"tip": 90}), ("dumpster", {}), ("crowd_barrier", {}), ("crowd_barrier_bent", {}),
+                                        ("water_barrier", {}), ("jersey", {}), ("fence_panel", {}), ("cone", {}), ("rubbish_bag", {}),
+                                        ("box_large", {}), ("bodybag_a", {}), ("oil_barrel", {}), ("concrete_barrier", {}), ("moped", {"tip": 80}), ("bench", {})])
+    ] + [{"type": "bike", "pos": [21.5, 0.0, 0.0], "yaw": 30, "size": [1.8, 1.1, 0.5], "seed": 3},
+         {"type": "bike", "pos": [21.5, 0.0, 3.2], "yaw": 60, "roll": 84, "size": [1.8, 1.1, 0.5], "seed": 4},
+         {"type": "body_bag", "pos": [24.5, 0.0, 1.6], "yaw": 80, "size": [2.0, 0.35, 0.7]}],
     "plant": [   # the site's things: a lighting tower, the fair's stalls
         {"type": "light_tower", "pos": [0.0, 0.0, 0.0], "yaw": 20, "size": [2.2, 8.5, 1.4], "aim": [4.0, 0.0, 14.0], "power": 1500.0, "seed": 7},
         {"type": "fair_stall", "pos": [7.0, 0.0, 1.0], "yaw": -10, "size": [5.0, 2.8, 2.6], "kind": "oliebollen", "seed": 1},
@@ -76,7 +78,7 @@ VIEWS = {   # (camera position, look at) in the Godot frame
     "heavy": [((7.0, 2.8, -9.0), (1.0, 1.2, 0.0)), ((22.0, 3.5, -11.0), (14.0, 1.4, 2.0)), ((-6.0, 2.6, 9.0), (4.0, 1.2, 2.0))],
     "trams": [((20.5, 1.7, 5.2), (13.0, 1.75, 0.3)), ((6.0, 1.8, 13.0), (6.0, 1.7, 0.0)), ((-21.0, 2.6, -7.5), (-9.0, 1.6, 0.0)),
               ((24.0, 6.5, 22.0), (4.0, 1.4, 6.0)), ((9.0, 1.7, 5.0), (9.5, 1.6, 0.0))],
-    "street": [((8.0, 2.6, 8.5), (8.0, 0.6, 0.0)), ((30.0, 2.6, 8.5), (30.0, 0.6, 0.0))],
+    "street": [((5.0, 3.4, 9.5), (4.5, 0.4, 1.6)), ((15.0, 3.4, 9.5), (14.5, 0.4, 1.6)), ((24.0, 3.0, 9.0), (22.5, 0.4, 1.6))],
     "lineup": [((7.5, 1.2, 3.6), (0.0, 0.75, 3.6)), ((7.5, 1.2, 10.8), (0.0, 0.75, 10.8)), ((9.0, 1.5, 19.8), (0.0, 1.0, 19.8)),
                ((-7.5, 1.2, 3.6), (0.0, 0.75, 3.6)), ((-7.5, 1.2, 10.8), (0.0, 0.75, 10.8)), ((-9.0, 1.5, 19.8), (0.0, 1.0, 19.8)),
                ((11.0, 1.9, 5.4), (0.0, 0.8, 5.4)), ((11.0, 1.9, 19.8), (0.0, 0.8, 19.8)), ((13.0, 2.4, 35.0), (0.0, 0.9, 34.2)),

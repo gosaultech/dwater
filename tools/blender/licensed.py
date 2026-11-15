@@ -40,7 +40,7 @@ MODELS = {
     "wreck_crashed": {"axis": "y", "front": -1, "paint": []},
     "wreck_gutted": {"axis": "x", "front": 1, "paint": []},
     "wrecks_burnt": {"pca": True, "paint": []},
-    "bike_classic": {"axis": "y", "front": -1, "paint": []},
+    "bike_classic": {"axis": "y", "front": -1},
     "moped": {"axis": "y", "front": -1, "paint": []},
     "bodybags": {"axis": "x", "front": 1, "paint": [], "loose": True},
     "sandbags": {"axis": "x", "front": 1, "paint": []},
@@ -65,6 +65,15 @@ PIECES = {
     "bodybag_a": ("bodybags", None, 0), "bodybag_b": ("bodybags", None, 1), "bodybag_c": ("bodybags", None, 2),
     "bodybag_d": ("bodybags", None, 3), "bodybag_e": ("bodybags", None, 4),
 }
+# How big each thing really is: its height in metres (or, lying things and vehicles, its length).
+REAL = {"bin_blue": ("h", 1.07), "bin_green": ("h", 1.07), "bin_orange": ("h", 1.07), "bin_yellow": ("h", 1.07), "bin_red": ("h", 1.07),
+        "dumpster": ("h", 1.3), "bench": ("h", 0.85), "box_large": ("h", 0.6), "box_medium": ("h", 0.45), "box_small": ("h", 0.3),
+        "rubbish_bag": ("h", 0.55), "cone": ("h", 0.5), "crowd_barrier": ("h", 1.1), "crowd_barrier_bent": ("h", 1.1), "crowd_barrier_b": ("h", 1.1),
+        "water_barrier": ("h", 1.0), "oil_barrel": ("h", 0.9), "concrete_barrier": ("h", 0.8), "jersey": ("h", 0.81), "jersey_painted": ("h", 0.81),
+        "jersey_short": ("h", 0.5), "fence_panel": ("h", 2.0), "burnt_car_a": ("l", 4.5), "burnt_car_b": ("l", 4.5), "wreck_gutted": ("l", 4.6),
+        "wreck_crashed": ("l", 4.6), "bodybag_a": ("l", 2.1), "bodybag_b": ("l", 2.1), "bodybag_c": ("l", 2.1), "bodybag_d": ("l", 2.1),
+        "bodybag_e": ("l", 2.1), "bike_classic": ("l", 1.85), "moped": ("l", 1.75), "sandbags": ("l", 3.0)}
+BINS = ["sf:bin_green", "sf:bin_blue", "sf:bin_orange"]
 NOT_PAINT = ("glass", "window", "vitre", "black", "rubber", "tire", "tyre", "reifen", "interior", "interrieur", "chrome", "shadow", "wheel", "rim",
              "light", "phare", "amber", "grey", "gray", "default", "material", "sitze", "plastik", "schwarz", "chassis", "trim", "undercarriage")
 GLASS = ("glass", "window", "vitre")
@@ -85,6 +94,8 @@ def reset():
     _LIB.clear()
     _TINTED.clear()
     _TREES.clear()
+    _DRESS.clear()
+    _EXTENT.clear()
 
 
 def _base(name):
@@ -230,6 +241,14 @@ def _debadge(model, meshes):
             l.uv = uv
         if mat is not None:
             me.materials.append(mat)
+        src = next((h for h in hits if h), found[0])
+        ca = src[2].data.color_attributes.active_color if src[2].data.color_attributes else None
+        if ca is not None:   # (a paint coloured by its vertices: the cap takes the panel's)
+            idx = src[2].data.polygons[src[3]].loop_indices[0] if ca.domain == "CORNER" else src[2].data.polygons[src[3]].vertices[0]
+            col = ca.data[idx].color[:]
+            mine = me.color_attributes.new(ca.name, ca.data_type, "CORNER")
+            for c_ in mine.data:
+                c_.color = col
         cap = bpy.data.objects.new("debadge", me)
         bpy.context.scene.collection.objects.link(cap)
         cap.hide_render = cap.hide_viewport = True
@@ -238,21 +257,218 @@ def _debadge(model, meshes):
     return caps
 
 
+LIVERY = {   # an emergency vehicle's side stripes: (first colour, second colour), its lettering, what stands on its roof
+    "police": {"stripes": ((0.0, 0.07, 0.42), (0.85, 0.12, 0.02)), "text": "POLITIE", "ink": (0.0, 0.06, 0.35), "roof": "bar"},
+    "ambulance": {"stripes": ((0.75, 0.03, 0.02), (0.0, 0.08, 0.45)), "text": "AMBULANCE", "ink": (0.0, 0.06, 0.35), "roof": "bar"},
+    "taxi": {"roof": "sign"},
+}
+_DRESS = {}     # (model, livery) -> the livery's pieces, made once in the library's space
+
+
+def _plain(name, color, rough=0.35, emit=0.0):
+    m = bpy.data.materials.get(name)
+    if m is None:
+        m = bpy.data.materials.new(name)
+        m.use_nodes = True
+        b = m.node_tree.nodes["Principled BSDF"]
+        b.inputs["Base Color"].default_value = (*color, 1.0)
+        b.inputs["Roughness"].default_value = rough
+        builders.weather(m, {"grime": 0.9, "streaks": 0.4, "silt": 0.5, "bevel": 0.0})
+    return m
+
+
+def _striped(name, c1, c2):
+    """Reflective tape in slanted stripes: two colours and the gaps between, read off the mesh's UVs
+    (u: metres along the car, v: metres up the band)."""
+    m = bpy.data.materials.get(name)
+    if m is not None:
+        return m
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    b = nt.nodes["Principled BSDF"]
+    uv = nt.nodes.new("ShaderNodeUVMap")
+    sep = nt.nodes.new("ShaderNodeSeparateXYZ")
+    nt.links.new(uv.outputs["UV"], sep.inputs[0])
+    add = nt.nodes.new("ShaderNodeMath")
+    add.operation = "ADD"
+    nt.links.new(sep.outputs["X"], add.inputs[0])
+    nt.links.new(sep.outputs["Y"], add.inputs[1])        # (one across for one up: 45 degrees)
+    fr = nt.nodes.new("ShaderNodeMath")
+    fr.operation = "FRACT"
+    sc = nt.nodes.new("ShaderNodeMath")
+    sc.operation = "MULTIPLY"
+    sc.inputs[1].default_value = 1.0 / 0.46              # a pair of stripes every 46 cm
+    nt.links.new(add.outputs[0], sc.inputs[0])
+    nt.links.new(sc.outputs[0], fr.inputs[0])
+    ramp = nt.nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.interpolation = "CONSTANT"
+    el = ramp.color_ramp.elements
+    el[0].position, el[0].color = 0.0, (*c1, 1.0)
+    el[1].position, el[1].color = 0.42, (0.0, 0.0, 0.0, 0.0)
+    e = el.new(0.5)
+    e.color = (*c2, 1.0)
+    e = el.new(0.72)
+    e.color = (0.0, 0.0, 0.0, 0.0)
+    nt.links.new(fr.outputs[0], ramp.inputs["Fac"])
+    nt.links.new(ramp.outputs["Color"], b.inputs["Base Color"])
+    nt.links.new(ramp.outputs["Alpha"], b.inputs["Alpha"])   # (the gaps: the body's own paint shows)
+    b.inputs["Roughness"].default_value = 0.3
+    builders.weather(m, {"grime": 0.9, "streaks": 0.4, "silt": 0.5, "bevel": 0.0})
+    return m
+
+
+def _keep(name, verts, faces, mat, uvs=None):
+    """A livery piece as a library mesh (hidden: the cars on the set are copies)."""
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(verts, [], faces)
+    layer = me.uv_layers.new(name="UVMap")
+    if uvs:
+        for poly in me.polygons:
+            for li, vi in zip(poly.loop_indices, poly.vertices):
+                layer.data[li].uv = uvs[vi]
+    for poly in me.polygons:
+        poly.use_smooth = True
+    me.materials.append(mat)
+    ob = bpy.data.objects.new(name, me)
+    bpy.context.scene.collection.objects.link(ob)
+    ob.hide_render = ob.hide_viewport = True
+    return ob
+
+
+def _box(c, half, axes):
+    """A box's corners and faces round c: half sizes along the three given axes."""
+    v = [c + axes[0] * (sx * half[0]) + axes[1] * (sy * half[1]) + axes[2] * (sz * half[2]) for sx in (-1, 1) for sy in (-1, 1) for sz in (-1, 1)]
+    return v, [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]
+
+
+def _dress(model, meshes, livery):
+    """The livery's pieces for a model, in the library's space: the striped band pressed onto each
+    side (dropped onto the body along its width; skipped over wheel arches and gaps), the lettering
+    pressed on above it, a light bar or a sign on the roof."""
+    key = (model, livery)
+    if key in _DRESS:
+        return _DRESS[key]
+    spec, liv = MODELS[model], LIVERY[livery]
+    lo, hi = _bounds(meshes)
+    ax = 0 if spec["axis"] == "x" else 1
+    side = 1 - ax
+    unit = (hi[ax] - lo[ax]) / spec["length"]
+    fwd, out, up = Vector((0.0, 0.0, 0.0)), Vector((0.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0))
+    fwd[ax], out[side] = spec["front"], 1.0
+    nose = hi[ax] if spec["front"] > 0 else lo[ax]
+    mid = (lo[side] + hi[side]) / 2
+    tall = (hi.z - lo.z) / unit
+    van = tall > 1.9
+    made = []
+
+    def drop(along, height, sgn):   # a point on the body's side: `along` metres back from the nose, `height` metres up
+        p = Vector((0.0, 0.0, lo.z + height * unit))
+        p[ax] = nose - spec["front"] * along * unit
+        p[side] = mid + sgn * ((hi[side] - lo[side]) / 2 + 0.5 * unit)
+        return _strike(meshes, p, -out * sgn)
+
+    if "stripes" in liv:
+        h0, h1 = (0.95, 1.3) if van else (0.52, 0.74)
+        cols, rows = 90, 3
+        for sgn in (1, -1):
+            grid = [[drop(0.25 + (spec["length"] - 0.5) * c / cols, h0 + (h1 - h0) * r / (rows - 1), sgn) for r in range(rows)] for c in range(cols + 1)]
+            depths = sorted(h[0] for col in grid for h in col if h)
+            if not depths:
+                continue
+            near = depths[len(depths) // 4]                      # the flank itself (arches and gaps lie deeper)
+            verts, uvs, faces, index = [], [], [], {}
+            for c in range(cols):
+                quad = [grid[c][0], grid[c + 1][0], grid[c + 1][rows - 1], grid[c][rows - 1]] + [grid[c][1], grid[c + 1][1]]
+                if any(h is None or h[0] > near + 0.07 * unit or h[0] < near - 0.05 * unit for h in quad):   # (an arch, a gap; a mirror, a handle)
+                    continue
+                for r in range(rows - 1):
+                    ids = []
+                    for cc, rr in ((c, r), (c + 1, r), (c + 1, r + 1), (c, r + 1)):
+                        if (cc, rr) not in index:
+                            index[(cc, rr)] = len(verts)
+                            verts.append(grid[cc][rr][1] + out * sgn * 0.004 * unit)
+                            uvs.append((sgn * (spec["length"] - 0.5) * cc / cols, (h1 - h0) * rr / (rows - 1)))
+                        ids.append(index[(cc, rr)])
+                    faces.append(tuple(ids) if sgn > 0 else tuple(reversed(ids)))
+            if faces:
+                made.append(_keep("livery_band", verts, faces, _striped("livery_" + livery, *liv["stripes"]), uvs))
+    if liv.get("text") and van:   # lettering on a van's flank, pressed on point by point
+        cu = bpy.data.curves.new("livery_text", "FONT")
+        cu.body, cu.size, cu.align_x, cu.align_y = liv["text"], 0.3, "CENTER", "CENTER"
+        font = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
+        if font.exists():
+            cu.font = bpy.data.fonts.load(str(font), check_existing=True)
+        tob = bpy.data.objects.new("livery_text", cu)
+        bpy.context.scene.collection.objects.link(tob)
+        bpy.context.view_layer.update()
+        tm = bpy.data.meshes.new_from_object(tob.evaluated_get(bpy.context.evaluated_depsgraph_get()))
+        bpy.data.objects.remove(tob)
+        for sgn in (1, -1):
+            right = (-out * sgn).cross(up)                       # the reader's right, standing outside that flank
+            verts = []
+            for v in tm.vertices:
+                along = spec["length"] * 0.58 - v.co.x * right.dot(fwd)
+                h = drop(along, 1.68 + v.co.y, sgn)
+                p = (h[1] if h else None)
+                if p is None:
+                    p = Vector((0.0, 0.0, lo.z + (1.68 + v.co.y) * unit))
+                    p[ax] = nose - spec["front"] * along * unit
+                    p[side] = mid + sgn * (hi[side] - lo[side]) / 2
+                verts.append(p + out * sgn * 0.005 * unit)
+            faces = [tuple(poly.vertices) if sgn > 0 else tuple(reversed(poly.vertices)) for poly in tm.polygons]
+            made.append(_keep("livery_text", verts, faces, _plain("livery_ink_" + livery, liv["ink"])))
+    if liv.get("roof"):   # on the roof, a third of the way back: where a ray from above lands
+        along = spec["length"] * (0.36 if liv["roof"] == "bar" else 0.45)
+        p = Vector((0.0, 0.0, hi.z + unit))
+        p[ax], p[side] = nose - spec["front"] * along * unit, mid
+        h = _strike(meshes, p, Vector((0.0, 0.0, -1.0)))
+        if h:
+            top = h[1]
+            if liv["roof"] == "bar":
+                wide = (hi[side] - lo[side]) / unit * 0.36
+                v, f = _box(top + up * 0.07 * unit, (0.09 * unit, wide * unit, 0.02 * unit), (fwd, out, up))
+                made.append(_keep("livery_bar_foot", v, f, _plain("livery_black", (0.02, 0.02, 0.022), 0.5)))
+                for sgn in (1, -1):
+                    v, f = _box(top + up * 0.14 * unit + out * sgn * wide * 0.52 * unit, (0.1 * unit, wide * 0.46 * unit, 0.055 * unit), (fwd, out, up))
+                    made.append(_keep("livery_bar_lens", v, f, _plain("livery_blue_lens", (0.0, 0.05, 0.5), 0.12)))
+            else:
+                v, f = _box(top + up * 0.09 * unit, (0.07 * unit, 0.19 * unit, 0.07 * unit), (fwd, out, up))
+                made.append(_keep("livery_sign", v, f, _plain("livery_sign", (0.75, 0.6, 0.05), 0.3)))
+    bpy.context.view_layer.update()
+    _DRESS[key] = made
+    return made
+
+
+_EXTENT = {}    # a mesh -> where its points really reach, in the library's space
+
+
+def _extent(o):
+    """A mesh's true reach (its bound_box, turned, would reach further than any of its points do)."""
+    e = _EXTENT.get(o.name)
+    if e is None:
+        import numpy as np
+        co = np.empty(len(o.data.vertices) * 3, dtype=np.float32)
+        o.data.vertices.foreach_get("co", co)
+        m = np.array(o.matrix_world)
+        w = co.reshape(-1, 3) @ m[:3, :3].T + m[:3, 3]
+        e = _EXTENT[o.name] = (Vector(w.min(axis=0).tolist()), Vector(w.max(axis=0).tolist())) if len(w) else (Vector(), Vector())
+    return e
+
+
 def _bounds(objs):
     lo, hi = Vector((1e9, 1e9, 1e9)), Vector((-1e9, -1e9, -1e9))
     for o in objs:
-        for c in o.bound_box:
-            w = o.matrix_world @ Vector(c)
-            lo, hi = Vector(map(min, lo, w)), Vector(map(max, hi, w))
+        a, b = _extent(o)
+        lo, hi = Vector(map(min, lo, a)), Vector(map(max, hi, b))
     return lo, hi
 
 
-def _things(meshes, marks):
-    """The separate things among a pack's meshes (touching meshes are one thing), left to right;
-    with `marks`, only the things one of whose materials is so named."""
-    boxes = [(_bounds([o]), o) for o in meshes]
+def _touching(objs):
+    """Meshes gathered into things: two that touch are one thing."""
     groups = []
-    for (lo, hi), o in boxes:
+    for o in objs:
+        lo, hi = _bounds([o])
         near = [g for g in groups if all(lo[i] <= g["hi"][i] + 0.02 and hi[i] >= g["lo"][i] - 0.02 for i in range(3))]
         g = {"lo": lo.copy(), "hi": hi.copy(), "objs": [o]}
         for n in near:
@@ -260,9 +476,29 @@ def _things(meshes, marks):
             g["objs"] += n["objs"]
             groups.remove(n)
         groups.append(g)
-    if marks:
-        groups = [g for g in groups if any(s.material and _base(s.material.name) in marks for o in g["objs"] for s in o.material_slots)]
-    return [g["objs"] for g in sorted(groups, key=lambda g: (round(g["lo"][0], 2), round(g["lo"][1], 2)))]
+    return sorted(groups, key=lambda g: (round(g["lo"][0], 2), round(g["lo"][1], 2)))
+
+
+def _things(meshes, marks):
+    """The separate things in a pack, left to right. With `marks` (material names): the things made
+    of that material, each with whatever sits inside its box (a bin's lid and wheels); a pack's
+    things stand touching, so without a mark they could not be told apart."""
+    if not marks:
+        return [g["objs"] for g in _touching(meshes)]
+    seeds = [o for o in meshes if any(s.material and _base(s.material.name) in marks for s in o.material_slots)]
+    out = []
+    for g in _touching(seeds):
+        pad = 0.03 * max(g["hi"][i] - g["lo"][i] for i in range(3))
+        inside = []
+        for o in meshes:
+            if o in g["objs"]:
+                continue
+            lo, hi = _bounds([o])
+            c = (lo + hi) / 2
+            if all(g["lo"][i] - pad <= c[i] <= g["hi"][i] + pad for i in range(3)) and all(hi[i] - lo[i] <= (g["hi"][i] - g["lo"][i]) * 1.2 + pad for i in range(3)):
+                inside.append(o)
+        out.append(g["objs"] + inside)
+    return out
 
 
 def _points(objs, most=400):
@@ -365,9 +601,10 @@ def _tinted(m, color):
     return c
 
 
-def place(root, key, length, width=None, color=None, yaw=0.0, lift=0.0):
+def place(root, key, length=None, width=None, color=None, yaw=0.0, lift=0.0, livery=None, tip=None):
     """A model (or one piece of a pack) under `root`: its nose to the root's +x, scaled to `length`
-    (and no wider than `width`), standing on the ground; `color`: its body resprayed."""
+    (and no wider than `width`; without a length, to its real size: REAL), standing on the ground;
+    `color`: its body resprayed; `tip`: knocked over (degrees about its length), lying on its side."""
     model, marks, which = PIECES[key] if key in PIECES else (key, None, None)
     meshes = _load(model)
     if which is not None:
@@ -388,14 +625,28 @@ def place(root, key, length, width=None, color=None, yaw=0.0, lift=0.0):
     else:
         ex, ey = max(c.x for c in corners) - min(c.x for c in corners), max(c.y for c in corners) - min(c.y for c in corners)
         centre = rot @ Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, 0.0))
-    k = length / max(ex, 1e-6)
+    if length is None:
+        dim, real = REAL.get(key, ("l", ex))
+        k = real / max(hi.z - lo.z, 1e-6) if dim == "h" else real / max(ex, 1e-6)
+    else:
+        k = length / max(ex, 1e-6)
     if width:
         k = min(k, width / max(ey, 1e-6))
+    if tip:   # (rolled about its length, then lifted until its lowest edge rests on the ground)
+        t = math.radians(tip)
+        lift += (abs(math.sin(t)) * ey / 2 + min(0.0, math.cos(t)) * (hi.z - lo.z)) * k
+        rot = Matrix.Rotation(t, 4, "X") @ rot
     holder = bpy.data.objects.new("licensed_" + key, None)
     bpy.context.scene.collection.objects.link(holder)
     holder.parent = root
-    holder.matrix_basis = Matrix.Translation((0.0, 0.0, lift)) @ Matrix.Scale(k, 4) @ Matrix.Translation((-centre.x, -centre.y, -lo.z)) @ rot
+    drop = Matrix.Translation((-centre.x, -centre.y, -lo.z))
+    if tip:
+        drop = Matrix.Rotation(math.radians(tip), 4, "X") @ drop
+        rot = Matrix.Rotation(-math.radians(tip), 4, "X") @ rot   # (the turn about up only; the roll is applied after the drop)
+    holder.matrix_basis = Matrix.Translation((0.0, 0.0, lift)) @ Matrix.Scale(k, 4) @ drop @ rot
     paint = _paint_of(model, meshes) if color is not None else set()
+    if livery in LIVERY and "length" in MODELS[model]:
+        meshes = meshes + _dress(model, meshes, livery)
     for o in meshes:
         c = o.copy()   # (the mesh is shared: forty parked cars are five cars, eight times)
         bpy.context.scene.collection.objects.link(c)
@@ -437,14 +688,18 @@ def vehicle(root, p, w, h, d):
         color = color or rng.choice(COLOURS)
     if not available(key):
         return False
-    place(root, key, w, d * 1.04, color=color)
+    place(root, key, w, d * 1.04, color=color, livery=liv)
     return True
 
 
-def prop(root, p, w, h, d):
-    """A "licensed" prop: {"model": a MODELS or PIECES name}; sized by its "size"[0] along its length."""
-    if available(p["model"]):
-        place(root, p["model"], w, None, color=p.get("color"), yaw=p.get("yaw_model", 0.0))
+def prop(root, p, w=None, h=None, d=None):
+    """A "licensed" prop, or a "model" prop naming "sf:<key>": a MODELS or PIECES name at its real
+    size (REAL); "tip": knocked over; "color": resprayed. Returns False if the cache has not got it."""
+    key = p["model"][3:] if p["model"].startswith("sf:") else p["model"]
+    if not available(key):
+        return False
+    place(root, key, None, None, color=p.get("color"), yaw=p.get("yaw_model", 0.0), tip=p.get("tip"))
+    return True
 
 
 import kit  # noqa: E402

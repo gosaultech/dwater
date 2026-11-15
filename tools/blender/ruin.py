@@ -97,6 +97,11 @@ def boards(root, p, w, h, d):
 
 def body_bag(root, p, w, h, d):
     """Someone in a black bag on the ground, w long: the shape says enough; a zip down its length."""
+    import licensed
+    which = "bodybag_" + "abcde"[int(abs(p["pos"][0] * 7 + p["pos"][2] * 13)) % 5]
+    if not p.get("lofted") and licensed.available(which):   # a real bag's folds, where the cache has it
+        licensed.place(root, which, w)
+        return
     bag = M({"color": [0.018, 0.019, 0.021], "rough": 0.32, "noise": 0.15, "noise_scale": 6.0, "grime": 1.2})
     kit.soft(root, "bag", (0.0, h / 2, 0.0), (w, h, d), bag, min(h, d) * 0.45, 4)
     kit.soft(root, "bag_head", (w / 2 - 0.28, h * 0.55, 0.0), (0.42, h * 1.12, d * 0.8), bag, min(h, d) * 0.4, 4)

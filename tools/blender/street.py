@@ -655,6 +655,13 @@ def bike(root, p, w, h, d):
     """A black Dutch upright bike (an omafiets): two wheels, the frame, a rear rack, mudguards, a
     saddle and swept-back bars. Its length runs along local x."""
     rng = random.Random(p.get("seed", 5))
+    import licensed
+    if not p.get("lofted") and licensed.available("bike_classic"):   # a real one, where the cache has it (most of them black, as Amsterdam's are)
+        tint = rng.choice([None, (0.02, 0.02, 0.022), (0.02, 0.02, 0.022), (0.03, 0.05, 0.1), (0.16, 0.03, 0.02)])
+        if p.get("roll"):   # lying on its side: laid down by licensed.place (which rests it on the ground), not by the prop's own tilt
+            root.rotation_euler = (0.0, 0.0, math.radians(p.get("yaw", 0.0)))
+        licensed.place(root, "bike_classic", w, color=tint, tip=p.get("roll"))
+        return
     paint = M(p.get("material", {"color": rng.choice([[0.015, 0.015, 0.017], [0.015, 0.015, 0.017], [0.05, 0.08, 0.12],
                                                        [0.25, 0.04, 0.03]]), "rough": 0.35, "metal": 0.5, "noise": 0.1}))
     rubber = M({"color": [0.01, 0.01, 0.01], "rough": 0.8, "noise": 0.05})

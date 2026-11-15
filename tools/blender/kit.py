@@ -350,6 +350,8 @@ def reset_models():
     _MODELS.clear()
     _BOUNDS.clear()
     _GROUPS.clear()
+    import licensed
+    licensed.reset()   # (and the licensed models' library: a new scene has none of the last one's objects)
 
 
 def _base(name):
@@ -394,6 +396,9 @@ def model(root, p, w, h, d):
     """A Poly Haven model (glTF), standing on the prop's spot, facing its front; "scale" or "fit";
     "emit" lights the parts whose material names match (a street lamp's bulb and glass)."""
     ref = p["model"]
+    if isinstance(ref, str) and ref.startswith("sf:"):   # a licensed model from the ledger (licensed.py)
+        import licensed
+        return licensed.prop(root, p)
     a = surfaces.asset(ref[3:] if isinstance(ref, str) else ref["ph"])
     import json as _json
     look = a["id"] + _json.dumps([p.get("tint"), p.get("emit")], sort_keys=True)
