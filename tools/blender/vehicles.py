@@ -636,6 +636,9 @@ def _tram(root, p, w, h, d):
 
 
 def _car_or_truck(root, p, w, h, d):
+    import licensed
+    if not p.get("lofted") and licensed.vehicle(root, p, w, h, d):   # a licensed model, where the cache has one ("lofted": our own, for a before/after)
+        return None
     if p.get("livery") == "army" and h > 2.5:
         return army_truck(root, p, w, h, d)
     return car(root, p, w, h, d)

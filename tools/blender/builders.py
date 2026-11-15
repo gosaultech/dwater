@@ -687,6 +687,7 @@ def build_prop(p, room_h):
     import station  # noqa: F401  (Centraal and the metro: shop units, boards, the trackbed, the canopy)
     import ruin  # noqa: F401  (the catastrophe's: paint on the walls, boards, the dead, the silt)
     import vehicles  # noqa: F401  (cars, vans and trams lofted and smoothed: replaces aftermath's and city's boxes)
+    import licensed  # noqa: F401  (licensed models from the ledger: cars, vans, bins, barriers; the "licensed" prop)
     import photos  # noqa: F401  (photographs on cards: the stock on shelves, walls of bottles, tulips)
     if t in kit.PROPS:   # the detailed kit: sofas, kasten, the marble mantel, models...
         return kit.build_prop(p, room_h)
