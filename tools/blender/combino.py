@@ -5,8 +5,8 @@
 # cab, one black band of flush glass you can see the saloon through, plug doors, grey bellows, a
 # raked nose with broad white corner pillars, its lamps, wipers and mirrors, the amber destination
 # display behind the windscreen, the roof's gear behind its fairings and the pantograph on the
-# centre section. Proportions and livery are measured off CC BY photographs of the real cars
-# (docs/photo_credits.md, "Reference"); the operator's name and emblem are invented (no real marks).
+# centre section. Proportions and livery are measured off CC BY photographs of the real cars (layout
+# reference only: none of their pixels are used); the operator's name is invented (no real marks).
 # Options as the old tram's: "board", "line", "derail", "dark", "smashed", "doors_open",
 # "pantograph", "power", "fleet". Frame as vehicles.py (x along the tram, y up, z across).
 #

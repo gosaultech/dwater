@@ -1,7 +1,51 @@
 <!-- damned_waters/docs/handoff/session_memory.md -->
 <!-- Purpose: the memory between sessions: where the work stands, how it is made, what was learned, what is open. Update it at the end of each session. -->
 
-# Where Damned Waters stands (last updated 2026-11-10)
+# Where Damned Waters stands (last updated 2026-11-15)
+
+## The look overhaul (2026-11-11 onward, IN PROGRESS: read this first)
+The user's verdict on the whole city at 2048x1152: "far from a polished product"; the debris was
+"trash cans in random places" (floating ones "especially bad": "you must be a professional"); cars,
+trams and graffiti look "blocky/procedural"; "most things in the world just look too smooth and
+rubbery, including the characters"; the target is "an Amsterdam based RE3". And on the tram: "make
+this look like an Amsterdam tram... it will look goofy and out of place otherwise".
+- **The plan** (tasks #19 to #23): (1) the tram as Amsterdam's own; (2) licensed vehicles and street
+  furniture from Sketchfab instead of lofted ones; (3) materials and render settings that keep
+  surface detail; (4) characters that are not rubber dolls (engine shading, light, grain);
+  (5) graffiti that looks sprayed; then one re-render of every street with all of it, which also
+  finishes the re-dress (#18: 20 told rooms still show the old scatter).
+- **Done and pushed:**
+  - `tools/blender/combino.py`: the five-section tram (a Siemens Combino in all but the maker's
+    plate), built hard-surface from CC BY photo reference (layout reference only, no photo pixels):
+    white, blue skirt, the blue roof line stepping up to the cab's blue cap, a continuous black band
+    of see-through glass, plug doors, bellows, roof gear, pantograph, amber display. Operator
+    "SVA" is invented; the three crosses are the city's arms. `"plain": true` (or a metro's
+    `"underframe"`) keeps the old body. Look-dev: `vehicle_studio.py --set trams [--day] [--views]`,
+    `--set trams_before` for the old one.
+  - `tools/pipeline/tram_layout.py`: the five sections' lengths and hinge chain (tested).
+  - `builders._wear`: a material's `"silt"` (default 1) scales the flood's mud; gloss paint and
+    glass use about 0.4, or the livery drowns in brown.
+  - `tools/assets/sketchfab.py` (search, licence gate, fetch, credits, SQLite run log),
+    `tools/assets/models.json` (23 CC BY models), `docs/model_credits.md`,
+    `tools/blender/model_probe.py` (measure and photograph a model).
+- **Not done yet (the tram):** `catastrophe.tram_sections` still lays three sections. Point it at
+  `tram_layout.chain` (import it; the flicker fx goes on section 2; the test expects 5), rebuild
+  `rokin_zuid`'s spec, and commit that together with its re-rendered plates (the two catastrophe
+  tests compare the committed spec with a rebuild, so spec and generator must change together).
+  Trams stand in `damrak_zuid`, `rembrandtplein`, `rokin_zuid`, `stationsplein`.
+- **Not done yet (vehicles):** a Blender import path for the ledger's models (scale, facing, which
+  piece of a pack, de-badge, invented liveries, our weathering on their materials), behind the
+  existing `"vehicle"` prop so room specs don't change.
+- **Lesson, the hard way:** after a long idle the container is replaced: everything uncommitted,
+  the scratchpad and /opt are gone (a whole tram model was lost once). Commit and push work in
+  progress as soon as it stands up; keep tools in the repo, not the scratchpad. The environment
+  "dwater" now has a setup script (apt packages, SciPy, Blender 4.5.9), unproven until a fresh
+  container starts. Refill the caches with `polyhaven.py fetch`, `photos.py fetch`,
+  `sketchfab.py fetch`.
+- **Network:** `commons.wikimedia.org` is blocked and `upload.wikimedia.org` rate-limits quickly
+  (use Openverse's API and Flickr's `live.staticflickr.com` files). The Sketchfab token is a
+  network secret on the environment (never in code).
+
 
 ## In one paragraph
 The route runs end to end on pre-rendered backgrounds, from the canal house through central
