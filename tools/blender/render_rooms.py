@@ -31,7 +31,7 @@ from roomspec import g2b  # noqa: E402
 REPO = HERE.parent.parent
 HAZE = {"color": [0.045, 0.052, 0.068], "start": 12.0, "depth": 85.0, "strength": 0.5}   # a street's night air, by default
 QUALITY = {  # samples, bounces, volumetric density
-    "preview": dict(samples=12, bounces=4, volume=0.0),
+    "preview": dict(samples=16, bounces=4, volume=0.0, filter=1.0),   # (filter 1.0: crisp; at 1.5 every edge in a plate was a little soft)
     "ship": dict(samples=20, bounces=6, volume=0.0),
     "final": dict(samples=256, bounces=8, volume=0.012),
 }
