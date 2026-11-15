@@ -19,7 +19,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 GEN = REPO / "tools" / "citygen" / "catastrophe.py"
-TRAILER = "Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_018Fg2TGhREH4MYXioixRmNn"
+TRAILER = "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_018Fg2TGhREH4MYXioixRmNn"
 
 
 def add_to_set(source: str, name: str, room: str) -> str:
