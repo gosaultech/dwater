@@ -606,6 +606,8 @@ def leavings(spec, n=None):
             if p.get("model") == "ph:metal_trash_can":
                 p["model"] = BINS[int(abs(p["pos"][0] * 31 + p["pos"][2] * 17)) % len(BINS)]
                 p.pop("scale", None)
+            if p["type"] == "bus" and p["size"][0] > 14:   # (a rigid city bus, a licensed model: the bendy one was our own smooth body)
+                p["size"] = [12.0, p["size"][1], p["size"][2]]
     rng = np.random.default_rng(sum(map(ord, spec["id"])))   # (the same street, the same mess, every run)
     if spec["id"] in DRESSED:
         for p in spec["props"]:   # (what stands on a pavement or the quay stands on it, not sunk into it)

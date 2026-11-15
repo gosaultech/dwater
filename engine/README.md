@@ -682,6 +682,16 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
     are written in real hand lettering (OFL/Apache fonts) and put through a spray pass: a soft-edged
     core, thinner where the hand moved fast, a mist flecked with droplets, runs where it went on
     thick.
+  - **The metro's train** is built by the same hand as the tram (`combino.metro`): three long cars,
+    plug doors open at the platform's own doorways, a lit saloon, the tram's own white and blue. Bendy buses become the licensed
+    rigid bus.
+  - **Silt settles, it is not painted on** (`builders._wear`): thick at the foot of things, thinning
+    to the tide line, whole stretches left almost clean, and matt where it dried, whatever shines
+    under it. (Textures stay at 1k: a street at 2k ran the container out of memory; `DW_ASSET_RES=2k` asks for it on a bigger machine.)
+  - **People stand in the same street** (`CHAR_FS`): folds in every garment, wear and stains in
+    hand-wide patches, the flood's mud up the legs, denim worn pale, a harder light, cloth's nap at
+    grazing angles, and in the rain whatever faces the sky is wet. A doll is one clean colour under
+    a soft light; a person out all night is not.
   - A room joins the second look (`catastrophe.LOOK2`) in the commit that brings its re-rendered
     plates, as rooms joined the stories before it. Look-dev: `vehicle_studio.py --set
     trams|vehicles|lineup|street [--day] [--views 0,2]`; `model_probe.py` measures a new download.

@@ -35,9 +35,10 @@ GRADE = {   # (orange and tan out of the brick, the paving grey)
 
 
 def asset(asset_id):
-    """The cached asset.json (with "_dir"), preferring DW_ASSET_RES, else the sharpest there is."""
+    """The cached asset.json (with "_dir"), preferring DW_ASSET_RES, else 1k, else what there is. (1k
+    by default: a street at 2k needed 11 GB and the container's 15 GB killed the render.)"""
     pref = os.environ.get("DW_ASSET_RES", "")
-    for res in [r for r in (pref, "4k", "2k", "1k") if r]:
+    for res in [r for r in (pref, "1k", "2k", "4k") if r]:
         p = CACHE / asset_id / res / "asset.json"
         if p.exists():
             m = json.loads(p.read_text())

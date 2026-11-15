@@ -46,8 +46,14 @@ this look like an Amsterdam tram... it will look goofy and out of place otherwis
   - Engine: cloth folds in `CHAR_FS` (after the soaked-cloth block), an unsharp pass in `POST_FS`.
   - `tools/dev/render_queue.sh <specs dir> <queue file>`: restart-safe queue (renders only missing
     shots, packs, copies the spec in). `render_rooms.py --samples N --filter W` for look-dev.
-- **The rollout is RUNNING (started 2026-11-15 17:06):** all 27 story rooms, 257 shots, about 25 h
-  of container CPU at the new preview quality (16 samples, 1.0-pixel filter; `render_rooms.py`).
+- **The rollout (27 story rooms, 257 shots, about 25 h of container CPU)** was started and then
+  STOPPED at the user's word ("stop rendering, get the rest of the plan done, and then render"):
+  the world pass and the characters came first. Since then: `combino.metro` (the metro train),
+  bendy buses to the licensed rigid bus (LOOK2), patchy matt silt (`_wear`), darker leaflets,
+  2k textures fetched, and the character pass in `CHAR_FS` (`u_wet` from the room's rain flag).
+  The user chose "option A" for characters (keep the generated bodies, make them look better; not
+  licensed character models). The full room list is `pipeline_out/look2_all.txt`; copy it to
+  `pipeline_out/look2_queue.txt` and start the queue as below.
   - Specs: `pipeline_out/look2_rooms/` (built with `DW_LOOK2` and `DW_DRESSED` set to every story
     room: `pipeline_out/look2_rooms.txt`). Queue: `pipeline_out/look2_queue.txt` (a room leaves the
     file when it is packed). Logs: `pipeline_out/look2_queue.log`, `pipeline_out/queue_logs/`.

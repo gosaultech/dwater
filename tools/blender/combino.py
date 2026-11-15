@@ -170,11 +170,12 @@ def _disc(acc, c, r, n=18):
 
 def _paints(p):
     """The car's paints and stuffs ("silt": gloss paint and glass shed most of what the flood left).
-    A prop's "material" and "band" colours repaint the body and the skirt (the metro: white and red)."""
+    One livery for the city's trams and its metro: white and the operator's blue (a room's older
+    "band" or "material" colours are not read: the metro is blue, not red)."""
     paint = {"rough": 0.28, "coat": 0.9, "grime": 1.25, "streaks": 0.45, "silt": 0.45, "bevel": 0.0}
     return {
-        "white": M(dict(paint, color=list(p.get("material", {}).get("color", [0.80, 0.81, 0.82])))),
-        "blue": M(dict(paint, color=list(p.get("band", {}).get("color", [0.004, 0.075, 0.30])))),
+        "white": M(dict(paint, color=[0.80, 0.81, 0.82])),
+        "blue": M(dict(paint, color=[0.004, 0.075, 0.30])),
         "glass": _glass("combino_glass", (0.11, 0.125, 0.13), 0.13),
         "black": M({"color": [0.012, 0.013, 0.015], "rough": 0.06, "coat": 1.0, "grime": 0.9, "streaks": 0.3, "silt": 0.4, "bevel": 0.0}),
         "rubber": M({"color": [0.05, 0.05, 0.052], "rough": 0.72, "noise": 0.15, "noise_scale": 40.0, "grime": 1.3, "bevel": 0.004}),
@@ -528,8 +529,7 @@ def build(root, p, w, h, d):
 
 def metro(root, p, w, h, d):
     """The metro's train, built the way the tram is (flat sheets, see-through glass, plug doors, a
-    lit saloon) in three long cars with a cab at each end: white with the band's colour for its skirt
-    and cab caps. Its doors stand where the platform's doorways are ("doors_at": metres along the
+    lit saloon) in three long cars with a cab at each end, in the tram's own white and blue. Its doors stand where the platform's doorways are ("doors_at": metres along the
     train from its middle; by default where the station's own are), with more between them."""
     k, hw = h / 3.4, d / 2
     mats = _paints(p)

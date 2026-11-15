@@ -89,7 +89,7 @@ def leaflets(root, p, w, h, d):
         sheets.quad(at(-hw, 0.0), at(hw, 0.0), at(hw, hd, 0.003 + lift), at(-hw, hd, 0.003 + lift * 0.4))
         if rng.random() < 0.6:
             bands.quad(at(-hw * 0.8, -hd * 0.7, 0.005), at(hw * 0.8, -hd * 0.7, 0.005), at(hw * 0.8, -hd * 0.5, 0.005), at(-hw * 0.8, -hd * 0.5, 0.005))
-    sheets.build("leaflets", M({"color": p.get("paper", [0.4, 0.39, 0.35]), "rough": p.get("rough", 0.38), "noise": 0.35, "noise_scale": 14.0, "grime": 0}), root, smooth=False)
+    sheets.build("leaflets", M({"color": p.get("paper", [0.27, 0.26, 0.23]), "rough": p.get("rough", 0.62), "noise": 0.5, "noise_scale": 14.0, "grime": 0}), root, smooth=False)
     bands.build("leaflet_print", M({"color": [0.3, 0.14, 0.03], "rough": 0.4, "grime": 0}), root, smooth=False)
 
 

@@ -285,7 +285,18 @@ def _wear(nt, b, g, k):
         wav = _wmath(nt, "ADD", z, _wmath(nt, "MULTIPLY", _wmath(nt, "SUBTRACT", noise(P, 1.3, 3.0), 0.5), 0.09))
         below = _wmath(nt, "SUBTRACT", 1.0, ss(wav, FLOOD - 0.04, FLOOD + 0.01))
         mud = _wmath(nt, "MULTIPLY", below, _wmath(nt, "ADD", 0.45, _wmath(nt, "MULTIPLY", noise(P, 5.0, 8.0), 0.45)))
+        # Silt settles in patches, not as a coat of paint: thick at the foot of things, thinning to the
+        # line, and whole stretches the water left almost clean.
+        patchy = _wmath(nt, "ADD", 0.3, _wmath(nt, "MULTIPLY", ss(noise(P, 0.8, 3.0), 0.32, 0.68), 0.7))
+        foot_heavy = _wmath(nt, "ADD", 0.45, _wmath(nt, "MULTIPLY", _wmath(nt, "SUBTRACT", 1.0, ss(z, 0.0, FLOOD)), 0.55))
+        mud = _wmath(nt, "MULTIPLY", _wmath(nt, "MULTIPLY", mud, patchy), foot_heavy)
         mud = _wmath(nt, "MULTIPLY", mud, wall)                         # (the ground's silt is below)
+        rgh = b.inputs["Roughness"]                                     # dried silt is matt, whatever shines under it
+        if k.get("silt", 1.0) > 0:
+            base = rgh.links[0].from_socket if rgh.is_linked else None
+            held = _wmath(nt, "MULTIPLY", mud, min(1.0, k.get("silt", 1.0)))   # (as much of it as this surface holds)
+            keep = _wmath(nt, "MULTIPLY", base if base is not None else rgh.default_value, _wmath(nt, "SUBTRACT", 1.0, held))
+            nt.links.new(_wmath(nt, "ADD", keep, _wmath(nt, "MULTIPLY", held, 0.9)), rgh)
         c = mix(c, MUD, _wmath(nt, "MULTIPLY", mud, min(1.0, 0.92 * WEAR) * k.get("silt", 1.0)))   # ("silt": how much of it a surface holds; gloss paint sheds most)
         line = _wmath(nt, "SUBTRACT", ss(wav, FLOOD - 0.07, FLOOD - 0.015), ss(wav, FLOOD - 0.015, FLOOD + 0.03))
         crust = _wmath(nt, "MULTIPLY", _wmath(nt, "MAXIMUM", line, 0.0), wall)
