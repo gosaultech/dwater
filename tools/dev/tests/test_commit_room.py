@@ -20,7 +20,7 @@ class CommitRoomTests(unittest.TestCase):
     def test_joining_twice_changes_nothing(self):
         once = commit_room.add_to_set(SRC, "DRESSED", "dam")
         self.assertEqual(once, SRC)
-        self.assertEqual(commit_room.add_to_set(commit_room.add_to_set(SRC, "LOOK2", "dam"), "LOOK2", "dam").count('"dam"'), 3)
+        self.assertEqual(commit_room.add_to_set(commit_room.add_to_set(SRC, "LOOK2", "dam"), "LOOK2", "dam").count('"dam"'), 2)   # (once in DRESSED, once in LOOK2)
 
     def test_a_missing_set_is_an_error(self):
         with self.assertRaises(ValueError):
