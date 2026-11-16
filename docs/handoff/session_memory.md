@@ -46,36 +46,24 @@ this look like an Amsterdam tram... it will look goofy and out of place otherwis
   - Engine: cloth folds in `CHAR_FS` (after the soaked-cloth block), an unsharp pass in `POST_FS`.
   - `tools/dev/render_queue.sh <specs dir> <queue file>`: restart-safe queue (renders only missing
     shots, packs, copies the spec in). `render_rooms.py --samples N --filter W` for look-dev.
-- **The rollout (27 story rooms, 257 shots, about 25 h of container CPU)** was started and then
-  STOPPED at the user's word ("stop rendering, get the rest of the plan done, and then render"):
-  the world pass and the characters came first. Since then: `combino.metro` (the metro train),
-  bendy buses to the licensed rigid bus (LOOK2), patchy matt silt (`_wear`), darker leaflets,
-  2k textures fetched, and the character pass in `CHAR_FS` (`u_wet` from the room's rain flag).
-  The user chose "option A" for characters (keep the generated bodies, make them look better; not
-  licensed character models). The full room list is `pipeline_out/look2_all.txt`; copy it to
-  `pipeline_out/look2_queue.txt` and start the queue as below.
-  - Specs: `pipeline_out/look2_rooms/` (built with `DW_LOOK2` and `DW_DRESSED` set to every story
-    room: `pipeline_out/look2_rooms.txt`). Queue: `pipeline_out/look2_queue.txt` (a room leaves the
-    file when it is packed). Logs: `pipeline_out/look2_queue.log`, `pipeline_out/queue_logs/`.
-  - Each finished room is committed by `tools/dev/auto_commit.sh` (it adds the room to `DRESSED`
-    and `LOOK2`, runs the generator's tests, commits plates + spec + generator, pushes).
-  - **After a restart** (the container reboots every few hours when idle; detached jobs die, files
-    stay): from the repo root,
-    `(setsid nohup tools/dev/render_queue.sh $PWD/pipeline_out/look2_rooms $PWD/pipeline_out/look2_queue.txt >> pipeline_out/look2_queue.log 2>&1 < /dev/null &)`
-    and
-    `(setsid nohup tools/dev/auto_commit.sh $PWD/pipeline_out/look2_queue.log "the second look: ..." >> pipeline_out/look2_auto.log 2>&1 < /dev/null &)`,
-    then keep the container awake with one tracked background waiter (2 h limit; re-arm it). If
-    `pipeline_out/` itself is gone (a replaced container): `polyhaven.py fetch`, `photos.py fetch`,
-    `sketchfab.py fetch`, `decals.py make --rooms <specs>`, rebuild the specs (see `LOOK2` above),
-    and write the queue file again without the rooms already in `catastrophe.LOOK2`.
-  - Test shots that settled it (sent to the user): Rokin noord l and e, Rokin zuid l and m.
-- **When the queue is done:** `dw_tests`, the four tool suites, `--capture`, `--walkthrough`; then
-  tell the user it is ready to merge (PR only when asked).
-- **Still open after the rollout:** ground/facade textures soft up close (try Poly Haven 2k); lamp
-  posts and leaflets flat; Dutch number plates; the bus says "TOWN BUS"; bendy buses and the metro
-  are still the plain lofted body; the Beurs mortuary's rows of bags; abandoned cars along the
-  streets (RE3 has them everywhere); characters beyond folds (faces, lighting contrast); the army
-  truck's badge cap position is unverified.
+- **The rollout is DONE (2026-11-16 16:00): all 27 story rooms re-rendered at 2048x1152 with the
+  second look, each committed with its spec and set membership (`catastrophe.DRESSED` and `LOOK2`
+  now hold every story room).** It ran about 22 h, through four container reboots.
+  - Lessons from the run: a pass that changes a thing after the story placed its dead must keep
+    the old shape for the story (`"size0"`, like barriers' `"pos0"`), or the generator is not
+    idempotent (the Dam's bendy buses); `commit_room.py` takes several rooms at once (the tests read
+    every spec on disk); the tour boat is an outdoor room with a shelter's use (`CABINS`: belongings
+    on its landing stage, never in its one-person aisle). Keep-awake waiters must only read log
+    lines written after they start.
+  - To render again: `tools/dev/render_queue.sh <specs dir> <queue file>` and
+    `tools/dev/auto_commit.sh <queue log> "<what>"`, detached with `setsid nohup`, plus one tracked
+    background waiter (2 h limit; re-arm it). A replaced container loses `pipeline_out/`: refill it
+    with `polyhaven.py fetch`, `photos.py fetch`, `sketchfab.py fetch`, `decals.py make`.
+- **Still open:** Dutch number plates (the licensed cars carry foreign ones); the city bus says
+  "TOWN BUS"; abandoned cars along the streets (RE3 has them everywhere); the Beurs mortuary's rows
+  of bags are still our own; characters beyond the shading pass (faces, lighting contrast; the user
+  chose to keep the generated bodies and make them look better: "option A"); the army truck's
+  badge cap is unverified; textures at 2k need a machine with more than 15 GB.
 - **Lesson, the hard way:** after a long idle the container is replaced: everything uncommitted,
   the scratchpad and /opt are gone (a whole tram model was lost once). Commit and push work in
   progress as soon as it stands up; keep tools in the repo, not the scratchpad. The environment
