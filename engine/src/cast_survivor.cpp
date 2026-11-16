@@ -68,8 +68,15 @@ Character build_survivor() {
     locs.n = 14;
     locs.sides = 8;
     locs.mat = MAT_LOCS;
-    locs.col = {46, 33, 24, 255};
-    locs.tip = {98, 70, 46, 255};   // sun-bleached ends
+    locs.sub = 2;          // a smooth curve through the points
+    locs.sides = 10;
+    locs.lump = 0.13f;     // palm-rolled: it swells and thins
+    locs.wave = 0.0013f;   // and wanders a little off its line
+    locs.root = 0.78f;     // slimmer new growth at the scalp
+    locs.fluff = 1.3f;     // the margin the shader frays into loose hairs
+    locs.taper = 0.26f;
+    locs.col = {31, 25, 21, 255};
+    locs.tip = {60, 45, 33, 255};   // sun-bleached ends
     unsigned h = 0x2545F491u;
     auto rnd = [&h]() { h ^= h << 13; h ^= h >> 17; h ^= h << 5; return float(h & 0xFFFF) / 65535.0f; };
     const Vector3 crown{0.0f, skA.y + skR * 0.95f, 0.018f};
@@ -126,6 +133,7 @@ Character build_survivor() {
         locs.seg.push_back(seg);
         locs.radius.push_back(radius);
         locs.stiff.push_back(forelock ? 0.28f : 0.22f);
+        locs.shade.push_back(0.55f + 0.45f * height);   // rooted low on the head: under the ones above
     }
     c.add_strands(std::move(locs));
     MeshData d;

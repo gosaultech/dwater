@@ -173,18 +173,20 @@ const Character::Anchor* Character::anchor(const std::string& name) const {
     return nullptr;
 }
 
-// Each strand is a tube: n rings of (sides + 1) vertices (the last repeats the first, so the
+// Each strand is a tube: rings of (sides + 1) vertices (the last repeats the first, so the
 // pattern coordinate "around" can run 0..1 without jumping back at a seam), plus a tip vertex.
+// A tube has strand::rings(n, sub) of them (dw/strand_tube.hpp); a ribbon one per point.
 // Pattern space for strands (read by the shader's locs material): x = around (0..1, plus a
 // per-strand phase), y = metres along the strand, z = a per-strand seed.
 void Character::add_strands(Strands s) {
     if (s.ribbon) s.sides = 2;   // three vertices across: edge, middle, edge
-    const int count = int(s.anchor.size()), ring = s.sides, row = ring + 1, per = s.n * row + (s.ribbon ? 0 : 1);
+    const int count = int(s.anchor.size()), ring = s.sides, row = ring + 1;
+    const int rows = s.ribbon ? s.n : strand::rings(s.n, s.sub), per = rows * row + (s.ribbon ? 0 : 1);
     s.p.assign(size_t(count) * s.n, {});
     s.prev = s.p;
     Mesh m{};
     m.vertexCount = count * per;
-    m.triangleCount = count * ((s.n - 1) * ring * 2 + (s.ribbon ? 0 : ring));
+    m.triangleCount = count * ((rows - 1) * ring * 2 + (s.ribbon ? 0 : ring));
     m.vertices = static_cast<float*>(MemAlloc(unsigned(m.vertexCount * 3 * sizeof(float))));
     m.normals = static_cast<float*>(MemAlloc(unsigned(m.vertexCount * 3 * sizeof(float))));
     m.texcoords = static_cast<float*>(MemAlloc(unsigned(m.vertexCount * 2 * sizeof(float))));
@@ -194,32 +196,36 @@ void Character::add_strands(Strands s) {
     unsigned short* ix = m.indices;
     for (int k = 0; k < count; ++k) {
         const int base = k * per;
-        for (int i = 0; i + 1 < s.n; ++i)
+        for (int i = 0; i + 1 < rows; ++i)
             for (int j = 0; j < ring; ++j) {
                 const int a = base + i * row + j, b = a + 1, c = a + row, d = b + row;
                 *ix++ = (unsigned short)a; *ix++ = (unsigned short)c; *ix++ = (unsigned short)b;
                 *ix++ = (unsigned short)b; *ix++ = (unsigned short)c; *ix++ = (unsigned short)d;
             }
-        const int tip = base + s.n * row, last = base + (s.n - 1) * row;
+        const int tip = base + rows * row, last = base + (rows - 1) * row;
         for (int j = 0; j < ring && !s.ribbon; ++j) {
             *ix++ = (unsigned short)(last + j); *ix++ = (unsigned short)tip; *ix++ = (unsigned short)(last + j + 1);
         }
         Vector3 o = pattern_offset();
         if (s.ribbon) o.x = std::floor(o.x);   // so the shader finds "across" (0..1) as the fraction
         const float shade = 0.88f + 0.24f * (o.x + 20.0f) / 40.0f;   // no two strands quite the same colour
+        const float length = float(s.n - 1) * s.seg[k], lit = size_t(k) < s.shade.size() ? s.shade[size_t(k)] : 1.0f;
         for (int v = 0; v < per; ++v) {
-            const int idx = base + v, ringi = std::min(v / row, s.n - 1), j = v == per - 1 ? 0 : v % row;
-            const float along = v == per - 1 ? float(s.n - 1) * s.seg[k] + s.radius[k] : float(ringi) * s.seg[k];
+            const int idx = base + v, ringi = std::min(v / row, rows - 1), j = v == per - 1 ? 0 : v % row;
+            // How far along (m): a ribbon's rows are its points; a tube's are spread along the curve.
+            const float along = s.ribbon ? float(ringi) * s.seg[k]
+                              : v == per - 1 ? length + s.radius[k]
+                                             : std::min(length * float(ringi) / float(rows - 1 - strand::CAP), length + s.radius[k]);
+            const float frac = std::clamp(along / std::max(length, 1e-5f), 0.0f, 1.0f);
             m.texcoords[idx * 2] = float(s.mat);
-            m.texcoords[idx * 2 + 1] = 0.6f + 0.4f * std::min(1.0f, along / 0.06f);   // shadowed where they leave the scalp
+            m.texcoords[idx * 2 + 1] = (0.6f + 0.4f * std::min(1.0f, along / 0.06f)) * lit;   // shadowed where they leave the scalp
             m.tangents[idx * 4] = o.x + float(j) / float(ring) * (s.ribbon ? 0.999f : 1.0f);
             m.tangents[idx * 4 + 1] = o.y + along;
             m.tangents[idx * 4 + 2] = o.z;
             // Ribbons: how far toward a thinned-out edge or end (0 in the middle, 1 at the edge).
-            m.tangents[idx * 4 + 3] = s.ribbon ? std::max(std::fabs(float(j) - 1.0f),
-                                                          std::clamp((float(ringi) / float(s.n - 1) - 0.55f) / 0.45f, 0.0f, 1.0f))
-                                               : 0.0f;
-            float t = std::clamp((float(ringi) / float(s.n - 1) - 0.45f) / 0.55f, 0.0f, 1.0f);   // the last half fades
+            // Tubes: how far along the strand (0 at the root, 1 at the tip).
+            m.tangents[idx * 4 + 3] = s.ribbon ? std::max(std::fabs(float(j) - 1.0f), std::clamp((frac - 0.55f) / 0.45f, 0.0f, 1.0f)) : frac;
+            float t = std::clamp((frac - 0.45f) / 0.55f, 0.0f, 1.0f);   // the last half fades
             t = s.tip.a > 0 ? t * t * (3 - 2 * t) : 0.0f;
             auto ch = [&](unsigned char a, unsigned char b) {
                 return (unsigned char)std::clamp((float(a) + (float(b) - float(a)) * t) * shade, 0.0f, 255.0f);
@@ -278,7 +284,8 @@ void Character::step_strands(float dt) {
             }
         }
         s.live = true;
-        const int ring = s.sides, row = ring + 1, per = s.n * row + (s.ribbon ? 0 : 1);
+        const int ring = s.sides, row = ring + 1;
+        const int rows = s.ribbon ? s.n : strand::rings(s.n, s.sub), per = rows * row + (s.ribbon ? 0 : 1);
         if (s.ribbon) {
             // Ribbons: across each point, perpendicular to the strand and to the way out from the
             // skull, so they lie flat against the head and hang flat down the back.
@@ -307,34 +314,38 @@ void Character::step_strands(float dt) {
             UpdateMeshBuffer(s.mesh, 2, s.mesh.normals, s.mesh.vertexCount * 12, 0);
             continue;
         }
-        // Rebuild the tubes: a ring per point, slightly lumpy (palm-rolled, not machined), tapering a
-        // little to a rounded tip.
+        // Rebuild the tubes (dw/strand_tube.hpp): a smooth, lumpy rope through each strand's points,
+        // rounded off at its end.
+        std::vector<strand::Ring>& rings = ring_scratch_;
+        rings.resize(size_t(rows));
+        std::vector<float>& cs = circle_scratch_;
+        cs.resize(size_t(row) * 2);
+        for (int j = 0; j <= ring; ++j) {
+            const float a = 2.0f * PI * float(j % ring) / float(ring);
+            cs[size_t(j) * 2] = std::cos(a);
+            cs[size_t(j) * 2 + 1] = std::sin(a);
+        }
+        strand::Shape shape;
+        shape.n = s.n; shape.sub = s.sub; shape.taper = s.taper; shape.lump = s.lump; shape.wave = s.wave; shape.root = s.root;
         for (int k = 0; k < count; ++k) {
-            const Vector3* p = &s.p[size_t(k) * s.n];
-            Vector3 x{W.m0, W.m1, W.m2};
-            for (int i = 0; i < s.n; ++i) {
-                const Vector3 t = Vector3Normalize(Vector3Subtract(p[std::min(i + 1, s.n - 1)], p[std::max(i - 1, 0)]));
-                // Parallel transport: carry the previous ring's x down the strand, minus its component along t.
-                x = Vector3Subtract(x, Vector3Scale(t, Vector3DotProduct(x, t)));
-                if (Vector3LengthSqr(x) < 1e-8f) x = Vector3CrossProduct(t, {0, 0, 1});
-                x = Vector3Normalize(x);
-                const Vector3 y = Vector3CrossProduct(t, x);
-                const float lump = 1.0f + s.lump * std::sin(float(i) * 2.3f + float(k) * 1.7f);
-                const float r = s.radius[k] * lump * (1.0f - s.taper * float(i) / float(s.n - 1));
-                for (int j = 0; j <= ring; ++j) {
-                    const float a = 2.0f * PI * float(j % ring) / float(ring);
-                    const Vector3 nrm = Vector3Add(Vector3Scale(x, std::cos(a)), Vector3Scale(y, std::sin(a)));
-                    const int idx = k * per + i * row + j;
-                    const Vector3 pos = Vector3Add(p[i], Vector3Scale(nrm, r));
-                    std::memcpy(&s.mesh.vertices[idx * 3], &pos, 12);
-                    std::memcpy(&s.mesh.normals[idx * 3], &nrm, 12);
+            shape.seg = s.seg[k];
+            shape.radius = s.radius[k] * s.fluff;
+            shape.phase = float(k) * 1.7f;
+            const Vector3 tip = strand::build(&s.p[size_t(k) * s.n], shape, {W.m0, W.m1, W.m2}, rings.data());
+            float* vp = &s.mesh.vertices[size_t(k) * per * 3];
+            float* np = &s.mesh.normals[size_t(k) * per * 3];
+            for (int i = 0; i < rows; ++i) {
+                const strand::Ring& g = rings[size_t(i)];
+                for (int j = 0; j <= ring; ++j, vp += 3, np += 3) {
+                    const float c = cs[size_t(j) * 2], sn = cs[size_t(j) * 2 + 1];
+                    const Vector3 nrm{g.x.x * c + g.y.x * sn, g.x.y * c + g.y.y * sn, g.x.z * c + g.y.z * sn};
+                    vp[0] = g.c.x + nrm.x * g.r; vp[1] = g.c.y + nrm.y * g.r; vp[2] = g.c.z + nrm.z * g.r;
+                    np[0] = nrm.x; np[1] = nrm.y; np[2] = nrm.z;
                 }
             }
-            const Vector3 dir = Vector3Normalize(Vector3Subtract(p[s.n - 1], p[s.n - 2]));
-            const Vector3 tip = Vector3Add(p[s.n - 1], Vector3Scale(dir, s.radius[k] * 0.4f));   // a blunt, rounded end
-            const int idx = k * per + s.n * row;
-            std::memcpy(&s.mesh.vertices[idx * 3], &tip, 12);
-            std::memcpy(&s.mesh.normals[idx * 3], &dir, 12);
+            const Vector3 dir = Vector3Normalize(Vector3Subtract(tip, rings[size_t(rows - 1)].c));
+            std::memcpy(vp, &tip, 12);
+            std::memcpy(np, &dir, 12);
         }
         UpdateMeshBuffer(s.mesh, 0, s.mesh.vertices, s.mesh.vertexCount * 12, 0);
         UpdateMeshBuffer(s.mesh, 2, s.mesh.normals, s.mesh.vertexCount * 12, 0);
@@ -1407,9 +1418,12 @@ void Character::draw(const Material& m, bool shadow_caster) const {
     for (const auto& d : dyn_) DrawMesh(d.mesh, m, MatrixIdentity());
     for (const auto& d : dangles_)
         if (!severed(d.region)) DrawMesh(d.mesh, m, MatrixIdentity());
-    if (shadow_caster) return;   // hair lets light through: its shadow would black out the face
+    // Hair lets light through. Locs cast a half shadow (the shader thins them out in the shadow
+    // map); long wet hair casts none: it would black out the face it hangs over.
     if (!severed(R_HEAD))
-        for (const auto& s : strands_) DrawMesh(s.mesh, m, MatrixIdentity());
+        for (const auto& s : strands_)
+            if (!shadow_caster || s.mat == MAT_LOCS) DrawMesh(s.mesh, m, MatrixIdentity());
+    if (shadow_caster) return;
     for (const auto& d : drips_)   // stretched by their fall
         DrawMesh(d.blood ? blood_drip_mesh_ : drip_mesh_, m,
                  MatrixMultiply(MatrixScale(1, 1 + 0.5f * std::fabs(d.v.y), 1), MatrixTranslate(d.p.x, d.p.y, d.p.z)));

@@ -24,6 +24,7 @@
 #include "dw/combat.hpp"
 #include "dw/mesh_builder.hpp"
 #include "dw/reload.hpp"
+#include "dw/strand_tube.hpp"
 #include "dw/two_bone.hpp"
 
 namespace dw {
@@ -260,6 +261,12 @@ private:
         int mat = 0;
         float taper = 0.22f;                    // how much thinner the end is than the root (0..1)
         float lump = 0.09f;                     // how uneven the thickness is along it (palm-rolled locs)
+        // Tubes only (dw/strand_tube.hpp): rings drawn per simulated segment, how far the rope wanders
+        // off its line (m), how thick it is at the scalp, and how much wider than `radius` it is drawn
+        // (the shader frays that margin into loose hairs: a fuzzy outline).
+        int sub = 1;
+        float wave = 0.0f, root = 1.0f, fluff = 1.0f;
+        std::vector<float> shade;               // per strand, optional: 1 = out in the light, less = under other hair
         // Ribbons instead of tubes (long hair as "cards"): flat strips `radius` wide that lie against
         // the head, facing away from the skull's axis (axisA-axisB, joint space); their edges and ends
         // thin out into single hairs (the shader stipples them away).
@@ -337,6 +344,8 @@ private:
     std::vector<Skinned> skinned_;
     std::vector<Anchor> anchors_;
     std::vector<Strands> strands_;
+    std::vector<strand::Ring> ring_scratch_;   // per-frame scratch for the tubes, kept to avoid reallocating
+    std::vector<float> circle_scratch_;
     std::vector<DripSource> drip_src_;
     std::vector<Drip> drips_;
     Mesh drip_mesh_{}, blood_drip_mesh_{};

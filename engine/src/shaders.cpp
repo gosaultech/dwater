@@ -121,6 +121,9 @@ void main() {
     if (vMat == 37 && vAux > 0.0 && hash(vec3(floor(fract(vSurf.x) * 26.0), floor(vSurf.y * 7.0), floor(vSurf.z * 50.0))) < smoothstep(0.25, 1.0, vAux) * 1.05) discard;
     if (u_depthOnly == 1) {   // a shadow map: only depth matters (thinned hair casts thinned shadows)
         if (vMat == 8 && vAux > 0.0 && hash(floor(vec3(vSurf.x * 1400.0, vSurf.y * 380.0, vSurf.z * 1400.0))) < vAux) discard;
+        // Locs let half the light through: every other texel of the map, which the 3 x 3 lookup
+        // blurs into a soft half shadow on his brow and shoulders.
+        if (vMat == 35 && mod(floor(gl_FragCoord.x) + floor(gl_FragCoord.y), 2.0) < 0.5) discard;
         finalColor = vec4(1.0);
         return;
     }
@@ -214,7 +217,7 @@ void main() {
     } else if (mat == 8) {     // hair: tight curls, matte, a soft rim; thins out toward its edge (vAux)
         if (vAux > 0.0 && hash(floor(vec3(p.x * 1400.0, p.y * 380.0, p.z * 1400.0))) < vAux) discard;   // strand-shaped stipple
         float curl = noise(p * 700.0) * 0.6 + noise(p * 260.0) * 0.4;
-        albedo *= mix(0.7, 1.15, curl); h = curl; bk = 0.00035; spec = 0.05; gloss = 14.0; wrap = 0.35; rim = 0.35;
+        albedo *= mix(0.7, 1.15, curl); h = curl; bk = 0.00035; spec = 0.02; gloss = 10.0; wrap = 0.35; rim = 0.1;
     } else if (mat == 9 || mat == 10) { spec = 0.9; gloss = 220.0; wrap = 0.25; rim = 0.1; }   // wet eyes
     else if (mat == 11) { albedo *= mix(0.7, 1.0, fbm(p * 50.0)); spec = 0.6; gloss = 60.0; metal = 0.18; }
     else if (mat == 12) {     // raw flesh: fibres, wet
@@ -278,20 +281,36 @@ void main() {
         float flower = 1.0 - smoothstep(0.12, 0.2, petal);
         albedo = mix(albedo, mix(lin(vec3(0.62, 0.52, 0.28)), lin(vec3(0.55, 0.18, 0.2)), step(0.5, rnd)), flower * step(0.35, rnd));
         h = fbm(p * 50.0); bk = 0.001; spec = 0.03; gloss = 8.0; wrap = 0.35;
-    } else if (mat == 35) {   // locs: palm-rolled rope, matted and fuzzy (p: around, along, seed)
+    } else if (mat == 35) {   // locs: ropes of matted hair, palm-rolled (p: around 0..1, metres along, seed; vAux: 0 root .. 1 tip)
+        // The hair winds round the rope as it was rolled (a turn every 6 cm or so): locks of it as
+        // streaks along that winding, single hairs finer still, and lumps where it budded. Detail
+        // finer than a pixel fades to its average rather than shimmer.
         float ang = 6.2832 * p.x;
-        vec3 cyl = vec3(cos(ang) * 1.3, sin(ang) * 1.3, p.y * 160.0 + p.z);
-        float aa = clamp(1.4 - fwidth(p.y * 90.0) * 1.5, 0.0, 1.0);
-        float tw = mix(0.5, sin(ang * 2.0 + p.y * 560.0) * 0.5 + 0.5, aa);    // two plies wrapping round
-        float fuzz = fbm(cyl), lumps = fbm(vec3(p.z * 3.1, p.y * 45.0, 0.5));
-        albedo *= mix(0.62, 1.1, tw * 0.45 + fuzz * 0.55) * mix(0.8, 1.14, lumps);
-        albedo *= mix(0.6, 1.0, sqrt(max(dot(N, V), 0.0)));    // round, not flat: the sides of each rope fall into shadow
-        h = tw * 0.55 + fuzz * 0.45; bk = 0.0012; spec = 0.02; gloss = 10.0; wrap = 0.3; rim = 0.06;
+        vec2 rnd = vec2(cos(ang), sin(ang));
+        float wander = fbm(vec3(rnd * 0.9, p.y * 38.0 + p.z));          // no two turns of the winding alike
+        float tw = ang + p.y * (70.0 + 50.0 * fract(p.z * 0.37)) + wander * 5.0;
+        float aa = clamp(1.6 - fwidth(p.y) * 900.0, 0.0, 1.0);
+        vec2 hel = vec2(cos(tw), sin(tw));
+        float lock = noise(vec3(hel * 4.5, p.y * 48.0 + p.z));
+        float hair = noise(vec3(hel * 13.0, p.y * 230.0 + p.z * 3.0));
+        float knots = fbm(vec3(rnd * 1.6, p.y * 95.0 + p.z));
+        float crease = pow(ridge(vec3(rnd * 0.7, p.y * 120.0 + p.z * 2.0 + wander * 2.0)), 3.0);   // where it was pinched as it was rolled
+        float fibre = mix(0.5, lock * 0.5 + hair * 0.5, aa);
+        // A fuzzy outline: the rope is drawn a little fat and its edge frayed into loose hairs (more
+        // of them at the new growth by the scalp and at the worn tip).
+        float ndv = abs(dot(N, V));
+        float edge = 1.0 - smoothstep(0.1, 0.74, ndv);
+        float loose = mix(0.5, noise(vec3(hel * 16.0, p.y * 520.0 + p.z * 5.0)), aa);
+        float frizz = 0.12 * (smoothstep(0.25, 0.0, vAux) + smoothstep(0.85, 1.0, vAux));
+        if (loose < edge * 1.3 - 0.16 + frizz * (1.0 - edge) * 2.0 * aa) discard;
+        albedo *= mix(0.62, 1.2, fibre) * mix(0.7, 1.2, knots) * (1.0 - 0.35 * crease);
+        albedo *= mix(0.62, 1.0, ndv);    // hairs seen end-on between the fibres: the sides of each rope sink into shadow
+        h = fibre * 0.45 + knots * 0.4 - crease * 0.35; bk = 0.0022 * aa + 0.0006; spec = 0.025; gloss = 9.0; wrap = 0.5; rim = 0.1;
         // Hair sheen runs across the strand (Kajiya-Kay): find the strand's direction from how the
         // "along" coordinate changes over the surface.
         vec3 dpx = dFdx(vWorld), dpy = dFdy(vWorld), r1 = cross(dpy, N), r2 = cross(N, dpx);
         vec3 g = (dFdx(p.y) * r1 + dFdy(p.y) * r2) * sign(dot(dpx, r1));
-        if (dot(g, g) > 1e-20) { strand = normalize(g); aniso = 0.1; }
+        if (dot(g, g) > 1e-20) { strand = normalize(g); aniso = 0.06; }
     } else if (mat == 37) {   // soaked long hair: many fine hairs stuck together, dark and glossy (p: across, along, seed)
         float aa = clamp(1.4 - fwidth(p.x * 60.0) * 1.2, 0.0, 1.0);
         float fine = mix(0.5, noise(vec3(fract(p.x) * 60.0, p.y * 4.0, p.z * 3.0)), aa);   // the hairs within a clump
@@ -374,6 +393,7 @@ void main() {
         wrap *= 0.45;      // a harder edge between lit and unlit: soft wrap-round light is what makes cloth look moulded
         fuzz = mat == 7 ? 0.12 : 0.32;   // the nap of cloth catching light at grazing angles
     }
+    if (mat == 35) fuzz = 0.7;   // loose hairs round each loc catch the light from behind: a soft halo
     if (mat == 31 || mat == 7) {   // boots and soles: mud
         float muck = (1.0 - smoothstep(0.0, 0.2, p.y)) * (0.4 + 0.6 * fbm(p * 30.0));
         albedo = mix(albedo, vec3(0.05, 0.042, 0.033), clamp(muck, 0.0, 0.8));
