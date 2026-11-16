@@ -20,8 +20,8 @@ THIS SESSION: make the people and what they carry look like a polished game.
    can possibly look.
 2. The enemies (the Drowned) must look disgusting and scary.
 3. The weapons (the pistol and the shotgun) and the item models must look polished and real.
-4. Lower priority, if time allows: Dutch number plates on the licensed cars, abandoned cars
-   along the streets, and the city bus's "TOWN BUS" livery replaced with an invented Amsterdam one.
+All of this is drawn live by the engine over the backgrounds: no background re-render is needed
+this session, so don't start one.
 
 Decided already: keep the generated bodies (MakeHuman-based, tools/characters) and make them
 look much better ("option A"); do not swap in licensed character models. Licensed CC0/CC BY
@@ -82,7 +82,15 @@ uncommitted). I pay for tokens: keep image reviews lean. Open a PR and merge whe
   materials (parkerised and blued steel, worn edges, stippled polymer, walnut), small parts
   (screws, sights, markings invented: no real brands), or CC0/CC BY models refitted to his
   hands. Pickups the same: herbs, ammo boxes, keys.
-- **Lower priority**: Dutch plates (yellow, black lettering, invented numbers) as decals over the
-  licensed cars' own plates (`tools/blender/licensed.py`); abandoned cars placed by
-  `tools/citygen/catastrophe.py` along kerbs; the bus's livery like the tram's projected stripes.
-  These change the plates, so batch them into one re-render at the end (tools/dev/render_queue.sh).
+
+## Later, in a separate session (after the cast is done)
+
+Not this session: these are baked into the backgrounds and need a re-render of the streets they
+appear in (about ten street rooms, not all 27), batched into one run with
+`tools/dev/render_queue.sh`.
+- Dutch number plates (yellow, black lettering, invented numbers) as decals over the licensed
+  cars' own plates (`tools/blender/licensed.py`).
+- Abandoned cars along the kerbs, placed by `tools/citygen/catastrophe.py` (new rooms' specs join
+  `LOOK2`-style with their plates, as the second look did).
+- The city bus's "TOWN BUS" livery replaced with an invented Amsterdam one (projected like the
+  ambulance's stripes in `licensed.py`).
