@@ -380,7 +380,7 @@ for _r in filter(None, __import__("os").environ.get("DW_DRESSED", "").split(",")
 # The rooms whose plates show the second look (2026-11): the Amsterdam tram's five sections, wheelie
 # bins for dustbins. A room joins in the commit that brings its re-rendered plates. DW_LOOK2=a,b,...
 # adds rooms for a build of the next ones to render (into a scratch DW_ROOMS).
-LOOK2 = {"dam", "damrak_noord", "damrak_zuid", "rokin_noord", "rokin_zuid", "stationsplein"}
+LOOK2 = {"dam", "damrak_noord", "damrak_zuid", "kalverstraat", "rokin_noord", "rokin_zuid", "stationsplein"}
 for _r in filter(None, __import__("os").environ.get("DW_LOOK2", "").split(",")):
     LOOK2.add(_r)
 BINS = ["sf:bin_green", "sf:bin_blue", "sf:bin_orange"]   # licensed models (tools/assets/models.json): what Amsterdam puts out, not a film's dustbin
