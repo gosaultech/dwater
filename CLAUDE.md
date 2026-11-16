@@ -3,7 +3,7 @@
 
 # Damned Waters: notes for Claude
 
-**Start by reading `docs/handoff/session_memory.md`.** It records where the last session left
+**Start by reading `docs/handoff/session_memory.md`, then the current brief, `docs/handoff/characters_session_prompt.md`.** It records where the last session left
 off, what is open, and the lessons learned in this container.
 
 ## The project

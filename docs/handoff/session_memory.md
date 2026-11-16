@@ -1,7 +1,11 @@
 <!-- damned_waters/docs/handoff/session_memory.md -->
 <!-- Purpose: the memory between sessions: where the work stands, how it is made, what was learned, what is open. Update it at the end of each session. -->
 
-# Where Damned Waters stands (last updated 2026-11-15)
+# Where Damned Waters stands (last updated 2026-11-16)
+
+**Next session's brief: `docs/handoff/characters_session_prompt.md`** (characters, his hair, the
+Drowned, guns and items; then Dutch plates, abandoned cars, the bus). The second look (below) is
+finished and merged into `claude/inspiring-turing-gl0kys`.
 
 ## The look overhaul (2026-11-11 onward, IN PROGRESS: read this first)
 The user's verdict on the whole city at 2048x1152: "far from a polished product"; the debris was
