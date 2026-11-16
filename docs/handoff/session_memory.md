@@ -4,7 +4,8 @@
 # Where Damned Waters stands (last updated 2026-11-16)
 
 **Next session's brief: `docs/handoff/characters_session_prompt.md`** (characters, his hair, the
-Drowned, guns and items; then Dutch plates, abandoned cars, the bus). The second look (below) is
+Drowned, guns and items; engine-side, no re-render). Dutch plates, abandoned cars and the bus's
+livery come after, in a session of their own (they need a re-render of about ten streets). The second look (below) is
 finished and merged into `claude/inspiring-turing-gl0kys`.
 
 ## The look overhaul (2026-11-11 onward, IN PROGRESS: read this first)
