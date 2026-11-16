@@ -374,13 +374,13 @@ AUTO = {"apotheek", "beurs_zaal", "bioscoop", "bloemenmarkt", "centraal_hal", "d
 
 STORIES = {"rokin_zuid": rokin_zuid, "rokin_noord": rokin_noord, "dam": dam, "stationsplein": stationsplein}
 ACTIVE = {"dam", "rokin_noord", "rokin_zuid", "stationsplein"}   # the hand-told streets whose plates are rendered (others wait for theirs)
-DRESSED = {"bloemenmarkt", "centraal_hal", "dam", "damrak_noord", "damrak_zuid", "herengracht", "kalversteeg", "kalverstraat", "kalverstraat_noord", "muntplein", "reguliersbreestraat", "rembrandtplein", "rokin_noord", "rokin_zuid", "station_noord", "stationsplein", "thorbeckeplein"}   # the rooms whose plates show dress() (the night's leavings by what each place was), not the old scatter
+DRESSED = {"bloemenmarkt", "centraal_hal", "dam", "damrak_noord", "damrak_zuid", "herengracht", "kalversteeg", "kalverstraat", "kalverstraat_noord", "metro_centraal", "muntplein", "reguliersbreestraat", "rembrandtplein", "rokin_noord", "rokin_zuid", "station_noord", "stationsplein", "thorbeckeplein"}   # the rooms whose plates show dress() (the night's leavings by what each place was), not the old scatter
 for _r in filter(None, __import__("os").environ.get("DW_DRESSED", "").split(",")):
     DRESSED.add(_r)
 # The rooms whose plates show the second look (2026-11): the Amsterdam tram's five sections, wheelie
 # bins for dustbins. A room joins in the commit that brings its re-rendered plates. DW_LOOK2=a,b,...
 # adds rooms for a build of the next ones to render (into a scratch DW_ROOMS).
-LOOK2 = {"bloemenmarkt", "centraal_hal", "dam", "damrak_noord", "damrak_zuid", "herengracht", "kalversteeg", "kalverstraat", "kalverstraat_noord", "muntplein", "reguliersbreestraat", "rembrandtplein", "rokin_noord", "rokin_zuid", "station_noord", "stationsplein", "thorbeckeplein"}
+LOOK2 = {"bloemenmarkt", "centraal_hal", "dam", "damrak_noord", "damrak_zuid", "herengracht", "kalversteeg", "kalverstraat", "kalverstraat_noord", "metro_centraal", "muntplein", "reguliersbreestraat", "rembrandtplein", "rokin_noord", "rokin_zuid", "station_noord", "stationsplein", "thorbeckeplein"}
 for _r in filter(None, __import__("os").environ.get("DW_LOOK2", "").split(",")):
     LOOK2.add(_r)
 BINS = ["sf:bin_green", "sf:bin_blue", "sf:bin_orange"]   # licensed models (tools/assets/models.json): what Amsterdam puts out, not a film's dustbin
