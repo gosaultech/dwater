@@ -7,6 +7,8 @@
 //                                   (it opens on the title screen; --room id starts straight in that room)
 //   --flashlight                    start with the flashlight on (also for --capture)
 //   ./damned_waters --capture out   stage + screenshot every setup, then exit
+//   ./damned_waters --walkthrough r.txt   hold the stick through every doorway and staircase, both
+//                                   ways; a line per try in r.txt; exit 2 if he ever turned back
 //   ./damned_waters --room proef --still 3.2,2.2,163 out.png [--shot c]
 //                                   the survivor standing in a room (x, z, yaw degrees), one frame, then exit;
 //                                   DW_ROOT=<dir> reads rooms, plates and audio from another tree
@@ -44,12 +46,13 @@
 #include "game.hpp"
 
 int main(int argc, char** argv) {
-    std::string capture, sheet, only, view, view_png, room = "gang", still, still_png, shot;
+    std::string capture, sheet, only, view, view_png, room = "gang", still, still_png, shot, walk;
     long max_frames = -1;
     bool chose_room = false;
     for (int i = 1; i + 1 < argc; ++i) {
         std::string a = argv[i];
         if (a == "--capture") capture = argv[++i];
+        else if (a == "--walkthrough") walk = argv[++i];
         else if (a == "--sheet") sheet = argv[++i];
         else if (a == "--only") only = argv[++i];
         else if (a == "--view" && i + 2 < argc) { view = argv[++i]; view_png = argv[++i]; }
@@ -72,7 +75,7 @@ int main(int argc, char** argv) {
     SetExitKey(KEY_NULL);   // Esc pauses (the menu has Quit)
     SetTargetFPS(60);
     dw::Telemetry tel(std::string(GetApplicationDirectory()) + "damned_waters.db");
-    tel.begin(!view.empty() ? "view" : !sheet.empty() ? "sheet" : capture.empty() ? "play" : "capture", room);
+    tel.begin(!view.empty() ? "view" : !sheet.empty() ? "sheet" : !walk.empty() ? "walkthrough" : capture.empty() ? "play" : "capture", room);
     dw::Game game;
     game.flashlight = flashlight;
     game.settings_path = std::string(GetApplicationDirectory()) + "damned_waters.db";   // the options live next to the telemetry
@@ -83,7 +86,10 @@ int main(int argc, char** argv) {
     }
     double start = GetTime(), worst = 0;
     long frames = 0;
-    if (fitreload) {
+    int status = 0;
+    if (!walk.empty()) {   // a held stick through every doorway and staircase: non-zero if he ever turned back
+        status = game.walkthrough(walk) > 0 ? 2 : 0;
+    } else if (fitreload) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);
         TraceLog(LOG_INFO, "FITRELOAD%s", c.fit_reload().c_str());
         c.unload();
@@ -212,8 +218,8 @@ int main(int argc, char** argv) {
             if (max_frames > 0 && ++frames >= max_frames) break;
         }
     }
-    tel.end("clean", GetTime() - start, frames, worst);
+    tel.end(status ? "failed" : "clean", GetTime() - start, frames, worst);
     game.shutdown();
     CloseWindow();
-    return 0;
+    return status;
 }

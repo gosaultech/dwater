@@ -46,5 +46,20 @@ class RoomSpecTests(unittest.TestCase):
         self.assertTrue(any("exceeds" in p for p in roomspec.validate(spec)))
 
 
+class PruneTests(unittest.TestCase):
+    def test_plates_of_shots_the_room_no_longer_has_go(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            room = Path(d)
+            for shot in ("a", "b", "aw", "peek_door_x"):
+                for part in ("color", "depth"):
+                    (room / f"{shot}_{part}.png").write_bytes(b"x")
+                    (room / f"{shot}_{part}.png.import").write_text("x")
+            spec = {"shots": [{"id": "a"}, {"id": "b"}], "interactables": [{"id": "door_x", "peek": {}}, {"id": "y"}]}
+            gone = depth_pack.prune(room, spec)
+            self.assertEqual(len(gone), 4)   # aw: colour, depth and their .import files
+            self.assertEqual(sorted(p.name for p in room.glob("*_color.png")), ["a_color.png", "b_color.png", "peek_door_x_color.png"])
+
+
 if __name__ == "__main__":
     unittest.main()

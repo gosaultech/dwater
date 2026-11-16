@@ -371,3 +371,73 @@ TEST(Controls, AHeldStickWalksOnTheWayHeFacesAfterABeat) {
         }
 }
 
+
+namespace {
+float deg_between(Vector2 a, Vector2 b) { return dw::HeldFrame::angle(a, b) * RAD2DEG; }
+constexpr float DT = 1.0f / 60;
+}  // namespace
+
+TEST(HeldFrame, TheStickReadsLikeTheScreenRightAndForward) {
+    const Vector2 f{0, -1};   // the camera looks up the floor plan (-z): screen right is +x
+    const Vector2 r = stick_world({1, 0}, f), u = stick_world({0, 1}, f), d = stick_world({0, -1}, f);
+    EXPECT_NEAR(r.x, 1, 1e-6f);
+    EXPECT_NEAR(r.y, 0, 1e-6f);
+    EXPECT_NEAR(u.y, -1, 1e-6f);
+    EXPECT_NEAR(d.y, 1, 1e-6f);
+}
+
+TEST(HeldFrame, AHeldStickWalksOnThroughACutThatTurnsTheCameraRound) {
+    HeldFrame h;
+    const Vector2 down{0, -0.8f}, cam_a{0, -1}, cam_b{0, 1};   // B looks back at A
+    Vector2 f = h.update(DT, down, true, cam_a);
+    const Vector2 went = stick_world(down, f);
+    for (int i = 0; i < 120; ++i) f = h.update(DT, down, true, cam_b);   // two seconds on the new shot
+    EXPECT_LT(deg_between(stick_world(down, f), went), 1.0f);
+}
+
+TEST(HeldFrame, ACorrectionJustAfterACutDoesNotTurnHimBack) {
+    // The bug the play-test found: walking down through a doorway, the thumb corrected his line by
+    // 40 degrees as the camera cut to one facing the other way, and he walked back through the door.
+    HeldFrame h;
+    const Vector2 down{0, -0.8f}, cam_a{0, -1}, cam_b{0.2f, 1};
+    Vector2 f = h.update(DT, down, true, cam_a);
+    const Vector2 went = stick_world(down, f);
+    for (int i = 0; i < 15; ++i) f = h.update(DT, down, true, cam_b);
+    const float c = std::cos(40 * DEG2RAD), s = std::sin(40 * DEG2RAD);
+    const Vector2 corrected{down.x * c - down.y * s, down.x * s + down.y * c};
+    for (int i = 0; i < 60; ++i) f = h.update(DT, corrected, true, cam_b);
+    EXPECT_LT(deg_between(stick_world(corrected, f), went), 41.0f);   // his 40 degrees, not 180
+}
+
+TEST(HeldFrame, ACorrectionTakesTheNewCameraWhenTheyAgree) {
+    HeldFrame h;
+    const Vector2 up{0, 1}, cam_a{0, -1}, cam_b{std::sin(30 * DEG2RAD), -std::cos(30 * DEG2RAD)};
+    h.update(DT, up, true, cam_a);
+    h.update(DT, up, true, cam_b);
+    EXPECT_LT(deg_between(h.fwd, cam_a), 1.0f);   // held: still A's
+    const Vector2 f = h.update(DT, {0.8f, 0.6f}, true, cam_b);
+    EXPECT_LT(deg_between(f, cam_b), 1.0f);       // a correction, and B is only 30 degrees off: B's
+}
+
+TEST(HeldFrame, LetGoAndTheNewCameraTakesOver) {
+    HeldFrame h;
+    const Vector2 down{0, -1}, cam_a{0, -1}, cam_b{0, 1};
+    h.update(DT, down, true, cam_a);
+    for (int i = 0; i < 12; ++i) h.update(DT, {}, false, cam_b);   // a fifth of a second at the centre
+    const Vector2 f = h.update(DT, down, true, cam_b);
+    EXPECT_LT(deg_between(f, cam_b), 1.0f);
+}
+
+TEST(HeldFrame, AReGripKeepsTheFrameButANewLineDoesNot) {
+    const Vector2 down{0, -1}, cam_a{0, -1}, cam_b{0, 1};
+    HeldFrame h;
+    h.update(DT, down, true, cam_a);
+    h.update(DT, down, true, cam_b);
+    for (int i = 0; i < 4; ++i) h.update(DT, {}, false, cam_b);   // the thumb slips through the centre
+    EXPECT_LT(deg_between(h.update(DT, {0.1f, -1}, true, cam_b), cam_a), 1.0f);
+    HeldFrame g;
+    g.update(DT, down, true, cam_a);
+    g.update(DT, down, true, cam_b);
+    for (int i = 0; i < 4; ++i) g.update(DT, {}, false, cam_b);
+    EXPECT_LT(deg_between(g.update(DT, {1, 0}, true, cam_b), cam_b), 1.0f);   // flicked over to a new line
+}

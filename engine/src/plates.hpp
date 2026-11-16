@@ -1,9 +1,10 @@
 // damned_waters/engine/src/plates.hpp
 // Purpose: the painted plates (colour + depth per camera shot) of the rooms around him, kept ready
-// on the GPU. With seamless doors the next room's picture must already be there the moment he
-// steps through, so the rooms next door are decoded on a worker thread in the background and
-// uploaded a couple per frame; rooms out of reach are let go. If he outruns it, the plate is
-// loaded on the spot (a hitch, never a missing picture).
+// on the GPU. With seamless doors and many short shots, the next shot's picture must already be
+// there the moment he crosses into its zone, so the plates of the shots near him (dw/streaming.hpp)
+// are decoded on a worker thread in the background and uploaded a couple per frame; ones he's left
+// well behind are let go. If he outruns it, the plate is loaded on the spot (a hitch, never a
+// missing picture).
 //
 // ELI5: a stage crew that sets up the next scene's backdrops in the wings while the current scene
 // plays, and strikes the ones nobody will need.
@@ -12,6 +13,7 @@
 #include <raylib.h>
 
 #include <condition_variable>
+#include <cstdint>
 #include <deque>
 #include <map>
 #include <mutex>
@@ -35,18 +37,25 @@ public:
     bool need(const std::string& room, const std::vector<std::string>& shots);
     // Upload what the worker has decoded: at most `budget` plates this frame.
     void pump(int budget = 2);
-    // Let go of every room not in `keep`.
+    // Decode these plates in the background ("room/shot" keys; no-op for ones loaded or on their way).
+    void want(const std::vector<std::string>& keys);
+    // Let go of every plate not in `keep` ("room/shot" keys), and stop decoding ones not in it.
     void keep_only(const std::set<std::string>& keep);
     const Pair* get(const std::string& room, const std::string& shot) const;
     bool has(const std::string& room, const std::string& shot) const { return get(room, shot) != nullptr; }
+    // The painted depth (m along the camera's view) at (u, v) on a loaded plate, from a small copy
+    // kept on the CPU (SMALL_W x SMALL_H): is he behind something in the painting? -1: not loaded.
+    float depth_at(const std::string& room, const std::string& shot, float u, float v) const;
+    static constexpr int SMALL_W = 320, SMALL_H = 180;
 
 private:
     struct Job { std::string room, shot; };
-    struct Done { std::string room, shot; Image color{}, depth{}; };
+    struct Done { std::string room, shot; Image color{}, depth{}; std::vector<uint16_t> small; };
     void work();
-    bool upload(const std::string& room, const std::string& shot, Image& c, Image& d);
+    bool upload(const std::string& room, const std::string& shot, Image& c, Image& d, std::vector<uint16_t>&& small);
     std::string dir_;
     std::map<std::string, std::map<std::string, Pair>> loaded_;
+    std::map<std::string, std::vector<uint16_t>> small_;   // "room/shot": the depth, small, on the CPU
     std::set<std::string> queued_;           // "room/shot" sent to the worker and not yet uploaded
     std::deque<Job> jobs_;
     std::deque<Done> done_;

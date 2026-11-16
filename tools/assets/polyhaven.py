@@ -93,12 +93,17 @@ def references(spec: dict) -> dict[str, str]:
 
 def code_references(source: str) -> dict[str, str]:
     """The assets the set-building code itself names (a kit's lions, its suitcases), so they're
-    fetched without a RoomSpec asking: "ph:<id>" in quotes is a model, {"ph": "<id>"} a texture."""
+    fetched without a RoomSpec asking: "ph:<id>" in quotes is a model, {"ph": "<id>"} a texture, and
+    every id in a shelf-stock table (shops.py's SCANS = {palette: [model ids]}) a model."""
     out: dict[str, str] = {}
     for m in re.finditer(r'"ph:([A-Za-z0-9_]+)"', source):
         out.setdefault(m.group(1), "model")
     for m in re.finditer(r'"ph"\s*:\s*"([A-Za-z0-9_]+)"', source):
         out.setdefault(m.group(1), "texture")
+    for table in re.finditer(r"^SCANS\s*=\s*\{(.*?)\}\s*$", source, re.S | re.M):
+        for ids in re.finditer(r"\[([^\]]*)\]", table.group(1)):
+            for m in re.finditer(r'"([A-Za-z0-9_]+)"', ids.group(1)):
+                out.setdefault(m.group(1), "model")
     return out
 
 
@@ -164,6 +169,15 @@ def fetch(url: str, dest: Path, md5: str = "") -> Path:
     return dest
 
 
+def api_kind(info: dict, guess: str) -> str:
+    """What Poly Haven says the asset is (0 an HDRI, 1 a texture, 2 a model), over a guess: "ph:<id>"
+    names a model in a prop and a texture in a material, and the kits' code says it both ways (a
+    brick wall once came down as a model, with no maps for the street to be paved with)."""
+    if guess in HDRI_RES:
+        return guess
+    return {1: "texture", 2: "model"}.get(info.get("type"), guess)
+
+
 def ensure(asset_id: str, kind: str, res: str = "1k", cache: Path = CACHE) -> dict:
     """Fetch one asset into the cache; returns (and writes) its asset.json for Blender."""
     res = HDRI_RES.get(kind, res)
@@ -172,6 +186,7 @@ def ensure(asset_id: str, kind: str, res: str = "1k", cache: Path = CACHE) -> di
     if meta_path.exists():
         return json.loads(meta_path.read_text())
     info = _get_json(f"{API}/info/{asset_id}")
+    kind = api_kind(info, kind)
     files = _get_json(f"{API}/files/{asset_id}")
     meta = {"id": asset_id, "kind": kind, "res": res, "name": info.get("name", asset_id),
             "authors": sorted(info.get("authors", {})), "license": "CC0",

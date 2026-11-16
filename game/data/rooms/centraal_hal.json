@@ -1320,6 +1320,189 @@
       "rough": 0.7,
       "lift": 0.5,
       "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:wicker_basket_01",
+      "pos": [
+        1.69,
+        0.0,
+        3.76
+      ],
+      "yaw": 153.9,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:jug_01",
+      "pos": [
+        1.62,
+        0.0,
+        7.16
+      ],
+      "yaw": 240.9,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:rubber_boots",
+      "pos": [
+        22.58,
+        0.0,
+        5.26
+      ],
+      "yaw": 9.4,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wicker_basket_01",
+      "pos": [
+        19.07,
+        0.0,
+        1.65
+      ],
+      "yaw": 314.5,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wheelchair_01",
+      "pos": [
+        4.1,
+        0.0,
+        30.57
+      ],
+      "yaw": 131.1,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:vintage_suitcase",
+      "pos": [
+        3.01,
+        0.0,
+        19.76
+      ],
+      "yaw": 214.6,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        19.35,
+        0.0,
+        23.86
+      ],
+      "yaw": 102.5,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wicker_basket_01",
+      "pos": [
+        4.11,
+        0.0,
+        10.23
+      ],
+      "yaw": 57.1,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:vintage_suitcase",
+      "pos": [
+        17.4,
+        0.0,
+        34.22
+      ],
+      "yaw": 131.6,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        18.03,
+        0.0,
+        31.21
+      ],
+      "yaw": 297.5,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:trashbag",
+      "pos": [
+        19.8,
+        0.0,
+        34.22
+      ],
+      "yaw": 336.7,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:russian_food_cans_01",
+      "pos": [
+        20.31,
+        0.0,
+        31.01
+      ],
+      "yaw": 23.8,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:vintage_suitcase",
+      "pos": [
+        23.46,
+        0.0,
+        24.14
+      ],
+      "yaw": 127.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        22.79,
+        0.0,
+        26.89
+      ],
+      "yaw": 133.9,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
     }
   ],
   "lights": [
@@ -1522,79 +1705,404 @@
   ],
   "shots": [
     {
-      "id": "a",
       "pos": [
-        21.8,
-        5.2,
-        22.5
+        2.09,
+        2.7,
+        13.56
       ],
       "look_at": [
-        7.0,
-        1.2,
-        34.5
+        4.32,
+        0.59,
+        8.41
       ],
-      "fov": 64,
+      "fov": 46.8,
+      "zone": {
+        "min": [
+          0.5,
+          0.0
+        ],
+        "max": [
+          7.75,
+          10.25
+        ]
+      },
+      "priority": 1,
+      "id": "a"
+    },
+    {
+      "pos": [
+        6.28,
+        2.1,
+        13.29
+      ],
+      "look_at": [
+        9.28,
+        0.45,
+        8.37
+      ],
+      "fov": 43.7,
+      "zone": {
+        "min": [
+          6.25,
+          0.0
+        ],
+        "max": [
+          12.75,
+          10.25
+        ]
+      },
+      "priority": 1,
+      "id": "b"
+    },
+    {
+      "pos": [
+        11.34,
+        2.1,
+        13.3
+      ],
+      "look_at": [
+        14.34,
+        0.47,
+        8.37
+      ],
+      "fov": 44.6,
+      "zone": {
+        "min": [
+          11.25,
+          0.0
+        ],
+        "max": [
+          18.0,
+          10.25
+        ]
+      },
+      "priority": 1,
+      "id": "c"
+    },
+    {
+      "pos": [
+        22.31,
+        2.1,
+        13.59
+      ],
+      "look_at": [
+        19.71,
+        0.62,
+        8.38
+      ],
+      "fov": 43.4,
+      "zone": {
+        "min": [
+          16.5,
+          0.5
+        ],
+        "max": [
+          23.5,
+          10.25
+        ]
+      },
+      "priority": 1,
+      "id": "d"
+    },
+    {
+      "pos": [
+        7.62,
+        2.1,
+        22.53
+      ],
+      "look_at": [
+        4.47,
+        0.59,
+        17.65
+      ],
+      "fov": 46.0,
       "zone": {
         "min": [
           0.0,
-          24.0
+          8.75
+        ],
+        "max": [
+          7.5,
+          19.5
+        ]
+      },
+      "priority": 1,
+      "id": "e"
+    },
+    {
+      "pos": [
+        6.11,
+        2.1,
+        22.3
+      ],
+      "look_at": [
+        9.13,
+        0.33,
+        17.42
+      ],
+      "fov": 47.1,
+      "zone": {
+        "min": [
+          6.0,
+          8.75
+        ],
+        "max": [
+          12.75,
+          19.5
+        ]
+      },
+      "priority": 1,
+      "id": "f"
+    },
+    {
+      "pos": [
+        18.26,
+        2.1,
+        22.27
+      ],
+      "look_at": [
+        15.16,
+        0.39,
+        17.43
+      ],
+      "fov": 47.9,
+      "zone": {
+        "min": [
+          11.25,
+          8.75
+        ],
+        "max": [
+          18.25,
+          19.5
+        ]
+      },
+      "priority": 1,
+      "id": "g"
+    },
+    {
+      "pos": [
+        23.5,
+        2.1,
+        22.56
+      ],
+      "look_at": [
+        20.55,
+        0.48,
+        17.59
+      ],
+      "fov": 46.2,
+      "zone": {
+        "min": [
+          16.75,
+          8.75
+        ],
+        "max": [
+          24.0,
+          19.5
+        ]
+      },
+      "priority": 1,
+      "id": "h"
+    },
+    {
+      "pos": [
+        11.61,
+        2.1,
+        31.01
+      ],
+      "look_at": [
+        14.46,
+        0.82,
+        25.89
+      ],
+      "fov": 45.4,
+      "zone": {
+        "min": [
+          11.25,
+          18.0
+        ],
+        "max": [
+          18.75,
+          27.5
+        ]
+      },
+      "priority": 1,
+      "id": "i"
+    },
+    {
+      "pos": [
+        22.42,
+        2.1,
+        30.84
+      ],
+      "look_at": [
+        20.27,
+        0.77,
+        25.4
+      ],
+      "fov": 46.2,
+      "zone": {
+        "min": [
+          17.25,
+          18.0
+        ],
+        "max": [
+          24.0,
+          27.5
+        ]
+      },
+      "priority": 1,
+      "id": "j"
+    },
+    {
+      "pos": [
+        7.23,
+        2.1,
+        30.21
+      ],
+      "look_at": [
+        4.11,
+        0.14,
+        25.47
+      ],
+      "fov": 46.6,
+      "zone": {
+        "min": [
+          0.0,
+          18.0
+        ],
+        "max": [
+          7.0,
+          27.75
+        ]
+      },
+      "priority": 1,
+      "id": "k"
+    },
+    {
+      "pos": [
+        12.75,
+        2.1,
+        30.4
+      ],
+      "look_at": [
+        9.6,
+        0.33,
+        25.61
+      ],
+      "fov": 49.6,
+      "zone": {
+        "min": [
+          5.5,
+          18.0
+        ],
+        "max": [
+          12.75,
+          27.75
+        ]
+      },
+      "priority": 1,
+      "id": "l"
+    },
+    {
+      "pos": [
+        11.48,
+        2.1,
+        38.7
+      ],
+      "look_at": [
+        14.48,
+        0.47,
+        33.77
+      ],
+      "fov": 48.1,
+      "zone": {
+        "min": [
+          11.25,
+          26.0
+        ],
+        "max": [
+          18.5,
+          36.0
+        ]
+      },
+      "priority": 1,
+      "id": "m"
+    },
+    {
+      "pos": [
+        11.96,
+        4.4,
+        35.03
+      ],
+      "look_at": [
+        16.7,
+        1.73,
+        32.48
+      ],
+      "fov": 40.5,
+      "zone": {
+        "min": [
+          17.0,
+          26.0
         ],
         "max": [
           24.0,
           36.0
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "n"
     },
     {
-      "id": "b",
       "pos": [
-        2.2,
-        4.6,
-        35.0
+        11.21,
+        4.4,
+        34.61
       ],
       "look_at": [
-        13.5,
-        0.8,
-        12.0
+        6.72,
+        1.22,
+        32.22
       ],
-      "fov": 62,
+      "fov": 47.1,
       "zone": {
         "min": [
           0.0,
-          12.0
+          26.25
         ],
         "max": [
-          24.0,
-          24.0
+          7.25,
+          36.0
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "o"
     },
     {
-      "id": "c",
       "pos": [
-        20.5,
-        4.2,
-        14.5
+        12.8,
+        2.1,
+        38.84
       ],
       "look_at": [
-        9.0,
-        0.6,
-        0.0
+        9.71,
+        0.55,
+        33.94
       ],
-      "fov": 64,
+      "fov": 44.8,
       "zone": {
         "min": [
-          0.0,
-          0.0
+          5.75,
+          26.25
         ],
         "max": [
-          24.0,
-          12.0
+          12.75,
+          36.0
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "p"
     }
   ],
   "spawns": {
@@ -1730,6 +2238,69 @@
       ],
       "yaw": 90,
       "lying": true
+    }
+  ],
+  "fx": [],
+  "dead": [
+    {
+      "pos": [
+        20.12,
+        0.0,
+        24.38
+      ],
+      "yaw": 338,
+      "variant": 1,
+      "prone": true,
+      "blood": 0.79,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        2.88,
+        0.0,
+        18.62
+      ],
+      "yaw": 186,
+      "variant": 0,
+      "prone": false,
+      "blood": 0.42,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        6.88,
+        0.0,
+        14.62
+      ],
+      "yaw": 309,
+      "variant": 1,
+      "prone": true,
+      "blood": 0.79,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        21.88,
+        0.0,
+        11.88
+      ],
+      "yaw": 272,
+      "variant": 0,
+      "prone": true,
+      "blood": 0.57,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        9.88,
+        0.0,
+        31.88
+      ],
+      "yaw": 314,
+      "variant": 1,
+      "prone": true,
+      "blood": 0.8,
+      "catastrophe": true
     }
   ]
 }

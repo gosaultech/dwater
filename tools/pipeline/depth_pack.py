@@ -111,15 +111,39 @@ def process_room(src_room: Path, dst_room: Path, game_root: Path) -> list[str]:
     return written
 
 
+def prune(dst_room: Path, spec: dict) -> list[str]:
+    """Remove the plates of shots the room no longer has (its cameras were planned afresh), with their
+    .import files. Its shots and its doors' views through the crack ("peek_<door>") stay."""
+    keep = {s["id"] for s in spec.get("shots", [])} | {"peek_" + i["id"] for i in spec.get("interactables", []) if "peek" in i}
+    gone = []
+    for color in sorted(dst_room.glob("*_color.png")):
+        shot = color.name.removesuffix("_color.png")
+        if shot in keep:
+            continue
+        for f in (color, dst_room / f"{shot}_depth.png"):
+            for g in (f, Path(str(f) + ".import")):
+                if g.exists():
+                    g.unlink()
+                    gone.append(g.name)
+    return gone
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Pack Blender renders into Godot plates")
     ap.add_argument("--src", default=str(REPO / "pipeline_out" / "renders"))
     ap.add_argument("--game", default=str(REPO / "game"))
+    ap.add_argument("--prune", action="store_true", help="remove the plates of shots a packed room no longer has")
     a = ap.parse_args(argv)
     game = Path(a.game)
     for room in sorted(p for p in Path(a.src).iterdir() if p.is_dir()):
-        files = process_room(room, game / "assets" / "rooms" / room.name, game)
+        dst = game / "assets" / "rooms" / room.name
+        files = process_room(room, dst, game)
         print(f"[pack] {room.name}: {len(files)} plates")
+        spec_file = game / "data" / "rooms" / f"{room.name}.json"
+        if a.prune and spec_file.exists():
+            import json
+            for g in prune(dst, json.loads(spec_file.read_text())):
+                print(f"[pack] {room.name}: removed {g}")
 
 
 if __name__ == "__main__":

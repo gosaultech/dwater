@@ -20,6 +20,8 @@
 namespace dw {
 namespace {
 constexpr float LIGHT_SCALE = 2.4f;   // RoomSpec godot_energy -> this shader's units
+constexpr float FILL = 2.0f;          // the fill on the characters where no lamp reaches him (this shader's units)
+constexpr float FILL_LIT = 0.5f;      // ... none once the room's lights on him add up to this
 // The muzzle flash as a light: warm white, bright for a frame or three, reaching a few metres.
 constexpr float FLASH_RANGE = 6.0f;
 const Vector3 FLASH_COLOR{2.6f, 1.9f, 1.1f};
@@ -33,7 +35,7 @@ bool Game::init(const std::string& room_id) {
     if (!load_house(room_id)) return false;
     spec_ = rooms_[size_t(room_)];
     plates_.start(root + "/game/assets/rooms");
-    if (!plates_.need(spec_.id, shot_ids(spec_))) { TraceLog(LOG_ERROR, "missing plates for %s", spec_.id.c_str()); return false; }
+    if (spec_.shots.empty() || !plates_.need(spec_.id, {spec_.shots.front().id})) { TraceLog(LOG_ERROR, "missing plates for %s", spec_.id.c_str()); return false; }
     plate_ = LoadShaderFromMemory(nullptr, shaders::PLATE_FS);
     l_depth_ = GetShaderLocation(plate_, "u_depth");
     l_near_ = GetShaderLocation(plate_, "u_near");
@@ -62,6 +64,22 @@ bool Game::init(const std::string& room_id) {
     blob_mat_ = LoadMaterialDefault();
     blob_mat_.shader = blob_;
     blob_mesh_ = GenMeshPlane(1, 1, 1, 1);
+    rain_sh_ = LoadShaderFromMemory(nullptr, shaders::RAIN_FS);
+    l_rTime_ = GetShaderLocation(rain_sh_, "u_time");
+    l_rDist_ = GetShaderLocation(rain_sh_, "u_dist");
+    l_rSeed_ = GetShaderLocation(rain_sh_, "u_seed");
+    l_rPlate_ = GetShaderLocation(rain_sh_, "u_plate");
+    l_rScreen_ = GetShaderLocation(rain_sh_, "u_screen");
+    splash_sh_ = LoadShaderFromMemory(nullptr, shaders::SPLASH_FS);
+    l_sTime_ = GetShaderLocation(splash_sh_, "u_time");
+    l_sCam_ = GetShaderLocation(splash_sh_, "u_cam");
+    l_sPlate_ = GetShaderLocation(splash_sh_, "u_plate");
+    l_sScreen_ = GetShaderLocation(splash_sh_, "u_screen");
+    l_rWin_ = GetShaderLocation(rain_sh_, "u_win");
+    l_sWin_ = GetShaderLocation(splash_sh_, "u_win");
+    l_fill_ = GetShaderLocation(char_, "u_fill");
+    l_wet_ = GetShaderLocation(char_, "u_wet");
+    init_fx();
     post_ = LoadShaderFromMemory(nullptr, shaders::POST_FS);
     l_time_ = GetShaderLocation(post_, "u_time");
     l_res_ = GetShaderLocation(post_, "u_res");
@@ -103,7 +121,7 @@ void Game::shutdown() {
     fx_.shutdown();
     sfx_.shutdown();
     UnloadMesh(blob_mesh_);
-    UnloadShader(plate_); UnloadShader(char_); UnloadShader(blob_); UnloadShader(post_);
+    UnloadShader(plate_); UnloadShader(char_); UnloadShader(blob_); UnloadShader(post_); UnloadShader(rain_sh_); UnloadShader(splash_sh_);
     UnloadRenderTexture(rt_);
     for (auto& sm : shadows_) {
         rlUnloadTexture(sm.rt.depth.id);
@@ -288,6 +306,7 @@ void Game::bind_shadows() {
 }
 
 void Game::cut_to(const std::string& id) {
+    plates_.need(spec_.id, {id});   // (streamed in ahead of him; if he outran it, a hitch rather than no picture)
     for (const auto& s : spec_.shots)
         if (s.id == id) {
             shot_ = id;
@@ -296,6 +315,7 @@ void Game::cut_to(const std::string& id) {
             cam_.up = {0, 1, 0};
             cam_.fovy = s.fov;   // vertical FOV, exactly as Blender rendered it
             cam_.projection = CAMERA_PERSPECTIVE;
+            view_cut_ = true;
         }
 }
 
@@ -354,6 +374,29 @@ void Game::upload_lights() {
     SetShaderValue(char_, l_env_bot_, env_bot, SHADER_UNIFORM_VEC3);
     SetShaderValue(char_, l_fog_, fog, SHADER_UNIFORM_VEC3);
     SetShaderValue(char_, l_fogr_, fogr, SHADER_UNIFORM_VEC2);
+    // The fill: a soft light from the camera's side on the characters, as much as the room's own
+    // lights leave him in the dark (none where a lamp is on him), so he never goes black on the picture.
+    float lit = 0;
+    const Vector3 chest{player_.x, 1.3f, player_.z};
+    for (int i = 0; i < static_lights_; ++i) {
+        const float lum = 0.2126f * col[i].x + 0.7152f * col[i].y + 0.0722f * col[i].z;
+        if (col[i].w > 1.5f) { lit += lum; continue; }   // (the sun, or the moon: everywhere)
+        const Vector3 d{pos[i].x - chest.x, pos[i].y - chest.y, pos[i].z - chest.z};
+        const float dist = std::sqrt(d.x * d.x + d.y * d.y + d.z * d.z);
+        const float x = std::clamp(1.0f - std::pow(dist / std::max(pos[i].w, 1e-3f), 4.0f), 0.0f, 1.0f);
+        float att = x * x / (1.0f + dist * dist * 0.35f);
+        if (col[i].w > 0.5f && dist > 1e-3f) {   // a spot: only inside its cone
+            const float c = -(d.x * dir[i].x + d.y * dir[i].y + d.z * dir[i].z) / dist, e0 = dir[i].w, e1 = e0 + (1.0f - e0) * 0.3f;
+            const float k = std::clamp((c - e0) / std::max(e1 - e0, 1e-4f), 0.0f, 1.0f);
+            att *= k * k * (3 - 2 * k);
+        }
+        lit += lum * att;
+    }
+    const float k = std::clamp(lit / FILL_LIT, 0.0f, 1.0f), f = FILL * (1.0f - k * k * (3 - 2 * k));
+    const float fill[3] = {0.82f * f, 0.9f * f, 1.0f * f};
+    SetShaderValue(char_, l_fill_, fill, SHADER_UNIFORM_VEC3);
+    const float wet = spec_.rain ? 1.0f : 0.0f;   // out in the rain, whatever faces the sky is wet (CHAR_FS)
+    SetShaderValue(char_, l_wet_, &wet, SHADER_UNIFORM_FLOAT);
 }
 
 void Game::collide(float& x, float& z, float r) const {
@@ -424,8 +467,10 @@ void Game::update(float dt) {
         const float before = beat_.t;
         const Beat::Phase ph = beat_.phase;
         if (beat_.update(dt) == Beat::Event::Swap) finish_beat();
+        else if (beat_.phase != Beat::Phase::Out && Vector2Length(in_.move) < 0.2f) frame_ = {};   // let go in the dark: the new camera's way
         if (ph == Beat::Phase::Hold && std::floor(before / 0.26f) != std::floor(beat_.t / 0.26f))
             sfx_.play("step_wood", 0.45f, 0.1f);
+        update_view(dt);   // (on the new shot as the picture comes up)
         sfx_.update();
         return;
     }
@@ -457,18 +502,15 @@ void Game::update(float dt) {
             const V2 f = forward_from_yaw(player_.yaw);
             want = {f.x * std::max(0.0f, in_.move.y), f.z * std::max(0.0f, in_.move.y)};
         } else if (tilt > 0) {
-            Vector3 fwd = holding_ ? held_fwd_ : Vector3Subtract(cam_.target, cam_.position);
-            fwd.y = 0;
-            fwd = Vector3Normalize(fwd);
-            const Vector3 right = holding_ ? held_right_ : Vector3{-fwd.z, 0, fwd.x};
-            want = {right.x * in_.move.x + fwd.x * in_.move.y, right.z * in_.move.x + fwd.z * in_.move.y};
+            const Vector2 w = stick_world(in_.move, frame_fwd_);
+            want = {w.x, w.y};
         }
         update_doors(g, want, tilt);
     }
     if (wake_t_ >= 0 && (wake_t_ -= g) < 0) wake(wake_flag_);
     update_enemies(g);
     fx_.update(g);
-    if (spec_.rain) rain_.update(g, player_.x, player_.z);
+    update_fx(g);   // (the street's fires, sparks and beacons: they pause with the game)
     for (Vector3 at; fx_.landed(at);) sfx_.play_at("mag_drop", at, ear(), ear_right(), 0.9f, 0.08f);   // an empty magazine on the floor
     sfx_.update();
     // Through a doorway into the next room: no loading, just a cut to its camera.
@@ -477,8 +519,10 @@ void Game::update(float dt) {
         std::string next = select_shot(spec_.zones(), shot_, player_.x, player_.z);
         if (next != shot_) cut_to(next);
     }
+    if (std::hypot(player_.x - stream_at_.x, player_.z - stream_at_.y) > streaming::RESTREAM) stream_plates();
     animate(g);
     upload_lights();   // after the pose: the flash light sits where the muzzle is now
+    update_view(dt);   // (the camera operator keeps real time, through a slow-motion beat too)
 }
 
 // ── The title screen ────────────────────────────────────────────────────────────
@@ -612,6 +656,7 @@ void Game::draw_menu() const {
 // with the aim held and the trigger pulled from here, and stop on the frame worth looking at.
 std::string Game::stage(int i) {
     constexpr float DT = 1.0f / 60;
+    establish_ = std::getenv("DW_CAPTURE_ESTABLISH") != nullptr;   // (the settled view, unless asked)
     auto run = [&](float seconds) { for (float t = 0; t < seconds; t += DT) update(DT); };
     auto join = [&](size_t k, float x, float z, float yaw, EState st) -> Enemy& {
         Enemy& e = enemies_[std::min(k, enemies_.size() - 1)];
@@ -1160,7 +1205,7 @@ std::string Game::stage(int i) {
                 run(6.0f);                               // (through the beat and out on the Dam)
                 name = "onto_the_dam";
             } else if (i == 62) {
-                at("dam", 34.0f, 44.0f, 0.9f);   // among the stalls, the wheel ahead
+                at("dam", 47.5f, 46.0f, 0.9f);   // by the carousel, the wheel ahead beyond the cordon
                 run(0.6f);
                 name = "the_funfair";
             } else if (i == 63) {
@@ -1315,7 +1360,7 @@ std::string Game::stage(int i) {
             } else if (i == 89) {
                 at("stationsplein", 38.0f, 12.0f, 0.0f);
                 run(0.6f);
-                name = "the_checkpoint";
+                name = "the_station_checkpoint";
             } else if (i == 90) {
                 at("stationsplein", 35.0f, 4.0f, 0.0f);   // at the arch, and in through it
                 staged_in_ = stick_toward(0, -1, 0.6f);
@@ -1379,6 +1424,8 @@ void Game::pose_still(float x, float z, float yaw_deg, const std::string& shot) 
     cut_to(shot.empty() ? select_shot(spec_.zones(), "", x, z) : shot);
     for (int f = 0; f < 90; ++f) { time_ += DT; animate(DT); }
     upload_lights();
+    establish_ = view_establish_ = false;   // (a still: the settled view)
+    update_view(0);
 }
 
 void Game::upload_studio_lights() {
@@ -1392,6 +1439,8 @@ void Game::upload_studio_lights() {
     const float top[3] = {0.05f, 0.055f, 0.07f}, bot[3] = {0.02f, 0.018f, 0.015f}, rim[3] = {0.1f, 0.12f, 0.16f};
     const float fog[3] = {0, 0, 0}, fogr[2] = {50.0f, 60.0f};
     const float env_top[3] = {0.12f, 0.13f, 0.15f}, env_bot[3] = {0.035f, 0.032f, 0.03f};
+    const float no_fill[3] = {0, 0, 0};   // (the studio's own lights: no fill)
+    SetShaderValue(char_, l_fill_, no_fill, SHADER_UNIFORM_VEC3);
     const float no_softbox = 0;
     SetShaderValue(char_, l_softbox_, &no_softbox, SHADER_UNIFORM_FLOAT);
     SetShaderValue(char_, l_top_, top, SHADER_UNIFORM_VEC3);
@@ -1490,6 +1539,7 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     Character c = Character::make(survivor ? Kind::Survivor : Kind::Drowned, variant);
     c.place({0, 0, 0}, 0);
     Pose pose = Pose::Idle;
+    float speed_opt = -1, extra_t = 0;
     std::vector<int> cuts;
     float pitch = 0;
     bool live = false;   // /live: a reload played up to its moment as the game plays it, not posed and settled there
@@ -1519,9 +1569,11 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
         if (key == "rack") c.reloading.kind = reload::Kind::ShellRack;
         if (key == "port") c.reloading.from_grip = false;
         if (key == "live") live = true;
+        if (key == "speed") speed_opt = std::stof(val);   // m/s (walk, run: the stride the motion capture takes at it)
+        if (key == "t") extra_t = std::stof(val);         // s more of it (a filmstrip: a frame of the stride each)
         i = j;
     }
-    const float speed = pose == Pose::Walk || pose == Pose::Shamble ? 0.8f : 0.0f;
+    const float speed = speed_opt >= 0 ? speed_opt : pose == Pose::Walk || pose == Pose::Shamble ? 0.8f : 0.0f;
     if (c.reloading.on && c.weapon() == 1 && c.reloading.kind == reload::Kind::Magazine) c.reloading.kind = reload::Kind::Shell;
     if (live && c.reloading.on) {   // played as the game plays it: from the aim, the reload running in real time up to t
         const float until = c.reloading.t;
@@ -1545,7 +1597,7 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
         const Vector3 b = c.barrel_dir();
         TraceLog(LOG_INFO, "VIEW barrel dir %.2f %.2f %.2f  muzzle %.2f %.2f %.2f", b.x, b.y, b.z, c.muzzle().x, c.muzzle().y, c.muzzle().z);
     }
-    if (!live) for (int f = 0; f < 60; ++f) c.animate(pose, speed, 1.0f / 60, pitch);
+    if (!live) for (int f = 0; f < 60 + int(extra_t * 60); ++f) c.animate(pose, speed, 1.0f / 60, pitch);
     else c.animate(pose, speed, 1.0f / 60, pitch);
     render_shadows({&c});
     bind_shadows();
@@ -1630,6 +1682,8 @@ bool Game::gun_view(const std::string& who, const std::string& opts, float orbit
     const float top[3] = {0.2f, 0.2f, 0.21f}, bot[3] = {0.09f, 0.09f, 0.09f}, rim[3] = {0.2f, 0.2f, 0.21f};
     const float env_top[3] = {1.1f, 1.1f, 1.13f}, env_bot[3] = {0.05f, 0.05f, 0.055f};
     const float fog[3] = {0, 0, 0}, fogr[2] = {50.0f, 60.0f}, softbox = 0.35f;
+    const float no_fill[3] = {0, 0, 0};   // (the studio's own lights: no fill)
+    SetShaderValue(char_, l_fill_, no_fill, SHADER_UNIFORM_VEC3);
     SetShaderValue(char_, l_softbox_, &softbox, SHADER_UNIFORM_FLOAT);
     SetShaderValue(char_, l_top_, top, SHADER_UNIFORM_VEC3);
     SetShaderValue(char_, l_bot_, bot, SHADER_UNIFORM_VEC3);
@@ -1732,14 +1786,27 @@ void Game::render() {
     SetShaderValue(plate_, l_near_, &near_, SHADER_UNIFORM_FLOAT);
     SetShaderValue(plate_, l_far_, &far_, SHADER_UNIFORM_FLOAT);
     SetShaderValue(plate_, l_dmax_, &dmax, SHADER_UNIFORM_FLOAT);
-    DrawTexturePro(plate.first, {0, 0, float(plate.first.width), float(plate.first.height)}, {0, 0, float(W), float(H)}, {0, 0}, 0, WHITE);
+    fx_plate();
+    const float pw = float(plate.first.width), ph = float(plate.first.height);
+    DrawTexturePro(plate.first, {win_.x0() * pw, win_.y0() * ph, win_.h * pw, win_.h * ph}, {0, 0, float(W), float(H)}, {0, 0}, 0, WHITE);
     EndShaderMode();
     BeginMode3D(cam_);
+    {   // ... and the room's 3D through the same window: the camera's frustum, cropped to it
+        const framing::Frustum fr = framing::frustum(lens(), win_);
+        const double n = rlGetCullDistanceNear();
+        rlDrawRenderBatchActive();
+        rlMatrixMode(RL_PROJECTION);
+        rlLoadIdentity();
+        rlFrustum(fr.l * n, fr.r * n, fr.b * n, fr.t * n, n, rlGetCullDistanceFar());
+        rlMatrixMode(RL_MODELVIEW);
+    }
     SetShaderValue(char_, l_cam_, &cam_.position, SHADER_UNIFORM_VEC3);
     rlDisableBackfaceCulling();
     if (peek_ < 0) hero_.draw(char_mat_);   // (peeking, the camera is his eye at the crack)
     for (const auto& e : enemies_)
         if (e.active) e.body.draw(char_mat_);
+    for (const auto& c : corpses_)   // the dead in the streets, the ones near enough to be seen
+        if (std::hypot(c.at.x - cam_.position.x, c.at.z - cam_.position.z) < 40.0f) c.body.draw(char_mat_);
     fx_.draw(char_mat_);   // blood, brass, what came off
     draw_loot();           // what's lying about to be picked up
     draw_leaves();         // the doors, where they hang now
@@ -1762,6 +1829,7 @@ void Game::render() {
     if (peek_ < 0) blob(hero_, player_);
     for (const auto& e : enemies_)
         if (e.active) blob(e.body, e.a);
+    draw_fx();
     if (spec_.rain) draw_rain();
     EndBlendMode();
     rlEnableDepthMask();
@@ -1771,16 +1839,58 @@ void Game::render() {
     if (status_.is_open()) render_status();
 }
 
-void Game::draw_rain() const {   // short streaks, behind whatever the painting puts in front of them
-    const V3 v = rain_.velocity();
-    const float k = Rain::STREAK;
-    rlBegin(RL_LINES);
-    rlColor4ub(175, 185, 200, 60);
-    for (const auto& d : rain_.drops()) {
-        rlVertex3f(d.x, d.y, d.z);
-        rlVertex3f(d.x - v.x * k, d.y - v.y * k, d.z - v.z * k);
+// Sheets of falling streaks across the whole shot, from the lens to the far end of the street
+// (dw/rain.hpp), each behind whatever the painting or a character puts in front of it: depth-tested,
+// not written.
+void Game::draw_rain() const {
+    const PlateStore::Pair* plate = current_plate();
+    if (!plate) return;
+    const auto sheets = rain::sheets({cam_.position.x, cam_.position.y, cam_.position.z}, {cam_.target.x, cam_.target.y, cam_.target.z},
+                                     cam_.fovy, float(W) / float(H));
+    const float t = time_, screen[2] = {float(W), float(H)}, win[4] = {win_.x0(), win_.y0(), win_.h, win_.h};
+    rlDrawRenderBatchActive();
+    rlDisableBackfaceCulling();
+    {   // where it lands: the room's floor, a hair above the pavement (the painting hides it under anything nearer)
+        const Rect2& b = spec_.bounds;
+        const float y = 0.065f, cam[3] = {cam_.position.x, cam_.position.y, cam_.position.z};
+        BeginShaderMode(splash_sh_);
+        SetShaderValue(splash_sh_, l_sTime_, &t, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(splash_sh_, l_sCam_, cam, SHADER_UNIFORM_VEC3);
+        SetShaderValue(splash_sh_, l_sScreen_, screen, SHADER_UNIFORM_VEC2);
+        SetShaderValue(splash_sh_, l_sWin_, win, SHADER_UNIFORM_VEC4);
+        SetShaderValueTexture(splash_sh_, l_sPlate_, plate->first);
+        rlBegin(RL_QUADS);
+        rlColor4ub(255, 255, 255, 255);
+        rlTexCoord2f(b.x0, b.z0); rlVertex3f(b.x0, y, b.z0);
+        rlTexCoord2f(b.x0, b.z1); rlVertex3f(b.x0, y, b.z1);
+        rlTexCoord2f(b.x1, b.z1); rlVertex3f(b.x1, y, b.z1);
+        rlTexCoord2f(b.x1, b.z0); rlVertex3f(b.x1, y, b.z0);
+        rlEnd();
+        rlDrawRenderBatchActive();
+        EndShaderMode();
     }
-    rlEnd();
+    BeginShaderMode(rain_sh_);
+    SetShaderValue(rain_sh_, l_rTime_, &t, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(rain_sh_, l_rScreen_, screen, SHADER_UNIFORM_VEC2);
+    SetShaderValue(rain_sh_, l_rWin_, win, SHADER_UNIFORM_VEC4);
+    for (int i = 0; i < rain::SHEETS; ++i) {
+        const rain::Sheet& s = sheets[size_t(i)];
+        const float seed = 1.0f + float(i) * 7.31f;
+        SetShaderValue(rain_sh_, l_rDist_, &s.dist, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(rain_sh_, l_rSeed_, &seed, SHADER_UNIFORM_FLOAT);
+        SetShaderValueTexture(rain_sh_, l_rPlate_, plate->first);
+        const float uv[4][2] = {{s.u0, s.v0}, {s.u1, s.v0}, {s.u1, s.v1}, {s.u0, s.v1}};
+        rlBegin(RL_QUADS);
+        rlColor4ub(255, 255, 255, 255);
+        for (int k = 0; k < 4; ++k) {
+            rlTexCoord2f(uv[k][0], uv[k][1]);
+            rlVertex3f(s.c[k].x, s.c[k].y, s.c[k].z);
+        }
+        rlEnd();
+        rlDrawRenderBatchActive();   // (each sheet its own uniforms)
+    }
+    EndShaderMode();
+    rlEnableBackfaceCulling();
 }
 
 void Game::present() const {

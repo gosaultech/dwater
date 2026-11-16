@@ -47,8 +47,39 @@ dark, and a press goes back to the title screen. (Like a play's last scene: the 
 - **Backgrounds and depth.** Pre-rendered Cycles backgrounds, each with a painted depth map.
   Characters are hidden correctly behind painted furniture, like RE (1998).
 - **Camera cuts.** The camera switches shots as you cross zones. The current shot is kept near
-  the thresholds (hysteresis), so it never flickers back and forth.
-- **The survivor.** Walk and run, tank or modern controls, quick turn, and an aim pose.
+  the thresholds (hysteresis), so it never flickers back and forth. The streets, squares and halls
+  are cut into many short shots (the camera pass below), so he's never a speck.
+- **The following view** (`dw/framing.hpp`, `src/game_view.cpp`). Within each shot, the screen
+  shows a window of the background that follows him, the way the GameCube Resident Evil panned
+  across its paintings. He stands about 38% of the picture's height (a fifth or less before),
+  never less than 22% while it can still zoom, and never more than 78%: it widens as he walks up
+  to the lens. There's room ahead of the way he faces, and a still middle so a step or a turn
+  doesn't swing the picture. The camera itself never moves, so the controls never change within a
+  shot. The first time he walks into a big space (450 m2 and up: the squares, the church, the
+  halls), the cut opens on the whole picture for a moment and then closes in on him. It holds with
+  him whatever he aims at, a Drowned within reach, and a pickup nearby. It leans in a little when
+  he faces a pickup, punches in on a blow, and pushes in slowly as he dies. If something painted
+  into the background hides him for more than a moment (the field hospital's tent, a bus), it
+  opens to the whole picture until he's out from behind it (a small copy of each plate's depth is
+  kept on the CPU to tell). The plates are 720
+  lines today, so a 2x window is soft; plates rendered bigger (step 2) make it sharp. Like a
+  photographer standing still on a balcony with a zoom lens: zoomed in on you as you cross the
+  square, wide for a moment when you first arrive.
+- **The live layer** (`dw/fxlive.hpp`, `src/game_fx.cpp`; a room's `"fx"`). The painting lives:
+  fires burn on upright cards facing the camera (procedural flames in churning air, their tops torn
+  into licks and wisps, white-hot at the root, embers carried up out of them) and breathe their
+  light on the walls round them; smoke rises and spreads, lit orange from
+  below; a beacon flashes its double flash and sweeps the street blue; a snapped tram wire throws
+  sparks that fall, skip on the wet road and cool from white to red; a tram's last tube flickers
+  and dies. Each one's light is the change from the light the painting was rendered with (the
+  plate shader adds it round its spot, brighter or darker), and all of it is depth-tested against
+  the painted depth, so a wall still hides a fire. Like the stagehands behind a painted backdrop:
+  one waving a torch behind the cut-out flames, one working the blue lamp, one striking sparks.
+- **The fill.** A soft light from the camera's side on the characters, as much as the room's own
+  lights leave him in the dark and none where a lamp is on him, so he never goes black against a
+  dark painting (the Beurs' back wall). Like a reflector held just out of shot.
+- **The survivor.** Walk and run, tank or modern controls, quick turn, and an aim pose. He sneaks,
+  walks, runs and stands as real people do: motion capture (below), his arms on the gun.
 - **One Verdronkene.** Its brain runs IDLE → ALERT → PURSUIT → ATTACK (0.85 s readable
   wind-up) → RECOVERY. The strike does 20 damage and knocks you back.
 - **Characters built in C++ at startup.** There are no model files. Torso, arms and legs are
@@ -59,11 +90,19 @@ dark, and a press goes back to the title screen. (Like a play's last scene: the 
   alike (a little less colour, cold shadows and warm lights, a gentle S-curve, a hint of lens
   fringe at the corners), then grain and vignette.
 - **Rain over the streets** (`dw/rain.hpp`): out under the sky (a room with `"outdoor"`, unless it
-  says `"rain": false`), 1,400 drops fall through a box 18 m across that follows him, slanted by the
-  wind, each drawn as a short streak tested against the painting's depth, so it falls behind the
-  houses and in front of him. A fixed pool: nothing is allocated per frame. It is heard too: the
-  streets' ambience is rain (`amb_street_rain`, synthesized by `tools/audio/synth_sfx.py`). ELI5: a
-  stage hand with a watering can who always stands over the actor, never over the whole theatre.
+  says `"rain": false`), it rains on the whole shot. Eight sheets of falling streaks stand square to
+  the camera, from 1.2 m in front of the lens to 34 m down the street; each is drawn against the
+  painting's depth and the characters (tested, not written), so the rain falls behind the houses, in
+  front of him and all the way down the street. The streaks are drawn by a shader (`RAIN_FS`): each
+  column of drops at its own spacing and speed, leaned by the wind; a streak thinner than a pixel
+  fades rather than shimmers; and rain shows where there's light behind it (over a lit window or a
+  lamp it glows, against a dark wall it all but vanishes), as it does at night. Where it lands, rings
+  spread here and there over the street (`SPLASH_FS`). Nine quads a frame and no particles, so
+  nothing is allocated or simulated. It is heard too: the streets' ambience is rain
+  (`amb_street_rain`, synthesized by `tools/audio/synth_sfx.py`). (It used to be a box of drops 18 m
+  across that followed him, so a shot down a street showed a little rain cloud over his head.) ELI5:
+  a theatre's rain: curtains of falling water hung across the whole stage at different depths, and
+  the actors walk between them.
 
 **Not ported yet:** saves (the typewriter only talks so far), the cellar's boss and the crawling
 Kelderkind.
@@ -115,6 +154,7 @@ the shaders are GLSL 3.30 core, which both platforms support.
 ../build/macos/damned_waters --view m92fs,0,0,2.0,0,0,8.3 pistol.png              # a gun, catalogue-lit
 ../build/macos/damned_waters --view r870,30,14,1.6,0.05,0,14 shotgun.png           # the 870
 ../build/macos/damned_waters --room voorkamer --still 3.2,4.5,163 still.png --shot a   # him standing in a room (x, z, yaw degrees), one frame
+../build/macos/damned_waters --walkthrough /tmp/walk.txt   # hold the stick through every doorway and staircase, both ways (exit 2 if he ever turned back)
 DW_ROOT=/path/to/tree ../build/macos/damned_waters ...   # read rooms, plates and audio from another tree (a test room)
 ../build/macos/damned_waters --fitgrips  # fit his hands to both guns as people hold them, write src/grips_fitted.inc, exit
 ../build/macos/damned_waters --fitpistol # fit the pistol in both hands (the aim: right arm, wrist, head; the low ready, standing and running: the arms), print it, exit
@@ -403,9 +443,11 @@ flat: the camera crew moves room to room, nobody has to change the scenery.
   as a street plan does. The beat is a door interactable with a `"target_room"` standing in the
   gap (within 1.6 m of its middle); one that stands anywhere else never fires, and the way on is a
   wall, so a test checks every one in the city.
-- **No waiting at a door.** The plates of the rooms next door are decoded on a worker thread
-  while he's still in this one and uploaded a couple per frame (`src/plates.cpp`), so the cut is
-  instant; rooms out of reach are let go. A stage crew setting up the next backdrops in the wings.
+- **No waiting at a door.** The plates of every shot he could step into within a few seconds
+  (`dw/streaming.hpp`: within 14 m of its zone, through doors and down stairs too) are decoded on a
+  worker thread and uploaded a couple per frame (`src/plates.cpp`); one is let go only once he's
+  22 m from it. So the cut is instant, and the GPU holds a dozen or so plates, not whole
+  districts. A stage crew setting up the next backdrops in the wings.
 - **The dead lie still** (`"lying"` on one of the Drowned in a room file): laid out among the
   bodies, it stays down until he comes within 4 m and it can see him, or a shot goes off, or it's
   hit; then it gets up the way a knocked-down one does. **Keys** (the cellar key, the store's staff
@@ -453,6 +495,66 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   `"sat"`, which any RoomSpec material can also set): the brick red-brown, the clinker road a dark
   purple-brown, the pavement and cobbles grey. Like a photographer's colour profile per camera: the
   same scene, its colours as they really are. The moon does the rest: a cool sky, warm-white lamps.
+- **Cordons through the wide rooms** (`tools/citygen/barricades.py`). The big squares and
+  boulevards (the Dam, the Stationsplein, Rembrandtplein, Muntplein, Thorbeckeplein, Rokin, Damrak)
+  were too open to film: a shot that holds 90 x 70 m of the Dam holds him as a speck. As the
+  PlayStation-era survival horrors walled their streets with wrecks and barricades, the evacuation
+  left lanes of crowd barriers (dranghekken, police tape along the top) through each one: he walks a
+  lane ten or so metres wide past every door, item and Drowned, and sees the rest of the square
+  through the bars. Each room's lanes are rectangles; a line of barriers stands wherever a lane's
+  edge crosses open floor. Tested (`tools/citygen/tests/test_barricades.py`): everything in a room is
+  on one walkable network, nothing outside the lanes can be walked, and the lanes meet across the
+  seamless passages between rooms. ELI5: a festival's stewards' fences: the field is still there,
+  you just walk where the fences let you, and so the cameras know where to point.
+- **The camera pass** (`tools/citygen/cameras.py`). The wide rooms' shots are planned by rule, the way
+  the PlayStation survival horrors cut their cities into many short shots: each shot holds a stretch
+  of floor about ten metres long (a lane, cut along its length), and from it a 1.75 m man stands
+  about a fifth to a third of the picture's height (the old wide shots held him at 5 to 10 percent),
+  never under 17 percent typically, and wholly in the picture anywhere in the zone. The cameras look
+  the way he travels through the room, so "forward" stays forward on the stick across a cut; from a
+  little above (about 20 degrees down) with the game's lenses (40 to 60 degrees), alternating sides;
+  never in a tree, a lamp, an awning or a prop, and with a clear view of the floor they hold. What
+  hides him is judged by shape, not by footprint: a tent or a platform canopy only by its roof (he
+  is seen beneath it), the National Monument by its pillar, lions and curved wall (not its steps).
+  `python3 tools/citygen/cameras.py report` prints every shot's numbers; the tests
+  (`tools/citygen/tests/test_cameras.py`) check them all. Like a crew blocking a walk-and-talk: not
+  one camera on a rooftop, but one every ten metres, each looking the way the actor walks.
+- **The catastrophe pass** (`tools/citygen/catastrophe.py`; the brief is `docs/city_aftermath.md`).
+  What the night did to each street in its `STORIES` (Rokin first): set pieces (the derailed tram,
+  a burned-out car, the dead by an ambulance, shops boarded and written on), the room's live
+  effects (`"fx"`), and what the night left, placed by what each place was (`dress()`, scanned CC0
+  models from Poly Haven): the water's line of litter at the facades' foot and along the quay
+  railings, heaps against what stood in its way (a car, a tram, a lamp's foot), a café's chairs and
+  tables knocked over in front of it, a looted shop's stock dropped by its door, a bin toppled by a
+  lamp, belongings dropped near the doors people left by; indoors, what the hall's use that night
+  left by its beds, counters and shelves. Never a scatter, never one thing on another, never street
+  litter in a church. Like a set dresser's notes: every object answers "why is this here?".
+  (A model knocked over falls piece by piece where it stood: `kit.model`'s "tip" lays a pair of
+  bins side by side, never one stood on the other.)
+  Blender's side is `tools/blender/ruin.py` (decals, boards, body bags, a snapped wire, soot, the
+  silt) and `builders._wear` (a tide line, silt, streaks, splashes and rust on every material, set
+  per room from its flood height); the words on the walls are drawn by `tools/assets/decals.py`
+  (`make`, into the asset cache). Tested (`tools/citygen/tests/test_catastrophe.py`,
+  `tools/assets/tests/test_decals.py`). Like a crime-scene photographer's list: what's where, and
+  why, street by street, before the cameras roll.
+- **The vehicles** (`tools/blender/vehicles.py`; look-development in `tools/blender/vehicle_studio.py`).
+  Cars, vans, the bus, the army truck and the trams are modelled the way a car designer's clay is:
+  cross-sections along the body (sill, shoulder, window line, roof), lofted and smoothed with the
+  character lines held sharp, the glass, pillars, doors and livery laid on the body's own faces,
+  wheels (tyre, rim, brake) in arches cut out of it, lights, Dutch plates, mirrors, a taxi's sign,
+  a light bar, Battenburg blocks; burned out on request. Like slicing a loaf of bread into the
+  car's shape, lining the slices up, and stretching a skin over them. The site's lighting towers are
+  built the same way (a lofted canopy with its doors and louvres, a telescopic mast, floodlights
+  turned at what they light, outriggers on pads), and the Dam's kermis stalls (`fair.py`) have
+  arched crests of bulbs, scalloped awnings, soft toys on strings, targets, claw machines lit inside.
+  The studio's sets: `--set vehicles|heavy|trams|plant`.
+- **The dead** (a room's `"dead"`; `Game::build_corpses`). The cast's own bodies, posed where they
+  fell (face down, flat, an arm reaching on and the cheek to the street; on the back, arms flung
+  out; or sat slumped against a shop front or a car's flank, the head fallen aside, one knee drawn
+  up: `"sitting"`, placed by `catastrophe.slumped` clear of doors and props and where a shot sees
+  them), half of them sprawled the other way round (`mirror_targets`, tested in `test_pose.cpp`), never rising (unlike a `"lying"` Drowned, which does: from the
+  doorway you can't tell which is which), their blood spread under them; drawn over the painting
+  within 40 m of the camera. Placed by the catastrophe pass, clear of every door.
 - **The whole floor at once.** To render a room, Blender builds every room on its storey at its
   origin (`tools/pipeline/house.py` agrees with the engine on the floor plan), so an open doorway
   shows the real room beyond. A shared wall is built half by each room; a door the game swings is
@@ -559,6 +661,40 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
   flat is not the set; the room built behind it is). The Damrak shops' pieces are `shops.py`'s
   (clogs, cheeses, the exchange's board of rates, the cashiers' glass, the safe), and a tour boat
   can be boarded (`canal_boat`'s `"door"`, `"aisle"` and `"draught"`).
+- **The second look (2026-11): flat and sharp reads as metal, round and soft reads as rubber.** The
+  streets' own vehicles were lofted and smoothed, which is why they looked like soap. Three changes:
+  - **The tram is Amsterdam's** (`tools/blender/combino.py`): the five-section low-floor car, built
+    hard and square from flat sheets like the real one, measured off CC BY photographs (reference
+    only: no photo pixels). White, a blue skirt, the blue roof line that steps up to a blue cap over
+    the cab, one black band of see-through glass with the lit saloon behind it, plug doors, pleated
+    bellows, roof gear, a pantograph, an amber display. The operator's name is invented.
+    `tools/pipeline/tram_layout.py` is the one tape measure for the model and the colliders.
+  - **Vehicles and street furniture are hired, not home-made** (`tools/blender/licensed.py`,
+    `tools/assets/sketchfab.py`, `tools/assets/models.json`, `docs/model_credits.md`): CC BY models
+    from Sketchfab (a licence gate lets in CC0 and CC BY only). Each "vehicle" prop gets a real car,
+    van, army truck or burnt wreck: nose to the prop's front, scaled to its footprint, resprayed,
+    its windows swapped for the set's glass, the set's weather laid over its own materials. Makers'
+    badges are capped (a small flat cap in the neighbouring paint, pressed onto the body); police
+    and ambulance vans get Dutch striping, lettering and a roof bar pressed on the same way (each
+    point dropped onto the body along a ray, like a sticker smoothed on by hand). Bins, crowd
+    barriers, body bags and bicycles come out of packs by material name (`"model": "sf:bin_green"`).
+  - **Paint from a can** (`tools/assets/decals.py`, `tools/assets/fonts/`): the words on the walls
+    are written in real hand lettering (OFL/Apache fonts) and put through a spray pass: a soft-edged
+    core, thinner where the hand moved fast, a mist flecked with droplets, runs where it went on
+    thick.
+  - **The metro's train** is built by the same hand as the tram (`combino.metro`): three long cars,
+    plug doors open at the platform's own doorways, a lit saloon, the tram's own white and blue. Bendy buses become the licensed
+    rigid bus.
+  - **Silt settles, it is not painted on** (`builders._wear`): thick at the foot of things, thinning
+    to the tide line, whole stretches left almost clean, and matt where it dried, whatever shines
+    under it. (Textures stay at 1k: a street at 2k ran the container out of memory; `DW_ASSET_RES=2k` asks for it on a bigger machine.)
+  - **People stand in the same street** (`CHAR_FS`): folds in every garment, wear and stains in
+    hand-wide patches, the flood's mud up the legs, denim worn pale, a harder light, cloth's nap at
+    grazing angles, and in the rain whatever faces the sky is wet. A doll is one clean colour under
+    a soft light; a person out all night is not.
+  - A room joins the second look (`catastrophe.LOOK2`) in the commit that brings its re-rendered
+    plates, as rooms joined the stories before it. Look-dev: `vehicle_studio.py --set
+    trams|vehicles|lineup|street [--day] [--views 0,2]`; `model_probe.py` measures a new download.
 - **The next district down the street.** Rendering a district also builds the streets of the
   districts beside it (within 40 m), so the end of a street shows the city going on, not a void.
 - **One ground per street.** Rooms on one storey are built together, and each room's lights only
@@ -567,6 +703,32 @@ every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
 - **A row ends where it says.** A row of houses is laid out house by house at random widths; the
   last one takes whatever is left of the row (never a sliver, never a house standing out in the
   next street). A terrace ends at the corner plot, whatever its size.
+
+## How he walks (motion capture)
+
+His legs, hips, spine, neck and head move as real people's did: gait cycles from the 100STYLE motion
+capture dataset (CC BY 4.0, `docs/motion_credits.md`), a tactical "Swat" walk for the sneak, a
+hurried walk and run, a standing idle. `tools/anim/bake_mocap.py` finds the actors' strides nearest
+each of his speeds, averages them into one loop, mirrors it so neither leg is favoured, sets the
+average lean and gaze (the actors hurried and crouched; he stays upright, eyes ahead), and writes the
+loops for his rig into `src/mocap_clips.inc`. The capture faces +z and the rig -z; both turn a joint
+Y then X then Z, so a captured turn seen from behind is the same turn with its X and Z reversed.
+
+`dw/mocap.hpp` plays them: each loop starts with the left foot down, the stride's phase moves on as
+far as his feet carry him (so they plant instead of sliding), the loops either side of his speed are
+mixed at the same phase, and faster than a loop's own speed its stride lengthens and its step
+quickens a little each. Slowing to a stop he settles into the idle loop. His arms stay on the gun
+(the fitted carry), and his torso swings a little less for holding it. ELI5: a flip-book of a real
+person walking for each pace; walk faster and you flip faster, and between two paces both books are
+traced over each other.
+
+The Drowned shamble the same way, each in its own gait (its variant): one drags a leg, one staggers
+like a drunk, one lurches bent double; those loops are kept lopsided (not mirrored), and their
+reaching arms, lolling heads and twitches stay the game's own.
+
+Re-bake: `python3 tools/anim/bake_mocap.py --src <folder holding 100STYLE/>` (the 1.5 GB dataset from
+Zenodo record 8127870). A filmstrip of a stride: `--view "survivor/pose=walk/speed=1.9/t=0.3,90,4,3.2,0,0.95,30" out.png`
+(`t`: seconds further on).
 
 ## The death screen
 
@@ -645,8 +807,19 @@ stumbles past, open to a kick, and your next shot does double damage; slow motio
 dodge is an option. Kick in the last moment of a lunge (a counter) and it's thrown back and
 floored; kick too early and you eat the bite.
 
-Movement is camera-relative, and a cut keeps the previous camera's directions until you change
-direction, so a cut never reverses your movement. Classic tank controls are in the options
+Movement is camera-relative, and a cut never turns you round (`HeldFrame` in `controls.hpp`):
+for as long as the stick stays pushed, he goes by the camera you set off on, through any number
+of cuts and through a thumb correcting his line. Let go and the new camera's directions take over;
+a correction also takes them at once when the new camera looks within 45 degrees of the old one.
+A thumb slipping through the centre for a moment (a re-grip) doesn't count as letting go. ELI5: a
+driver steers by the road, not by whichever camera is filming the car.
+
+**The walk-through** (`--walkthrough report.txt`, `src/game_walk.cpp`) checks this on every
+doorway, passage and staircase in the game: it holds the stick through each one both ways,
+walking, running, and with a 40-degree correction just after the cut, and writes a line per try:
+OK, BOUNCED (back where he came from), STUCK (no headway: something stands in the way), and FLIP
+where letting go and pushing the same way again walks him back (the cameras either side face each
+other). Run it under `xvfb-run` like `--capture`. Classic tank controls are in the options
 (or T). Rumble arrives with the switch to raylib's SDL3 backend. F3 shows a debug line.
 
 ## Architecture
@@ -668,8 +841,11 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 | `include/dw/house.hpp`, `src/house.cpp` | The house's floor plan per storey: doorways paired across rooms, which room a point is in, sight lines across walls and shut doors, the way through the doors. Pure, unit-tested. |
 | `include/dw/doors.hpp` | A door leaf: pushed, leant on, slammed, shoved; its collider follows its swing. Pure, unit-tested. |
 | `include/dw/transition.hpp` | The beat between storeys: fade, dark, swap, fade up. Pure, unit-tested. |
+| `src/game_walk.cpp` | The walk-through (`--walkthrough`): the stick held through every doorway and staircase, to prove a cut never turns him round. |
 | `src/game_house.cpp` | The house in the game: loading every room, each storey's walls and Drowned, walking into the next room, the doors and their peeks, the Drowned following through doorways, the cellar's risers, the stairs, the retry checkpoint. |
-| `src/plates.hpp`, `src/plates.cpp` | The plates of the rooms around him, decoded in the background and uploaded a few a frame. |
+| `src/plates.hpp`, `src/plates.cpp` | The plates of the shots near him, decoded in the background and uploaded a few a frame. |
+| `include/dw/mocap.hpp`, `src/mocap.cpp`, `src/mocap_clips.inc` | The motion-captured gait loops and how they're played by his speed. Pure, unit-tested. |
+| `include/dw/streaming.hpp` | Which plates to keep: every shot he could step into within a few seconds; one let go only once he's well away. Pure, unit-tested. |
 | `src/status_view.cpp` | The status screen on screen: fonts, the 3D previews and icons, his figure, the tabs, the button glyphs. |
 | `include/dw/death.hpp` | The death screen's timing: the fade, the words, the drips, the choice. Pure, unit-tested. |
 | `include/dw/title.hpp` | The title screen's timing and its menu (New Game, Quit). Pure, unit-tested. |
@@ -679,12 +855,18 @@ direction, so a cut never reverses your movement. Classic tank controls are in t
 | `src/character_combat.cpp` | Hit capsules, wounds, severing, the guns in hand, and the aim and ready fitters (`--fitpistol`, `--fit870`). |
 | `src/shaders.cpp` | All GLSL, embedded. |
 | `src/game.cpp` | Room, cameras, input, AI, and render order. |
+| `include/dw/framing.hpp` | The following view: the window over a shot's background that follows him, its frustum, the establishing view and the push-ins. Pure, unit-tested. |
+| `include/dw/fxlive.hpp` | The live layer's timing: a fire's breath, a beacon, a failing tube, a wire's sparks. Pure, unit-tested. |
+| `src/game_fx.cpp` | The live layer drawn over the painting (flames, smoke, sparks, halos) and its light on the plate. |
+| `src/game_view.cpp` | The game's side of the following view: him, his target, a threat and a pickup as the shot sees them; each shot's starting zoom. |
 | `src/main.cpp` | Entry point, capture mode, and telemetry. |
 
 **Render order per frame:**
 
-1. The background is drawn, writing `gl_FragDepth` from its painted depth.
-2. Characters are drawn depth-tested against the painting.
+1. The background is drawn through the window (`dw/framing.hpp`), writing `gl_FragDepth` from its
+   painted depth.
+2. Characters are drawn depth-tested against the painting, through the same window: the camera's
+   frustum cropped to it, so they stand exactly where the painting has their floor.
 3. Blob shadows are drawn.
 4. The post pass (the film grade, grain and vignette) goes to the window.
 

@@ -1,0 +1,787 @@
+# damned_waters/tools/citygen/catastrophe.py
+# Purpose: the catastrophe pass (docs/city_aftermath.md): what the night did to each street, on top
+# of what the evacuation left. Each street in STORIES gets its set pieces (the tram that derailed,
+# the car that burned, the dead by the ambulance, the boards and the paint on the walls) and its
+# live effects for the engine (the room's "fx": fire, smoke, sparks, flashing lights, a flicker);
+# then the flood's leavings drift where water and panic would have dropped them, thick against the
+# walls, the kerbs and the railing (drift); and, once the cameras are planned, each shot gets
+# something close to its lens to look past (foreground), never where it would hide him.
+# Idempotent: everything it adds is marked "catastrophe" and replaced on every run.
+#
+# ELI5: the night's story, told by the props: a crime-scene photographer's list of what's where, and
+# why, laid out street by street before the cameras roll.
+from __future__ import annotations
+
+import math
+import random
+import sys
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parents[0] / "assets"))
+sys.path.insert(0, str(HERE.parents[0] / "pipeline"))
+import barricades  # noqa: E402
+import cameras  # noqa: E402
+import tram_layout  # noqa: E402
+import decals  # noqa: E402
+
+MARK = "catastrophe"
+# What the water left: (model, tip degrees or None for upright/random, big). Big things only off the
+# lanes he walks (he'd walk through them: they're dressing, not walls).
+DEBRIS = [("ph:can_rusted", 90, False), ("ph:plastic_bottle_gallon", 90, False), ("ph:bleach_bottle", 90, False),
+          ("ph:plastic_container", None, False), ("ph:trashbag", None, False), ("ph:trashbag", None, False),
+          ("ph:cardboard_box_01", 90, False), ("ph:bark_debris_01", None, False), ("ph:dry_branches_medium_01", None, False),
+          ("ph:rubber_boots", 90, False), ("ph:compost_bag_02", None, False), ("ph:plastic_crate_01", 90, False),
+          ("ph:plastic_jerrycan", 90, False), ("ph:metal_jerrycan", 90, False), ("ph:cement_bag", None, False),
+          ("ph:old_tyre", 90, True), ("ph:wooden_crate_02", 20, True), ("ph:plastic_monobloc_chair_01", 90, True),
+          ("ph:metal_trash_can", 90, True), ("ph:plastic_crate_03", None, True), ("ph:wooden_military_crate", None, True)]
+OUTSIDE_ONLY = {"ph:bark_debris_01", "ph:dry_branches_medium_01", "ph:old_tyre", "ph:cement_bag", "ph:compost_bag_02"}   # (not under a roof)
+# What can stand close to a lens without telling a different story from the street's.
+FOREGROUND = [("ph:trashbag", None), ("ph:old_tyre", 90), ("ph:plastic_crate_02", None), ("ph:metal_trash_can", 90),
+              ("ph:wooden_crate_02", 20), ("ph:compost_bags", None), ("ph:plastic_monobloc_chair_01", 90)]
+SILT = {"ph": "brown_mud_02", "wet": 0.75, "puddles": 0.3}
+
+
+def _decal(**spec):
+    spec = dict(spec)
+    spec["id"] = decals.decal_id(spec)
+    return spec
+
+
+def spray(x, y, z, yaw, w, h, text, color=(0.72, 0.04, 0.03), seed=1, out=0.012):
+    """Words sprayed on a wall: the decal's foot at (x, y, z), facing yaw."""
+    return {"type": "spray", "pos": [x, y, z], "yaw": yaw, "size": [w, h, 0.01], "collide": False, "out": out,
+            "decal": _decal(style="spray", text=text, color=list(color), aspect=round(w / h, 2), seed=seed)}
+
+
+def xcode(x, y, z, yaw, s, top, left, right, bottom, seed=2, out=0.012):
+    return {"type": "spray", "pos": [x, y, z], "yaw": yaw, "size": [s, s, 0.01], "collide": False, "out": out,
+            "decal": _decal(style="xcode", top=top, left=left, right=right, bottom=bottom, color=[0.95, 0.45, 0.02], seed=seed)}
+
+
+def poster(x, y, z, yaw, text, photo=True, seed=3, w=0.42):
+    return {"type": "spray", "pos": [x, y, z], "yaw": yaw, "size": [w, w / 0.71, 0.01], "collide": False, "out": 0.006,
+            "decal": _decal(style="poster", text=text, photo=photo, seed=seed)}
+
+
+def boards(x, z, yaw, w, h, y=0.3, x_brace=False, seed=9):
+    return {"type": "boards", "pos": [x, y, z], "yaw": yaw, "size": [w, h, 0.05], "collide": False, "x": x_brace, "seed": seed}
+
+
+def dead(x, z, yaw, variant=0, prone=False, blood=0.6, y=0.0):
+    """One of the dead where they fell (the engine poses the cast's bodies: never rising)."""
+    return {"pos": [x, y, z], "yaw": yaw, "variant": variant, "prone": prone, "blood": blood}
+
+
+def ground_y(spec, x, z):
+    """The street's surface at (x, z): the pavement or quay it's on (up its kerb), else the road (0)."""
+    ys = [g.get("y", 0.0) for g in spec.get("outdoor", {}).get("ground", [])
+          if g["min"][0] <= x <= g["max"][0] and g["min"][1] <= z <= g["max"][1]]
+    return max(ys) if ys else 0.0
+
+
+def drag(x0, z0, x1, z1, width=0.4):
+    """A drag mark in blood from (x0, z0) to (x1, z1) (a decal on the street)."""
+    L = math.hypot(x1 - x0, z1 - z0)
+    return {"type": "blood", "pos": [round((x0 + x1) / 2, 2), 0.0, round((z0 + z1) / 2, 2)], "yaw": round(math.degrees(math.atan2(-(z1 - z0), x1 - x0)), 1),
+            "size": [round(L, 2), 0.0, width], "smear": True, "collide": False}
+
+
+def model(ref, x, z, yaw, y=0.0, tip=None, collide=False, scale=None):
+    p = {"type": "model", "model": ref, "pos": [round(x, 2), round(y, 3), round(z, 2)], "yaw": round(yaw, 1), "collide": collide}
+    if tip is not None:
+        p["tip"] = tip
+    if scale is not None:
+        p["scale"] = scale
+    return p
+
+
+def tram_sections(tram, five=False):
+    """Where a derailed tram's sections stand, in the room's frame: (x, z, yaw degrees, length) each;
+    the engine's colliders and the camera planner go by these. `five`: the five sections of the
+    Amsterdam car (tram_layout's chain, which the Blender model stands on too); otherwise the three
+    of the plain body the older plates show."""
+    w = tram["size"][0]
+    yaws = tram.get("derail", {}).get("yaw", [])
+    ty = math.radians(tram.get("yaw", 0.0))
+    if five:
+        chain = tram_layout.chain(w, yaws)
+    else:
+        n, gap = 3, 0.25
+        seg = (w - gap * (n - 1)) / n
+        cx, cz, joint, chain = -w / 2 + seg / 2, 0.0, None, []
+        for i in range(n):
+            a = math.radians(yaws[i] if i < len(yaws) else 0.0)
+            if joint is not None:
+                cx, cz = joint[0] + math.cos(a) * (gap / 2 + seg / 2), joint[1] - math.sin(a) * (gap / 2 + seg / 2)
+            joint = (cx + math.cos(a) * (seg / 2 + gap / 2), cz - math.sin(a) * (seg / 2 + gap / 2))
+            chain.append((cx, cz, a, seg))
+    out = []
+    for cx, cz, a, seg in chain:
+        # the prop's own turn: local (x, z) -> room (x cos + z sin, -x sin + z cos)
+        X = tram["pos"][0] + cx * math.cos(ty) + cz * math.sin(ty)
+        Z = tram["pos"][2] - cx * math.sin(ty) + cz * math.cos(ty)
+        out.append((X, Z, tram.get("yaw", 0.0) + math.degrees(a), seg))
+    return out
+
+
+# ── The streets' stories ────────────────────────────────────────────────────────────────────
+def rokin_zuid(spec):
+    """The last tram north derailed when the power went: its back still on the rails, the rest slewed
+    across the road toward the water, windows gone, its wire down and arcing on the wet road. The water
+    came up the basin and over the quay to the hips and left its line on everything; one boat tore
+    loose. The shops are boarded and written on; the search team's marks are on the doors."""
+    props, fx = [], []
+    for p in spec["props"]:
+        if p["type"] == "tram":
+            p.update({"derail": {"yaw": [0.0, 9.0, 24.0], "roll": [0.0, 2.0, 6.5], "lift": [0.0, 0.0, 0.1]},
+                      "dark": [2], "smashed": [1, 2], "pantograph": False, "board": "", "collide": False, "power": 170.0})
+            five = spec["id"] in LOOK2
+            for k, (x, z, yaw, seg) in enumerate(tram_sections(p, five)):   # (solid, and something the cameras keep clear of and show)
+                props.append({"type": "tram_section", "pos": [round(x, 2), 0.0, round(z, 2)], "yaw": round(yaw, 1), "size": [round(seg, 2), 3.4, 2.4],
+                              "hero": k > 0})
+                if k == (2 if five else 1):
+                    fx.append({"kind": "flicker", "pos": [round(x, 2), 1.8, round(z, 2)], "radius": 4.5, "amount": 0.45, "seed": 3})
+        elif p["type"] == "canal_boat" and p.get("name") == "RONDVAART 7":
+            p.update({"yaw": 78, "list": 5.0, "pos": [-3.9, -0.95, p["pos"][2]]})   # torn off its pier against the quay
+    W = -90   # the fronts at x 26 face west: a decal's +z is -x
+    props += [
+        # the wire down across the road, arcing where it touches
+        {"type": "wire_down", "pos": [10.2, 0.0, 41.8], "yaw": 0, "from": [3.8, 5.8, 4.6], "sag": 0.7, "slack": 3.2, "seed": 4, "collide": False, "hero": True},
+        # the café: its windows boarded, its chairs piled against its door
+        boards(25.9, 43.4, W, 2.3, 2.3, seed=11), boards(25.9, 48.7, W, 2.3, 2.3, seed=12),
+        spray(25.86, 1.0, 43.4, W, 2.1, 0.8, "GEEN ETEN", (0.92, 0.9, 0.86), seed=13),
+        spray(25.86, 1.1, 48.7, W, 2.1, 0.75, "GEEN WATER", (0.92, 0.9, 0.86), seed=14),
+        # the hotel: its ground floor boarded, the survivors upstairs saying so
+        boards(25.9, 20.3, W, 2.2, 2.4, seed=21), boards(25.9, 22.8, W, 2.2, 2.4, seed=22), boards(25.9, 25.3, W, 2.2, 2.4, seed=23),
+        boards(25.9, 27.8, W, 2.2, 2.4, seed=24), boards(25.9, 30.3, W, 2.2, 2.4, seed=25),
+        spray(25.86, 0.9, 25.3, W, 6.2, 1.7, "HOTEL VOL\n14 LEVEND · 2e VERD.", seed=26),
+        # the houses: their doors searched and marked
+        boards(25.9, 38.0, W, 1.3, 2.3, x_brace=True, seed=31),
+        xcode(25.85, 0.9, 38.0, W, 1.15, "8/11 04:10", "BRW-3", "WATER", "2 DOOD", seed=32),
+        xcode(25.95, 0.8, 54.0, W, 1.1, "8/11 04:40", "BRW-3", "GAS", "0", seed=33),
+        # the museum's plinth, and the ticket office shuttered
+        spray(25.95, 0.7, 66.0, W, 6.5, 0.9, "ZE KOMEN UIT HET WATER", (0.88, 0.88, 0.84), seed=41),
+        model("ph:rollershutter_window_02", 25.75, 6.3, W),
+        poster(25.6, 1.25, 5.7, W, "VERMIST\nSANNE DE VRIES · 9 JAAR\nLAATST GEZIEN: ROKIN\nZIE CENTRAAL", seed=42),
+        poster(25.95, 1.3, 34.3, W, "VERMIST\nJOOST BAKKER · 71 JAAR\nIN PYJAMA, BLOTE VOETEN\nBEL 112", seed=43),
+        poster(25.95, 1.35, 50.1, W, "MEDEDELING\nEVACUATIE\nVERLAAT DE STAD VIA CENTRAAL\nNEEM NIETS MEE\nDRINK GEEN KRAANWATER", photo=False, seed=44),
+        # the bikes the water left wound into the railing, the rubbish against it
+        {"type": "bike", "pos": [0.55, 0.0, 31.2], "yaw": 95, "roll": 70, "size": [1.8, 1.1, 0.5], "collide": False, "seed": 150},
+        {"type": "bike", "pos": [0.5, 0.25, 32.1], "yaw": 80, "roll": -60, "size": [1.8, 1.1, 0.5], "collide": False, "seed": 151},
+        {"type": "bike", "pos": [0.6, 0.0, 36.4], "yaw": 100, "roll": 82, "size": [1.8, 1.1, 0.5], "collide": False, "seed": 152},
+        # what floats in the basin
+        model("ph:plastic_crate_01", -1.6, 33.5, 40, y=-1.02, tip=20), model("ph:old_tyre", -2.4, 35.2, 0, y=-1.05, tip=90),
+        model("ph:wooden_crate_02", -1.2, 37.0, 70, y=-1.08, tip=10), model("ph:plastic_bottle_gallon", -0.8, 34.4, 10, y=-1.0, tip=90),
+        model("ph:trashbag", -3.0, 31.0, 120, y=-1.06), model("ph:dry_branches_medium_01", -1.8, 29.0, 30, y=-1.0),
+        # the flood's silt over the whole street
+        {"type": "silt", "pos": [13.0, 0.0, 40.0], "size": [26.0, 0.0, 80.0], "material": dict(SILT), "cover": 0.5, "seed": 71, "collide": False},
+    ]
+    fx.append({"kind": "sparks", "pos": [10.2, 0.05, 41.8], "every": 2.4, "seed": 5})
+    props.append(drag(8.1, 44.9, 7.4, 43.5))
+    the_dead = [dead(7.2, 43.1, 160, 0, prone=True, blood=0.7),     # thrown through the tram's windscreen, crawled a metre
+                dead(11.0, 56.6, 75, 1, blood=0.55),                # by the derailed sections
+                dead(24.7, 21.0, 250, 2, prone=True, blood=0.8),    # under the hotel's boarded windows
+                dead(3.1, 24.2, 20, 0, blood=0.0),                  # pulled out of the water onto the quay
+                dead(20.9, 46.3, 300, 1, prone=True, blood=0.6),    # the taxi's driver, by his door
+                dead(-2.6, 43.5, 120, 2, prone=True, blood=0.0, y=-1.06)]   # face down in the basin
+    return props, fx, the_dead
+
+
+def rokin_noord(spec):
+    """The army's checkpoint at the Dam end, overrun; a car run into the quay and burned, still burning;
+    the ambulance crew's dead lined up by their van, which still flashes, like the police van up the
+    road; the police post papered with the missing; the metro's way in written over."""
+    props, fx = [], []
+    for p in spec["props"]:
+        if p["type"] == "aid_post":
+            p["covered"] = 2
+    W = -90
+    props += [
+        {"type": "vehicle", "pos": [5.6, 0.0, 16.4], "yaw": 35, "size": [4.4, 1.45, 1.8], "livery": "car", "burnt": True, "collide": True, "hero": True},
+        {"type": "glow", "pos": [5.6, 0.9, 16.4], "color": [1.0, 0.45, 0.12], "power": 700.0, "radius": 0.6, "collide": False},   # the fire's light, as the painting has it
+        {"type": "scorch", "pos": [5.6, 0.0, 16.4], "yaw": 35, "size": [7.0, 0.0, 5.5], "collide": False},
+        {"type": "body_bag", "pos": [8.2, 0.0, 26.3], "yaw": 0, "size": [1.85, 0.3, 0.62], "collide": False, "hero": True},
+        {"type": "body_bag", "pos": [8.2, 0.0, 27.1], "yaw": 3, "size": [1.85, 0.3, 0.62], "collide": False},
+        spray(25.95, 0.85, 17.0, W, 4.2, 0.9, "NIET NAAR BENEDEN", (0.92, 0.9, 0.86), seed=51),
+        spray(25.95, 1.85, 17.4, W, 3.2, 0.55, "ZE ZITTEN IN HET WATER", (0.72, 0.04, 0.03), seed=52),
+        poster(25.95, 1.3, 36.2, W, "VERMIST\nAYLA YILMAZ · 16 JAAR\nGROENE JAS\nLAATST GEZIEN: DAM", seed=53),
+        poster(25.95, 1.62, 36.75, W, "VERMIST\nPIETER EN ROOS\nWIJ ZIJN IN NOORD\n— MAMA", photo=False, seed=54),
+        poster(25.95, 1.15, 37.3, W, "VERMIST\nTHEO · 4 JAAR\nBLAUW REGENJASJE", seed=55),
+        poster(25.95, 1.55, 37.85, W, "WIE HEEFT HAAR GEZIEN?\nMARIEKE · 34\nVERPLEEGKUNDIGE", seed=56),
+        poster(25.95, 1.25, 38.4, W, "VERMIST\nOPA HENK · 88\nDEMENTEREND", seed=57),
+        spray(13.2, 0.2, 1.75, 180, 2.6, 0.6, "DAM = DOOD", (0.72, 0.04, 0.03), seed=58, out=0.33),
+        {"type": "silt", "pos": [13.0, 0.0, 40.0], "size": [26.0, 0.0, 80.0], "material": dict(SILT), "cover": 0.5, "seed": 72, "collide": False},
+    ]
+    fx += [{"kind": "fire", "pos": [5.6, 0.75, 16.4], "size": 1.3, "seed": 1},
+           {"kind": "smoke", "pos": [5.6, 1.8, 16.4], "size": 2.2, "seed": 2},
+           {"kind": "strobe", "pos": [22.3, 2.45, 46.0], "color": [0.15, 0.35, 1.0], "rate": 1.7, "seed": 3},
+           {"kind": "strobe", "pos": [11.0, 2.75, 24.0], "color": [0.15, 0.35, 1.0], "rate": 2.1, "seed": 4}]
+    the_dead = [dead(4.6, 9.4, 30, 0, blood=0.65),                   # at the checkpoint, where it was overrun
+                dead(21.4, 6.2, 210, 2, prone=True, blood=0.75),
+                dead(7.8, 18.7, 120, 1, prone=True, blood=0.5),      # by the car that burned
+                dead(25.0, 37.2, 260, 2, blood=0.45),                # under the missing, at the police post
+                dead(13.6, 22.4, 340, 0, prone=True, blood=0.85)]    # in the road by the ambulance
+    return props, fx, the_dead
+
+
+# ── Every other street: the night's marks laid by rule ──────────────────────────────────────
+SAYINGS = ["HELP", "WIJ LEVEN NOG", "3 LEVEND\nNAAR NOORD", "NIET OPENDOEN", "BESMET", "GEEN WATER", "GEEN ETEN",
+           "GEPLUNDERD", "WAAR IS IEDEREEN?", "BLIJF WEG", "RAAK ZE NIET AAN", "SCHIET OP HET HOOFD", "MAMA WIJ\nZIJN BIJ OMA",
+           "LUISTER NIET\nNAAR DE RADIO", "ZE ZITTEN IN\nHET WATER", "NIEMAND MEER\nBINNEN", "2 KINDEREN\nBOVEN"]
+MISSING = [("ELIF DEMIR", "7 JAAR", "ROZE JAS"), ("HENK VAN DAM", "81 JAAR", "WANDELSTOK"), ("NOOR JANSEN", "15 JAAR", "SCHOOLTAS"),
+           ("KEES DE BOER", "52 JAAR", "BLAUWE OVERALL"), ("LOTTE VISSER", "29 JAAR", "ZWANGER"), ("MILAN BAKKER", "4 JAAR", "GELE LAARSJES"),
+           ("FATIMA EL AMRANI", "63 JAAR", "GROENE HOOFDDOEK"), ("BRAM SMIT", "11 JAAR", "VOETBALSHIRT")]
+NORMALS = {"west": (-1.0, 0.0, -90.0), "east": (1.0, 0.0, 90.0), "north": (0.0, -1.0, 180.0), "south": (0.0, 1.0, 0.0)}
+
+
+def _front_spots(f):
+    """A facade's ground-floor bays: (along-centre, bay width, is the door's bay), and how to place a
+    thing on its face: (x, z) at a point along it, out in front by `out`, and the yaw facing out."""
+    nx, nz, yaw = NORMALS[f["facing"]]
+    if f["facing"] in ("west", "east"):
+        a, b, line = f["z0"], f["z1"], f["x"]
+        at = lambda u, out: (line + nx * out, u)
+    else:
+        a, b, line = f["x0"], f["x1"], f["z"]
+        at = lambda u, out: (u, line + nz * out)
+    bays = max(1, int(f.get("bays", 3)))
+    door = (f.get("shop") or {}).get("door_bay", f.get("door_bay", 1))
+    bw = (b - a) / bays
+    return [(a + bw * (k + 0.5), bw, k == door) for k in range(bays)], at, yaw
+
+
+def auto_story(spec, rng):
+    """The night's marks, by rule, for a street with no hand-written story: shops boarded and written
+    on (some looted, their glass on the pavement), the search teams' marks on house doors, the
+    missing pasted up; beacons left turning on the police and ambulances, cars burned out (one
+    still burning); the dead where people fell, clear of every door; the flood's silt."""
+    props, fx, the_dead = [], [], []
+    o = spec.get("outdoor") or {}
+    for f in o.get("facades", []):
+        if f.get("facing") not in NORMALS or not (f.get("x0") is not None or f.get("z0") is not None):
+            continue
+        bays, at, yaw = _front_spots(f)
+        shop = f.get("shop")
+        for u, bw, door in bays:
+            r = rng.random()
+            if shop and not door and r < 0.45 and bw > 1.2:   # boarded, and often written on
+                x, z = at(u, 0.1)
+                props.append(boards(round(x, 2), round(z, 2), yaw, round(bw - 0.4, 2), 2.3, seed=int(rng.integers(1 << 16))))
+                if rng.random() < 0.6:
+                    x, z = at(u, 0.14)
+                    props.append(spray(round(x, 2), 0.9, round(z, 2), yaw, round(bw - 0.6, 2), 0.8, SAYINGS[int(rng.integers(len(SAYINGS)))],
+                                       (0.92, 0.9, 0.86) if rng.random() < 0.5 else (0.72, 0.04, 0.03), seed=int(rng.integers(1 << 16))))
+            elif not shop and door and r < 0.55:   # a house the search teams went through
+                x, z = at(u, 0.04)
+                day, mins = 8, int(rng.integers(20, 59))
+                props.append(xcode(round(x, 2), 0.85, round(z, 2), yaw, 1.05, f"{day}/11 0{int(rng.integers(2, 6))}:{mins}",
+                                   f"BRW-{int(rng.integers(1, 9))}", ["WATER", "GAS", "INSTORT", "-"][int(rng.integers(4))],
+                                   str(int(rng.choice([0, 0, 1, 2, 3, 5]))) + (" DOOD" if rng.random() < 0.5 else ""), seed=int(rng.integers(1 << 16))))
+            if not door and rng.random() < 0.14:   # the missing, pasted up (on the boards or the wall beside)
+                x, z = at(u + bw * 0.32, 0.16)
+                name, age, mark = MISSING[int(rng.integers(len(MISSING)))]
+                props.append(poster(round(x, 2), 1.25, round(z, 2), yaw, f"VERMIST\n{name} · {age}\n{mark}\nZIE CENTRAAL", seed=int(rng.integers(1 << 16))))
+    burning = False
+    for p in spec["props"]:
+        if p["type"] != "vehicle":
+            continue
+        liv = p.get("livery", "car")
+        x, y, z = p["pos"]
+        w, h, d = p["size"]
+        a = math.radians(p.get("yaw", 0.0))
+        fx_, fz_ = math.cos(a), -math.sin(a)   # the vehicle's front (local +x)
+        if liv in ("police", "ambulance"):
+            fx.append({"kind": "strobe", "pos": [round(x + fx_ * w * 0.25, 2), round(h + 0.12, 2), round(z + fz_ * w * 0.25, 2)],
+                       "color": [0.15, 0.35, 1.0], "rate": round(float(rng.uniform(1.5, 2.3)), 2), "seed": int(rng.integers(100))})
+        elif liv in ("car", "taxi") and rng.random() < 0.5:
+            p["burnt"] = True
+            p["hero"] = True
+            props.append({"type": "scorch", "pos": [x, 0.0, z], "yaw": p.get("yaw", 0.0), "size": [w + 2.4, 0.0, d + 3.0], "collide": False})
+            if not burning:
+                burning = True
+                fx += [{"kind": "fire", "pos": [x, 0.75, z], "size": 1.3, "seed": int(rng.integers(100))},
+                       {"kind": "smoke", "pos": [x, 1.8, z], "size": 2.2, "seed": int(rng.integers(100))}]
+                props.append({"type": "glow", "pos": [x, 0.9, z], "color": [1.0, 0.45, 0.12], "power": 700.0, "radius": 0.6, "collide": False})
+    # The dead: where people fell, never near a door, a spawn, a thing to pick up or a Drowned.
+    at = lambda t: t.get("pos0") or t["pos"]   # (as the street stood before its cordon: a rebuild tells it the same way)
+    keep_off = [(at(i)[0], at(i)[2]) for i in spec.get("interactables", [])] + \
+               [(at(sp)[0], at(sp)[2]) for sp in spec.get("spawns", {}).values()] + [(at(e)[0], at(e)[2]) for e in spec.get("enemies", [])]
+    xs, zs, ok = cameras.open_floor({**spec, "props": [{**p, "size": p["size0"]} if "size0" in p else p   # (a thing as it stood when the night began:
+                                                       for p in spec["props"] if not p.get("barricade")]})   #  the same dead on every run)
+    cells = [(float(xs[i]), float(zs[k])) for i in range(len(xs)) for k in range(len(zs)) if ok[i, k]]
+    (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
+    area = (bx1 - bx0) * (bz1 - bz0)
+    want = int(min(7, max(2, area / 450))) if o else int(min(5, max(1, area / 160)))   # (indoors: fewer, by the room's size)
+    for _ in range(400):
+        if len(the_dead) >= want or not cells:
+            break
+        x, z = cells[int(rng.integers(len(cells)))]
+        if any(math.hypot(x - a, z - b) < 2.6 for a, b in keep_off) or any(math.hypot(x - b_["pos"][0], z - b_["pos"][2]) < 3.0 for b_ in the_dead):
+            continue
+        the_dead.append(dead(round(x, 2), round(z, 2), int(rng.integers(360)), int(rng.integers(3)), prone=bool(rng.random() < 0.55),
+                             blood=round(float(rng.uniform(0.35, 0.85)), 2)))
+    if o:
+        props.append({"type": "silt", "pos": [(bx0 + bx1) / 2, 0.0, (bz0 + bz1) / 2], "size": [bx1 - bx0, 0.0, bz1 - bz0],
+                      "material": dict(SILT), "cover": 0.5, "seed": int(rng.integers(1000)), "collide": False})
+    return props, fx, the_dead
+
+
+def dam(spec):
+    """The evacuation point, overrun: the queues for the buses broke where they stood; the field
+    hospital's dead under blankets and a row of bags beside it; the last bus dark, its windows in."""
+    props, fx, the_dead = auto_story(spec, np.random.default_rng(907))
+    for p in spec["props"]:
+        if p["type"] == "aid_post":
+            p["covered"] = 3
+        elif p["type"] == "bus" and p.get("board") == "NIET INSTAPPEN":
+            p.update({"smashed": [0, 1], "dark": [1], "hero": True})
+    props += [{"type": "body_bag", "pos": [69.6, 0.0, 29.6 + 1.25 * k], "yaw": 90 + (k % 3 - 1) * 4, "size": [1.85, 0.3, 0.62],
+               "collide": False, "hero": k == 0} for k in range(6)]
+    the_dead += [dead(76.2, 22.5, 200, 0, prone=True, blood=0.7), dead(77.4, 30.8, 20, 2, blood=0.5),
+                 dead(75.6, 49.2, 290, 1, prone=True, blood=0.85), dead(78.0, 56.6, 110, 0, blood=0.6),
+                 dead(67.6, 41.2, 160, 2, prone=True, blood=0.65)]   # (at the monument's foot, off its steps)
+    return props, fx, the_dead
+
+
+def stationsplein(spec):
+    """The crush at Centraal: they fell in front of the doors when the doors were shut; prams and cases
+    left in heaps; the dead in bags by the aid tent; a bus with its windows in, dark; a car run into the
+    barriers and burned, still burning."""
+    props, fx, the_dead = auto_story(spec, np.random.default_rng(911))
+    for p in spec["props"]:
+        if p["type"] == "bus" and p["pos"][0] > 40:
+            p.update({"smashed": [0], "dark": [0], "hero": True})
+    props += [{"type": "vehicle", "pos": [8.0, 0.0, 40.0], "yaw": 60, "size": [4.4, 1.45, 1.8], "livery": "car", "burnt": True, "collide": True, "hero": True},
+              {"type": "scorch", "pos": [8.0, 0.0, 40.0], "yaw": 60, "size": [7.0, 0.0, 5.5], "collide": False},
+              {"type": "glow", "pos": [8.0, 0.9, 40.0], "color": [1.0, 0.45, 0.12], "power": 700.0, "radius": 0.6, "collide": False}]
+    props += [{"type": "body_bag", "pos": [65.0, 0.0, 22.5 + 1.2 * k], "yaw": 90 + (k % 2) * 5, "size": [1.85, 0.3, 0.62], "collide": False}
+              for k in range(5)]
+    fx += [{"kind": "fire", "pos": [8.0, 0.75, 40.0], "size": 1.3, "seed": 21}, {"kind": "smoke", "pos": [8.0, 1.8, 40.0], "size": 2.2, "seed": 22}]
+    the_dead += [dead(30.1, 7.1, 170, 0, prone=True, blood=0.5), dead(31.2, 8.4, 40, 1, blood=0.4),   # (clear of the cordon)
+                 dead(39.1, 6.4, 300, 2, prone=True, blood=0.6), dead(41.8, 9.2, 120, 0, prone=True, blood=0.45),
+                 dead(26.8, 10.8, 250, 2, blood=0.55), dead(44.5, 12.6, 80, 1, prone=True, blood=0.5)]
+    return props, fx, the_dead
+
+
+# The streets told by rule (auto_story), as their backgrounds are re-rendered (so a room's cameras and
+# its pictures always agree): add a room here in the same commit as its new plates.
+AUTO = {"apotheek", "beurs_zaal", "bioscoop", "bloemenmarkt", "centraal_hal", "damrak_noord", "damrak_zuid", "herengracht", "hotel_bar", "hotel_lobby", "kalversteeg", "kalverstraat", "kalverstraat_noord", "metro_centraal", "metro_rokin", "muntplein", "nieuwe_kerk", "reguliersbreestraat", "rembrandtplein", "rondvaartboot", "station_noord", "thorbeckeplein", "warenhuis"}
+
+
+STORIES = {"rokin_zuid": rokin_zuid, "rokin_noord": rokin_noord, "dam": dam, "stationsplein": stationsplein}
+ACTIVE = {"dam", "rokin_noord", "rokin_zuid", "stationsplein"}   # the hand-told streets whose plates are rendered (others wait for theirs)
+DRESSED = {"apotheek", "beurs_zaal", "bioscoop", "bloemenmarkt", "centraal_hal", "dam", "damrak_noord", "damrak_zuid", "herengracht", "hotel_bar", "hotel_lobby", "kalversteeg", "kalverstraat", "kalverstraat_noord", "metro_centraal", "metro_rokin", "muntplein", "nieuwe_kerk", "reguliersbreestraat", "rembrandtplein", "rokin_noord", "rokin_zuid", "rondvaartboot", "station_noord", "stationsplein", "thorbeckeplein", "warenhuis"}   # the rooms whose plates show dress() (the night's leavings by what each place was), not the old scatter
+for _r in filter(None, __import__("os").environ.get("DW_DRESSED", "").split(",")):
+    DRESSED.add(_r)
+# The rooms whose plates show the second look (2026-11): the Amsterdam tram's five sections, wheelie
+# bins for dustbins. A room joins in the commit that brings its re-rendered plates. DW_LOOK2=a,b,...
+# adds rooms for a build of the next ones to render (into a scratch DW_ROOMS).
+LOOK2 = {"apotheek", "beurs_zaal", "bioscoop", "bloemenmarkt", "centraal_hal", "dam", "damrak_noord", "damrak_zuid", "herengracht", "hotel_bar", "hotel_lobby", "kalversteeg", "kalverstraat", "kalverstraat_noord", "metro_centraal", "metro_rokin", "muntplein", "nieuwe_kerk", "reguliersbreestraat", "rembrandtplein", "rokin_noord", "rokin_zuid", "rondvaartboot", "station_noord", "stationsplein", "thorbeckeplein", "warenhuis"}
+for _r in filter(None, __import__("os").environ.get("DW_LOOK2", "").split(",")):
+    LOOK2.add(_r)
+BINS = ["sf:bin_green", "sf:bin_blue", "sf:bin_orange"]   # licensed models (tools/assets/models.json): what Amsterdam puts out, not a film's dustbin
+# DW_STORIES=a,b,...: tell these too (a build of the next rooms to render, into a scratch DW_ROOMS)
+for _r in filter(None, __import__("os").environ.get("DW_STORIES", "").split(",")):
+    (ACTIVE if _r in STORIES else AUTO).add(_r)
+
+
+
+def _scatter(spec, rng, n):
+    """(The old leavings, for a room not yet re-dressed: n things from DEBRIS dropped where the water slowed, against whatever
+    stands (most within a metre of a wall, a kerb, the railing, a car), some out in the open; the big
+    ones only off the lanes he walks."""
+    xs, zs, ok = cameras.open_floor(spec)
+    X, Z = np.meshgrid(xs, zs, indexing="ij")
+    # how far each open cell is from anything solid or the room's edge (cells; 4-neighbour steps)
+    dist = np.where(ok, 99, 0).astype(np.int32)
+    for _ in range(8):
+        d2 = dist.copy()
+        d2[1:, :] = np.minimum(d2[1:, :], dist[:-1, :] + 1)
+        d2[:-1, :] = np.minimum(d2[:-1, :], dist[1:, :] + 1)
+        d2[:, 1:] = np.minimum(d2[:, 1:], dist[:, :-1] + 1)
+        d2[:, :-1] = np.minimum(d2[:, :-1], dist[:, 1:] + 1)
+        dist = np.where(ok, d2, 0)
+    lanes = barricades.in_lanes(barricades.LANES.get(spec["id"], []), X, Z)
+    w = np.where(ok, np.exp(-dist * cameras.CELL / 0.7) + 0.06, 0.0).ravel()
+    if w.sum() <= 0:
+        return []
+    picks = rng.choice(len(w), size=min(n, int((w > 0).sum())), replace=False, p=w / w.sum())
+    out = []
+    for k in picks:
+        i, j = divmod(int(k), len(zs))
+        x, z = float(xs[i]) + rng.uniform(-0.1, 0.1), float(zs[j]) + rng.uniform(-0.1, 0.1)
+        pool = DEBRIS if spec.get("outdoor") else [d_ for d_ in DEBRIS if d_[0] not in OUTSIDE_ONLY]
+        choices = [d for d in pool if not (d[2] and lanes[i, j])]
+        ref, tip, _ = choices[rng.integers(len(choices))]
+        out.append(model(ref, x, z, float(rng.uniform(0, 360)), tip=tip if tip is None or rng.random() < 0.8 else None))
+    return out
+
+
+def apply(spec):
+    """The street's story: its set pieces and its live effects (before the cordons, so their barriers
+    fence what now stands where, and before the cameras, which plan round it)."""
+    tell = STORIES.get(spec["id"]) if spec["id"] in ACTIVE else None
+    if tell is None and spec["id"] in AUTO:
+        rng0 = np.random.default_rng(sum(map(ord, spec["id"])) + 7)
+        tell = lambda sp: auto_story(sp, rng0)
+    if tell is None:   # (a street with no story yet: untouched)
+        return spec
+    spec["props"] = [p for p in spec.get("props", []) if not p.get(MARK)]
+    spec["fx"] = [f for f in spec.get("fx", []) if not f.get(MARK)]
+    spec["dead"] = [b for b in spec.get("dead", []) if not b.get(MARK)]
+    props, fx, the_dead = tell(spec)
+    for b in the_dead:   # (lying on the pavement or the quay it fell on, not sunk into it)
+        if b["pos"][1] == 0.0:
+            b["pos"][1] = round(ground_y(spec, b["pos"][0], b["pos"][2]), 3)
+    for x in props + fx + the_dead:
+        x[MARK] = True
+    spec["props"] += props
+    spec["fx"] += fx
+    spec["dead"] += the_dead
+    return spec
+
+
+# ── What the night left, placed by what each place was ───────────────────────────────────────────
+# Not a scatter: the water's line of litter along the walls and kerbs it reached, in clumps; heaps
+# against what stood in its way; each place's own things knocked over where they stood (a café's
+# chairs, a shop's stock, the bin by a lamp); what people dropped on the way out; indoors, what the
+# night's use of the hall left by its beds and counters. Big things only where they belong.
+WRACK = ["ph:bark_debris_01", "ph:dry_branches_medium_01", "ph:can_rusted", "ph:plastic_bottle_gallon", "ph:bleach_bottle",
+         "ph:plastic_container", "ph:trashbag", "ph:cardboard_box_01"]
+WRACK_IN = ["ph:can_rusted", "ph:plastic_bottle_gallon", "ph:bleach_bottle", "ph:plastic_container", "ph:cardboard_box_01"]
+BELONGINGS = [("ph:vintage_suitcase", None), ("ph:vintage_suitcase", 90), ("ph:trashbag", None), ("ph:rubber_boots", 90),
+              ("ph:wicker_basket_01", 90), ("ph:plastic_jerrycan", None)]
+CAFES = {"cafe", "snack", "restaurant", "bar", "ijs", "club"}
+INDOORS = {   # a hall's or a shop's use that night: by which of its things, what it leaves, and how often
+    "shelter": [({"camp_bed", "bench", "luggage", "shop_unit", "ticket_machine"},
+                 [("ph:vintage_suitcase", None), ("ph:vintage_suitcase", 90), ("ph:wicker_basket_01", None), ("ph:rubber_boots", None),
+                  ("ph:plastic_bottle_gallon", None), ("ph:jug_01", None), ("ph:vintage_oil_lamp", None), ("ph:russian_food_cans_01", None),
+                  ("ph:trashbag", None), ("ph:wooden_stool_01", 90)], 0.7),
+                ({"trestle_table", "counter"}, [("ph:medical_box", None), ("ph:clipboard", None), ("ph:vintage_crutches_01", 90),
+                                                ("ph:wheelchair_01", None), ("ph:plastic_jerrycan", None)], 0.9)],
+    "shop": [({"shelving", "display_case", "clothes_rail", "counter"},
+              [("ph:cardboard_box_01", None), ("ph:cardboard_box_01", 90), ("ph:bleach_bottle", 90), ("ph:multi_cleaner_bottle", 90),
+               ("ph:lubricant_spray", 90), ("ph:plastic_container", None)], 0.5)],
+    "lobby": [({"counter", "ticket_booth", "stanchions"},
+               [("ph:vintage_suitcase", None), ("ph:vintage_suitcase", 90), ("ph:trashbag", None), ("ph:wooden_stool_01", 90)], 0.5)],
+    "bar": [({"counter"}, [("ph:wine_bottles_01", None), ("ph:wooden_stool_01", 90), ("ph:dining_chair_02", 90)], 0.5)],
+}
+USE = {"nieuwe_kerk": "shelter", "centraal_hal": "shelter", "beurs_zaal": "shelter", "metro_centraal": "shelter",
+       "metro_rokin": "shelter", "warenhuis": "shop", "apotheek": "shop", "bioscoop": "lobby", "hotel_lobby": "lobby",
+       "hotel_bar": "bar", "rondvaartboot": "shelter"}
+CABINS = {"rondvaartboot"}   # rooms that are one narrow cabin and its landing (the tour boat): belongings dropped where people got off
+STOPS = {"vehicle", "bus", "tram", "tram_section", "light_tower", "evac_board", "kiosk", "bench", "sandbags", "aid_post"}
+SETTLE = {"model", "bike", "luggage", "leaflets", "broken_glass", "body_bag", "sandbags", "blood", "scorch", "evac_board",
+          "fire_pump", "boards", "trestle_table"}   # things that rest on the street: on the pavement where they stand
+
+
+def dress(spec, rng):
+    """The night's leavings in this room (see above): a list of models, none on another, all on open floor."""
+    xs, zs, ok = cameras.open_floor(spec)
+    outdoor = bool(spec.get("outdoor"))
+    look2 = spec["id"] in LOOK2
+    placed, out = [], []
+
+    def cell(x, z):
+        return int(np.argmin(np.abs(xs - x))), int(np.argmin(np.abs(zs - z)))
+
+    def put(ref, x, z, r=0.25, tip=None, yaw=None):
+        i, k = cell(x, z)
+        if not ok[i, k] or any(math.hypot(x - a, z - b) < r + c for a, b, c in placed):
+            return False
+        if ref not in WRACK and any(q["model"] == ref and math.hypot(x - q["pos"][0], z - q["pos"][2]) < 3.0 for q in out):
+            return False   # (not the same thing twice side by side: a set dresser varies what's dropped)
+        y = ground_y(spec, x, z) if outdoor else 0.0
+        out.append(model(ref, x, z, float(rng.uniform(0, 360)) if yaw is None else yaw, y=y, tip=tip))
+        placed.append((x, z, r))
+        return True
+
+    def clump(x, z, things, n, spread):
+        for _ in range(n * 3):
+            if n <= 0:
+                break
+            ref, tip = things[int(rng.integers(len(things)))] if isinstance(things[0], tuple) else (things[int(rng.integers(len(things)))], None)
+            a, d = rng.uniform(0, 2 * math.pi), spread * math.sqrt(rng.uniform(0, 1))
+            if put(ref, x + d * math.cos(a), z + d * math.sin(a), 0.2, tip=tip):
+                n -= 1
+    # 1. the water's line: clumps of litter at the foot of the facades and along the quay's railings it
+    #    reached, one every ~10 m (outdoors: indoors the halls were swept by people, not by the water)
+    if outdoor:
+        runs = []
+        for fa in spec["outdoor"].get("facades", []):
+            fx, fz = FACING.get(fa.get("facing"), (0.0, 0.0))
+            if fx or fz:
+                lo, hi = (fa["z0"], fa["z1"]) if fx else (fa["x0"], fa["x1"])
+                runs.append((lambda t, fa=fa, fx=fx, fz=fz: (fa["x"] + fx * 0.45, t) if fx else (t, fa["z"] + fz * 0.45), lo, hi))
+        for p in spec["props"]:
+            if p["type"] == "railing" and "size" in p:
+                a, L = math.radians(p.get("yaw", 0.0)), p["size"][0]
+                runs.append((lambda t, p=p, a=a: (p["pos"][0] + t * math.cos(a), p["pos"][2] - t * math.sin(a)), -L / 2, L / 2))
+        for at, lo, hi in runs:
+            t = lo + float(rng.uniform(1.0, 7.0))
+            while t < hi - 0.5:
+                x, z = at(t)
+                clump(x, z, WRACK, int(rng.integers(2, 5)), 0.55)
+                t += float(rng.uniform(6.0, 10.0))
+    if outdoor:
+        o = spec["outdoor"]
+        # 2. heaps against what stood in the water's way: a car, a tram, a stall, a lamp's foot
+        stops = [(p["pos"][0], p["pos"][2], p["size"][0] / 2, p["size"][2] / 2, math.radians(p.get("yaw", 0.0)))
+                 for p in spec["props"] if p["type"] in STOPS and "size" in p]
+        stops += [(x, z, 0.15, 0.15, 0.0) for x, z in o.get("lamps", [])]
+        (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
+        heaps = min(8, max(1, int((bx1 - bx0) * (bz1 - bz0) / 300)))
+        for j in rng.permutation(len(stops))[:heaps * 2]:
+            if heaps <= 0:
+                break
+            cx, cz, hx, hz, a = stops[int(j)]
+            side = rng.uniform(0, 2 * math.pi)
+            lx, lz = math.cos(side) * (hx + 0.6), math.sin(side) * (hz + 0.6)
+            x, z = cx + lx * math.cos(a) + lz * math.sin(a), cz - lx * math.sin(a) + lz * math.cos(a)
+            i, k = cell(x, z)
+            if not ok[i, k]:
+                continue
+            if rng.random() < 0.5:
+                if look2:
+                    put(BINS[int(rng.integers(len(BINS)))], x, z, 0.45, tip=90 if rng.random() < 0.6 else None)
+                else:
+                    put("ph:metal_trash_can", x, z, 0.35, tip=90)
+            clump(x, z, WRACK, int(rng.integers(5, 9)), 0.9)
+            heaps -= 1
+        # 3. the street's own things, knocked over where they stood: a café's chairs, a shop's stock, a bin by a lamp
+        for fa in o.get("facades", []):
+            fx, fz = FACING.get(fa.get("facing"), (0.0, 0.0))
+            shop = fa.get("shop") or {}
+            if (fx == 0 and fz == 0) or not shop:
+                continue
+            lo, hi = (fa["z0"], fa["z1"]) if fx else (fa["x0"], fa["x1"])
+            t = float(rng.uniform(lo + 1.0, max(lo + 1.1, hi - 1.0)))
+            d = float(rng.uniform(1.2, 2.2))
+            x, z = (fa["x"] + fx * d, t) if fx else (t, fa["z"] + fz * d)
+            if shop.get("kind") in CAFES and rng.random() < 0.7:
+                put("ph:round_wooden_table_01", x, z, 0.45, tip=90 if rng.random() < 0.5 else None)
+                for _ in range(int(rng.integers(1, 4))):
+                    a = rng.uniform(0, 2 * math.pi)
+                    put("ph:dining_chair_02", x + 0.8 * math.cos(a), z + 0.8 * math.sin(a), 0.3, tip=90 if rng.random() < 0.6 else None)
+            elif rng.random() < 0.3:   # (looted: its stock dropped on the way out of the door)
+                clump(x, z, [("ph:cardboard_box_01", None), ("ph:cardboard_box_01", 90), ("ph:plastic_container", None)], int(rng.integers(2, 4)), 0.8)
+        for x, z in o.get("lamps", []):
+            if rng.random() < 0.2:
+                a = rng.uniform(0, 2 * math.pi)
+                if put(BINS[int(rng.integers(len(BINS)))] if look2 else "ph:metal_trash_can", x + 0.55 * math.cos(a), z + 0.55 * math.sin(a), 0.4 if look2 else 0.35,
+                       tip=None if look2 and rng.random() < 0.5 else 90):
+                    put("ph:trashbag", x + 1.1 * math.cos(a), z + 1.1 * math.sin(a), 0.3)
+    if not outdoor or spec["id"] in USE:   # (a boat at its pier is out of doors, but it was a shelter all the same)
+        # 5. indoors: what the night's use of the hall left by its beds, tables and counters
+        for p in spec["props"]:
+            for near, things, often in INDOORS.get(USE.get(spec["id"], ""), []):
+                if p["type"] not in near or "size" not in p or rng.random() >= often:
+                    continue
+                a = math.radians(p.get("yaw", 0.0))
+                ref, tip = things[int(rng.integers(len(things)))]
+                for _ in range(4):   # (a side of it with floor to stand a thing on)
+                    side = rng.uniform(0, 2 * math.pi)
+                    lx, lz = math.cos(side) * (p["size"][0] / 2 + 0.7), math.sin(side) * (p["size"][2] / 2 + 0.7)
+                    if put(ref, p["pos"][0] + lx * math.cos(a) + lz * math.sin(a), p["pos"][2] - lx * math.sin(a) + lz * math.cos(a), 0.3, tip=tip):
+                        break
+    if spec["id"] in CABINS:   # what people carried off the boat, dropped where they landed: on wide floor, never in the one-person aisle
+        wide = ok.copy()
+        for di in (-2, -1, 1, 2):
+            for dk in (-2, -1, 1, 2):
+                wide &= np.roll(np.roll(ok, di, axis=0), dk, axis=1)
+        wide[:2, :] = wide[-2:, :] = wide[:, :2] = wide[:, -2:] = False
+        cells = np.argwhere(wide)
+        for _ in range(3 if len(cells) else 0):
+            i, k = cells[int(rng.integers(len(cells)))]
+            clump(float(xs[i]), float(zs[k]), BELONGINGS, int(rng.integers(1, 3)), 0.6)
+    # 4. what people dropped on their way out: belongings near the doors they left by
+    exits = [(i["pos"][0], i["pos"][2]) for i in spec.get("interactables", []) if i.get("kind") in ("door", "end")]
+    for ex, ez in exits:
+        if rng.random() < (0.5 if outdoor else 0.35):
+            a = rng.uniform(0, 2 * math.pi)
+            d = rng.uniform(2.5, 6.0)
+            clump(ex + d * math.cos(a), ez + d * math.sin(a), BELONGINGS, int(rng.integers(1, 3)), 1.2)
+    return out
+
+
+def leavings(spec, n=None):
+    """What the night left (dress()), after the cordons: round their barriers too."""
+    if spec["id"] not in ACTIVE and spec["id"] not in AUTO:
+        return spec
+    spec["props"] = [p for p in spec["props"] if not p.get(MARK + "_drift")]
+    if spec["id"] in LOOK2:   # the street's own dustbins too: what the city puts out, by where each stands
+        for p in spec["props"]:
+            if p.get("model") == "ph:metal_trash_can":
+                p["model"] = BINS[int(abs(p["pos"][0] * 31 + p["pos"][2] * 17)) % len(BINS)]
+                p.pop("scale", None)
+            if p["type"] == "bus" and p["size"][0] > 14:   # (a rigid city bus, a licensed model: the bendy one was our own smooth body)
+                p.setdefault("size0", list(p["size"]))   # (the story placed its dead round the bendy one: they stay where they fell)
+                p["size"] = [12.0, p["size"][1], p["size"][2]]
+    rng = np.random.default_rng(sum(map(ord, spec["id"])))   # (the same street, the same mess, every run)
+    if spec["id"] in DRESSED:
+        for p in spec["props"]:   # (what stands on a pavement or the quay stands on it, not sunk into it)
+            if p["type"] in SETTLE and p["pos"][1] == 0.0:
+                p["pos"][1] = round(ground_y(spec, p["pos"][0], p["pos"][2]), 3)
+        left = dress(spec, rng)
+    else:   # (not re-rendered yet: the old scatter its plates show)
+        (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
+        left = _scatter(spec, rng, int(min(180, max(12, (bx1 - bx0) * (bz1 - bz0) * 0.09))) if n is None else n)
+    for p in left:
+        p[MARK] = p[MARK + "_drift"] = True
+        spec["props"].append(p)
+    return spec
+
+
+def foreground(spec, per_shot=0):
+    """Something close to each shot's lens to look past: low in a bottom corner of the picture, 1.5-3.5 m
+    from the lens, off the lanes, hiding him from no shot. Off (per_shot 0): a bin or a crate put by
+    every lens for its own sake was clutter, not the street's story; what stands by a lens now is
+    what the place left there (dress())."""
+    if spec["id"] not in ACTIVE and spec["id"] not in AUTO:
+        return spec
+    spec["props"] = [p for p in spec["props"] if not p.get(MARK + "_fg")]
+    if spec["id"] not in DRESSED:
+        per_shot = max(per_shot, 1)   # (not re-rendered yet: the lens props its plates show)
+    if per_shot <= 0:
+        return spec
+    xs, zs, ok = cameras.open_floor(spec)
+    X, Z = np.meshgrid(xs, zs, indexing="ij")
+    lanes = barricades.in_lanes(barricades.LANES.get(spec["id"], []), X, Z)
+    floor_x, floor_z, floor = cameras.floor_grid(spec)
+    FX, FZ = np.meshgrid(floor_x, floor_z, indexing="ij")
+    targets = []   # every shot's floor, at his chest, as each camera sees it
+    for s in spec["shots"]:
+        (zx0, zz0), (zx1, zz1) = s["zone"]["min"], s["zone"]["max"]
+        sel = floor & (FX >= zx0) & (FX <= zx1) & (FZ >= zz0) & (FZ <= zz1)
+        pts = np.stack([FX[sel], np.full(sel.sum(), 1.45), FZ[sel]], axis=1)
+        targets.append((np.array(s["pos"], float), pts[:: max(1, len(pts) // 150)]))
+    rng = random.Random(spec["id"] + "fg")
+    added = []
+    for s in spec["shots"]:
+        c = np.array(s["pos"], float)
+        f = np.array(s["look_at"], float) - c
+        f /= np.linalg.norm(f)
+        r = np.cross(f, [0.0, 1.0, 0.0])
+        r /= np.linalg.norm(r)
+        u = np.cross(r, f)
+        tv = math.tan(math.radians(s["fov"]) / 2)
+        cand = []
+        for x, z in zip(X[ok & ~lanes], Z[ok & ~lanes]):
+            d = np.array([x, 0.25, z]) - c
+            depth = d @ f
+            if not 1.5 < np.hypot(x - c[0], z - c[2]) < 3.6 or depth <= 0.5:
+                continue
+            px, py = (d @ r) / depth / (tv * 16 / 9), (d @ u) / depth / tv
+            if 0.45 < abs(px) < 0.95 and -0.98 < py < -0.45:   # low in a bottom corner
+                cand.append((abs(abs(px) - 0.72) + abs(py + 0.75), float(x), float(z)))
+        cand.sort()
+        placed = 0
+        for _, x, z in cand[:40]:
+            ref, tip = FOREGROUND[rng.randrange(len(FOREGROUND))]
+            box = [(x, z, 0.45, 0.45, 0.0, 0.0, 1.0, "fg")]   # a man-high-ish lump, to test sight against
+            hides = any(cameras._segment_hits(cam, pts, box).mean() > 0.01 for cam, pts in targets if len(pts))
+            if hides or any(math.hypot(x - a["pos"][0], z - a["pos"][2]) < 1.2 for a in added):
+                continue
+            p = model(ref, x, z, rng.uniform(0, 360), tip=tip)
+            p[MARK + "_fg"] = True
+            added.append(p)
+            placed += 1
+            if placed >= per_shot:
+                break
+    spec["props"] += added
+    return spec
+
+
+FACING = {"west": (-1.0, 0.0), "east": (1.0, 0.0), "south": (0.0, 1.0), "north": (0.0, -1.0)}   # a facade's front
+FLAT = {"boards", "spray", "poster", "xcode", "silt", "scorch", "blood", "leaflets", "puddle", "glow", "wire_down", "rug", "runner"}
+SAT = MARK + "_sat"
+
+
+def _seen(spec, x, y, z):
+    """Is (x, y, z) well inside some shot's picture, 3 to 22 m from its lens?"""
+    for s in spec.get("shots", []):
+        p, look = np.array(s["pos"], float), np.array(s["look_at"], float)
+        f = look - p
+        f /= np.linalg.norm(f)
+        r = np.cross(f, [0.0, 1.0, 0.0])
+        r /= np.linalg.norm(r)
+        u = np.cross(r, f)
+        d = np.array([x, y, z]) - p
+        depth = d @ f
+        tv = math.tan(math.radians(s["fov"]) / 2)
+        if 3.0 < depth < 22.0 and abs((d @ r) / depth / (tv * 16 / 9)) < 0.8 and abs((d @ u) / depth / tv) < 0.8:
+            return True
+    return False
+
+
+def slumped(spec, most=2):
+    """The dead sat against a wall or a car where they died, slumped (RE's corpses against the
+    walls): one or two a street, against a facade clear of its doors or a vehicle's flank, never in a
+    prop, never on top of another of the dead, and only where a shot sees them. The engine poses them
+    ("sitting"); nothing here touches the props, so the cameras and the pictures are unchanged."""
+    if spec["id"] not in ACTIVE and spec["id"] not in AUTO:
+        return spec
+    spec["dead"] = [b for b in spec.get("dead", []) if not b.get(SAT)]
+    rng = np.random.default_rng(sum(map(ord, spec["id"])) * 31 + 5)
+    spots = []   # (x, z, facing x, facing z)
+    for fa in spec.get("outdoor", {}).get("facades", []):
+        fx, fz = FACING.get(fa.get("facing"), (0.0, 0.0))
+        if (fx == 0.0 and fz == 0.0) or fa.get("stoop", 0.0) > 0.0:   # (a stoop's steps out front: no wall to sit against)
+            continue
+        lo, hi = (fa["z0"], fa["z1"]) if fx else (fa["x0"], fa["x1"])
+        bays = max(1, fa.get("bays", 1))
+        bw = (hi - lo) / bays
+        door = (fa.get("shop") or {}).get("door_bay", fa.get("door_bay"))
+        t = lo + 0.8
+        while t < hi - 0.8:
+            k = int((t - lo) / bw)
+            if door is None or (k != door and k != bays - 1 - door):
+                spots.append((fa["x"] + fx * 0.38, t, fx, fz) if fx else (t, fa["z"] + fz * 0.38, fx, fz))
+            t += 1.3
+    for p in spec.get("props", []):   # a vehicle's flank
+        if p["type"] not in ("vehicle", "bus") or p.get("burnt") or "size" not in p:
+            continue
+        a = math.radians(p.get("yaw", 0.0))
+        w, _, d = p["size"]
+        for side in (-1.0, 1.0):
+            for lx in (-w * 0.25, w * 0.15):
+                lz = side * (d / 2 + 0.35)
+                x = p["pos"][0] + lx * math.cos(a) + lz * math.sin(a)
+                z = p["pos"][2] - lx * math.sin(a) + lz * math.cos(a)
+                spots.append((x, z, side * math.sin(a), side * math.cos(a)))
+    if not spots:
+        return spec
+    xs, zs, ok = cameras.open_floor(spec)
+    (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
+    solid = [(p["pos"][0], p["pos"][2], p["size"][0] / 2, p["size"][2] / 2, math.radians(p.get("yaw", 0.0)))
+             for p in spec.get("props", []) if "size" in p and p["type"] not in FLAT and p["type"] not in ("vehicle", "bus")]
+    doors = [(i["pos"][0], i["pos"][2]) for i in spec.get("interactables", []) if i.get("kind") in ("door", "end")]
+    taken = [(b["pos"][0], b["pos"][2]) for b in spec["dead"]]
+    order = rng.permutation(len(spots))
+    want = int(rng.integers(1, most + 1))
+    out = []
+    for i in order:
+        x, z, fx, fz = spots[int(i)]
+        if not (bx0 + 0.3 < x < bx1 - 0.3 and bz0 + 0.3 < z < bz1 - 0.3):
+            continue
+        ci, ck = int(np.argmin(np.abs(xs - x))), int(np.argmin(np.abs(zs - z)))
+        if not ok[ci, ck]:
+            continue
+        if any(cameras._in_box(np.array([x]), np.array([z]), (cx, cz, hx, hz, a), 0.55)[0] for cx, cz, hx, hz, a in solid):
+            continue
+        if any(math.hypot(x - dx, z - dz) < 2.2 for dx, dz in doors) or any(math.hypot(x - tx, z - tz) < 5.0 for tx, tz in taken):
+            continue
+        y = ground_y(spec, x, z)
+        if not _seen(spec, x, y + 0.6, z):
+            continue
+        out.append({"pos": [round(x, 2), round(y, 3), round(z, 2)], "yaw": round(math.degrees(math.atan2(fx, fz)), 1),
+                    "variant": int(rng.integers(3)), "prone": False, "sitting": True, "blood": 0.35, MARK: True, SAT: True})
+        taken.append((x, z))
+        if len(out) >= want:
+            break
+    spec["dead"] += out
+    return spec

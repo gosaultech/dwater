@@ -85,14 +85,6 @@ int Game::room_index(const std::string& id) const {
     return -1;
 }
 
-std::vector<std::string> Game::shot_ids(const RoomSpec& r) const {
-    std::vector<std::string> ids;
-    for (const auto& s : r.shots) ids.push_back(s.id);
-    for (const auto& i : r.interactables)
-        if (!i.peek.id.empty()) ids.push_back(i.peek.id);
-    return ids;
-}
-
 bool Game::load_house(const std::string& start) {
     rooms_.clear();
     std::vector<std::string> files;
@@ -174,14 +166,50 @@ void Game::build_storey(int storey) {
             enemies_.push_back(std::move(e));
         }
     }
+    build_corpses(storey);
     aim_target_ = kick_target_ = -1;
     refresh_loot();
+}
+
+void Game::build_corpses(int storey) {
+    for (auto& c : corpses_) c.body.unload();
+    corpses_.clear();
+    constexpr size_t MOST = 24;   // (on one storey: each is a body to draw)
+    for (const auto& r : rooms_) {
+        if (r.floor != storey) continue;
+        for (const auto& d : r.dead) {
+            if (corpses_.size() >= MOST) break;
+            Corpse c;
+            c.body = Character::make(Kind::Drowned, std::clamp(d.variant, 0, 2));
+            c.at = {d.pos.x, d.pos.y, d.pos.z};   // (y below the street: afloat in a canal, the water over most of it)
+            c.blood = d.blood;
+            c.body.place(c.at, d.yaw);
+            c.body.mirror = (int(std::floor(d.pos.x * 7.0f + d.pos.z * 3.0f)) & 1) != 0;   // (not every body sprawled alike)
+            c.body.sit = d.sitting;
+            constexpr float DT = 1.0f / 30;
+            if (d.prone)   // (face down: it died crawling)
+                for (int f = 0; f < 20; ++f) c.body.animate(Pose::Crawl, 0.0f, DT);
+            for (int f = 0; f < 75; ++f) c.body.animate(Pose::Dead, 0.0f, DT);
+            c.body.settle();
+            corpses_.push_back(std::move(c));
+        }
+    }
+    pool_corpses();
+}
+
+void Game::pool_corpses() {
+    for (const auto& c : corpses_)   // (pooled long since, on the floor it lies on: a pavement, the road)
+        if (c.blood > 0) {
+            const Vector3 chest = c.body.joint(J_CHEST);
+            fx_.pool({chest.x, c.at.y, chest.z}, c.blood, true);
+        }
 }
 
 void Game::enter_room(int r) {
     room_ = r;
     spec_ = rooms_[size_t(r)];
-    if (!world_.visited.count(spec_.id)) {
+    const bool first = !world_.visited.count(spec_.id);
+    if (first) {
         world_.visited.insert(spec_.id);
         banner_t_ = 3.5f;   // its name, the first time
     }
@@ -189,29 +217,53 @@ void Game::enter_room(int r) {
         ambience_ = spec_.ambience;
         sfx_.ambience(spec_.ambience, 0.45f);
     }
-    plates_.need(spec_.id, shot_ids(spec_));
     peek_ = -1;
     cut_to(select_shot(spec_.zones(), "", player_.x, player_.z));
+    // The first time in a big space, the cut opens on the whole picture and closes in on him.
+    const Rect2& b = spec_.bounds;
+    view_establish_ = first && establish_ && (b.x1 - b.x0) * (b.z1 - b.z0) >= framing::BIG;
     upload_lights();
     stream_plates();
     checkpoint();
 }
 
 void Game::stream_plates() {
-    std::set<std::string> keep{spec_.id};
-    for (const auto& d : doorways_) {
-        if (d.b < 0 || (d.a != room_ && d.b != room_)) continue;
-        const RoomSpec& n = rooms_[size_t(d.a == room_ ? d.b : d.a)];
-        keep.insert(n.id);
-        plates_.want(n.id, shot_ids(n));
+    // Every shot on this storey he could step into within a few seconds, and each door's view through
+    // the crack near him; down (or up) the stairs near him, the shots round where he'll stand. The
+    // rest are let go once he's well away (dw/streaming.hpp: two radii, so nothing bounces).
+    stream_at_ = {player_.x, player_.z};
+    plate_cands_.clear();
+    for (const auto& r : rooms_) {
+        if (r.floor != storey_) continue;
+        for (const auto& s : r.shots) plate_cands_.push_back({r.id, s.id, s.zone});
+        for (const auto& i : r.interactables)
+            if (!i.peek.id.empty()) plate_cands_.push_back({r.id, i.peek.id, {i.pos.x - 1, i.pos.z - 1, i.pos.x + 1, i.pos.z + 1}});
     }
-    for (const auto& i : spec_.interactables) {   // the rooms its stairs lead to
-        const int t = i.kind == "door" ? room_index(i.target_room) : -1;
-        if (t >= 0 && rooms_[size_t(t)].floor != storey_) {
-            keep.insert(rooms_[size_t(t)].id);
-            plates_.want(rooms_[size_t(t)].id, shot_ids(rooms_[size_t(t)]));
+    const std::string now = peek_ >= 0 ? rooms_[size_t(peek_room_)].id + "/" + peek_shot_.id : spec_.id + "/" + shot_;
+    std::vector<std::string> want = streaming::within(plate_cands_, player_.x, player_.z, streaming::WANT, now);
+    const std::vector<std::string> near = streaming::within(plate_cands_, player_.x, player_.z, streaming::KEEP, now);
+    std::set<std::string> keep(near.begin(), near.end());
+    std::vector<streaming::Candidate> far;
+    for (const auto& r : rooms_) {
+        if (r.floor != storey_) continue;
+        for (const auto& i : r.interactables) {
+            const int t = i.kind == "door" ? room_index(i.target_room) : -1;
+            if (t < 0 || rooms_[size_t(t)].floor == storey_) continue;
+            const float d = std::hypot(i.pos.x - player_.x, i.pos.z - player_.z);
+            if (d > streaming::KEEP) continue;
+            const RoomSpec& to = rooms_[size_t(t)];
+            const auto sp = to.spawns.find(i.target_spawn);
+            if (to.spawns.empty()) continue;
+            const Spawn s = sp != to.spawns.end() ? sp->second : to.spawns.begin()->second;
+            far.clear();
+            for (const auto& sh : to.shots) far.push_back({to.id, sh.id, sh.zone});
+            for (const auto& k : streaming::within(far, s.pos.x, s.pos.z, 6.0f)) {
+                keep.insert(k);
+                if (d <= streaming::WANT) want.push_back(k);
+            }
         }
     }
+    plates_.want(want);
     plates_.keep_only(keep);
 }
 
@@ -347,7 +399,16 @@ void Game::start_beat(const std::string& room, const std::string& spawn) {
     beat_spawn_ = spawn;
     vel_ = {};
     peek_ = -1;
-    plates_.want(room, shot_ids(rooms_[size_t(room_index(room))]));
+    {   // the shots round where he'll come out, ahead of the dark
+        const RoomSpec& to = rooms_[size_t(room_index(room))];
+        const auto sp = to.spawns.find(spawn);
+        std::vector<streaming::Candidate> c;
+        for (const auto& sh : to.shots) c.push_back({to.id, sh.id, sh.zone});
+        if (!to.spawns.empty()) {
+            const Spawn s = sp != to.spawns.end() ? sp->second : to.spawns.begin()->second;
+            plates_.want(streaming::within(c, s.pos.x, s.pos.z, 6.0f));
+        }
+    }
 }
 
 // In the dark: the other floor goes in, he stands at the foot (or the head) of the stairs.
@@ -358,13 +419,10 @@ void Game::finish_beat() {
     const auto sp = to.spawns.find(beat_spawn_);
     const Spawn s = sp != to.spawns.end() ? sp->second : to.spawns.begin()->second;
     player_ = {s.pos.x, s.pos.z, s.yaw};
-    holding_ = Vector2Length(in_.move) > 0.2f;   // pushing on through it: on the way he faces now
-    if (holding_) {
+    frame_ = {};
+    if (Vector2Length(in_.move) > 0.2f) {   // pushing on through it: on the way he faces now
         const V2 f = forward_from_yaw(s.yaw);
-        const Vector2 b = basis_for(in_.move, {f.x, f.z});
-        held_fwd_ = {b.x, 0, b.y};
-        held_right_ = {-b.y, 0, b.x};
-        held_in_ = in_.move;
+        frame_.take(basis_for(in_.move, {f.x, f.z}), in_.move);
     }
     if (to.floor != storey_) build_storey(to.floor);
     enter_room(r);

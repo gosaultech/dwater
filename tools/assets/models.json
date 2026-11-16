@@ -1,0 +1,233 @@
+{
+ "_file": "damned_waters/tools/assets/models.json - the licensed 3D models the sets use (tools/assets/sketchfab.py): Sketchfab uid, title, author, licence (CC0 or CC BY only), and what each is used as.",
+ "ambulance": {
+  "author": "GRIP420",
+  "author_url": "https://sketchfab.com/GRIP420",
+  "faces": 33231,
+  "licence": "CC BY 4.0",
+  "role": "an ambulance",
+  "title": "Rettungswagen / Krankenwagen /  Ambulance",
+  "uid": "e6c4858d34f0440394c2aa772ebaca38",
+  "url": "https://sketchfab.com/3d-models/rettungswagen-krankenwagen-ambulance-e6c4858d34f0440394c2aa772ebaca38"
+ },
+ "barriers": {
+  "author": "Sabri Ayeş",
+  "author_url": "https://sketchfab.com/sabriayes",
+  "faces": 5138,
+  "licence": "CC BY 4.0",
+  "role": "road barriers and cones",
+  "title": "Barrier & Traffic Cone Pack",
+  "uid": "23c4dfca76a24bf0b21894847867af2a",
+  "url": "https://sketchfab.com/3d-models/barrier-traffic-cone-pack-23c4dfca76a24bf0b21894847867af2a"
+ },
+ "bike_classic": {
+  "author": "by__Rx",
+  "author_url": "https://sketchfab.com/by__Rx",
+  "faces": 19822,
+  "licence": "CC BY 4.0",
+  "role": "a city bicycle",
+  "title": "Classic Bicycle | LowPoly | Game ready",
+  "uid": "da6507928c0c4a5c8776008cdb9f747e",
+  "url": "https://sketchfab.com/3d-models/classic-bicycle-lowpoly-game-ready-da6507928c0c4a5c8776008cdb9f747e"
+ },
+ "bike_dutch": {
+  "author": "Fairyflosslord7",
+  "author_url": "https://sketchfab.com/Fairyflosslord7",
+  "faces": 56066,
+  "licence": "CC BY 4.0",
+  "role": "a Dutch bicycle",
+  "title": "Dutch Bicycle",
+  "uid": "1967bfe65c164c589351985e7becc8b8",
+  "url": "https://sketchfab.com/3d-models/dutch-bicycle-1967bfe65c164c589351985e7becc8b8"
+ },
+ "bodybags": {
+  "author": "honky",
+  "author_url": "https://sketchfab.com/smartinius",
+  "faces": 20480,
+  "licence": "CC BY 4.0",
+  "role": "body bags",
+  "title": "smartinius body bag 3D asset",
+  "uid": "48d33832605545828f8297b64ddf599d",
+  "url": "https://sketchfab.com/3d-models/smartinius-body-bag-3d-asset-48d33832605545828f8297b64ddf599d"
+ },
+ "bus_town": {
+  "author": "own.guest",
+  "author_url": "https://sketchfab.com/own.guest",
+  "faces": 55542,
+  "licence": "CC BY 4.0",
+  "role": "a city bus",
+  "title": "Generic Town Bus",
+  "uid": "14fe03d792914d51b6c6250b393c44fd",
+  "url": "https://sketchfab.com/3d-models/generic-town-bus-14fe03d792914d51b6c6250b393c44fd"
+ },
+ "car_focus": {
+  "author": "Luquita",
+  "author_url": "https://sketchfab.com/speedmodel",
+  "faces": 93740,
+  "licence": "CC BY 4.0",
+  "role": "a saloon (taxi)",
+  "title": "Ford Focus Sedan",
+  "uid": "ed2e9355b8a64e6a8700973df1a5b8f0",
+  "url": "https://sketchfab.com/3d-models/ford-focus-sedan-ed2e9355b8a64e6a8700973df1a5b8f0"
+ },
+ "car_octavia": {
+  "author": "tonielpro520",
+  "author_url": "https://sketchfab.com/tonielpro520",
+  "faces": 51136,
+  "licence": "CC BY 4.0",
+  "role": "a saloon",
+  "title": "2000 Skoda Octavia",
+  "uid": "892e152237fa4e8bbeb6afb20169f0c2",
+  "url": "https://sketchfab.com/3d-models/2000-skoda-octavia-892e152237fa4e8bbeb6afb20169f0c2"
+ },
+ "car_punto": {
+  "author": "Lionsharp Studios",
+  "author_url": "https://sketchfab.com/lionsharp",
+  "faces": 35168,
+  "licence": "CC BY 4.0",
+  "role": "a hatchback",
+  "title": "(FREE) 1995 Fiat Punto GT",
+  "uid": "48db6facb4b64e99b60f36b8c01185e1",
+  "url": "https://sketchfab.com/3d-models/free-1995-fiat-punto-gt-48db6facb4b64e99b60f36b8c01185e1"
+ },
+ "car_v70": {
+  "author": "Dennis Andersson",
+  "author_url": "https://sketchfab.com/bigslavehd",
+  "faces": 94955,
+  "licence": "CC BY 4.0",
+  "role": "an estate car (police)",
+  "title": "volvo v70",
+  "uid": "6a1aed1ffa8741e292d5b9043fdaaf9c",
+  "url": "https://sketchfab.com/3d-models/volvo-v70-6a1aed1ffa8741e292d5b9043fdaaf9c"
+ },
+ "car_yaris": {
+  "author": "Dave Love SketchFab",
+  "author_url": "https://sketchfab.com/Tyler_Dave",
+  "faces": 101192,
+  "licence": "CC BY 4.0",
+  "role": "a small hatchback",
+  "title": "2001 Toyota Yaris",
+  "uid": "443fd49eb0844557a06854cae0b61267",
+  "url": "https://sketchfab.com/3d-models/2001-toyota-yaris-443fd49eb0844557a06854cae0b61267"
+ },
+ "cars_generic": {
+  "author": "Comrade1280",
+  "author_url": "https://sketchfab.com/comrade1280",
+  "faces": 69312,
+  "licence": "CC BY 4.0",
+  "role": "parked cars",
+  "title": "Generic passenger car pack",
+  "uid": "20f9af9b8a404d5cb022ac6fe87f21f5",
+  "url": "https://sketchfab.com/3d-models/generic-passenger-car-pack-20f9af9b8a404d5cb022ac6fe87f21f5"
+ },
+ "moped": {
+  "author": "Scanamatics",
+  "author_url": "https://sketchfab.com/jake.martinez",
+  "faces": 39736,
+  "licence": "CC BY 4.0",
+  "role": "a moped",
+  "title": "MOPED 1978 Puch Moped Hero",
+  "uid": "b6c212a12d85425bb166f43cd3d70248",
+  "url": "https://sketchfab.com/3d-models/moped-1978-puch-moped-hero-b6c212a12d85425bb166f43cd3d70248"
+ },
+ "sandbags": {
+  "author": "Evan",
+  "author_url": "https://sketchfab.com/Evanz",
+  "faces": 5824,
+  "licence": "CC BY 4.0",
+  "role": "sandbags",
+  "title": "Sandbags",
+  "uid": "8cda4370170746d393aa311a7c080c50",
+  "url": "https://sketchfab.com/3d-models/sandbags-8cda4370170746d393aa311a7c080c50"
+ },
+ "street_pack": {
+  "author": "vmatthew",
+  "author_url": "https://sketchfab.com/vmatthew",
+  "faces": 37840,
+  "licence": "CC BY 4.0",
+  "role": "crowd barriers, signs, cones",
+  "title": "Street Asset Pack",
+  "uid": "f3eb47d02e2e4ab290e66752fa354b48",
+  "url": "https://sketchfab.com/3d-models/street-asset-pack-f3eb47d02e2e4ab290e66752fa354b48"
+ },
+ "street_props": {
+  "author": "MadeByYeshe",
+  "author_url": "https://sketchfab.com/MadeByYeshe",
+  "faces": 20667,
+  "licence": "CC BY 4.0",
+  "role": "bins, benches, boxes",
+  "title": "PBR Street Props Pack (Game Ready)",
+  "uid": "8013d8e6af4645d1a7c3d5b24054bfc8",
+  "url": "https://sketchfab.com/3d-models/pbr-street-props-pack-game-ready-8013d8e6af4645d1a7c3d5b24054bfc8"
+ },
+ "truck_army": {
+  "author": "KojfDiscord",
+  "author_url": "https://sketchfab.com/KojfDiscord",
+  "faces": 21607,
+  "licence": "CC BY 4.0",
+  "role": "an army truck",
+  "title": "Unimog U1350l (WARNO)",
+  "uid": "6348951a604144f084ae059dfd227b6b",
+  "url": "https://sketchfab.com/3d-models/unimog-u1350l-warno-6348951a604144f084ae059dfd227b6b"
+ },
+ "van_euro": {
+  "author": "Evan Hiltz",
+  "author_url": "https://sketchfab.com/evan.hiltz",
+  "faces": 21317,
+  "licence": "CC BY 4.0",
+  "role": "a delivery van",
+  "title": "European Delivery Van",
+  "uid": "0b2f1ad95a79419f9a092420024d329c",
+  "url": "https://sketchfab.com/3d-models/european-delivery-van-0b2f1ad95a79419f9a092420024d329c"
+ },
+ "van_sprinter": {
+  "author": "Max",
+  "author_url": "https://sketchfab.com/Max-7215",
+  "faces": 37565,
+  "licence": "CC BY 4.0",
+  "role": "a panel van (ambulance, police van)",
+  "title": "Mercedes Benz Sprinter 2006",
+  "uid": "f69de1315bb049c8946d57f6006acd73",
+  "url": "https://sketchfab.com/3d-models/mercedes-benz-sprinter-2006-f69de1315bb049c8946d57f6006acd73"
+ },
+ "wheelie_bin": {
+  "author": "BLENDERBROCPT",
+  "author_url": "https://sketchfab.com/sameegh779",
+  "faces": 6962,
+  "licence": "CC BY 4.0",
+  "role": "a wheelie bin",
+  "title": "wheelie bin game asset",
+  "uid": "390046444cab4de0b668fe702269b5c1",
+  "url": "https://sketchfab.com/3d-models/wheelie-bin-game-asset-390046444cab4de0b668fe702269b5c1"
+ },
+ "wreck_crashed": {
+  "author": "Rashad Ibrahimli",
+  "author_url": "https://sketchfab.com/rashad-brahimli",
+  "faces": 8334,
+  "licence": "CC BY 4.0",
+  "role": "a crashed car",
+  "title": "Crashed Abandoned Car - Game Ready",
+  "uid": "66ef51a84c9843dda53bf0b4b9020011",
+  "url": "https://sketchfab.com/3d-models/crashed-abandoned-car-game-ready-66ef51a84c9843dda53bf0b4b9020011"
+ },
+ "wreck_gutted": {
+  "author": "Renafox",
+  "author_url": "https://sketchfab.com/kryik1023",
+  "faces": 9997,
+  "licence": "CC BY 4.0",
+  "role": "a gutted car",
+  "title": "Destroyed Car 03 / Backrooms Car (Gameready ver)",
+  "uid": "efc4dfe2c7284a64bc9281eb4f61d402",
+  "url": "https://sketchfab.com/3d-models/destroyed-car-03-backrooms-car-gameready-ver-efc4dfe2c7284a64bc9281eb4f61d402"
+ },
+ "wrecks_burnt": {
+  "author": "Renafox",
+  "author_url": "https://sketchfab.com/kryik1023",
+  "faces": 3451,
+  "licence": "CC BY 4.0",
+  "role": "burned-out cars",
+  "title": "Burned-out Cars",
+  "uid": "701066df6b914fd08318524c7ccd96a7",
+  "url": "https://sketchfab.com/3d-models/burned-out-cars-701066df6b914fd08318524c7ccd96a7"
+ }
+}

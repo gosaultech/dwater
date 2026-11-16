@@ -827,6 +827,86 @@
       "yaw": 204,
       "scale": 0.94,
       "collide": false
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        9.94,
+        0.0,
+        36.17
+      ],
+      "yaw": 327.6,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:vintage_oil_lamp",
+      "pos": [
+        8.89,
+        0.0,
+        17.44
+      ],
+      "yaw": 69.6,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:wooden_stool_01",
+      "pos": [
+        8.0,
+        0.0,
+        31.6
+      ],
+      "yaw": 320.5,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_bottle_gallon",
+      "pos": [
+        7.16,
+        0.0,
+        45.25
+      ],
+      "yaw": 42.1,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:rubber_boots",
+      "pos": [
+        5.92,
+        0.0,
+        23.28
+      ],
+      "yaw": 13.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:vintage_suitcase",
+      "pos": [
+        6.58,
+        0.0,
+        23.66
+      ],
+      "yaw": 110.1,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
     }
   ],
   "lights": [
@@ -918,83 +998,231 @@
       "blender_power": 150,
       "godot_energy": 0.5,
       "range": 8.0
+    },
+    {
+      "kind": "area",
+      "pos": [
+        6.0,
+        4.2,
+        3.5
+      ],
+      "look_at": [
+        5.0,
+        0.0,
+        4.0
+      ],
+      "size": 0.77,
+      "color": [
+        0.75,
+        0.9,
+        1.0
+      ],
+      "blender_power": 70,
+      "godot_energy": 0.35,
+      "range": 7.0,
+      "flicker": true
     }
   ],
   "shots": [
     {
-      "id": "a",
       "pos": [
-        4.2,
-        3.4,
-        44.5
+        6.25,
+        2.7,
+        14.12
       ],
       "look_at": [
-        10.5,
-        0.8,
-        63.5
+        7.54,
+        1.84,
+        8.33
       ],
-      "fov": 62,
+      "fov": 45.3,
       "zone": {
         "min": [
-          0.0,
-          46.0
-        ],
-        "max": [
-          16.0,
-          64.0
-        ]
-      },
-      "priority": 1
-    },
-    {
-      "id": "b",
-      "pos": [
-        11.8,
-        3.6,
-        62.0
-      ],
-      "look_at": [
-        4.0,
-        1.2,
-        30.0
-      ],
-      "fov": 58,
-      "zone": {
-        "min": [
-          0.0,
-          24.0
-        ],
-        "max": [
-          16.0,
-          46.0
-        ]
-      },
-      "priority": 1
-    },
-    {
-      "id": "c",
-      "pos": [
-        11.8,
-        3.0,
-        28.0
-      ],
-      "look_at": [
-        5.0,
-        1.0,
-        0.0
-      ],
-      "fov": 62,
-      "zone": {
-        "min": [
-          0.0,
+          3.25,
           0.0
         ],
         "max": [
-          16.0,
-          24.0
+          12.75,
+          9.0
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "a"
+    },
+    {
+      "pos": [
+        11.5,
+        2.7,
+        20.13
+      ],
+      "look_at": [
+        8.72,
+        0.63,
+        15.23
+      ],
+      "fov": 47.9,
+      "zone": {
+        "min": [
+          3.25,
+          7.5
+        ],
+        "max": [
+          12.75,
+          16.75
+        ]
+      },
+      "priority": 1,
+      "id": "b"
+    },
+    {
+      "pos": [
+        11.61,
+        2.1,
+        28.93
+      ],
+      "look_at": [
+        8.74,
+        0.96,
+        23.78
+      ],
+      "fov": 46.1,
+      "zone": {
+        "min": [
+          3.25,
+          15.25
+        ],
+        "max": [
+          12.75,
+          25.25
+        ]
+      },
+      "priority": 1,
+      "id": "c"
+    },
+    {
+      "pos": [
+        12.25,
+        2.1,
+        35.69
+      ],
+      "look_at": [
+        8.9,
+        0.47,
+        30.98
+      ],
+      "fov": 49.6,
+      "zone": {
+        "min": [
+          3.25,
+          23.75
+        ],
+        "max": [
+          12.75,
+          33.0
+        ]
+      },
+      "priority": 1,
+      "id": "d"
+    },
+    {
+      "pos": [
+        6.25,
+        3.4,
+        45.63
+      ],
+      "look_at": [
+        7.55,
+        1.78,
+        40.0
+      ],
+      "fov": 45.9,
+      "zone": {
+        "min": [
+          3.25,
+          31.5
+        ],
+        "max": [
+          12.75,
+          40.75
+        ]
+      },
+      "priority": 1,
+      "id": "e"
+    },
+    {
+      "pos": [
+        12.25,
+        2.1,
+        51.3
+      ],
+      "look_at": [
+        8.9,
+        0.4,
+        46.62
+      ],
+      "fov": 51.0,
+      "zone": {
+        "min": [
+          3.25,
+          39.25
+        ],
+        "max": [
+          12.75,
+          48.75
+        ]
+      },
+      "priority": 1,
+      "id": "f"
+    },
+    {
+      "pos": [
+        4.05,
+        2.1,
+        60.15
+      ],
+      "look_at": [
+        7.22,
+        0.64,
+        55.27
+      ],
+      "fov": 47.1,
+      "zone": {
+        "min": [
+          3.25,
+          47.25
+        ],
+        "max": [
+          12.75,
+          57.0
+        ]
+      },
+      "priority": 1,
+      "id": "g"
+    },
+    {
+      "pos": [
+        14.5,
+        2.1,
+        64.62
+      ],
+      "look_at": [
+        10.02,
+        0.53,
+        60.95
+      ],
+      "fov": 47.5,
+      "zone": {
+        "min": [
+          3.25,
+          55.5
+        ],
+        "max": [
+          12.75,
+          64.0
+        ]
+      },
+      "priority": 1,
+      "id": "h"
     }
   ],
   "spawns": {
@@ -1126,6 +1354,69 @@
       ],
       "yaw": 250,
       "emerge": true
+    }
+  ],
+  "fx": [],
+  "dead": [
+    {
+      "pos": [
+        9.12,
+        0.0,
+        47.62
+      ],
+      "yaw": 146,
+      "variant": 2,
+      "prone": false,
+      "blood": 0.36,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        11.12,
+        0.0,
+        30.88
+      ],
+      "yaw": 218,
+      "variant": 1,
+      "prone": false,
+      "blood": 0.75,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        11.38,
+        0.0,
+        23.12
+      ],
+      "yaw": 114,
+      "variant": 1,
+      "prone": true,
+      "blood": 0.5,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        11.62,
+        0.0,
+        50.12
+      ],
+      "yaw": 152,
+      "variant": 1,
+      "prone": true,
+      "blood": 0.74,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        6.62,
+        0.0,
+        28.88
+      ],
+      "yaw": 251,
+      "variant": 0,
+      "prone": false,
+      "blood": 0.36,
+      "catastrophe": true
     }
   ]
 }

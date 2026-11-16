@@ -1,4 +1,4 @@
-<!-- damned_waters/docs/city_aftermath.md — the brief for dressing the city's streets and shops: an Amsterdam emptied by an evacuation, not one that was never busy. Every area follows it when it is scaffolded; areas 1–3 get it retrofitted before the final polish pass. -->
+<!-- damned_waters/docs/city_aftermath.md — the brief for dressing the city's streets and shops: an Amsterdam emptied by an evacuation and struck by a catastrophe, not one that was never busy. Every area follows it when it is scaffolded; areas 1–3 get it retrofitted before the final polish pass. -->
 
 # City aftermath: how the streets should look
 
@@ -18,9 +18,36 @@ Like a stage after the audience has fled the theatre: the coats are still on the
   amber) are the only ones that flash.
 - **One story per street.** Each street gets one thing that happened there (the evacuation queue for
   the trams, a looted jeweller, the aid post where people were checked), plus the general mess.
-- **Horror stays rare.** A covered body or two near an aid post at most. The Drowned are the horror;
-  the dressing is sadness and haste.
+- **Tragedy, not gore** (the user, 2026-11-09: "the streets really tell a story of survival and
+  tragedy", RE3's Raccoon City as the model). The dead are covered or bagged, never shown; the
+  tragedy is in what's written and left: the missing posters, the messages, the empty pushchair.
 - **Survivors are tabled** until the story has a place for them.
+
+## The night itself: the catastrophe layer
+
+Emptied in a hurry was the first pass; this is the second, and it's the one that sells it. The user
+asked for a world that feels "lived in, dirty, run down, like a real catastrophic event happened".
+Rokin is the first street done this way (the vertical slice); every street follows it.
+
+- **The water's mark on everything.** A tide line at the street's flood height (its "outdoor" tide)
+  on every wall, door, car and post, a pale crust at the line and silt below it; real scanned mud
+  over the street in patches, thickest against whatever stands; rust on bare metal; streaks down
+  the walls from every ledge (`builders._wear`, `ruin.silt`).
+- **Debris where it would drift.** The flood's leavings (scanned bottles, cans, crates, branches,
+  bags, tyres, boots) piled against walls, kerbs and the railing, thinner in the open; the big
+  pieces off the lanes he walks (`catastrophe.drift`). Bikes wound into railings; a raft of rubbish
+  in the basin.
+- **One story per street, told by the night.** What went wrong there: Rokin's last tram derailed
+  and slewed toward the water with its wire down and arcing; a car run into the quay and burned;
+  the dead lined up by an ambulance. Then what the survivors and rescuers wrote: messages sprayed
+  in Dutch ("HOTEL VOL · 14 LEVEND", "NIET NAAR BENEDEN"), the search teams' X on the doors they
+  went through, missing posters papering the police post, shops boarded and written on
+  (`catastrophe.STORIES`, `ruin.py`, `tools/assets/decals.py`).
+- **The painting is alive.** Fires burn and breathe their light on the walls, beacons flash blue
+  down the street, a snapped wire throws sparks, a tram's last tube fails (the room's "fx"; the
+  engine's live layer, `dw/fxlive.hpp`).
+- **Something by the lens.** Each shot looks past something close (a bag, a tyre, a crate), placed
+  where it never hides him (`catastrophe.foreground`).
 
 ## The kit (what each area draws on)
 

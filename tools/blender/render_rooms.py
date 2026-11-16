@@ -31,7 +31,7 @@ from roomspec import g2b  # noqa: E402
 REPO = HERE.parent.parent
 HAZE = {"color": [0.045, 0.052, 0.068], "start": 12.0, "depth": 85.0, "strength": 0.5}   # a street's night air, by default
 QUALITY = {  # samples, bounces, volumetric density
-    "preview": dict(samples=12, bounces=4, volume=0.0),
+    "preview": dict(samples=16, bounces=4, volume=0.0, filter=1.0),   # (filter 1.0: crisp; at 1.5 every edge in a plate was a little soft)
     "ship": dict(samples=20, bounces=6, volume=0.0),
     "final": dict(samples=256, bounces=8, volume=0.012),
 }
@@ -47,6 +47,8 @@ def parse_args():
     ap.add_argument("--out", default=str(REPO / "pipeline_out" / "renders"))
     ap.add_argument("--specs", default=str(REPO / "game" / "data" / "rooms"))
     ap.add_argument("--gpu", action="store_true", help="try Metal/OptiX/CUDA/HIP")
+    ap.add_argument("--samples", type=int, default=0, help="override the quality's samples (look development)")
+    ap.add_argument("--filter", type=float, default=0.0, help="override the pixel filter's width in pixels (1.5 is soft, 1.0 crisp)")
     return ap.parse_args(argv)
 
 
@@ -219,6 +221,7 @@ def depth_material():
     """Emission = planar view depth / DEPTH_MAX. With the Raw view transform the
     number lands in the PNG untouched: this *is* a measuring tape, not a picture."""
     m = bpy.data.materials.new("depth_override")
+    m.cycles.emission_sampling = "NONE"   # a tape measure, not a lamp: else every triangle joins the light tree (GBs)
     if m.node_tree is None:
         m.use_nodes = True
     nt = m.node_tree
@@ -241,7 +244,7 @@ def render_beauty(s, q, path, exposure=0.6, glow=None):
     s.cycles.samples = q["samples"]
     s.cycles.use_denoising = True
     s.cycles.denoiser = "OPENIMAGEDENOISE"
-    s.cycles.filter_width = 1.5
+    s.cycles.filter_width = q.get("filter", 1.5)
     s.view_settings.view_transform = "AgX"
     for look in ("AgX - Medium High Contrast", "Medium High Contrast", "None"):
         try:
@@ -372,7 +375,11 @@ def shots_of(spec):
 
 def main():
     a = parse_args()
-    q = QUALITY[a.quality]
+    q = dict(QUALITY[a.quality])
+    if a.samples:
+        q["samples"] = a.samples
+    if a.filter:
+        q["filter"] = a.filter
     res = tuple(int(v) for v in a.res.lower().split("x"))
     assert abs(res[0] / res[1] - 16 / 9) < 1e-3, "backgrounds must be 16:9 (Godot viewport is 16:9)"
     specs = roomspec.load_all(a.specs)
@@ -380,6 +387,10 @@ def main():
     shots_wanted = {s for s in a.shots.split(",") if s}
     for room_id in wanted:
         spec = specs[room_id]
+        # The room's weather, before anything is built (builders._wear reads it).
+        builders.FLOOD = spec.get("flood", (spec.get("outdoor") or {}).get("tide", 0.0))
+        builders.OUTDOOR = bool(spec.get("outdoor"))
+        builders.WEAR = spec.get("wear", 1.0)
         s = new_scene(spec, q, res)
         if a.gpu and enable_gpu():
             s.cycles.device = "GPU"

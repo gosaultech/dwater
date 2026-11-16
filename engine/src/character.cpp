@@ -11,6 +11,8 @@
 
 #include "dw/character_file.hpp"
 #include "dw/core.hpp"
+#include "dw/controls.hpp"
+#include "dw/mocap.hpp"
 #include "dw/ready.hpp"
 #include "dw/room_spec.hpp"
 #include "cast_guns.hpp"
@@ -30,7 +32,7 @@ constexpr std::array<int, J_COUNT> make_parents() {
     return p;
 }
 constexpr std::array<int, J_COUNT> PARENT = make_parents();
-enum RootMode { STAND = 0, BACK = 1, PRONE = 2 };
+enum RootMode { STAND = 0, BACK = 1, PRONE = 2, SIT = 3 };
 
 float frand(unsigned& s) {   // xorshift: deterministic per character, no global RNG state
     s ^= s << 13; s ^= s >> 17; s ^= s << 5;
@@ -423,7 +425,7 @@ void Character::fk() {
         const Vector3 a = Vector3Add(ang_[j], twitch_[j]);
         Matrix R = MatrixMultiply(MatrixMultiply(MatrixRotateZ(a.z), MatrixRotateX(a.x)), MatrixRotateY(a.y));
         Vector3 o = off_[j];
-        if (j == J_PELVIS) o = {off_[j].x, pelvis_h_ + bob_, off_[j].z};
+        if (j == J_PELVIS) o = {off_[j].x + sway_.x, pelvis_h_ + bob_, off_[j].z + sway_.y};
         Matrix L = MatrixMultiply(R, MatrixTranslate(o.x, o.y, o.z));
         W_[j] = MatrixMultiply(L, PARENT[j] < 0 ? root : W_[PARENT[j]]);
     }
@@ -707,13 +709,18 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     if (pose != Pose::Aim) from_ready_ = ready;
     const bool carrying = kind == Kind::Survivor && (ready || (pose == Pose::Aim && from_ready_));
     auto arm = [](int j) { return j == J_SHO_L || j == J_WRI_L || j == J_SHO_R || j == J_WRI_R; };
+    // The motion capture's joints follow it closely (eased as slowly as a change of pose, a walk's
+    // swing would be dulled to half of itself).
+    const float km = smoothing(30.0f, dt);
+    auto captured = [&](int j) { return mocap_feet_ && (j <= J_HEAD || (j >= J_HIP_L && j <= J_ANK_R)); };
     for (int j = 0; j < J_COUNT; ++j)
         ang_[j] = j >= J_THUMB1_L ? slerp_angles(ang_[j], T[j], k)
                   : carrying && arm(j) ? angles_near(slerp_angles(ang_[j], T[j], k), T[j])   // (written as the pose has it, once there)
-                                       : Vector3Lerp(ang_[j], T[j], k);
+                                       : Vector3Lerp(ang_[j], T[j], captured(j) ? km : k);
     if (steps_)   // a reload's steps time the fingers themselves: they follow closely
         for (int j = J_THUMB1_L; j < J_THUMB1_R; ++j) ang_[j] = slerp_angles(ang_[j], T[j], smoothing(40.0f, dt));
-    bob_ = Lerp(bob_, bob, k);
+    bob_ = Lerp(bob_, bob, mocap_feet_ ? km : k);
+    sway_ = Vector2Lerp(sway_, sway_t_, mocap_feet_ ? km : k);
     // Trigger discipline (ready.hpp): the gun comes up as the arms ease to the aim, and only once
     // it's nearly there does the trigger finger leave the frame for the trigger; it comes off first
     // when he lowers it, and stays off through a reload, a dodge, a kick.
@@ -753,6 +760,7 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     const bool prone_pose = pose == Pose::Crawl || pose == Pose::CrawlWindup || pose == Pose::CrawlStrike;
     int mode = prone_pose ? PRONE : (pose == Pose::Floored || pose == Pose::Dead) ? BACK : STAND;
     if (pose == Pose::Dead && root_mode_ == PRONE) mode = PRONE;   // a crawler dies face-down
+    if (pose == Pose::Dead && sit) mode = SIT;                       // (slumped against a wall where it died)
     if (mode != root_mode_) {
         root_mode_ = mode;
         from_pitch_ = pitch_; from_pivot_ = pivot_; from_lift_ = lift_;
@@ -760,7 +768,11 @@ void Character::animate(Pose pose, float speed, float dt, float aim_pitch) {
     }
     float tp = 0, tv = 0, tl = 0;
     if (mode == BACK) { tp = kPi / 2; tv = 0; tl = thickness_; }
-    if (mode == PRONE) { tp = -kPi / 2 + 0.12f; tv = pelvis_h_; tl = -(pelvis_h_ - thickness_ - 0.04f); }
+    if (mode == SIT) { tp = 0.25f; tv = pelvis_h_; tl = -(pelvis_h_ - 0.12f); }   // sat on the ground, leaning back on the wall
+    if (mode == PRONE) {   // (crawling, the chest held up off the floor; dead, flat on it)
+        const bool flat = pose == Pose::Dead;
+        tp = -kPi / 2 + (flat ? 0.02f : 0.12f); tv = pelvis_h_; tl = -(pelvis_h_ - thickness_ - (flat ? 0.0f : 0.04f));
+    }
     root_k_ = std::min(1.0f, root_k_ + dt * (mode == STAND ? 1.25f : 2.1f));
     const float e = mode == STAND ? root_k_ * root_k_ * (3 - 2 * root_k_) : std::pow(root_k_, 2.2f);   // falls accelerate
     pitch_ = Lerp(from_pitch_, tp, e);
@@ -935,9 +947,33 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
     // the way (its wrist sits easy there, not bent round a gun held in at the chest).
     const bool driving_out = !drowned && weapon_ == 0 && pose == Pose::Reload && reloading.on && reloading.kind == reload::Kind::Magazine &&
                              reloading.t >= reload::DRIVE_OUT;
+    // Standing, sneaking, walking, running: his legs, hips and spine as a real person's at his speed
+    // (motion capture, mocap.hpp); the stride's phase moves on as far as his feet carry him, so they
+    // plant. The arms stay on the gun (below); the torso swings a little less for holding it.
+    mocap_feet_ = false;
+    sway_t_ = {};
+    if (!drowned && (pose == Pose::Idle || pose == Pose::Walk || pose == Pose::Run)) {
+        const float scale = pelvis_h_ / mocap::WALK.hip_height;
+        const mocap::Pace p = mocap::pace(speed, scale, SNEAK_SPEED, WALK_SPEED, RUN_SPEED);
+        loco_ += dt * speed / std::max(p.stride, 0.2f);
+        loco_ -= std::floor(loco_);
+        idle_ += dt / mocap::IDLE.time;
+        idle_ -= std::floor(idle_);
+        const float still = 1.0f - std::clamp((speed - 0.05f) / 0.45f, 0.0f, 1.0f);
+        const mocap::Frame f = mocap::at(p, loco_, still, idle_);
+        static constexpr int JM[mocap::NJ] = {J_PELVIS, J_SPINE, J_CHEST, J_NECK, J_HEAD, J_HIP_L, J_KNE_L, J_ANK_L, J_HIP_R, J_KNE_R, J_ANK_R};
+        for (int k = 0; k < mocap::NJ; ++k) T[JM[k]] = f.ang[k];
+        T[J_SPINE].y *= 0.6f;
+        T[J_CHEST].y *= 0.6f;
+        bob = f.off.y * scale - pelvis_h_;
+        sway_t_ = {f.off.x * scale, f.off.z * scale};
+        phase_ = loco_ * 2 * kPi;   // (the limp keys off his step)
+        mocap_feet_ = true;
+    }
     switch (driving_out ? Pose::Aim : pose) {
         case Pose::Walk:
         case Pose::Run: {
+            if (mocap_feet_) break;   // (his: the motion capture, above; this is the Drowned's)
             const bool run = pose == Pose::Run;
             // Sneaking (his walk at a sneak's pace, about 0.8 m/s): shorter steps placed carefully,
             // knees bent, a little hunched, arms drawn in, the head kept up. Eased in by the speed.
@@ -976,6 +1012,27 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
             T[J_HEAD] = {0.34f + c * 0.06f, 0.1f - s * 0.1f, 0.38f + s * 0.1f};
             T[J_PELVIS] = {0, 0, s * 0.06f};   // lurching from hip to hip
             bob = -std::fabs(s) * 0.035f;
+            {   // its legs, hips and spine: a real person's dragging, staggering or lurching walk (mocap.hpp);
+                // the reaching arms, the lolling head and the jaw stay as above
+                static const mocap::Clip* const GAITS[3] = {&mocap::DRAG, &mocap::DRUNK, &mocap::LURCH};
+                const mocap::Clip& g = *GAITS[((gait_ % 3) + 3) % 3];
+                const float scale = pelvis_h_ / g.hip_height;
+                const mocap::Pace p = mocap::pace(g, speed, scale);
+                loco_ += dt * std::max(speed, 0.1f) / std::max(p.stride, 0.2f);
+                loco_ -= std::floor(loco_);
+                const mocap::Frame f = mocap::at(p, loco_, 0, 0);
+                for (int j : {J_PELVIS, J_SPINE, J_CHEST}) T[j] = f.ang[j == J_PELVIS ? mocap::PELVIS : j == J_SPINE ? mocap::SPINE : mocap::CHEST];
+                T[J_HIP_L] = f.ang[mocap::HIP_L];
+                T[J_KNE_L] = f.ang[mocap::KNE_L];
+                T[J_ANK_L] = f.ang[mocap::ANK_L];
+                T[J_HIP_R] = f.ang[mocap::HIP_R];
+                T[J_KNE_R] = f.ang[mocap::KNE_R];
+                T[J_ANK_R] = f.ang[mocap::ANK_R];
+                bob = f.off.y * scale - pelvis_h_;
+                sway_t_ = {f.off.x * scale, f.off.z * scale};
+                phase_ = loco_ * 2 * kPi;
+                mocap_feet_ = true;
+            }
             break;
         }
         case Pose::Aim: {   // both hands on the gun, elbows down: the pistol in the modern isosceles, or the shotgun shouldered
@@ -1123,6 +1180,40 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         }
         case Pose::Floored:
         case Pose::Dead: {   // on its back: arms flung out, knees fallen apart, head rolled to one side
+            if (pose == Pose::Dead && sit) {   // sat against a wall or a car where it died: slumped, the head
+                T[J_SPINE] = {-0.08f, 0.05f, 0.06f};   // fallen forward and aside, one hand in its lap, the
+                T[J_CHEST] = {-0.18f, 0.06f, 0};       // other on the street, one leg out, the knee of
+                T[J_NECK] = {-0.35f, 0.15f, 0.1f};     // the other drawn up
+                T[J_HEAD] = {-0.45f, 0.3f, 0.35f};
+                T[J_JAW] = {-0.4f, 0, 0};
+                T[J_SHO_L] = {0.3f, 0, -0.18f};
+                T[J_ELB_L] = {0.35f, 0, 0};
+                T[J_SHO_R] = {0.65f, 0, 0.1f};
+                T[J_ELB_R] = {1.2f, 0, 0};
+                T[J_HIP_L] = {1.3f, 0, -0.12f};
+                T[J_KNE_L] = {-0.12f, 0, 0};
+                T[J_HIP_R] = {1.9f, 0, 0.15f};
+                T[J_KNE_R] = {-1.7f, 0, 0};
+                if (mirror) mirror_targets(T);
+                break;
+            }
+            if (pose == Pose::Dead && root_mode_ == PRONE) {   // face down where it fell crawling: flat on its
+                T[J_SPINE] = {-0.04f, 0.1f, 0.05f};             // front, one arm reaching on along the ground,
+                T[J_CHEST] = {-0.02f, 0.08f, 0};                // the other along its side, the face turned
+                T[J_NECK] = {0, 0.35f, 0};                      // to the side, cheek to the street
+                T[J_HEAD] = {0.05f, 1.0f, 0.1f};
+                T[J_JAW] = {-0.35f, 0, 0};
+                T[J_SHO_L] = {2.95f, 0, -0.35f};
+                T[J_ELB_L] = {0.15f, 0, 0};
+                T[J_SHO_R] = {0.12f, 0, 0.18f};
+                T[J_ELB_R] = {0.1f, 0, 0};
+                T[J_HIP_L] = {0.04f, 0, -0.14f};
+                T[J_HIP_R] = {0.02f, 0, 0.1f};
+                T[J_KNE_L] = {-0.2f, 0, 0};
+                T[J_KNE_R] = {-0.45f, 0, 0};
+                if (mirror) mirror_targets(T);
+                break;
+            }
             const float writhe = pose == Pose::Floored ? std::sin(t_ * 5.0f) : 0.0f;
             T[J_SPINE] = {0.05f, 0, 0.05f};
             T[J_CHEST] = {0.05f, 0, 0};
@@ -1137,6 +1228,7 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
             T[J_HIP_R] = {0.25f + writhe * 0.15f, 0, 0.2f};
             T[J_KNE_L] = {-0.35f, 0, 0};
             T[J_KNE_R] = {-0.6f, 0, 0};
+            if (pose == Pose::Dead && mirror) mirror_targets(T);
             break;
         }
         case Pose::Crawl:
@@ -1232,7 +1324,8 @@ void Character::targets(Pose pose, float speed, float dt, float ap, Vector3* T, 
         T[J_SPINE] = Vector3Add(T[J_SPINE], {-0.1f * limp, 0, 0.12f * limp * std::max(0.0f, -s) * moving});
         bob -= 0.035f * limp * std::max(0.0f, -s) * moving;
     }
-    for (float s : {-1.0f, 1.0f}) {   // keep the soles flat
+    for (float s : {-1.0f, 1.0f}) {   // keep the soles flat (the motion capture's feet roll heel to toe on their own)
+        if (mocap_feet_) break;
         int hp = s < 0 ? J_HIP_L : J_HIP_R, kn = s < 0 ? J_KNE_L : J_KNE_R;
         T[s < 0 ? J_ANK_L : J_ANK_R] = {-(T[hp].x + T[kn].x) * 0.9f, 0, 0};
     }

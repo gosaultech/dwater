@@ -262,7 +262,7 @@ Sv["props"] = [
     {"type": "cheeses", "pos": [7.2, 0.0, 1.1], "size": [0.45, 0.6, 0.45], "seed": 65},
     {"type": "coat_rack", "pos": [1.0, 0.0, Sd - 2.2], "yaw": 90, "size": [2.0, 1.7, 0.6], "seed": 66,
      "colors": [[0.85, 0.1, 0.1], [0.95, 0.5, 0.05], [0.95, 0.95, 0.92], [0.1, 0.2, 0.6], [0.1, 0.1, 0.1]]},   # I ♥ AMSTERDAM T-shirts
-    {"type": "counter", "pos": [7.4, 0.0, Sd - 1.6], "yaw": -90, "size": [2.0, 1.0, 0.6], "till": True},
+    {"type": "counter", "pos": [7.4, 0.0, Sd - 1.2], "yaw": -90, "size": [1.2, 1.0, 0.6], "till": True},   # beside the door, not across it
     {"type": "wall_sign", "pos": [0.04, 2.6, Sd / 2 + 1.0], "size": [2.4, 0.4, 0.03], "yaw": 90, "text": "I ♥ AMSTERDAM", "color": [1.0, 0.3, 0.3], "glow": 2.0,
      "collide": False},
     {"type": "strip_light", "pos": [4.5, 3.4, Sd / 2], "size": [5.0, 0.1, 0.2], "yaw": 90, "collide": False}]

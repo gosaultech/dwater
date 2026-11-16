@@ -50,6 +50,8 @@ flat in int vRegion;
 uniform int u_hidden;   // a bit per body region that has been shot away: its skin and clothes vanish
 uniform vec3 u_camPos; uniform int u_lightCount;
 uniform vec4 u_lightPos[8]; uniform vec4 u_lightCol[8]; uniform vec4 u_lightDir[8];
+uniform vec3 u_fill;   // a soft light from the camera's side, where the room leaves him dark
+uniform float u_wet;   // 1 out in the rain: whatever faces the sky is wet
 uniform vec3 u_ambTop; uniform vec3 u_ambBottom; uniform vec3 u_rim; uniform vec3 u_fog; uniform vec2 u_fogRange;
 // What bare metal mirrors: the surroundings as a gradient from the floor (bottom) to the ceiling (top).
 uniform vec3 u_envTop; uniform vec3 u_envBottom;
@@ -335,9 +337,65 @@ void main() {
         albedo *= 1.0 - (thick ? 0.3 : 0.22) * vAux;
         spec = mix(spec, thick ? 0.06 : 0.16, vAux); gloss = mix(gloss, thick ? 14.0 : 28.0, vAux); bk *= 1.0 - 0.4 * vAux;
     }
+    // Folds: what tells cloth from rubber at any distance. Cloth hangs and bunches in creases a few
+    // centimetres across: long ones down the drape, short ones across it where it gathers (elbows,
+    // knees, the waist: where the baked occlusion is deep). Thin raised ridges of warped noise in the
+    // garment's own space (so they move with it), darker in their valleys, and bumped a few
+    // millimetres so every light picks them out. Leather folds too, broader and shallower.
+    if (cloth || mat == 7) {
+        bool heavy = mat == 4 || mat == 28 || mat == 7;
+        float warp = fbm(p * 5.0);
+        vec3 qd = vec3(p.x * 13.0, p.y * 4.2, p.z * 13.0) + warp * 2.6;          // down the drape
+        vec3 qa = vec3(p.x * 5.0, p.y * 19.0, p.z * 5.0) + warp * 2.2 + 11.3;    // across it
+        float gather = smoothstep(0.98, 0.55, vAo);
+        float fd = pow(ridge(qd), 4.0), fa = pow(ridge(qa), 4.0);
+        float fold = mix(fd * 0.55, max(fd * 0.55, fa), gather) * (heavy ? 0.6 : 1.0);
+        float px = length(fwidth(p)) * 13.0;                                   // (creases finer than a pixel fade out, not shimmer)
+        fold *= clamp(1.6 - px * 2.2, 0.0, 1.0);
+        albedo *= 1.0 - 0.3 * (mix(0.35, 1.0, gather) - fold) * (heavy ? 0.7 : 1.0);
+        N = bumpN(N, fold, heavy ? 0.011 : 0.015);
+    }
     if (bk > 0.0) N = bumpN(N, h, bk);
 
-    vec3 col = albedo * mix(u_ambBottom, u_ambTop, N.y * 0.5 + 0.5) * vAo;
+    // The street on him: what a doll fresh from the box lacks. (p is the garment's own space, metres, feet at 0.)
+    bool garment = cloth || mat == 7;
+    float fuzz = 0.0;
+    if (garment) {
+        // Wear: cloth is never one colour. Faded where it rubs, darker where it is damp or dirty, in patches a hand wide.
+        albedo *= mix(0.76, 1.1, fbm(p * 7.0)) * mix(0.9, 1.06, fbm(p * 2.2 + 3.1));
+        // The flood's mud up the legs: thick at the hem, gone by the knee, dried paler at its edge.
+        float splash = (1.0 - smoothstep(0.04, 0.46, p.y)) * (0.35 + 0.65 * fbm(vec3(p.x * 16.0, p.y * 7.0, p.z * 16.0)));
+        albedo = mix(albedo, vec3(0.045, 0.038, 0.03), clamp(splash * 0.75, 0.0, 0.7));
+        spec = mix(spec, 0.02, splash); 
+        if (mat == 6) {    // denim wears pale where it bends and rubs: the thighs, the knees, the seat; dark in the seams
+            float rub = smoothstep(0.3, 0.75, fbm(vec3(p.x * 9.0, p.y * 4.0, p.z * 9.0) + 4.0)) * smoothstep(0.2, 0.5, p.y) * (1.0 - smoothstep(0.85, 1.0, p.y));
+            albedo = mix(albedo, albedo * 1.9 + vec3(0.012, 0.016, 0.024), rub * 0.6);
+        }
+        wrap *= 0.45;      // a harder edge between lit and unlit: soft wrap-round light is what makes cloth look moulded
+        fuzz = mat == 7 ? 0.12 : 0.32;   // the nap of cloth catching light at grazing angles
+    }
+    if (mat == 31 || mat == 7) {   // boots and soles: mud
+        float muck = (1.0 - smoothstep(0.0, 0.2, p.y)) * (0.4 + 0.6 * fbm(p * 30.0));
+        albedo = mix(albedo, vec3(0.05, 0.042, 0.033), clamp(muck, 0.0, 0.8));
+    }
+    if (mat == 1) {   // living skin: uneven as skin is (ruddier and paler in patches), and a harder light on it
+        albedo *= mix(0.88, 1.08, fbm(p * 11.0)) * mix(vec3(1.0), vec3(1.06, 0.95, 0.93), smoothstep(0.45, 0.7, fbm(p * 5.0 + 9.0)));
+        wrap = 0.3;
+    }
+    // Rain: whatever faces the sky is wet. Cloth darkens and takes a dull sheen, skin and hair shine,
+    // and single drops catch the lamps. A little damp everywhere: the air is full of it.
+    if (u_wet > 0.0) {
+        float up = smoothstep(0.1, 0.75, Ng.y);
+        float w = u_wet * clamp(0.22 + up * (0.55 + 0.45 * fbm(p * 9.0)), 0.0, 1.0);
+        float drops = pow(noise(p * 700.0), 9.0) * up * u_wet;
+        if (garment) { albedo *= 1.0 - 0.32 * w; spec = mix(spec, 0.2, w); gloss = mix(gloss, 34.0, w); fuzz *= 1.0 - 0.6 * w; }
+        else if (mat == 1 || mat == 29) { spec += 0.22 * w; gloss = mix(gloss, 60.0, w); }
+        else if (mat == 8 || mat == 35 || mat == 37) { albedo *= 1.0 - 0.25 * w; spec += 0.2 * w; gloss = mix(gloss, 50.0, w); }
+        spec += drops * 1.5; gloss = mix(gloss, 180.0, clamp(drops * 3.0, 0.0, 1.0));
+    }
+    float ao = mix(vAo, vAo * vAo, 0.55);   // deeper in the creases and under the arms than the bake alone
+
+    vec3 col = albedo * mix(u_ambBottom, u_ambTop, N.y * 0.5 + 0.5) * ao;
     for (int i = 0; i < 8; i++) {
         if (i >= u_lightCount) break;
         vec3 L; float att = 1.0;
@@ -353,24 +411,26 @@ void main() {
         if (i == u_shadowLight[0]) lc *= 0.06 + 0.94 * shadowIn(texture1, u_shadowVP[0], vWorld + Ng * 0.012);
         else if (i == u_shadowLight[1]) lc *= 0.06 + 0.94 * shadowIn(texture2, u_shadowVP[1], vWorld + Ng * 0.012);
         float ndl = dot(N, L);
-        col += albedo * max((ndl + wrap) / (1.0 + wrap), 0.0) * lc * vAo;
+        col += albedo * max((ndl + wrap) / (1.0 + wrap), 0.0) * lc * ao;
         col += sss * (0.5 - 0.5 * ndl) * lc * 0.35;                                  // light bleeding through flesh
-        col += spec * pow(max(dot(N, normalize(L + V)), 0.0), gloss) * lc * step(0.0, ndl) * vAo;
+        if (fuzz > 0.0) col += fuzz * albedo * pow(1.0 - max(dot(N, V), 0.0), 3.0) * max(ndl * 0.5 + 0.5, 0.0) * lc * ao;   // cloth's nap
+        col += spec * pow(max(dot(N, normalize(L + V)), 0.0), gloss) * lc * step(0.0, ndl) * ao;
         if (metal > 0.0 && u_softbox > 0.0)   // the softbox itself, mirrored: a broad patch with soft edges
-            col += metal * u_softbox * smoothstep(0.72, 0.93, dot(reflect(-V, N), L)) * lc * vAo;
+            col += metal * u_softbox * smoothstep(0.72, 0.93, dot(reflect(-V, N), L)) * lc * ao;
         if (aniso > 0.0) {   // a band of sheen across hair, tinted by the hair's own colour
             float th = dot(strand, normalize(L + V));
-            col += aniso * pow(sqrt(max(1.0 - th * th, 0.0)), 48.0) * lc * step(0.0, ndl) * vAo * (vec3(0.2) + albedo * 4.0);
+            col += aniso * pow(sqrt(max(1.0 - th * th, 0.0)), 48.0) * lc * step(0.0, ndl) * ao * (vec3(0.2) + albedo * 4.0);
         }
     }
+    col += albedo * u_fill * (0.35 + 0.65 * max(dot(N, V), 0.0)) * ao;   // the fill, from the camera's side
     if (metal > 0.0) {   // bare metal mirrors its surroundings, tinted by its own colour (strongest at grazing angles)
         vec3 R = reflect(-V, N);
         vec3 env = mix(u_envBottom, u_envTop, smoothstep(-0.15, 0.55, R.y));
         float fres = mix(1.0, 1.5, pow(1.0 - max(dot(N, V), 0.0), 5.0));
         vec3 tint = mix(vec3(1.0), albedo / max(max(albedo.r, max(albedo.g, albedo.b)), 0.02), 0.25);
-        col += env * metal * fres * tint * vAo;
+        col += env * metal * fres * tint * ao;
     }
-    col += pow(1.0 - max(dot(N, V), 0.0), 4.0) * rim * u_rim * vAo;
+    col += pow(1.0 - max(dot(N, V), 0.0), 4.0) * rim * u_rim * ao;
     col = mix(col, u_fog, fogf * 0.6);
     finalColor = vec4(pow(filmic(max(col, 0.0)), vec3(1.0 / 2.2)), 1.0);
 })";
@@ -389,6 +449,9 @@ uniform mat4 u_shadowVP[2]; uniform vec4 u_shadowL[2];   // light position (xyz)
 // (w: 0 point, 1 spot), spot direction + cos(half angle). Black = off.
 uniform vec4 u_dynPos[2]; uniform vec4 u_dynCol[2]; uniform vec4 u_dynDir[2];
 uniform int u_dynShadow[2];   // which shadow map holds each of those lights' shadows (-1: none)
+// The street's live lights (dw/fxlive.hpp): each the difference from the light the painting was
+// rendered with, round its spot (position + reach; colour, + brighter, - darker). Reach 0: off.
+uniform vec4 u_fxPos[4]; uniform vec4 u_fxCol[4];
 out vec4 finalColor;
 float decode(vec2 rg) { return (floor(rg.r * 255.0 + 0.5) * 256.0 + floor(rg.g * 255.0 + 0.5)) / 65535.0; }
 // How much of a light at `lp` a character hides from the point P (0..1, softened over 3x3 texels).
@@ -440,7 +503,77 @@ void main() {
         else if (u_dynShadow[i] == 1) att *= 1.0 - occluded(u_shadow1, u_shadowVP[1], u_dynPos[i].xyz, P);
         add += alb * u_dynCol[i].rgb * att * max(dot(Nf, L), 0.0);
     }
-    finalColor = vec4(col * (1.0 - clamp(dark, 0.0, 0.82)) + add, 1.0);
+    vec3 live = vec3(0.0);
+    for (int i = 0; i < 4; i++) {
+        if (u_fxPos[i].w <= 0.0) continue;
+        vec3 toL = u_fxPos[i].xyz - P;
+        float dist = length(toL);
+        float x = clamp(1.0 - dist / u_fxPos[i].w, 0.0, 1.0);
+        live += u_fxCol[i].rgb * x * x * (0.35 + 0.65 * max(dot(Nf, toL / max(dist, 1e-4)), 0.0));
+    }
+    finalColor = vec4(col * (1.0 - clamp(dark, 0.0, 0.82)) * (vec3(1.0) + min(live, vec3(0.0))) + add + alb * max(live, vec3(0.0)) * 0.5, 1.0);
+})";
+
+// The live layer's sprites (dw/fxlive.hpp; game_fx.cpp draws them on quads that face the camera,
+// upright, depth-tested against the painting). Shared noise:
+#define DW_FX_NOISE \
+    "float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7)) + u_seed * 13.7) * 43758.5453); }\n" \
+    "float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);\n" \
+    "  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y); }\n" \
+    "float fbm(vec2 p) { float v = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; } return v; }\n"
+
+// Flames: a tongue narrowing as it rises, the air round it churning (domain-warped noise), its top
+// torn into licks and wisps, deep red at its edges to yellow-white at its heart, embers carried up
+// out of it and winking out (added to the picture: light, not paint).
+const char* FIRE_FS = "#version 330\n"
+    "in vec2 fragTexCoord; out vec4 finalColor;\n"
+    "uniform float u_time; uniform float u_seed; uniform float u_power;\n"
+    DW_FX_NOISE
+    R"(void main() {
+    float y = 1.0 - fragTexCoord.y, x = (fragTexCoord.x - 0.5) * 2.0, t = u_time;
+    vec2 p = vec2(x * 2.6, y * 3.2 - t * 2.6);
+    vec2 q = vec2(fbm(p + vec2(0.0, t * 0.4)), fbm(p + vec2(5.2, 1.3) - vec2(0.0, t * 0.3)));
+    float n = fbm(p + 1.8 * q);
+    float lick = fbm(vec2(x * 6.0, y * 2.2 - t * 4.2) + 3.1 * q);
+    float width = (1.0 - y) * 0.9 + 0.06;
+    float body = 1.0 - smoothstep(width * 0.45, width, abs(x) + (n - 0.5) * 0.75);
+    body *= 1.0 - smoothstep(0.35, 0.95, y + (lick - 0.5) * 0.9 * y);
+    float heat = clamp(body * (1.25 - y * 1.25) + (n - 0.45) * 0.7 * body, 0.0, 1.0);
+    vec3 c = mix(vec3(0.45, 0.04, 0.0), vec3(0.95, 0.32, 0.03), smoothstep(0.08, 0.45, heat));
+    c = mix(c, vec3(1.0, 0.72, 0.25), smoothstep(0.45, 0.8, heat));
+    c = mix(c, vec3(1.0, 0.95, 0.8), smoothstep(0.85, 1.0, heat));
+    float a = smoothstep(0.03, 0.3, heat) * smoothstep(0.0, 0.06, y) * u_power;
+    vec2 g = vec2(x * 7.0, y * 9.0 - t * 3.0), cell = floor(g), f = fract(g) - 0.5;
+    vec2 off = (vec2(hash(cell + 3.0), hash(cell + 9.0)) - 0.5) * 0.5;
+    float ember = step(0.93, hash(cell + 17.0)) * smoothstep(0.12, 0.0, length(f + off))
+                * smoothstep(1.0, 0.45, y) * smoothstep(0.25, 0.5, y) * step(0.5, fract(hash(cell + 5.0) + t * 0.7));
+    c += vec3(1.0, 0.6, 0.2) * ember * 2.0;
+    finalColor = vec4(c * 1.5, max(a, ember * u_power));
+})";
+
+// Smoke: billows rising and spreading, dark, lit orange from below by what's burning.
+const char* SMOKE_FS = "#version 330\n"
+    "in vec2 fragTexCoord; out vec4 finalColor;\n"
+    "uniform float u_time; uniform float u_seed; uniform float u_power;\n"
+    DW_FX_NOISE
+    R"(void main() {
+    float y = 1.0 - fragTexCoord.y, x = (fragTexCoord.x - 0.5) * 2.0;
+    float n = fbm(vec2(x * 2.4, y * 3.0 - u_time * 0.55) + vec2(u_time * 0.06, 0.0));
+    float spread = 0.3 + y * 0.7;
+    float puff = (1.0 - smoothstep(spread * 0.35, spread, abs(x) + (n - 0.5) * 0.6)) * smoothstep(0.0, 0.2, y) * (1.0 - smoothstep(0.6, 1.0, y));
+    float a = clamp(puff * (n * 1.4 - 0.2), 0.0, 1.0) * 0.6 * u_power;
+    vec3 c = mix(vec3(0.3, 0.13, 0.05), vec3(0.055, 0.055, 0.06), smoothstep(0.0, 0.3, y));
+    finalColor = vec4(c, a);
+})";
+
+// A glow: a lamp's halo (a beacon at its flash, the arc where a wire touches the road).
+const char* GLOW_FS = R"(#version 330
+in vec2 fragTexCoord; out vec4 finalColor;
+uniform vec3 u_color; uniform float u_power;
+void main() {
+    float d = distance(fragTexCoord, vec2(0.5)) * 2.0;
+    float a = (exp(-d * d * 7.0) + exp(-d * 22.0) * 0.8) * u_power;
+    finalColor = vec4(u_color * 1.4, a);
 })";
 
 const char* BLOB_FS = R"(#version 330
@@ -457,6 +590,11 @@ void main() {
     vec2 d = fragTexCoord - 0.5;
     vec2 ca = d * dot(d, d) * 0.006;                              // lens fringe toward the corners
     vec3 c = vec3(texture(texture0, fragTexCoord + ca).r, texture(texture0, fragTexCoord).g, texture(texture0, fragTexCoord - ca).b);
+    vec2 t = 1.0 / u_res;                                         // a lens that is in focus: each pixel pushed away from its neighbours' average
+    vec3 mid = texture(texture0, fragTexCoord).rgb;
+    vec3 soft = (texture(texture0, fragTexCoord + vec2(t.x, 0.0)).rgb + texture(texture0, fragTexCoord - vec2(t.x, 0.0)).rgb +
+                 texture(texture0, fragTexCoord + vec2(0.0, t.y)).rgb + texture(texture0, fragTexCoord - vec2(0.0, t.y)).rgb) * 0.25;
+    c += clamp((mid - soft) * 0.55, -0.08, 0.08);                 // (held back at hard edges: no halos round a lamp)
     c = clamp(c, 0.0, 1.0);
     float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
     c = mix(vec3(l), c, 1.05);                                    // the city's own colours, a touch richer
@@ -469,4 +607,70 @@ void main() {
     finalColor = vec4(c, 1.0);
 })";
 
+// Rain: one sheet of falling streaks (dw/rain.hpp), its texture coordinates in metres (across the
+// sheet, and height). Each column of the sheet carries drops at its own spacing and speed; a drop
+// is a short streak (the blur of its fall in a frame), leaned by the wind. A streak thinner than a
+// pixel (far off) fades rather than shimmers. Rain shows where there's light behind it: over a lit
+// window or a lamp it glows, against the dark it all but vanishes, as it does at night.
+const char* RAIN_FS = R"(#version 330
+in vec2 fragTexCoord; in vec4 fragColor; out vec4 finalColor;
+uniform float u_time; uniform float u_dist; uniform float u_seed;
+uniform sampler2D u_plate; uniform vec2 u_screen; uniform vec4 u_win;   // (the window over the background: x0, y0, w, h)
+float h1(float n) { return fract(sin(n * 91.345 + u_seed * 47.13) * 43758.5453); }
+void main() {
+    vec2 p = fragTexCoord;
+    p.x += p.y * 0.12;                                   // the wind leans them
+    float pitch = 0.04 + 0.008 * u_dist;                 // m between columns of drops
+    float col = floor(p.x / pitch);
+    float r1 = h1(col), r2 = h1(col + 13.7), r3 = h1(col + 29.1);
+    float len = 0.34;                                    // m: a drop's blur in one frame
+    float gap = len * (4.0 + 10.0 * r2);
+    float y = p.y + u_time * 9.5 * (0.9 + 0.2 * r3) + r1 * 23.0;
+    float along = mod(y, gap);                           // m up from the drop's head
+    float x = (fract(p.x / pitch) - (0.25 + 0.5 * r1)) * pitch;
+    float px = max(fwidth(p.x), 1e-5);                   // m per pixel on this sheet
+    float core = 0.0012;                                 // m: half a drop's width
+    float across = 1.0 - smoothstep(core, core + px, abs(x));
+    float thin = min(1.0, (2.0 * core + 0.6 * px) / (2.0 * px));   // thinner than a pixel: fainter
+    float down = smoothstep(0.0, 0.04, along) * (1.0 - smoothstep(len * 0.55, len, along));
+    vec2 uv = u_win.xy + vec2(gl_FragCoord.x / u_screen.x, 1.0 - gl_FragCoord.y / u_screen.y) * u_win.zw;
+    vec3 bg = texture(u_plate, uv).rgb;
+    float l = dot(bg, vec3(0.2126, 0.7152, 0.0722));
+    float lit = 0.18 + 0.82 * smoothstep(0.02, 0.35, l);
+    float a = across * thin * down * lit * mix(0.55, 0.3, clamp(u_dist / 34.0, 0.0, 1.0));
+    vec3 c = mix(vec3(0.58, 0.63, 0.7), bg * 1.8 + 0.12, 0.45);
+    finalColor = vec4(c, a * fragColor.a);
+})";
+
+// Rain on the ground: a ring spreading where a drop lands, here and there all over the floor
+// (the room's floor as one quad just above the street, its texture coordinates in metres on the
+// floor plan), behind whatever stands in front of it; brighter where the street shines.
+const char* SPLASH_FS = R"(#version 330
+in vec2 fragTexCoord; in vec4 fragColor; out vec4 finalColor;
+uniform float u_time; uniform vec3 u_cam;
+uniform sampler2D u_plate; uniform vec2 u_screen; uniform vec4 u_win;
+float h2(vec2 c, float k) { return fract(sin(dot(c, vec2(127.1, 311.7)) + k * 74.7) * 43758.5453); }
+void main() {
+    vec2 p = fragTexCoord;
+    float cell = 0.32;
+    vec2 c = floor(p / cell);
+    float period = 0.45 + 0.9 * h2(c, 1.0);
+    float life = 0.16;
+    float t = mod(u_time + h2(c, 2.0) * period, period);
+    if (t > life) discard;
+    vec2 centre = (c + 0.2 + 0.6 * vec2(h2(c, 3.0), h2(c, 4.0))) * cell;
+    float k = t / life;
+    float r = 0.012 + 0.06 * k;
+    float d = abs(length(p - centre) - r);
+    float px = max(fwidth(p.x), 1e-5);
+    float ring = 1.0 - smoothstep(0.004, 0.004 + px, d);
+    vec2 uv = u_win.xy + vec2(gl_FragCoord.x / u_screen.x, 1.0 - gl_FragCoord.y / u_screen.y) * u_win.zw;
+    vec3 bg = texture(u_plate, uv).rgb;
+    float l = dot(bg, vec3(0.2126, 0.7152, 0.0722));
+    float far = 1.0 - smoothstep(14.0, 26.0, distance(vec3(p.x, 0.0, p.y), vec3(u_cam.x, 0.0, u_cam.z)));
+    float a = ring * (1.0 - k) * far * (0.15 + 0.85 * smoothstep(0.03, 0.3, l)) * 0.6 * min(1.0, 0.012 / px);
+    finalColor = vec4(mix(vec3(0.7, 0.74, 0.8), bg * 1.6 + 0.15, 0.5), a);
+})";
+
 }  // namespace dw::shaders
+

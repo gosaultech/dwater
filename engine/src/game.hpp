@@ -21,11 +21,14 @@
 #include "dw/controls.hpp"
 #include "dw/core.hpp"
 #include "dw/doors.hpp"
+#include "dw/framing.hpp"
+#include "dw/fxlive.hpp"
 #include "dw/house.hpp"
 #include "dw/rain.hpp"
 #include "dw/room_spec.hpp"
 #include "dw/settings.hpp"
 #include "dw/status.hpp"
+#include "dw/streaming.hpp"
 #include "dw/title.hpp"
 #include "dw/transition.hpp"
 #include "dw/world_map.hpp"
@@ -80,6 +83,9 @@ public:
     // A still of the room (--still): the survivor standing at (x, z) facing yaw (degrees), no
     // Drowned, seen from `shot` (empty: whichever shot covers him). Render and present after.
     void pose_still(float x, float z, float yaw_deg, const std::string& shot);
+    // The walk-through (game_walk.cpp): the stick held through every doorway and staircase, both
+    // ways, walking and running; a line per try in `report`. Returns how many went wrong.
+    int walkthrough(const std::string& report);
     // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
     // only: a comma-separated list of subjects to render (empty: all).
     void model_sheet(const std::string& dir, const std::string& only = "");
@@ -125,6 +131,9 @@ private:
     void bind_shadows();                // shadow uniforms for the character and plate shaders
 
     void cut_to(const std::string& id);
+    void update_view(float dt);                     // the window over the background follows him (dw/framing.hpp)
+    framing::Lens lens() const;                     // the shot's camera, as the window sees it
+    float shot_zoom(const std::string& id);         // the zoom a shot starts from (his typical size in it)
     void upload_lights();
     void upload_studio_lights();
     void set_lights(const Vector4* pos, const Vector4* col, const Vector4* dir, int n);   // uploads and remembers them
@@ -205,8 +214,7 @@ private:
     bool load_house(const std::string& start_room);
     void build_storey(int storey);                  // colliders, sight walls, enemies and loot for that floor
     void enter_room(int r);                         // he's stepped into room r (seamless): its shots, lights, sound
-    void stream_plates();                           // the plates of the rooms next door, decoded in the background
-    std::vector<std::string> shot_ids(const RoomSpec& r) const;   // its camera shots and its doors' peeks
+    void stream_plates();                           // the plates of the shots near him, decoded in the background (dw/streaming.hpp)
     int room_index(const std::string& id) const;
     void update_doors(float dt, Vector2 want, float tilt);   // pushing, leaning, peeking, the stairs
     bool use_door(int room, const Interactable& it);  // Cross at a door: unlock, open, shut, or the stairs
@@ -279,7 +287,10 @@ private:
     std::vector<Enemy> enemies_;
     SoundBank sfx_;
     Effects fx_;
-    Rain rain_;                                     // over the streets (spec_.rain)
+    Shader rain_sh_{};                              // the rain's sheets over the streets (spec_.rain; dw/rain.hpp)
+    int l_rTime_ = -1, l_rDist_ = -1, l_rSeed_ = -1, l_rPlate_ = -1, l_rScreen_ = -1;
+    Shader splash_sh_{};                            // the rain landing on the floor
+    int l_sTime_ = -1, l_sCam_ = -1, l_sPlate_ = -1, l_sScreen_ = -1;
     // The survivor in a fight.
     PMode pmode_ = PMode::Normal;
     float pmode_t_ = 0, invuln_ = 0, dodge_cd_ = 0, aim_pitch_ = 0, aim_snap_ = 0, dead_t_ = 0;
@@ -336,9 +347,34 @@ private:
     int static_lights_ = 0;                      // room lights; the flash and the flashlight come after them
     int flash_light_ = -1, lamp_light_ = -1;     // where the flash and the flashlight sit in the light arrays (-1: off)
     int l_dynPos_ = -1, l_dynCol_ = -1, l_dynDir_ = -1, l_pDynSh_ = -1;
-    Vector3 held_fwd_{0, 0, -1}, held_right_{1, 0, 0};
-    Vector2 held_in_{};
-    bool holding_ = false;
+    std::vector<streaming::Candidate> plate_cands_;  // (stream_plates: kept so it allocates once)
+    // The following view (dw/framing.hpp): a window over the shot's background that keeps him in it.
+    framing::Operator view_;
+    framing::Window win_{};                      // this frame's window over the background ({}: the whole of it)
+    std::vector<std::vector<float>> shot_zoom_;  // each room's shots' starting zoom (-1: not worked out yet)
+    std::vector<float> zoom_scratch_;            // (shot_zoom: kept so it allocates once)
+    std::vector<Obb2> near_solid_;               // (... and the solids round the shot it measures over)
+    bool view_cut_ = true;                       // a cut: the next frame starts straight on him...
+    bool view_establish_ = false;                // ... or opens wide (the first time in a big space)
+    bool establish_ = true;                      // (off for the capture setups, stills and the walk-through)
+    float item_push_ = 1;                        // a little closer while a pickup is within reach
+    int l_rWin_ = -1, l_sWin_ = -1, l_fill_ = -1, l_wet_ = -1;
+    // The live layer over the painting (dw/fxlive.hpp, game_fx.cpp): flames, smoke, sparks, beacons.
+    Shader fire_sh_{}, smoke_sh_{}, glow_sh_{};
+    int l_fire_[3]{-1, -1, -1}, l_smoke_[3]{-1, -1, -1}, l_glow_[2]{-1, -1}, l_pFxPos_ = -1, l_pFxCol_ = -1;
+    std::vector<fxlive::Sparks> sparks_;          // one per "sparks" fx in this room (others unused)
+    // The dead in the streets (the rooms' "dead"): the cast's bodies posed once where they fell, still.
+    struct Corpse { Character body; Vector3 at{}; float blood = 0.55f; };
+    std::vector<Corpse> corpses_;
+    void build_corpses(int storey);
+    void pool_corpses();                          // their blood (again after the floor's been mopped)
+    void init_fx();
+    void update_fx(float dt);
+    void fx_plate();                              // the live lights' change, for the plate shader
+    void draw_fx() const;
+    Vector2 stream_at_{1e9f, 1e9f};                  // where he stood when the plates were last thought about
+    HeldFrame frame_;                // the camera directions the stick is read by: kept through cuts while it's held (controls.hpp)
+    Vector2 frame_fwd_{0, -1};       // this frame's forward on the floor (x, z), from update_player
     int l_cam_ = -1, l_count_ = -1, l_pos_ = -1, l_col_ = -1, l_dir_ = -1, l_top_ = -1, l_bot_ = -1, l_rim_ = -1, l_fog_ = -1, l_fogr_ = -1;
     int l_env_top_ = -1, l_env_bot_ = -1, l_softbox_ = -1;
     int l_depth_ = -1, l_near_ = -1, l_far_ = -1, l_dmax_ = -1, l_blob_ = -1, l_time_ = -1, l_res_ = -1;

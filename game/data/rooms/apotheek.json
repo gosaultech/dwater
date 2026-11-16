@@ -624,6 +624,34 @@
       ],
       "collide": false,
       "interior": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        1.84,
+        0.0,
+        4.84
+      ],
+      "yaw": 273.2,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:multi_cleaner_bottle",
+      "pos": [
+        8.53,
+        0.0,
+        4.88
+      ],
+      "yaw": 97.2,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
     }
   ],
   "lights": [
@@ -747,54 +775,54 @@
   ],
   "shots": [
     {
-      "id": "a",
       "pos": [
-        8.95,
-        2.8,
-        8.5
+        8.68,
+        3.4,
+        8.12
       ],
       "look_at": [
-        3.0,
-        1.0,
-        1.8
+        4.23,
+        0.42,
+        5.42
       ],
-      "fov": 62,
+      "fov": 48.3,
       "zone": {
         "min": [
           0.0,
           0.0
         ],
         "max": [
-          9.45,
-          5.0
+          5.47,
+          9.0
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "a"
     },
     {
-      "id": "b",
       "pos": [
-        0.6,
-        2.9,
-        3.6
+        1.87,
+        2.7,
+        8.27
       ],
       "look_at": [
-        7.949999999999999,
-        0.9,
-        8.6
+        5.93,
+        -0.3,
+        5.03
       ],
-      "fov": 62,
+      "fov": 62.6,
       "zone": {
         "min": [
-          0.0,
-          5.0
+          3.97,
+          0.0
         ],
         "max": [
           9.45,
           9.0
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "b"
     }
   ],
   "spawns": {
@@ -875,6 +903,21 @@
         1.5
       ],
       "yaw": 180
+    }
+  ],
+  "fx": [],
+  "dead": [
+    {
+      "pos": [
+        7.38,
+        0.0,
+        3.62
+      ],
+      "yaw": 41,
+      "variant": 0,
+      "prone": false,
+      "blood": 0.73,
+      "catastrophe": true
     }
   ]
 }

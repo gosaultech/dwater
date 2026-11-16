@@ -261,56 +261,178 @@ STALLS = {   # name on the front, awning colours, what's on the counter
 }
 
 
+def _blob(acc, c, rx, ry, rz, seg=8, rings=5):
+    """An ellipsoid into an accumulator (a soft toy's body, its head, its ears)."""
+    cx, cy, cz = c
+    rows = [[(cx + rx * math.sin(math.pi * i / rings) * math.cos(2 * math.pi * k / seg), cy - ry * math.cos(math.pi * i / rings),
+              cz + rz * math.sin(math.pi * i / rings) * math.sin(2 * math.pi * k / seg)) for k in range(seg)] for i in range(rings + 1)]
+    for i in range(rings):
+        for k in range(seg):
+            acc.quad(rows[i][k], rows[i + 1][k], rows[i + 1][(k + 1) % seg], rows[i][(k + 1) % seg])
+
+
+def _teddy(acc, x, y, z, s, sit=False):
+    """A soft toy s high-ish, facing +z: a body, a head with its ears and muzzle, arms (and legs out if
+    it sits on a shelf)."""
+    _blob(acc, (x, y, z), s * 0.5, s * 0.58, s * 0.42)
+    _blob(acc, (x, y + s * 0.8, z + s * 0.04), s * 0.4, s * 0.38, s * 0.36)
+    _blob(acc, (x, y + s * 0.74, z + s * 0.38), s * 0.15, s * 0.11, s * 0.1, seg=6, rings=4)
+    for ex in (-1, 1):
+        _blob(acc, (x + ex * s * 0.3, y + s * 1.12, z), s * 0.14, s * 0.14, s * 0.07, seg=6, rings=4)
+        _blob(acc, (x + ex * s * 0.46, y + s * 0.12, z + s * 0.12), s * 0.16, s * 0.3, s * 0.16, seg=6, rings=4)
+        if sit:
+            _blob(acc, (x + ex * s * 0.24, y - s * 0.45, z + s * 0.32), s * 0.17, s * 0.15, s * 0.3, seg=6, rings=4)
+
+
+def _bulbs(lit, dead, a, b, rng, gap=0.3, r=0.035, gone=0.12):
+    """bulb_line, with a share of the bulbs blown (the stall has been burning since the city emptied)."""
+    L = math.dist(a, b)
+    n = max(1, int(L / gap))
+    for i in range(n + 1):
+        t = i / n
+        q = tuple(a[k] + (b[k] - a[k]) * t for k in range(3))
+        (dead if rng.random() < gone else lit).rod((q[0], q[1] - r, q[2]), (q[0], q[1] + r, q[2]), r, r, 6)
+
+
+TOY_COLOURS = [(0.75, 0.12, 0.1), (0.15, 0.3, 0.75), (0.2, 0.6, 0.25), (0.85, 0.4, 0.6), (0.85, 0.7, 0.2), (0.55, 0.38, 0.22),
+               (0.85, 0.83, 0.8), (0.5, 0.2, 0.6)]
+
+
 def stall(root, p, w, h, d):
-    """A fairground stall: a trailer-box w wide in its livery (a deep colour, a band round it, a
-    chrome skirt) with its front flap up as an awning (striped), its counter lit, its name in bulbs
-    along the fascia, and on show: food, or rows of prizes (stuffed toys as bright soft lumps)."""
+    """A kermis stall: a trailer-box w wide in its livery (sanded edges, chrome at its corners, a band
+    round it, a chrome skirt), its front flap up as a striped awning with a scalloped valance (one
+    scallop torn off), an arched crest over it with the name in bulbs and bulbs round its edge,
+    pilasters of bulbs beside the hatch, some bulbs blown; the counter lit. On show: food (a glass
+    case, the fryers, the menu), a shooting gallery (rows of targets, rifles on the counter, soft
+    toys hung in a row), or claw machines lit inside, a heap of toys in each."""
     rng = random.Random(p.get("seed", 9))
-    name, (ca, cb), show = STALLS.get(p.get("kind", "oliebollen"), STALLS["oliebollen"])
+    kind = p.get("kind", "oliebollen")
+    name, (ca, cb), show = STALLS.get(kind, STALLS["oliebollen"])
     name = p.get("name", name)
-    paint, trim = LIVERY.get(p.get("kind", "oliebollen"), LIVERY["oliebollen"])
-    body = M({"color": list(paint), "rough": 0.3, "noise": 0.05})
+    paint, trim = LIVERY.get(kind, LIVERY["oliebollen"])
+    body = M({"color": list(paint), "rough": 0.3, "noise": 0.05, "coat": 0.6, "grime": 1.0, "streaks": 0.4})
+    trim_m = M({"color": list(trim), "rough": 0.35})
+    chrome = M({"color": [0.75, 0.76, 0.78], "rough": 0.12, "metal": 1.0, "noise": 0.08})
     f = d / 2   # (its footprint centred on its spot, as the game's collider is: the front at +d/2)
-    for lo, hi in (((-w / 2, 0.0, -d / 2), (w / 2, h, -d / 2 + 0.05)),            # the box as a shell, its hatch open:
-                   ((-w / 2, 0.0, -d / 2), (-w / 2 + 0.06, h, f - 0.05)),          # back, sides, roof, and the front
-                   ((w / 2 - 0.06, 0.0, -d / 2), (w / 2, h, f - 0.05)),            # round the hatch
-                   ((-w / 2, h - 0.06, -d / 2), (w / 2, h, f - 0.05)),
-                   ((-w / 2, 0.0, f - 0.12), (w / 2, 1.0, f - 0.05)),
-                   ((-w / 2, h - 0.5, f - 0.12), (w / 2, h, f - 0.05))):
-        lbox(root, "stall_body", lo, hi, body)
+    kit.soft(root, "stall_back", (0.0, h / 2, -f + 0.03), (w, h, 0.06), body, 0.025, 2)
+    for sx in (-1, 1):
+        kit.soft(root, "stall_side", (sx * (w / 2 - 0.03), h / 2, -0.025), (0.06, h, d - 0.05), body, 0.025, 2)
+        for zz in (-f, f - 0.05):
+            rod(root, "stall_corner", (sx * w / 2, 0.3, zz), (sx * w / 2, h, zz), 0.03, 0.03, chrome, seg=8)
+        kit.soft(root, "stall_pilaster", (sx * (w / 2 - 0.1), (1.05 + h - 0.5) / 2, f - 0.02), (0.2, h - 1.55, 0.06), trim_m, 0.02, 2)
+    kit.soft(root, "stall_roof", (0.0, h - 0.03, -0.025), (w + 0.04, 0.06, d - 0.05), body, 0.02, 2)
+    kit.soft(root, "stall_front_lo", (0.0, 0.5, f - 0.085), (w, 1.0, 0.07), body, 0.02, 2)
+    kit.soft(root, "stall_front_hi", (0.0, h - 0.25, f - 0.085), (w, 0.5, 0.07), body, 0.02, 2)
+    lbox(root, "stall_panel", (-w / 2 + 0.25, 0.38, f - 0.05), (w / 2 - 0.25, 0.86, f - 0.04), trim_m)
+    lbox(root, "stall_panel_in", (-w / 2 + 0.3, 0.43, f - 0.04), (w / 2 - 0.3, 0.81, f - 0.035), body)
     lbox(root, "stall_floor", (-w / 2, 0.88, -d / 2), (w / 2, 0.92, f - 0.1), M({"color": [0.2, 0.2, 0.21], "rough": 0.6}))
-    lbox(root, "stall_band", (-w / 2 - 0.01, 0.42, -d / 2 - 0.01), (w / 2 + 0.01, 0.62, f - 0.06), M({"color": list(trim), "rough": 0.35}))
+    lbox(root, "stall_band", (-w / 2 - 0.01, 0.92, -d / 2 - 0.01), (w / 2 + 0.01, 1.0, f - 0.06), trim_m)
     lbox(root, "stall_skirt", (-w / 2 - 0.01, 0.0, -d / 2 - 0.01), (w / 2 + 0.01, 0.3, f - 0.06), M({"color": [0.7, 0.72, 0.74], "rough": 0.2, "metal": 0.9}))
     lbox(root, "stall_inside", (-w / 2 + 0.1, 1.0, f - 1.2), (w / 2 - 0.1, h - 0.5, f - 1.18), M({"ph": "dirty_tiles", "tint": [0.9, 0.88, 0.84], "scale": 0.5}))
     for sx in (-1, 1):   # the box's insides, lit by its own lamp
         lbox(root, "stall_cheek", (sx * (w / 2 - 0.1) - 0.02, 1.0, f - 1.2), (sx * (w / 2 - 0.1) + 0.02, h - 0.5, f - 0.05), body)
     lbox(root, "stall_ceiling", (-w / 2 + 0.1, h - 0.52, f - 1.2), (w / 2 - 0.1, h - 0.5, f - 0.05), M({"color": [0.75, 0.73, 0.7], "rough": 0.6}))
+    rod(root, "stall_tube", (-w / 2 + 0.4, h - 0.56, f - 0.5), (w / 2 - 0.4, h - 0.56, f - 0.5), 0.02, 0.02, builders.emissive("stall_tube", (0.95, 0.97, 1.0), 6.0), seg=6)
     lbox(root, "stall_counter", (-w / 2, 0.95, f - 0.1), (w / 2, 1.05, f + 0.5), M({"color": [0.5, 0.06, 0.05], "rough": 0.4}))
-    flap = Acc()
-    flap_b = Acc()
+    lbox(root, "stall_counter_edge", (-w / 2, 0.94, f + 0.5), (w / 2, 1.06, f + 0.52), chrome)
+    # the awning: the flap propped up, sagging a little between its stays, a scalloped valance
+    stripes = (Acc(), Acc())
     n = max(2, int(w / 0.4))
-    for k in range(n):   # the awning, striped
+    ye, ze = h - 0.12, f + 1.4
+
+    def aw(t):
+        return (h - 0.45 + 0.33 * t - 0.05 * math.sin(math.pi * t), f + 1.4 * t)
+    torn = rng.randrange(n)
+    for k in range(n):
         x0, x1 = -w / 2 + w * k / n, -w / 2 + w * (k + 1) / n
-        (flap if k % 2 == 0 else flap_b).quad((x0, h - 0.4, f), (x1, h - 0.4, f), (x1, h - 0.1, f + 1.4), (x0, h - 0.1, f + 1.4))
-    flap.build("stall_awning", M({"color": list(ca), "rough": 0.6}), root, smooth=False)
-    flap_b.build("stall_awning", M({"color": list(cb), "rough": 0.6}), root, smooth=False)
-    lbox(root, "stall_fascia", (-w / 2, h - 0.05, f - 0.05), (w / 2, h + 0.55, f + 0.05), M({"color": list(cb), "rough": 0.4}))
-    text(root, name, (0.0, h + 0.25, f + 0.06), min(0.36, 1.4 * w / max(len(name), 1)), bulbs_mat("warm", 6.0), font="DejaVuSans-Bold.ttf", depth=0.0)
-    edge = Acc()
-    bulb_line(edge, (-w / 2, h - 0.12, f + 1.42), (w / 2, h - 0.12, f + 1.42), gap=0.3, r=0.035)
-    edge.build("stall_bulbs", bulbs_mat("warm", 8.0), root)
-    if show == "prizes":   # rows of soft toys up the back, bright
-        toys = {c: Acc() for c in ("red", "blue", "green", "pink", "warm")}
-        for row in range(3):
-            y = 1.4 + row * 0.45
-            x = -w / 2 + 0.25
-            while x < w / 2 - 0.25:
-                c = rng.choice(list(toys))
-                s = rng.uniform(0.12, 0.18)
-                toys[c].box((x - s, y, f - 0.6), (x + s, y + s * 2.2, f - 0.6 + s * 1.4))
-                x += 0.38
-        for c, acc in toys.items():
-            acc.build("prizes", M({"color": [v * 0.8 for v in BULB_COLOURS[c]], "rough": 0.9}), root, smooth=False)
+        acc = stripes[k % 2]
+        for j in range(3):
+            (ya, za), (yb, zb) = aw(j / 3), aw((j + 1) / 3)
+            acc.quad((x0, ya, za), (x1, ya, za), (x1, yb, zb), (x0, yb, zb))
+        if k == torn:
+            continue
+        xc, rx, drop = (x0 + x1) / 2, (x1 - x0) / 2, 0.2
+        for j in range(6):
+            a0, a1 = math.pi * j / 6, math.pi * (j + 1) / 6
+            acc.quad((xc, ye, ze), (xc - rx * math.cos(a0), ye - drop * math.sin(a0), ze), (xc - rx * math.cos(a1), ye - drop * math.sin(a1), ze), (xc, ye, ze))
+    stripes[0].build("stall_awning", M({"color": list(ca), "rough": 0.6}), root, smooth=False)
+    stripes[1].build("stall_awning", M({"color": list(cb), "rough": 0.6}), root, smooth=False)
+    for sx in (-1, 1):   # its stays
+        rod(root, "stall_stay", (sx * (w / 2 - 0.05), 1.05, f + 0.02), (sx * (w / 2 - 0.05), ye - 0.02, ze - 0.05), 0.018, 0.018, chrome)
+    # the crest: an arch over the front in the stall's colours, its name in bulbs, bulbs round it
+    crest, inset = Acc(), Acc()
+    nk = 16
+    top = [(-w / 2 + w * k / nk, h + 0.45 + 0.4 * math.sin(math.pi * k / nk) ** 0.8) for k in range(nk + 1)]
+    for (xa, ya), (xb, yb) in zip(top, top[1:]):
+        crest.quad((xa, h - 0.05, f + 0.05), (xb, h - 0.05, f + 0.05), (xb, yb, f + 0.05), (xa, ya, f + 0.05))
+        crest.quad((xb, h - 0.05, f - 0.05), (xa, h - 0.05, f - 0.05), (xa, ya, f - 0.05), (xb, yb, f - 0.05))
+        crest.quad((xa, ya, f + 0.05), (xb, yb, f + 0.05), (xb, yb, f - 0.05), (xa, ya, f - 0.05))
+        ia, ib = max(-w / 2 + 0.12, min(w / 2 - 0.12, xa)), max(-w / 2 + 0.12, min(w / 2 - 0.12, xb))
+        if ib > ia:
+            inset.quad((ia, h + 0.05, f + 0.055), (ib, h + 0.05, f + 0.055), (ib, yb - 0.12, f + 0.055), (ia, ya - 0.12, f + 0.055))
+    crest.build("stall_crest", M({"color": list(cb), "rough": 0.4}), root, smooth=False)
+    inset.build("stall_crest_in", body, root, smooth=False)
+    text(root, name, (0.0, h + 0.38, f + 0.06), min(0.36, 1.4 * w / max(len(name), 1)), bulbs_mat("warm", 6.0), font="DejaVuSans-Bold.ttf", depth=0.0)
+    lit, dead = Acc(), Acc()
+    for (xa, ya), (xb, yb) in zip(top, top[1:]):
+        _bulbs(lit, dead, (xa, ya - 0.05, f + 0.08), (xb, yb - 0.05, f + 0.08), rng, gap=0.22, r=0.03)
+    _bulbs(lit, dead, (-w / 2, h - 0.12, ze + 0.02), (w / 2, h - 0.12, ze + 0.02), rng, gap=0.3)
+    for sx in (-1, 1):
+        _bulbs(lit, dead, (sx * (w / 2 - 0.1), 1.15, f + 0.02), (sx * (w / 2 - 0.1), h - 0.6, f + 0.02), rng, gap=0.2, r=0.03)
+    lit.build("stall_bulbs", bulbs_mat("warm", 8.0), root)
+    dead.build("stall_bulbs_dead", M({"color": [0.5, 0.45, 0.38], "rough": 0.2}), root)
+    if show == "prizes":
+        toys = [Acc() for _ in TOY_COLOURS]
+        x, strings = -w / 2 + 0.45, Acc()
+        while x < w / 2 - 0.4:   # hung in a row under the crest, each on its string
+            s_ = rng.uniform(0.17, 0.24)
+            y = h - 0.75 - s_ * 0.6
+            _teddy(toys[rng.randrange(len(toys))], x, y, f - 0.25, s_)
+            strings.rod((x, h - 0.52, f - 0.25), (x, y + s_ * 1.15, f - 0.23), 0.004, 0.004, 4)
+            x += rng.uniform(0.4, 0.5)
+        strings.build("strings", M({"color": [0.8, 0.78, 0.7], "rough": 0.8}), root)
+        if kind == "grijper":   # claw machines: a lit glass box each, a heap of toys, the claw stopped
+            glass, frame = M("glass"), M({"color": [0.04, 0.04, 0.045], "rough": 0.4, "metal": 0.6})
+            k_n = max(2, int((w - 0.4) / 1.05))
+            for k in range(k_n):
+                cx = -w / 2 + 0.2 + (w - 0.4) * (k + 0.5) / k_n
+                cz = f - 0.75
+                kit.soft(root, "claw_base", (cx, 1.2, cz), (0.86, 0.56, 0.74), M({"color": list(BULB_COLOURS[["pink", "blue", "red", "green"][k % 4]]), "rough": 0.35}), 0.03, 2)
+                lbox(root, "claw_glass", (cx - 0.42, 1.48, cz - 0.35), (cx + 0.42, 2.12, cz + 0.35), glass)
+                lbox(root, "claw_top", (cx - 0.43, 2.12, cz - 0.36), (cx + 0.43, 2.26, cz + 0.36), builders.emissive("claw_%d" % (k % 4), BULB_COLOURS[["pink", "blue", "red", "green"][k % 4]], 4.0))
+                for sx in (-1, 1):
+                    for sz in (-1, 1):
+                        rod(root, "claw_post", (cx + sx * 0.42, 1.48, cz + sz * 0.35), (cx + sx * 0.42, 2.12, cz + sz * 0.35), 0.012, 0.012, frame, seg=6)
+                for _ in range(16):
+                    _blob(toys[rng.randrange(len(toys))], (cx + rng.uniform(-0.32, 0.32), 1.55 + rng.uniform(0.0, 0.08), cz + rng.uniform(-0.25, 0.25)), 0.07, 0.06, 0.07, seg=6, rings=4)
+                rod(root, "claw_wire", (cx, 2.12, cz), (cx, 1.85, cz), 0.004, 0.004, frame, seg=4)
+                for j in range(3):
+                    a = 2 * math.pi * j / 3
+                    rod(root, "claw", (cx, 1.85, cz), (cx + 0.06 * math.cos(a), 1.75, cz + 0.06 * math.sin(a)), 0.008, 0.006, M({"color": [0.7, 0.7, 0.72], "rough": 0.2, "metal": 1.0}), seg=4)
+        else:   # a shooting gallery: tin targets in rows on the back, toys up on shelves, rifles on the counter
+            red, white = Acc(), Acc()
+            for row in range(3):
+                y = 1.35 + row * 0.22
+                for k in range(int((w - 0.6) / 0.24)):
+                    x = -w / 2 + 0.4 + k * 0.24
+                    (red if (k + row) % 2 else white).rod((x, y, f - 1.175), (x, y, f - 1.15), 0.07, 0.07, 12)
+            red.build("targets", M({"color": [0.7, 0.08, 0.06], "rough": 0.5, "metal": 0.4}), root, smooth=False)
+            white.build("targets", M({"color": [0.85, 0.85, 0.8], "rough": 0.5, "metal": 0.4}), root, smooth=False)
+            lbox(root, "shelf", (-w / 2 + 0.15, 2.0, f - 1.18), (w / 2 - 0.15, 2.03, f - 0.95), M({"color": [0.3, 0.2, 0.12], "rough": 0.7}))
+            x = -w / 2 + 0.35
+            while x < w / 2 - 0.3:
+                _teddy(toys[rng.randrange(len(toys))], x, 2.03 + 0.11, f - 1.05, 0.15, sit=True)
+                x += 0.32
+            gun = M({"color": [0.03, 0.03, 0.03], "rough": 0.35, "metal": 0.8})
+            stock = M({"color": [0.25, 0.12, 0.05], "rough": 0.5})
+            for k in range(3):
+                gx = -w / 4 + k * w / 4 + rng.uniform(-0.15, 0.15)
+                yaw_ = rng.uniform(-0.25, 0.25)
+                ax_, az_ = math.sin(yaw_), math.cos(yaw_)
+                rod(root, "rifle", (gx, 1.075, f + 0.22), (gx + ax_ * 0.45, 1.075, f + 0.22 - az_ * 0.45), 0.012, 0.012, gun, seg=6)
+                rod(root, "rifle_stock", (gx, 1.07, f + 0.22), (gx - ax_ * 0.35, 1.08, f + 0.22 + az_ * 0.35), 0.03, 0.022, stock, seg=6)
+        for c, acc in zip(TOY_COLOURS, toys):
+            acc.build("prizes", M({"color": list(c), "rough": 0.95}), root)
     elif show == "food":   # a glass case of what was fried, the fryers behind, the prices up on a board
         steel = M({"color": [0.62, 0.63, 0.64], "rough": 0.3, "metal": 1.0, "noise": 0.15})
         lbox(root, "food_case", (-w / 3, 1.05, f + 0.02), (w / 3, 1.08, f + 0.42), steel)
@@ -330,6 +452,13 @@ def stall(root, p, w, h, d):
         chalk = M({"color": [0.85, 0.84, 0.78], "rough": 0.8})
         for k, line in enumerate(p.get("menu", [name, "3 STUKS  4,50", "6 STUKS  8,00", "MET ROZIJNEN +0,50"])):
             text(root, line, (0.0, h - 0.85 - k * 0.24, f - 1.14), 0.13 if k else 0.18, chalk, font="DejaVuSans-Bold.ttf", depth=0.0)
+        cups = Acc()
+        for _ in range(5):   # paper trays left on the counter, one on its side
+            x, z = rng.uniform(-w / 2 + 0.3, w / 2 - 0.3), rng.uniform(f + 0.05, f + 0.45)
+            if abs(x) < w / 3 + 0.1 and z > f + 0.0:
+                x = math.copysign(w / 3 + 0.25, x)
+            cups.rod((x, 1.05, z), (x, 1.11, z), 0.045, 0.06, 10)
+        cups.build("trays", M({"color": [0.88, 0.86, 0.8], "rough": 0.8}), root)
     import landmarks
     landmarks.point(root, (0.0, h - 0.6, f + 0.8), p.get("power", 40.0), (1.0, 0.82, 0.55), radius=0.5)
 

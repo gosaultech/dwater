@@ -17,6 +17,7 @@
 #include <array>
 #include <cmath>
 #include <string>
+#include <utility>
 #include <vector>
 #include "dw/anatomy.hpp"
 #include "dw/clearance.hpp"
@@ -41,6 +42,15 @@ enum Joint : int {
     J_RING1_R, J_RING2_R, J_RING3_R, J_LITTLE1_R, J_LITTLE2_R, J_LITTLE3_R,
     J_COUNT
 };
+
+// A pose the other way round: left and right limbs trade targets, and every turn and lean to one
+// side goes to the other (a body lying dead, sprawled the other way). T: J_COUNT joint targets.
+inline void mirror_targets(Vector3* T) {
+    for (auto [l, r] : {std::pair{J_SHO_L, J_SHO_R}, {J_ELB_L, J_ELB_R}, {J_WRI_L, J_WRI_R}, {J_HIP_L, J_HIP_R}, {J_KNE_L, J_KNE_R}})
+        std::swap(T[l], T[r]);
+    for (int k = 0; k < J_COUNT; ++k) { T[k].y = -T[k].y; T[k].z = -T[k].z; }
+}
+
 enum Finger : int { F_THUMB, F_INDEX, F_MIDDLE, F_RING, F_LITTLE };
 // Finger f's joint k (0 the knuckle or the thumb's root, 1 the middle, 2 by the nail) on one hand.
 constexpr int finger_joint(bool right, int f, int k) { return (right ? J_THUMB1_R : J_THUMB1_L) + f * 3 + k; }
@@ -76,6 +86,8 @@ public:
     Vector3 head_point() const { return Vector3Transform(head_c_, W_[J_HEAD]); }        // centre of the skull
     Vector3 face_dir() const { return Vector3Normalize({-W_[J_HEAD].m8, -W_[J_HEAD].m9, -W_[J_HEAD].m10}); }
     Kind kind = Kind::Survivor;
+    bool mirror = false;   // lying dead: sprawled the other way round (the other arm reaching, the face turned the other way)
+    bool sit = false;      // dead: sat slumped against a wall or a car, not lying (Pose::Dead)
 
     // ── Combat: being hit, and coming apart ──
     // Capsules round each body region still attached, for the shot rays (combat.hpp).
@@ -306,6 +318,10 @@ private:
     Vector3 rest_[J_COUNT]{};                                       // rest-pose joint positions (skinned bodies)
     Matrix bones_[J_COUNT]{};                                       // skinning matrices, this frame
     float pelvis_h_ = 0.95f, bob_ = 0, t_ = 0, phase_ = 0, yaw_ = 0;
+    float loco_ = 0, idle_ = 0;                                     // the motion capture's phases: his stride (loops), standing (loops)
+    Vector2 sway_{}, sway_t_{};                                     // the pelvis off his line (x across, y along), and where it's going
+    bool mocap_feet_ = false;                                       // his legs and spine from the motion capture this frame (mocap.hpp)
+    int gait_ = 0;                                                  // a Drowned's shamble: 0 dragging a leg, 1 staggering, 2 lurching
     float pitch_ = 0, pivot_ = 0, lift_ = 0;                        // root: falls and crawling
     float from_pitch_ = 0, from_pivot_ = 0, from_lift_ = 0, root_k_ = 1;
     int root_mode_ = 0;                                             // 0 standing, 1 on its back, 2 prone

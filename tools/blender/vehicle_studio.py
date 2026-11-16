@@ -1,0 +1,159 @@
+# damned_waters/tools/blender/vehicle_studio.py
+# Purpose: a look-development stage for the street's things on their own (vehicles.py's cars, vans
+# and trams; a street's trams): each set on a wet road under a night street's light (a lamp, the
+# moon, a little sky), the flood's line on everything, rendered from a few angles in seconds rather
+# than the minutes a whole street takes. A tool for judging and iterating a model, not a game asset.
+#
+#   blender -b --factory-startup -P tools/blender/vehicle_studio.py -- --out DIR [--set vehicles|trams|...] [--day] [--views 0,2]
+#
+# ELI5: the photo booth at a car show: one car at a time under the same lights, so you judge the car,
+# not the street it's parked in.
+import argparse
+import math
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent / "pipeline"))
+
+import bpy  # noqa: E402
+
+import builders  # noqa: E402
+from roomspec import g2b  # noqa: E402
+
+SETS = {
+    "vehicles": [
+        {"type": "vehicle", "pos": [0.0, 0.0, 0.0], "yaw": 25, "size": [4.3, 1.48, 1.8], "livery": "car", "color": [0.45, 0.06, 0.05]},
+        {"type": "vehicle", "pos": [6.0, 0.0, 0.0], "yaw": 25, "size": [4.6, 1.5, 1.85], "livery": "taxi", "door_open": "left"},
+        {"type": "vehicle", "pos": [12.5, 0.0, 0.0], "yaw": 25, "size": [5.4, 2.3, 2.0], "livery": "police"},
+        {"type": "vehicle", "pos": [19.0, 0.0, 0.0], "yaw": 25, "size": [6.0, 2.6, 2.1], "livery": "ambulance"},
+        {"type": "vehicle", "pos": [25.0, 0.0, 0.0], "yaw": 25, "size": [4.4, 1.45, 1.8], "livery": "car", "burnt": True},
+    ],
+    "heavy": [
+        {"type": "vehicle", "pos": [0.0, 0.0, 0.0], "yaw": 25, "size": [6.4, 2.8, 2.3], "livery": "army", "van": True, "door_open": "left"},
+        {"type": "bus", "pos": [12.0, 0.0, 2.0], "yaw": 25, "size": [12.0, 3.2, 2.6], "seed": 82},
+        {"type": "bus", "pos": [26.0, 0.0, 4.0], "yaw": 25, "size": [18.0, 3.1, 2.55], "board": "EVACUATIE · CENTRAAL"},
+    ],
+    "trams": [
+        {"type": "tram", "pos": [0.0, 0.0, 0.0], "yaw": 0, "size": [30.0, 3.4, 2.4], "board": "CENTRAAL", "power": 300.0},
+        {"type": "tram", "pos": [0.0, 0.0, 9.0], "yaw": 0, "size": [30.0, 3.4, 2.4], "board": "", "power": 170.0, "pantograph": False,
+         "derail": {"yaw": [0.0, 9.0, 24.0], "roll": [0.0, 2.0, 6.5], "lift": [0.0, 0.0, 0.1]}, "dark": [2], "smashed": [1, 2]},
+    ],
+    "trams_before": [   # the plain three-section body the streets had before combino.py (kept for the metro): for a before/after
+        {"type": "tram", "pos": [0.0, 0.0, 0.0], "yaw": 0, "size": [30.0, 3.4, 2.4], "board": "CENTRAAL", "power": 300.0, "plain": True},
+        {"type": "tram", "pos": [0.0, 0.0, 9.0], "yaw": 0, "size": [30.0, 3.4, 2.4], "board": "", "power": 170.0, "pantograph": False, "plain": True,
+         "derail": {"yaw": [0.0, 9.0, 24.0], "roll": [0.0, 2.0, 6.5], "lift": [0.0, 0.0, 0.1]}, "dark": [2], "smashed": [1, 2]},
+    ],
+    "lineup": [   # every licensed vehicle side by side, noses to +x: to check scale, facing, paint and badges
+        dict({"type": "vehicle", "pos": [0.0, 0.0, i * 3.6], "yaw": 0, "size": [L, H, 1.9], "model": m}, **extra)
+        for i, (m, L, H, extra) in enumerate([
+            ("car_punto", 3.8, 1.45, {"color": [0.22, 0.02, 0.02]}), ("car_focus", 4.4, 1.45, {"color": [0.3, 0.31, 0.32]}),
+            ("car_octavia", 4.5, 1.45, {"color": [0.012, 0.012, 0.014], "livery": "taxi"}), ("car_yaris", 3.6, 1.5, {"color": [0.02, 0.04, 0.12]}),
+            ("car_v70", 4.7, 1.47, {"color": [0.72, 0.73, 0.74], "livery": "police"}), ("van_sprinter", 5.9, 2.6, {"color": [0.85, 0.62, 0.02], "livery": "ambulance"}),
+            ("van_euro", 5.3, 2.4, {"color": [0.5, 0.42, 0.3]}), ("truck_army", 5.7, 2.7, {"livery": "army"}),
+            ("burnt_car_a", 4.5, 1.4, {}), ("burnt_car_b", 4.5, 1.4, {}), ("wreck_gutted", 4.6, 1.4, {}), ("wreck_crashed", 4.6, 1.7, {})])
+    ],
+    "street": [   # licensed street furniture, each on its own (licensed.py's PIECES), and two things knocked over
+        dict({"type": "model", "model": "sf:" + m, "pos": [(i % 8) * 2.6, 0.0, (i // 8) * 3.2], "yaw": 20}, **extra)
+        for i, (m, extra) in enumerate([("bin_blue", {}), ("bin_green", {"tip": 90}), ("dumpster", {}), ("crowd_barrier", {}), ("crowd_barrier_bent", {}),
+                                        ("water_barrier", {}), ("jersey", {}), ("fence_panel", {}), ("cone", {}), ("rubbish_bag", {}),
+                                        ("box_large", {}), ("bodybag_a", {}), ("oil_barrel", {}), ("concrete_barrier", {}), ("moped", {"tip": 80}), ("bench", {})])
+    ] + [{"type": "bike", "pos": [21.5, 0.0, 0.0], "yaw": 30, "size": [1.8, 1.1, 0.5], "seed": 3},
+         {"type": "bike", "pos": [21.5, 0.0, 3.2], "yaw": 60, "roll": 84, "size": [1.8, 1.1, 0.5], "seed": 4},
+         {"type": "body_bag", "pos": [24.5, 0.0, 1.6], "yaw": 80, "size": [2.0, 0.35, 0.7]}],
+    "metro": [   # the metro's train (combino.metro), its doors open on the platform side
+        {"type": "tram", "pos": [0.0, 0.7, 0.0], "yaw": 0, "size": [48.0, 3.5, 2.7], "board": "52 NOORD", "power": 380.0,
+         "band": {"color": [0.62, 0.04, 0.04]}, "pantograph": False, "doors_open": "all", "underframe": 0.7},
+    ],
+    "plant": [   # the site's things: a lighting tower, the fair's stalls
+        {"type": "light_tower", "pos": [0.0, 0.0, 0.0], "yaw": 20, "size": [2.2, 8.5, 1.4], "aim": [4.0, 0.0, 14.0], "power": 1500.0, "seed": 7},
+        {"type": "fair_stall", "pos": [7.0, 0.0, 1.0], "yaw": -10, "size": [5.0, 2.8, 2.6], "kind": "oliebollen", "seed": 1},
+        {"type": "fair_stall", "pos": [14.0, 0.0, 0.0], "yaw": -20, "size": [5.0, 2.8, 2.6], "kind": "grijper", "seed": 4},
+        {"type": "fair_stall", "pos": [21.0, 0.0, -1.0], "yaw": -30, "size": [5.0, 2.8, 2.6], "kind": "schiettent", "seed": 2},
+        {"type": "kiosk", "pos": [-6.0, 0.0, 2.0], "yaw": 20, "size": [2.6, 3.2, 2.6], "name": "TABAK · LOTTO"},
+    ],
+    "boats": [   # a canal cruise boat lifted clear of the road to judge its hull
+        {"type": "canal_boat", "pos": [0.0, 0.8, 0.0], "yaw": 0, "size": [22.0, 3.2, 4.2]},
+    ],
+}
+VIEWS = {   # (camera position, look at) in the Godot frame
+    "vehicles": [((9.0, 2.4, -8.0), (4.0, 0.8, 0.0)), ((24.0, 3.0, -9.0), (16.0, 1.0, 0.0)), ((26.5, 2.2, 6.0), (25.0, 0.6, 0.0)), ((-4.0, 2.6, 9.0), (8.0, 0.8, 0.0))],
+    "heavy": [((7.0, 2.8, -9.0), (1.0, 1.2, 0.0)), ((22.0, 3.5, -11.0), (14.0, 1.4, 2.0)), ((-6.0, 2.6, 9.0), (4.0, 1.2, 2.0))],
+    "trams": [((20.5, 1.7, 5.2), (13.0, 1.75, 0.3)), ((6.0, 1.8, 13.0), (6.0, 1.7, 0.0)), ((-21.0, 2.6, -7.5), (-9.0, 1.6, 0.0)),
+              ((24.0, 6.5, 22.0), (4.0, 1.4, 6.0)), ((9.0, 1.7, 5.0), (9.5, 1.6, 0.0))],
+    "metro": [((30.0, 2.6, 9.0), (18.0, 2.0, 0.0)), ((2.0, 2.4, 12.0), (0.0, 2.2, 0.0))],
+    "street": [((5.0, 3.4, 9.5), (4.5, 0.4, 1.6)), ((15.0, 3.4, 9.5), (14.5, 0.4, 1.6)), ((24.0, 3.0, 9.0), (22.5, 0.4, 1.6))],
+    "lineup": [((7.5, 1.2, 3.6), (0.0, 0.75, 3.6)), ((7.5, 1.2, 10.8), (0.0, 0.75, 10.8)), ((9.0, 1.5, 19.8), (0.0, 1.0, 19.8)),
+               ((-7.5, 1.2, 3.6), (0.0, 0.75, 3.6)), ((-7.5, 1.2, 10.8), (0.0, 0.75, 10.8)), ((-9.0, 1.5, 19.8), (0.0, 1.0, 19.8)),
+               ((11.0, 1.9, 5.4), (0.0, 0.8, 5.4)), ((11.0, 1.9, 19.8), (0.0, 0.8, 19.8)), ((13.0, 2.4, 35.0), (0.0, 0.9, 34.2)),
+               ((-11.0, 1.9, 5.4), (0.0, 0.8, 5.4)), ((-11.0, 1.9, 19.8), (0.0, 0.8, 19.8)), ((-13.0, 2.4, 35.0), (0.0, 0.9, 34.2))],
+    "plant": [((8.0, 4.5, 16.0), (-0.5, 4.2, 0.0)), ((3.2, 1.6, 4.0), (0.0, 1.0, 0.0)), ((10.0, 2.6, 10.0), (11.0, 2.0, 0.0)),
+              ((21.0, 2.0, 8.0), (20.5, 1.8, 0.0)), ((-3.0, 2.0, 8.5), (-6.0, 1.8, 2.0)), ((-10.5, 2.4, -2.5), (-6.0, 1.8, 2.0))],
+    "boats": [((16.0, 3.0, 9.0), (6.0, 1.0, 0.0)), ((-16.0, 2.4, 7.0), (-6.0, 1.0, 0.0))],
+}
+
+
+def main():
+    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--set", default="vehicles", choices=list(SETS))
+    ap.add_argument("--res", default="960x540")
+    ap.add_argument("--samples", type=int, default=16)
+    ap.add_argument("--day", action="store_true", help="an overcast day instead of the night: to judge a shape against a photograph")
+    ap.add_argument("--views", default="", help="which of the set's views to render (comma-separated numbers; all if empty)")
+    a = ap.parse_args(argv)
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    builders.reset_material_cache()
+    builders.FLOOD, builders.OUTDOOR, builders.WEAR = 0.7, True, 1.0
+    s = bpy.context.scene
+    s.render.engine = "CYCLES"
+    s.render.resolution_x, s.render.resolution_y = (int(v) for v in a.res.split("x"))
+    s.cycles.samples = a.samples
+    s.cycles.use_denoising = True
+    s.view_settings.view_transform = "AgX" if "AgX" in [i.identifier for i in s.view_settings.bl_rna.properties["view_transform"].enum_items] else "Filmic"
+    world = bpy.data.worlds.new("w")
+    world.use_nodes = True
+    world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.02, 0.025, 0.035, 1)
+    world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.6
+    if a.day:
+        world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.75, 0.8, 0.9, 1)
+        world.node_tree.nodes["Background"].inputs["Strength"].default_value = 1.1
+    s.world = world
+    ground = builders.material({"ph": "herringbone_brick", "tint": [0.55, 0.42, 0.42], "wet": 0.8, "puddles": 0.4})
+    builders.box_aabb("ground", (-40.0, -0.4, -30.0), (60.0, 0.0, 60.0), ground)
+    for pos, power, col in (((4.0, 6.5, 6.0), 2500.0, (1.0, 0.75, 0.5)), ((18.0, 6.5, 7.0), 2500.0, (1.0, 0.75, 0.5)), ((-6.0, 6.5, 6.0), 1500.0, (1.0, 0.75, 0.5))):
+        ld = bpy.data.lights.new("lamp", "POINT")
+        ld.energy, ld.color, ld.shadow_soft_size = power, col, 0.3
+        ob = bpy.data.objects.new("lamp", ld)
+        s.collection.objects.link(ob)
+        ob.location = g2b(pos)
+    sun = bpy.data.lights.new("moon", "SUN")
+    sun.energy, sun.color = 0.25, (0.6, 0.7, 1.0)
+    so = bpy.data.objects.new("moon", sun)
+    s.collection.objects.link(so)
+    so.rotation_euler = (math.radians(50), 0.0, math.radians(30))
+    for p in SETS[a.set]:
+        builders.build_prop(p, 10.0)
+    out = Path(a.out)
+    out.mkdir(parents=True, exist_ok=True)
+    only = {int(v) for v in a.views.split(",") if v}
+    for i, (eye, look) in enumerate(VIEWS.get(a.set, VIEWS.get(a.set.split("_")[0], []))):
+        if only and i not in only:
+            continue
+        cd = bpy.data.cameras.new("cam")
+        cd.lens_unit, cd.angle = "FOV", math.radians(48)
+        cam = bpy.data.objects.new("cam", cd)
+        s.collection.objects.link(cam)
+        cam.location = g2b(eye)
+        from mathutils import Vector
+        d = Vector(g2b(look)) - Vector(g2b(eye))
+        cam.rotation_euler = d.to_track_quat("-Z", "Y").to_euler()
+        s.camera = cam
+        s.render.filepath = str(out / f"{a.set}_{i}.png")
+        bpy.ops.render.render(write_still=True)
+
+
+if __name__ == "__main__":
+    main()

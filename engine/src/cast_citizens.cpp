@@ -51,6 +51,7 @@ int region_of(int joint) {   // which body region a joint's skin belongs to (for
 Character build_citizen(const std::string& id, int variant) {
     Character c;
     c.kind = Kind::Drowned;
+    c.gait_ = variant;      // (each walks its own way: mocap.hpp's shambles)
     c.thickness_ = 0.17f;   // bloated: lies high off the floor
     c.rng_ = 0x9E3779B9u ^ unsigned(variant * 7919 + 31);
     if (!c.load_body(repo_root() + "/engine/assets/characters/" + id + ".dwc")) return c;

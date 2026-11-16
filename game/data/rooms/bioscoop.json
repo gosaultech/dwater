@@ -836,6 +836,34 @@
       ],
       "collide": false,
       "interior": true
+    },
+    {
+      "type": "model",
+      "model": "ph:vintage_suitcase",
+      "pos": [
+        3.04,
+        0.0,
+        9.93
+      ],
+      "yaw": 65.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:vintage_suitcase",
+      "pos": [
+        4.99,
+        0.0,
+        1.59
+      ],
+      "yaw": 113.2,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
     }
   ],
   "lights": [
@@ -995,54 +1023,104 @@
   ],
   "shots": [
     {
-      "id": "a",
       "pos": [
-        14.75,
-        3.3,
-        1.0
+        0.97,
+        2.7,
+        2.01
       ],
       "look_at": [
-        5.0,
-        1.0,
-        11.0
+        3.46,
+        0.84,
+        7.14
       ],
-      "fov": 64,
+      "fov": 45.3,
       "zone": {
         "min": [
           0.0,
-          6.0
+          5.75
+        ],
+        "max": [
+          8.5,
+          14.0
+        ]
+      },
+      "priority": 1,
+      "id": "a"
+    },
+    {
+      "pos": [
+        15.11,
+        2.1,
+        2.15
+      ],
+      "look_at": [
+        11.86,
+        0.79,
+        7.03
+      ],
+      "fov": 47.0,
+      "zone": {
+        "min": [
+          7.0,
+          5.25
         ],
         "max": [
           15.95,
           14.0
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "b"
     },
     {
-      "id": "b",
       "pos": [
-        1.0,
-        3.2,
-        13.2
+        11.69,
+        2.1,
+        0.64
       ],
       "look_at": [
-        11.95,
-        1.2,
-        1.5
+        6.6,
+        0.57,
+        3.42
       ],
-      "fov": 62,
+      "fov": 45.6,
       "zone": {
         "min": [
           0.0,
           0.0
         ],
         "max": [
-          15.95,
-          6.0
+          8.5,
+          7.25
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "c"
+    },
+    {
+      "pos": [
+        3.39,
+        2.1,
+        1.03
+      ],
+      "look_at": [
+        8.8,
+        0.9,
+        3.32
+      ],
+      "fov": 45.0,
+      "zone": {
+        "min": [
+          7.0,
+          0.0
+        ],
+        "max": [
+          15.95,
+          6.75
+        ]
+      },
+      "priority": 1,
+      "id": "d"
     }
   ],
   "spawns": {
@@ -1122,6 +1200,21 @@
         4.0
       ],
       "yaw": 20
+    }
+  ],
+  "fx": [],
+  "dead": [
+    {
+      "pos": [
+        9.12,
+        0.0,
+        13.12
+      ],
+      "yaw": 319,
+      "variant": 0,
+      "prone": true,
+      "blood": 0.83,
+      "catastrophe": true
     }
   ]
 }

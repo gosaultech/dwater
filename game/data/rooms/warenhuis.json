@@ -1089,6 +1089,201 @@
       "glow": 1.5,
       "collide": false,
       "interior": true
+    },
+    {
+      "type": "model",
+      "model": "ph:lubricant_spray",
+      "pos": [
+        6.04,
+        0.0,
+        11.75
+      ],
+      "yaw": 131.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        4.38,
+        0.0,
+        8.03
+      ],
+      "yaw": 325.9,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:plastic_container",
+      "pos": [
+        10.09,
+        0.0,
+        12.9
+      ],
+      "yaw": 227.2,
+      "collide": false,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        9.86,
+        0.0,
+        7.96
+      ],
+      "yaw": 120.0,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        15.97,
+        0.0,
+        6.64
+      ],
+      "yaw": 144.1,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        17.07,
+        0.0,
+        6.59
+      ],
+      "yaw": 290.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        5.7,
+        0.0,
+        15.98
+      ],
+      "yaw": 76.3,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        1.48,
+        0.0,
+        18.0
+      ],
+      "yaw": 44.3,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:cardboard_box_01",
+      "pos": [
+        5.01,
+        0.0,
+        19.51
+      ],
+      "yaw": 92.4,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:multi_cleaner_bottle",
+      "pos": [
+        9.43,
+        0.0,
+        17.76
+      ],
+      "yaw": 186.5,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:multi_cleaner_bottle",
+      "pos": [
+        12.99,
+        0.0,
+        15.92
+      ],
+      "yaw": 159.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:bleach_bottle",
+      "pos": [
+        19.76,
+        0.0,
+        19.41
+      ],
+      "yaw": 340.7,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:multi_cleaner_bottle",
+      "pos": [
+        3.32,
+        0.0,
+        0.97
+      ],
+      "yaw": 336.6,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
+    },
+    {
+      "type": "model",
+      "model": "ph:vintage_suitcase",
+      "pos": [
+        15.79,
+        0.0,
+        16.77
+      ],
+      "yaw": 324.4,
+      "collide": false,
+      "tip": 90,
+      "catastrophe": true,
+      "catastrophe_drift": true
     }
   ],
   "lights": [
@@ -1173,54 +1368,129 @@
   ],
   "shots": [
     {
-      "id": "a",
       "pos": [
-        1.0,
-        3.6,
-        19.2
+        10.7,
+        2.7,
+        13.51
       ],
       "look_at": [
-        19.0,
-        1.0,
-        3.0
+        14.0,
+        -0.27,
+        9.47
       ],
-      "fov": 64,
+      "fov": 60.3,
       "zone": {
         "min": [
-          0.0,
-          10.0
+          10.25,
+          0.0
         ],
         "max": [
           23.0,
-          20.0
+          11.25
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "a"
     },
     {
-      "id": "b",
       "pos": [
-        22.0,
-        3.6,
-        1.0
+        1.46,
+        2.7,
+        14.33
       ],
       "look_at": [
-        3.0,
-        1.0,
-        17.0
+        4.34,
+        1.33,
+        9.25
       ],
-      "fov": 64,
+      "fov": 52.7,
       "zone": {
         "min": [
           0.0,
           0.0
         ],
         "max": [
-          23.0,
-          10.0
+          11.75,
+          10.25
         ]
       },
-      "priority": 1
+      "priority": 1,
+      "id": "b"
+    },
+    {
+      "pos": [
+        9.97,
+        4.4,
+        17.36
+      ],
+      "look_at": [
+        15.41,
+        2.42,
+        15.79
+      ],
+      "fov": 45.4,
+      "zone": {
+        "min": [
+          15.88,
+          9.75
+        ],
+        "max": [
+          23.0,
+          20.0
+        ]
+      },
+      "priority": 1,
+      "id": "c"
+    },
+    {
+      "pos": [
+        6.18,
+        2.7,
+        19.12
+      ],
+      "look_at": [
+        11.19,
+        1.13,
+        16.22
+      ],
+      "fov": 48.5,
+      "zone": {
+        "min": [
+          10.25,
+          9.75
+        ],
+        "max": [
+          17.38,
+          20.0
+        ]
+      },
+      "priority": 1,
+      "id": "d"
+    },
+    {
+      "pos": [
+        13.21,
+        2.1,
+        9.0
+      ],
+      "look_at": [
+        9.29,
+        -0.95,
+        12.37
+      ],
+      "fov": 64.9,
+      "zone": {
+        "min": [
+          0.0,
+          8.75
+        ],
+        "max": [
+          11.75,
+          20.0
+        ]
+      },
+      "priority": 1,
+      "id": "e"
     }
   ],
   "spawns": {
@@ -1318,6 +1588,33 @@
         9.5
       ],
       "yaw": 200
+    }
+  ],
+  "fx": [],
+  "dead": [
+    {
+      "pos": [
+        17.12,
+        0.0,
+        7.12
+      ],
+      "yaw": 178,
+      "variant": 2,
+      "prone": true,
+      "blood": 0.78,
+      "catastrophe": true
+    },
+    {
+      "pos": [
+        2.12,
+        0.0,
+        12.62
+      ],
+      "yaw": 175,
+      "variant": 2,
+      "prone": true,
+      "blood": 0.78,
+      "catastrophe": true
     }
   ]
 }
