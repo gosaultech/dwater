@@ -61,6 +61,10 @@ uniform float u_softbox;   // > 0: each light is a big studio softbox, mirrored 
 uniform sampler2D texture1; uniform sampler2D texture2;
 uniform mat4 u_shadowVP[2]; uniform int u_shadowLight[2];
 uniform int u_depthOnly;   // 1 while drawing those depth maps: nothing to shade
+// The detail maps (dw/detail.hpp): small tiling stamps of real surfaces. R, G the surface's slope,
+// B tone (0.5 = the material's own colour), A gloss. u_dTile: metres of surface a tile covers.
+uniform sampler2D u_dSkin, u_dLeather, u_dDenim, u_dCotton, u_dWalnut, u_dMetal;
+uniform float u_dTile[6];
 out vec4 finalColor;
 
 float hash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
@@ -104,14 +108,34 @@ float knit(vec2 q, float aa) {
     } else if (c < 1.0 || (c > 5.0 && c < 6.0)) st *= 0.3;   // purl channels either side
     return mix(0.45, st, aa);
 }
-// Surface-gradient bump (Mikkelsen): perturb N by the screen-space slope of a height field.
-vec3 bumpN(vec3 N, float h, float k) {
+// Surface-gradient bump (Mikkelsen): perturb N by a height field's change across the screen
+// (hs: per pixel right, per pixel up).
+vec3 bumpS(vec3 N, vec2 hs, float k) {
     vec3 dpx = dFdx(vWorld), dpy = dFdy(vWorld);
-    float hx = dFdx(h), hy = dFdy(h);
     vec3 r1 = cross(dpy, N), r2 = cross(N, dpx);
     float det = dot(dpx, r1);
     if (abs(det) < 1e-10) return N;
-    return normalize(N - k * sign(det) * (hx * r1 + hy * r2) / abs(det));
+    return normalize(N - k * sign(det) * (hs.x * r1 + hs.y * r2) / abs(det));
+}
+vec3 bumpN(vec3 N, float h, float k) { return bumpS(N, vec2(dFdx(h), dFdy(h)), k); }
+// A detail map laid on a body with no UVs: stamped down each axis of the rest pose (three flat
+// projections) and blended by which way the surface faces there. gW: the three weights; gQx, gQy:
+// how the rest position changes across the screen (taken once, before any branch, so the lookups
+// pick their mip level safely inside the material branches).
+vec3 gW, gQx, gQy;
+// One projection's slope (the map's R, G as a normal) as height change across the screen, in metres.
+vec2 stampSlope(vec4 t, vec2 dx, vec2 dy) {
+    vec2 n = t.rg * 2.0 - 1.0;
+    vec2 g = vec2(-n.x, n.y) / sqrt(max(1.0 - dot(n, n), 0.05));   // (the image's rows run down: v is flipped)
+    return vec2(dot(g, dx), dot(g, dy));
+}
+// Returns tone (x: 1 = unchanged) and gloss (y: 0..1); adds the stamp's slope to `hs` (for bumpS).
+vec2 stamp(sampler2D t, vec3 q, float tile, inout vec2 hs) {
+    vec3 u = q / tile, ux = gQx / tile, uy = gQy / tile;
+    vec4 a = textureGrad(t, u.zy, ux.zy, uy.zy), b = textureGrad(t, u.xz, ux.xz, uy.xz), c = textureGrad(t, u.xy, ux.xy, uy.xy);
+    hs += gW.x * stampSlope(a, gQx.zy, gQy.zy) + gW.y * stampSlope(b, gQx.xz, gQy.xz) + gW.z * stampSlope(c, gQx.xy, gQy.xy);
+    vec4 m = a * gW.x + b * gW.y + c * gW.z;
+    return vec2(m.b * 2.0, m.a);
 }
 
 void main() {
@@ -127,6 +151,10 @@ void main() {
         finalColor = vec4(1.0);
         return;
     }
+    gQx = dFdx(vSurf); gQy = dFdy(vSurf);
+    gW = pow(abs(normalize(vRestN)), vec3(4.0));
+    gW /= max(gW.x + gW.y + gW.z, 1e-4);
+    vec2 hs = vec2(0.0); float sk = 0.0;   // a detail map's slope, and how strongly it bumps the surface
     vec3 N = normalize(vNormal);
     if (!gl_FrontFacing) N = -N;   // cloth is single-skinned: light both sides
     vec3 Ng = N;                    // the true surface normal, before any bump: shadow lookups push out along it
@@ -134,6 +162,7 @@ void main() {
     vec3 p = vSurf;
     vec3 albedo = lin(vColor.rgb);
     float spec = 0.04, gloss = 12.0, wrap = 0.2, h = 0.0, bk = 0.0, rim = 0.2;
+    vec3 bleed = vec3(1.0);   // how far light creeps past the shadow's edge, per colour (skin: red furthest)
     float metal = 0.0;   // how much of the surroundings the surface mirrors (bare metal)
     vec3 sss = vec3(0.0);
     vec3 strand = vec3(0.0); float aniso = 0.0;   // hair: the strand's direction and the strength of its sheen
@@ -151,12 +180,12 @@ void main() {
         finalColor = vec4(pow(albedo * (1.2 + 2.2 * face * face), vec3(1.0 / 2.2)), 1.0);
         return;
     }
-    if (mat == 1) {            // living skin: blotchy, fine pores, a soft sheen strongest at grazing angles (not plastic)
-        albedo *= mix(0.9, 1.06, fbm(p * 40.0));
-        float aa = clamp(1.5 - length(fwidth(p)) * 400.0, 0.0, 1.0);
-        h = mix(0.5, fbm(p * 260.0), aa) * 0.6 + fbm(p * 70.0) * 0.4; bk = 0.0009;
+    if (mat == 1) {            // living skin: fine furrows and pores (the skin stamp), blotchy, a sheen broken up by them
+        vec2 d = stamp(u_dSkin, p, u_dTile[0], hs); sk = 0.9;
+        albedo *= mix(0.9, 1.06, fbm(p * 40.0)) * mix(1.0, d.x, 0.4);
+        h = fbm(p * 70.0); bk = 0.0004;
         float fres = pow(1.0 - max(dot(N, V), 0.0), 3.0);
-        spec = 0.045 + 0.12 * fres; gloss = 16.0; wrap = 0.42; rim = 0.16;
+        spec = (0.05 + 0.14 * fres) * mix(0.35, 1.35, d.y); gloss = mix(9.0, 30.0, d.y); wrap = 0.42; rim = 0.16;
         sss = albedo * vec3(1.1, 0.42, 0.3);
     } else if (mat == 2) {     // drowned skin: marbled vessels, slipping skin, blisters, slime where wet
         albedo *= mix(0.86, 1.06, fbm(p * 8.0));
@@ -204,21 +233,24 @@ void main() {
         albedo *= mix(0.72, 1.12, cr) * mix(0.88, 1.06, fbm(p * 45.0));
         h = cr * 0.7 + fbm(p * 60.0) * 0.3; bk = 0.003; spec = 0.1; gloss = 20.0; wrap = 0.25;
     } else if (mat == 6) {     // denim twill
-        float tw = sin((p.x + p.y + p.z) * 900.0) * 0.5 + 0.5;
-        albedo *= mix(0.84, 1.08, tw) * mix(0.8, 1.12, fbm(p * 14.0));
-        h = tw * 0.25 + fbm(p * 35.0) * 0.75; bk = 0.0015; spec = 0.03; gloss = 8.0; wrap = 0.2;
+        vec2 d = stamp(u_dDenim, p, u_dTile[2], hs); sk = 1.4;
+        albedo *= mix(1.0, d.x, 0.9) * mix(0.8, 1.12, fbm(p * 14.0));
+        h = fbm(p * 35.0); bk = 0.0011; spec = 0.02 + 0.03 * d.y; gloss = 8.0; wrap = 0.2;
     } else if (mat == 7) {     // leather: a soft satin sheen, pebbled grain, a sharper shine only where it's worn smooth
         float worn = smoothstep(0.5, 0.78, fbm(p * 6.0));
-        float aa = clamp(1.5 - length(fwidth(p)) * 500.0, 0.0, 1.0);
-        float pebble = mix(0.5, noise(p * 900.0) * 0.6 + noise(p * 430.0) * 0.4, aa);
-        albedo *= mix(0.85, 1.12, fbm(p * 35.0)) * mix(1.0, 1.22, worn);
-        h = pebble * 0.55 + fbm(p * 26.0) * 0.45; bk = 0.0012 * (1.0 - worn * 0.6);
-        spec = mix(0.055, 0.14, worn); gloss = mix(9.0, 26.0, worn); wrap = 0.25; rim = 0.22;
+        vec2 d = stamp(u_dLeather, p, u_dTile[1], hs); sk = 1.5 * (1.0 - worn * 0.5);
+        albedo *= mix(0.85, 1.12, fbm(p * 35.0)) * mix(1.0, 1.22, worn) * mix(1.0, d.x, 0.8);
+        h = fbm(p * 26.0); bk = 0.0005;
+        spec = mix(0.05, 0.16, worn) * mix(0.5, 1.6, d.y); gloss = mix(10.0, 30.0, worn) * mix(0.7, 1.4, d.y); wrap = 0.25; rim = 0.22;
     } else if (mat == 8) {     // hair: tight curls, matte, a soft rim; thins out toward its edge (vAux)
         if (vAux > 0.0 && hash(floor(vec3(p.x * 1400.0, p.y * 380.0, p.z * 1400.0))) < vAux) discard;   // strand-shaped stipple
         float curl = noise(p * 700.0) * 0.6 + noise(p * 260.0) * 0.4;
         albedo *= mix(0.7, 1.15, curl); h = curl; bk = 0.00035; spec = 0.02; gloss = 10.0; wrap = 0.35; rim = 0.1;
-    } else if (mat == 9 || mat == 10) { spec = 0.9; gloss = 220.0; wrap = 0.25; rim = 0.1; }   // wet eyes
+    } else if (mat == 9 || mat == 10) {   // wet eyes: the upper lid shades the top of the eyeball; fine red vessels in the white
+        albedo *= mix(0.45, 1.0, smoothstep(0.62, 0.05, normalize(vRestN).y));
+        if (mat == 9) albedo = mix(albedo, albedo * vec3(1.0, 0.72, 0.68), smoothstep(0.86, 0.97, ridge(p * 900.0 + fbm(p * 300.0) * 2.0)) * 0.6);
+        spec = 0.9; gloss = 260.0; wrap = 0.25; rim = 0.1;
+    }
     else if (mat == 11) { albedo *= mix(0.7, 1.0, fbm(p * 50.0)); spec = 0.6; gloss = 60.0; metal = 0.18; }
     else if (mat == 12) {     // raw flesh: fibres, wet
         float fib = abs(sin(p.y * 260.0 + fbm(p * 20.0) * 5.0));
@@ -270,8 +302,8 @@ void main() {
         float cr = fbm(p * 24.0);
         albedo *= mix(0.86, 1.06, cr); h = cr; bk = 0.0022; spec = 0.22; gloss = 30.0; rim = 0.25;
     } else if (mat == 33) {   // cotton: matte, fine weave
-        float wv = sin(p.x * 1200.0) * sin(p.y * 1200.0);
-        albedo *= mix(0.88, 1.04, fbm(p * 40.0)); h = wv * 0.3 + fbm(p * 60.0) * 0.7; bk = 0.0012; spec = 0.03; gloss = 8.0; wrap = 0.35;
+        vec2 d = stamp(u_dCotton, p, u_dTile[3], hs); sk = 1.3;
+        albedo *= mix(0.88, 1.04, fbm(p * 40.0)) * mix(1.0, d.x, 0.8); h = fbm(p * 60.0); bk = 0.0008; spec = 0.03; gloss = 8.0; wrap = 0.35;
     } else if (mat == 34) {   // printed fabric: small flowers over the base colour
         vec3 q = p * 38.0;
         vec3 cell = floor(q);
@@ -367,14 +399,17 @@ void main() {
         vec3 qd = vec3(p.x * 13.0, p.y * 4.2, p.z * 13.0) + warp * 2.6;          // down the drape
         vec3 qa = vec3(p.x * 5.0, p.y * 19.0, p.z * 5.0) + warp * 2.2 + 11.3;    // across it
         float gather = smoothstep(0.98, 0.55, vAo);
-        float fd = pow(ridge(qd), 4.0), fa = pow(ridge(qa), 4.0);
+        float fd = ridge(qd), fa = ridge(qa);
+        fd = fd * fd * (3.0 - 2.0 * fd); fa = fa * fa * (3.0 - 2.0 * fa);       // rounded ridges: cloth rolls, it doesn't crease like paper
         float fold = mix(fd * 0.55, max(fd * 0.55, fa), gather) * (heavy ? 0.6 : 1.0);
         float px = length(fwidth(p)) * 13.0;                                   // (creases finer than a pixel fade out, not shimmer)
         fold *= clamp(1.6 - px * 2.2, 0.0, 1.0);
-        albedo *= 1.0 - 0.3 * (mix(0.35, 1.0, gather) - fold) * (heavy ? 0.7 : 1.0);
-        N = bumpN(N, fold, heavy ? 0.011 : 0.015);
+        albedo *= 1.0 - 0.22 * (mix(0.3, 0.75, gather) - fold) * (heavy ? 0.7 : 1.0);
+        N = bumpN(N, fold, heavy ? 0.005 : 0.008);
     }
     if (bk > 0.0) N = bumpN(N, h, bk);
+    // (A stamp's relief fades as it shrinks under a pixel: grain too small to see must not sparkle.)
+    if (sk > 0.0) N = bumpS(N, hs, sk * clamp(1.25 - (length(gQx) + length(gQy)) * 260.0, 0.2, 1.0));
 
     // The street on him: what a doll fresh from the box lacks. (p is the garment's own space, metres, feet at 0.)
     bool garment = cloth || mat == 7;
@@ -400,7 +435,9 @@ void main() {
     }
     if (mat == 1) {   // living skin: uneven as skin is (ruddier and paler in patches), and a harder light on it
         albedo *= mix(0.88, 1.08, fbm(p * 11.0)) * mix(vec3(1.0), vec3(1.06, 0.95, 0.93), smoothstep(0.45, 0.7, fbm(p * 5.0 + 9.0)));
-        wrap = 0.3;
+        // Light gets into skin and comes out a little way off, red travelling furthest: the edge of
+        // every shadow on him glows warm instead of going grey (what tells flesh from painted clay).
+        wrap = 0.42; bleed = vec3(1.0, 0.42, 0.28);
     }
     // Rain: whatever faces the sky is wet. Cloth darkens and takes a dull sheen, skin and hair shine,
     // and single drops catch the lamps. A little damp everywhere: the air is full of it.
@@ -431,7 +468,8 @@ void main() {
         if (i == u_shadowLight[0]) lc *= 0.06 + 0.94 * shadowIn(texture1, u_shadowVP[0], vWorld + Ng * 0.012);
         else if (i == u_shadowLight[1]) lc *= 0.06 + 0.94 * shadowIn(texture2, u_shadowVP[1], vWorld + Ng * 0.012);
         float ndl = dot(N, L);
-        col += albedo * max((ndl + wrap) / (1.0 + wrap), 0.0) * lc * ao;
+        vec3 wr = wrap * bleed;
+        col += albedo * max((ndl + wr) / (1.0 + wr), 0.0) * lc * ao;
         col += sss * (0.5 - 0.5 * ndl) * lc * 0.35;                                  // light bleeding through flesh
         if (fuzz > 0.0) col += fuzz * albedo * pow(1.0 - max(dot(N, V), 0.0), 3.0) * max(ndl * 0.5 + 0.5, 0.0) * lc * ao;   // cloth's nap
         col += spec * pow(max(dot(N, normalize(L + V)), 0.0), gloss) * lc * step(0.0, ndl) * ao;

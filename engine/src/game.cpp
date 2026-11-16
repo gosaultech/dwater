@@ -59,6 +59,22 @@ bool Game::init(const std::string& room_id) {
     l_fogr_ = GetShaderLocation(char_, "u_fogRange");
     char_mat_ = LoadMaterialDefault();
     char_mat_.shader = char_;
+    // The detail maps (dw/detail.hpp): loaded once, each on its own texture unit for good.
+    float tiles[detail::COUNT];
+    for (int i = 0; i < detail::COUNT; ++i) {
+        Image img = LoadImage((root + "/engine/assets/detail/" + detail::MAPS[i].name + ".png").c_str());
+        if (!img.data) img = GenImageColor(1, 1, Color{128, 128, 128, 128});   // missing: flat, the material's own colour
+        detail_[i] = LoadTextureFromImage(img);
+        UnloadImage(img);
+        GenTextureMipmaps(&detail_[i]);
+        SetTextureFilter(detail_[i], TEXTURE_FILTER_ANISOTROPIC_8X);
+        SetTextureWrap(detail_[i], TEXTURE_WRAP_REPEAT);
+        const int unit = detail::FIRST_UNIT + i;
+        SetShaderValue(char_, GetShaderLocation(char_, detail::MAPS[i].uniform), &unit, SHADER_UNIFORM_INT);
+        tiles[i] = detail::MAPS[i].tile;
+    }
+    SetShaderValueV(char_, GetShaderLocation(char_, "u_dTile"), tiles, SHADER_UNIFORM_FLOAT, detail::COUNT);
+    bind_detail();
     blob_ = LoadShaderFromMemory(nullptr, shaders::BLOB_FS);
     l_blob_ = GetShaderLocation(blob_, "u_strength");
     blob_mat_ = LoadMaterialDefault();
@@ -121,6 +137,7 @@ void Game::shutdown() {
     fx_.shutdown();
     sfx_.shutdown();
     UnloadMesh(blob_mesh_);
+    for (auto& t : detail_) UnloadTexture(t);
     UnloadShader(plate_); UnloadShader(char_); UnloadShader(blob_); UnloadShader(post_); UnloadShader(rain_sh_); UnloadShader(splash_sh_);
     UnloadRenderTexture(rt_);
     for (auto& sm : shadows_) {
@@ -284,7 +301,16 @@ void Game::render_shadows(const std::vector<const Character*>& casters, const st
     }
 }
 
+void Game::bind_detail() {
+    for (int i = 0; i < detail::COUNT; ++i) {
+        rlActiveTextureSlot(detail::FIRST_UNIT + i);
+        rlEnableTexture(detail_[i].id);
+    }
+    rlActiveTextureSlot(0);
+}
+
 void Game::bind_shadows() {
+    bind_detail();   // (cheap, and safe against anything that used those units since)
     int which[2], dyn_map[2] = {-1, -1};
     Vector4 pl[2];
     for (int k = 0; k < 2; ++k) {

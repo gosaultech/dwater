@@ -20,6 +20,7 @@
 #include "dw/combat.hpp"
 #include "dw/controls.hpp"
 #include "dw/core.hpp"
+#include "dw/detail.hpp"
 #include "dw/doors.hpp"
 #include "dw/framing.hpp"
 #include "dw/fxlive.hpp"
@@ -129,6 +130,7 @@ private:
     void render_shadows(const std::vector<const Character*>& casters, const std::vector<const Character*>& gun_lit = {});
     void shadow_pass(int k, const Camera3D& from, double near_d, double far_d, const std::vector<const Character*>& casters);
     void bind_shadows();                // shadow uniforms for the character and plate shaders
+    void bind_detail();                 // the detail maps, onto their texture units
 
     void cut_to(const std::string& id);
     void update_view(float dt);                     // the window over the background follows him (dw/framing.hpp)
@@ -280,6 +282,7 @@ private:
     Camera3D cam_{};
     Shader plate_{}, char_{}, blob_{}, post_{};
     Material char_mat_{}, blob_mat_{};
+    Texture2D detail_[detail::COUNT]{};   // the tiling detail maps (dw/detail.hpp)
     Mesh blob_mesh_{};
     RenderTexture2D rt_{};
     Character hero_;
