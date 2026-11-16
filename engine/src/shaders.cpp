@@ -21,9 +21,10 @@ in vec3 vertexPosition; in vec3 vertexNormal; in vec2 vertexTexCoord; in vec4 ve
 in vec4 vertexBoneIds; in vec4 vertexBoneWeights; in vec2 vertexTexCoord2;
 uniform mat4 mvp; uniform mat4 matModel; uniform mat4 matNormal;
 uniform mat4 boneMatrices[48]; uniform int u_skin;
-out vec3 vWorld; out vec3 vNormal; out vec3 vRestN; out vec3 vSurf; out vec4 vColor; out float vAo; out float vAux; flat out int vMat;
+out vec3 vWorld; out vec3 vNormal; out vec3 vRestN; out vec3 vSurf; out vec3 vRest; out vec4 vColor; out float vAo; out float vAux; flat out int vMat;
 flat out int vRegion;
 void main() {
+    vRest = vertexPosition;   // where this is on the body at rest (skinned parts: metres, feet at 0)
     vRegion = int(vertexTexCoord2.x + 0.5);   // which body region (anatomy.hpp): cut-off regions are not drawn
     vAux = vertexTangent.w;   // the material's spare per-vertex value (hair: how thinned-out toward its edge)
     vRestN = vertexNormal;   // before skinning: which way the surface faces in pattern space (knit columns)
@@ -45,8 +46,10 @@ void main() {
 })";
 
 const char* CHAR_FS = R"(#version 330
-in vec3 vWorld; in vec3 vNormal; in vec3 vRestN; in vec3 vSurf; in vec4 vColor; in float vAo; in float vAux; flat in int vMat;
+in vec3 vWorld; in vec3 vNormal; in vec3 vRestN; in vec3 vSurf; in vec3 vRest; in vec4 vColor; in float vAo; in float vAux; flat in int vMat;
 flat in int vRegion;
+uniform int u_skin;     // 1: a skinned body part, so vRest is a place on the standing body
+uniform float u_drowned;   // 1 while drawing one of the Drowned: all they wear is soaked and fouled
 uniform int u_hidden;   // a bit per body region that has been shot away: its skin and clothes vanish
 uniform vec3 u_camPos; uniform int u_lightCount;
 uniform vec4 u_lightPos[8]; uniform vec4 u_lightCol[8]; uniform vec4 u_lightDir[8];
@@ -160,6 +163,7 @@ void main() {
     vec3 Ng = N;                    // the true surface normal, before any bump: shadow lookups push out along it
     vec3 V = normalize(u_camPos - vWorld);
     vec3 p = vSurf;
+    float up = u_skin == 1 ? vRest.y : 1.0;   // metres above his soles at rest (things he carries: clear of the mud)
     vec3 albedo = lin(vColor.rgb);
     float spec = 0.04, gloss = 12.0, wrap = 0.2, h = 0.0, bk = 0.0, rim = 0.2;
     vec3 bleed = vec3(1.0);   // how far light creeps past the shadow's edge, per colour (skin: red furthest)
@@ -170,7 +174,7 @@ void main() {
     int mat = vMat;
     // Seen from the inside, a body is meat: a torn scalp, a split, the far side of a cut.
     bool skinlike = mat == 1 || mat == 2 || mat == 20 || mat == 23 || mat == 24;
-    if (!gl_FrontFacing && skinlike) { mat = 12; albedo = lin(vec3(0.2, 0.045, 0.04)); }
+    if (!gl_FrontFacing && skinlike) { mat = 12; albedo = lin(vec3(0.13, 0.03, 0.03)); }
     if (!gl_FrontFacing && mat == 8) albedo *= 0.5;   // the underside of hair (lashes, a brow's edge) is just darker hair
     if (!gl_FrontFacing && (mat == 3 || mat == 4 || mat == 5 || mat == 6 || mat == 7 || mat == 27 || mat == 28 || mat == 32 ||
                             mat == 33 || mat == 34)) albedo *= 0.35;   // inside a garment
@@ -187,33 +191,55 @@ void main() {
         float fres = pow(1.0 - max(dot(N, V), 0.0), 3.0);
         spec = (0.05 + 0.14 * fres) * mix(0.35, 1.35, d.y); gloss = mix(9.0, 30.0, d.y); wrap = 0.42; rim = 0.16;
         sss = albedo * vec3(1.1, 0.42, 0.3);
-    } else if (mat == 2) {     // drowned skin: marbled vessels, slipping skin, blisters, slime where wet
-        albedo *= mix(0.86, 1.06, fbm(p * 8.0));
-        albedo = mix(albedo, albedo * vec3(0.95, 1.01, 0.94), smoothstep(0.4, 0.7, fbm(p * 3.0 + 9.0)));   // greening
-        vec3 q = p * 15.0 + vec3(fbm(p * 4.0) * 2.2);                                        // warped: vessels wander
-        float ves = max(smoothstep(0.9, 0.985, ridge(q)), smoothstep(0.93, 0.99, ridge(q * 2.13 + 7.3)) * 0.7);
-        float region = smoothstep(0.38, 0.62, fbm(p * 2.4 + 3.0));                            // marbling comes in patches
-        albedo = mix(albedo, lin(vec3(0.22, 0.17, 0.24)), ves * region * 0.65);                // under the skin, not on it
-        albedo = mix(albedo, lin(vec3(0.28, 0.22, 0.3)), (1.0 - smoothstep(0.1, 0.95, vWorld.y)) * 0.4);   // blood pooled low
+    } else if (mat == 2) {     // drowned skin: weeks in the canal
+        // Waterlogged skin wrinkles like fingers left in the bath: the skin stamp, swollen to twice
+        // its size and cut deep.
+        vec2 d = stamp(u_dSkin, p, u_dTile[0] * 2.2, hs); sk = 1.3;
+        albedo *= mix(0.8, 1.08, fbm(p * 8.0)) * mix(1.0, d.x, 0.7);
+        // What the water does to colour. Wax: pale, yellowed fat showing through in patches.
+        // Livor: blood settled dark purple, in blotches and low on the body. Rot: green going to
+        // black, worst over the belly and up the neck, where it starts.
+        float wax = smoothstep(0.5, 0.72, fbm(p * 4.3 + 21.0));
+        albedo = mix(albedo, albedo * vec3(1.25, 1.2, 0.92) + vec3(0.02, 0.02, 0.008), wax * 0.6);
+        float livor = max(smoothstep(0.52, 0.74, fbm(p * 3.1 + 5.0)), (1.0 - smoothstep(0.1, 0.95, vWorld.y)) * 0.6);
+        albedo = mix(albedo, lin(vec3(0.3, 0.17, 0.27)), livor * 0.6);
+        float belly = exp(-pow((up - 1.08) / 0.2, 2.0)) + 0.6 * exp(-pow((up - 1.46) / 0.07, 2.0));
+        float rot = smoothstep(0.5, 0.72, fbm(p * 3.6 + 9.0) + belly * 0.22);
+        albedo = mix(albedo, lin(vec3(0.13, 0.19, 0.12)), rot * 0.75);
+        albedo = mix(albedo, lin(vec3(0.05, 0.06, 0.05)), smoothstep(0.66, 0.82, fbm(p * 3.6 + 9.0) + belly * 0.22) * 0.8);
+        // Marbling: the vessels under the skin gone dark, and mould spotted along them (the skin
+        // stamp's pores and furrows, blown up thirteen times), in patches.
+        vec2 unused = vec2(0.0);
+        float net = stamp(u_dSkin, p + 3.7, u_dTile[0] * 13.0, unused).x;
+        float spots = smoothstep(0.96, 0.86, net);                         // and black mould where they meet
+        vec3 q = p * 13.0 + vec3(fbm(p * 5.0) * 4.0);
+        float ves = smoothstep(0.93, 0.985, ridge(q));                     // the big vessels, wandering
+        float region = smoothstep(0.32, 0.58, fbm(p * 2.4 + 3.0));
+        albedo = mix(albedo, lin(vec3(0.09, 0.12, 0.14)), max(ves, spots * 0.8) * region * 0.85);
         // Skin slippage: patches where the outer skin has lifted (pale, loose, wrinkled) and, at
         // their hearts, come away to the raw layer beneath.
-        float sl = fbm(p * 5.0 + 11.7) + (fbm(p * 34.0) - 0.5) * 0.08;
-        float curl = smoothstep(0.64, 0.66, sl) * (1.0 - smoothstep(0.67, 0.685, sl));
-        float raw = smoothstep(0.675, 0.695, sl) * smoothstep(0.5, 0.58, fbm(p * 16.0 + 3.1)) * 0.9;   // torn through in places
+        float sl = fbm(p * 5.0 + 11.7) + (fbm(p * 34.0) - 0.5) * 0.1;
+        float curl = smoothstep(0.6, 0.63, sl) * (1.0 - smoothstep(0.64, 0.66, sl));
+        float raw = smoothstep(0.64, 0.67, sl);
         float wrk = abs(sin(p.y * 190.0 + fbm(p * 26.0) * 6.0));
-        albedo = mix(albedo, lin(vec3(0.56, 0.56, 0.52)) * mix(0.8, 1.05, wrk), curl * 0.3);
-        albedo = mix(albedo, lin(vec3(0.3, 0.2, 0.19)) * mix(0.7, 1.1, fbm(p * 40.0)), raw * 0.75);   // the dermis: pink-brown, wet
-        float bl = smoothstep(0.9, 0.95, noise(p * 90.0)) * (1.0 - raw);                      // gas blisters: small, glassy
-        albedo = mix(albedo, albedo * vec3(1.15, 1.12, 0.95), bl * 0.5);
-        // Waterlogged skin creases all over (vAux: how deeply; the scream's brows furrow the forehead).
+        albedo = mix(albedo, lin(vec3(0.5, 0.48, 0.4)) * mix(0.7, 1.05, wrk), curl * 0.5);
+        albedo = mix(albedo, lin(vec3(0.24, 0.085, 0.07)) * mix(0.3, 1.2, fbm(p * 60.0)) * mix(0.6, 1.0, fbm(p * 17.0)), raw * 0.9);   // the dermis: dark, wet
+        float bl = smoothstep(0.86, 0.95, noise(p * 55.0)) * (1.0 - raw) * smoothstep(0.45, 0.6, fbm(p * 7.0 + 2.0));   // gas blisters, in crops
+        albedo = mix(albedo, albedo * vec3(1.2, 1.15, 0.9), bl * 0.6);
         // The scream's brows furrow the forehead (vAux: where, from tools/characters/drowned.py).
-        float furrow = smoothstep(0.72, 1.0, sin(p.y * 270.0 + fbm(p * 7.0) * 7.0)) * smoothstep(0.4, 1.0, vAux) * smoothstep(0.3, 0.6, fbm(p * 20.0 + 4.0));
-        albedo *= 1.0 - 0.3 * furrow;
-        float wet = max(smoothstep(0.45, 0.66, fbm(p * 5.0 + 7.0)), raw);
-        spec = max(mix(0.04, 0.32, wet), bl * 0.6); gloss = max(mix(10.0, 46.0, wet), bl * 90.0);
-        h = fbm(p * 70.0) * 0.6 + fbm(p * 190.0) * 0.25 - ves * region * 0.1 + bl * 0.6 - raw * 0.5 + curl * wrk * 0.3
-            - furrow * 0.45; bk = 0.0022; wrap = 0.4;
-        sss = mix(vec3(0.05, 0.07, 0.06), vec3(0.08, 0.04, 0.03), raw);
+        float furrow = smoothstep(0.6, 1.0, sin(p.y * 270.0 + fbm(p * 9.0) * 9.0)) * smoothstep(0.4, 1.0, vAux) * smoothstep(0.3, 0.6, fbm(p * 20.0 + 4.0));
+        albedo *= 1.0 - 0.22 * furrow;
+        // Silt: the canal's mud lies in every crease and on whatever faces up.
+        float silt = max(smoothstep(0.85, 0.45, vAo), smoothstep(0.35, 0.9, Ng.y) * smoothstep(0.35, 0.65, fbm(p * 12.0 + 31.0)));
+        albedo = mix(albedo, lin(vec3(0.16, 0.13, 0.09)), silt * 0.7);
+        // Wet where it weeps (the raw patches) and where water still runs down it in streaks; the
+        // rest is dull wax. A small hard glint, not a sheen: slime, not polish.
+        float runs = smoothstep(0.55, 0.85, noise(vec3(p.x * 55.0, p.y * 4.0, p.z * 55.0)));
+        float wet = max(max(raw, runs * 0.8), smoothstep(0.55, 0.72, fbm(p * 5.0 + 7.0)) * 0.3) * (1.0 - silt * 0.8);
+        spec = max(mix(0.03, 0.45, wet), bl * 0.5) * mix(0.6, 1.2, d.y); gloss = max(mix(7.0, 70.0, wet), bl * 80.0);
+        h = fbm(p * 70.0) * 0.5 - ves * region * 0.15 + bl * 0.7 - raw * 0.7 + curl * (0.5 + wrk * 0.4) - furrow * 0.4;
+        bk = 0.0024; wrap = 0.36; rim = 0.12;
+        sss = mix(vec3(0.03, 0.045, 0.035), vec3(0.1, 0.02, 0.015), raw);
     } else if (mat == 3) {     // coroner's sheet: dirty linen, canal mud, old blood; damp patches
         float st = fbm(p * 6.0);
         albedo = mix(albedo, albedo * vec3(0.5, 0.42, 0.3), smoothstep(0.48, 0.72, st));
@@ -245,7 +271,7 @@ void main() {
     } else if (mat == 8) {     // hair: tight curls, matte, a soft rim; thins out toward its edge (vAux)
         if (vAux > 0.0 && hash(floor(vec3(p.x * 1400.0, p.y * 380.0, p.z * 1400.0))) < vAux) discard;   // strand-shaped stipple
         float curl = noise(p * 700.0) * 0.6 + noise(p * 260.0) * 0.4;
-        albedo *= mix(0.7, 1.15, curl); h = curl; bk = 0.00035; spec = 0.02; gloss = 10.0; wrap = 0.35; rim = 0.1;
+        albedo *= mix(0.7, 1.15, curl) * mix(1.0, 0.3, u_drowned); h = curl; bk = 0.00035; spec = 0.02; gloss = 10.0; wrap = 0.35; rim = 0.1;   // (soaked: dark)
     } else if (mat == 9 || mat == 10) {   // wet eyes: the upper lid shades the top of the eyeball; fine red vessels in the white
         albedo *= mix(0.45, 1.0, smoothstep(0.62, 0.05, normalize(vRestN).y));
         if (mat == 9) albedo = mix(albedo, albedo * vec3(1.0, 0.72, 0.68), smoothstep(0.86, 0.97, ridge(p * 900.0 + fbm(p * 300.0) * 2.0)) * 0.6);
@@ -259,8 +285,11 @@ void main() {
         float rg = sin(p.y * 600.0) * 0.5 + 0.5; albedo *= mix(0.55, 1.1, rg); h = rg; bk = 0.0008; spec = 0.9; gloss = 100.0;
     } else if (mat == 15) { albedo *= mix(0.4, 1.0, fbm(p * 90.0)); spec = 0.04; gloss = 8.0; }
     else if (mat == 16) {     // dead eye: milky, clouded cornea under a wet film
-        albedo *= mix(0.8, 1.0, fbm(p * 120.0)); spec = 0.7; gloss = 240.0; wrap = 0.2; rim = 0.12;
-        sss = vec3(0.04, 0.045, 0.05);
+        albedo *= mix(0.8, 1.0, fbm(p * 120.0)) * mix(0.6, 1.15, smoothstep(0.6, 0.0, normalize(vRestN).y));   // the lid's shadow
+        albedo = mix(albedo, lin(vec3(0.3, 0.08, 0.07)), smoothstep(0.8, 0.96, ridge(p * 700.0 + fbm(p * 200.0) * 2.0)) * 0.7);   // burst vessels
+        albedo = mix(albedo, lin(vec3(0.5, 0.5, 0.36)), smoothstep(0.5, 0.8, fbm(p * 260.0 + 5.0)) * 0.35);                    // yellowed film
+        spec = 0.6; gloss = 200.0; wrap = 0.2; rim = 0.1;
+        sss = vec3(0.03, 0.035, 0.035);
     } else if (mat == 17) {   // teeth: yellowed, stained at the gumline
         albedo *= mix(0.7, 1.05, fbm(p * 90.0)); h = fbm(p * 200.0); bk = 0.0006; spec = 0.35; gloss = 50.0; wrap = 0.3;
     } else if (mat == 18) {   // bone: dirty ivory, pitted, wet
@@ -270,8 +299,9 @@ void main() {
         sss = vec3(0.25, 0.03, 0.06);
     } else if (mat == 20) {   // intestine: grey-pink, fine vessels, slick
         float ves = smoothstep(0.86, 0.97, 1.0 - abs(fbm(p * 30.0) * 2.0 - 1.0));
-        albedo = mix(albedo * mix(0.8, 1.1, fbm(p * 25.0)), lin(vec3(0.45, 0.08, 0.1)), ves * 0.7);
-        h = fbm(p * 90.0); bk = 0.001; spec = 0.8; gloss = 85.0; wrap = 0.55; sss = vec3(0.4, 0.12, 0.12);
+        albedo = mix(albedo * mix(0.55, 1.0, fbm(p * 25.0)) * vec3(0.8, 0.62, 0.62), lin(vec3(0.3, 0.05, 0.08)), ves * 0.8);
+        albedo = mix(albedo, lin(vec3(0.16, 0.2, 0.13)), smoothstep(0.5, 0.75, fbm(p * 18.0 + 6.0)) * 0.6);   // going green
+        h = fbm(p * 90.0); bk = 0.001; spec = 0.8; gloss = 85.0; wrap = 0.5; sss = vec3(0.22, 0.05, 0.05);
     } else if (mat == 21) {   // mussel shell: growth rings, wet, crusted with silt
         float gr = sin(length(p) * 1400.0) * 0.5 + 0.5;
         albedo *= mix(0.82, 1.08, gr) * mix(0.7, 1.0, fbm(p * 200.0)); h = gr; bk = 0.0005; spec = 0.3; gloss = 45.0;
@@ -279,8 +309,9 @@ void main() {
         albedo *= mix(0.6, 1.2, fbm(p * 50.0)); spec = 0.5; gloss = 40.0; wrap = 0.6; sss = vec3(0.1, 0.18, 0.05);
     } else if (mat == 23) {   // loose skin: bleached, wrinkled like a washerwoman's fingers, wet
         float wr = abs(sin(p.y * 170.0 + fbm(p * 30.0) * 5.0));
-        albedo *= mix(0.72, 1.06, wr) * mix(0.9, 1.05, fbm(p * 70.0));
-        h = wr; bk = 0.0012; spec = 0.35; gloss = 35.0; wrap = 0.5; sss = vec3(0.2, 0.16, 0.12);
+        albedo *= mix(0.5, 1.0, wr) * mix(0.8, 1.05, fbm(p * 70.0)) * vec3(0.8, 0.8, 0.76);
+        albedo = mix(albedo, lin(vec3(0.3, 0.2, 0.28)), smoothstep(0.45, 0.7, fbm(p * 14.0 + 3.0)) * 0.5);   // bruised under it
+        h = wr; bk = 0.0018; spec = 0.3; gloss = 35.0; wrap = 0.4; sss = vec3(0.1, 0.08, 0.07);
     } else if (mat == 28) {   // chunky cable knit, projected three ways by which way the cloth faces at rest
         vec3 w = pow(abs(normalize(vRestN)), vec3(6.0));
         w /= max(w.x + w.y + w.z, 1e-4);
@@ -381,12 +412,34 @@ void main() {
         albedo *= mix(0.7, 1.1, fbm(p * 55.0)); h = fbm(p * 140.0); bk = 0.0008; spec = 0.35; gloss = 50.0; wrap = 0.5;
         sss = vec3(0.09, 0.04, 0.035);
     }
-    // Soaked cloth (vAux on a garment: how wet): darker, and a dull sheen where the water sits.
+    // Soaked cloth (a garment's vAux: how wet): darker, and a dull sheen where the water sits.
     bool cloth = mat == 3 || mat == 4 || mat == 5 || mat == 6 || mat == 27 || mat == 28 || mat == 32 || mat == 33 || mat == 34;
-    if (cloth && vAux > 0.0) {
+    float soak = cloth ? vAux : 0.0;   // how wet a garment is (its own, or at least well soaked on the Drowned)
+    if (cloth && u_skin == 1 && u_drowned > 0.5) soak = max(soak, 0.65);
+    if (soak > 0.0) {
         bool thick = mat == 4 || mat == 28;   // wool and knit drink the water: dark, barely shining
-        albedo *= 1.0 - (thick ? 0.3 : 0.22) * vAux;
-        spec = mix(spec, thick ? 0.06 : 0.16, vAux); gloss = mix(gloss, thick ? 14.0 : 28.0, vAux); bk *= 1.0 - 0.4 * vAux;
+        albedo *= 1.0 - (thick ? 0.3 : 0.36) * soak;
+        spec = mix(spec, thick ? 0.06 : 0.16, soak); gloss = mix(gloss, thick ? 14.0 : 28.0, soak); bk *= 1.0 - 0.4 * soak;
+        // And what the canal left in it: silt settled in patches and thick toward the hems, dark
+        // slime run down it in streaks, a green cast where weed has grown into the weave.
+        float patchy = smoothstep(0.3, 0.62, fbm(p * 3.5 + 5.0)) + (1.0 - smoothstep(0.0, 0.6, up)) * 0.6;
+        float streak = smoothstep(0.5, 0.9, noise(vec3(p.x * 38.0, p.y * 2.6, p.z * 38.0))) * smoothstep(0.3, 0.6, fbm(p * 2.0 + 13.0));
+        albedo = mix(albedo, albedo * vec3(0.62, 0.82, 0.52), soak * 0.5 * smoothstep(0.4, 0.7, fbm(p * 2.1 + 17.0)));
+        albedo = mix(albedo, lin(vec3(0.17, 0.14, 0.1)) * mix(0.6, 1.1, fbm(p * 30.0)), clamp(soak * (0.4 + 0.7 * patchy + 0.5 * streak), 0.0, 0.88));
+        spec *= 1.0 - 0.7 * patchy * soak;
+    }
+    // The Drowned died screaming, and what came up ran down them: a bib of old blood from the chin
+    // down the chest (rest pose: metres, feet at 0, the front toward -z), thick under the mouth,
+    // breaking into runs lower down. On their skin and on their soaked clothes alike.
+    if (mat == 2 || soak > 0.0) {
+        float wob = (fbm(vec3(up * 9.0, 3.0, 1.0)) - 0.5) * 0.09;
+        float down = smoothstep(0.95, 1.3, up) * (1.0 - smoothstep(1.5, 1.6, up));
+        float width = mix(0.04, 0.13, smoothstep(1.52, 1.2, up));
+        float runny = mix(1.0, smoothstep(0.3, 0.7, noise(vec3(vRest.x * 70.0, up * 3.0, 0.5))), smoothstep(1.38, 1.1, up));
+        float bib = (1.0 - smoothstep(width * 0.45, width, abs(vRest.x + wob))) * down * runny * step(vRestN.z, 0.2)
+                  * smoothstep(0.2, 0.45, fbm(p * 14.0 + 40.0) + 0.3) * float(u_skin);
+        albedo = mix(albedo, lin(vec3(0.2, 0.035, 0.03)) * mix(0.5, 1.1, fbm(p * 50.0)), bib * 0.9);
+        spec = mix(spec, 0.3, bib * 0.6); gloss = mix(gloss, 50.0, bib * 0.6);
     }
     // Folds: what tells cloth from rubber at any distance. Cloth hangs and bunches in creases a few
     // centimetres across: long ones down the drape, short ones across it where it gathers (elbows,
@@ -418,11 +471,11 @@ void main() {
         // Wear: cloth is never one colour. Faded where it rubs, darker where it is damp or dirty, in patches a hand wide.
         albedo *= mix(0.76, 1.1, fbm(p * 7.0)) * mix(0.9, 1.06, fbm(p * 2.2 + 3.1));
         // The flood's mud up the legs: thick at the hem, gone by the knee, dried paler at its edge.
-        float splash = (1.0 - smoothstep(0.04, 0.46, p.y)) * (0.35 + 0.65 * fbm(vec3(p.x * 16.0, p.y * 7.0, p.z * 16.0)));
+        float splash = (1.0 - smoothstep(0.04, 0.46, up)) * (0.35 + 0.65 * fbm(vec3(p.x * 16.0, p.y * 7.0, p.z * 16.0)));
         albedo = mix(albedo, vec3(0.045, 0.038, 0.03), clamp(splash * 0.75, 0.0, 0.7));
         spec = mix(spec, 0.02, splash); 
         if (mat == 6) {    // denim wears pale where it bends and rubs: the thighs, the knees, the seat; dark in the seams
-            float rub = smoothstep(0.3, 0.75, fbm(vec3(p.x * 9.0, p.y * 4.0, p.z * 9.0) + 4.0)) * smoothstep(0.2, 0.5, p.y) * (1.0 - smoothstep(0.85, 1.0, p.y));
+            float rub = smoothstep(0.3, 0.75, fbm(vec3(p.x * 9.0, p.y * 4.0, p.z * 9.0) + 4.0)) * smoothstep(0.2, 0.5, up) * (1.0 - smoothstep(0.85, 1.0, up));
             albedo = mix(albedo, albedo * 1.9 + vec3(0.012, 0.016, 0.024), rub * 0.6);
         }
         wrap *= 0.45;      // a harder edge between lit and unlit: soft wrap-round light is what makes cloth look moulded
@@ -430,7 +483,7 @@ void main() {
     }
     if (mat == 35) fuzz = 0.7;   // loose hairs round each loc catch the light from behind: a soft halo
     if (mat == 31 || mat == 7) {   // boots and soles: mud
-        float muck = (1.0 - smoothstep(0.0, 0.2, p.y)) * (0.4 + 0.6 * fbm(p * 30.0));
+        float muck = (1.0 - smoothstep(0.0, 0.2, up)) * (0.4 + 0.6 * fbm(p * 30.0));
         albedo = mix(albedo, vec3(0.05, 0.042, 0.033), clamp(muck, 0.0, 0.8));
     }
     if (mat == 1) {   // living skin: uneven as skin is (ruddier and paler in patches), and a harder light on it

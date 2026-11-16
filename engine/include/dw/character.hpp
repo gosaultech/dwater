@@ -267,6 +267,7 @@ private:
         int sub = 1;
         float wave = 0.0f, root = 1.0f, fluff = 1.0f;
         std::vector<float> shade;               // per strand, optional: 1 = out in the light, less = under other hair
+        bool aux_along = false;                 // tubes: give the shader how far along the strand each point is (0 root .. 1 tip)
         // Ribbons instead of tubes (long hair as "cards"): flat strips `radius` wide that lie against
         // the head, facing away from the skull's axis (axisA-axisB, joint space); their edges and ends
         // thin out into single hairs (the shader stipples them away).

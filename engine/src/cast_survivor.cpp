@@ -69,6 +69,7 @@ Character build_survivor() {
     locs.sides = 8;
     locs.mat = MAT_LOCS;
     locs.sub = 2;          // a smooth curve through the points
+    locs.aux_along = true;
     locs.sides = 10;
     locs.lump = 0.13f;     // palm-rolled: it swells and thins
     locs.wave = 0.0013f;   // and wanders a little off its line

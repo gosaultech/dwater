@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 
 #include "dw/character_file.hpp"
@@ -224,7 +225,8 @@ void Character::add_strands(Strands s) {
             m.tangents[idx * 4 + 2] = o.z;
             // Ribbons: how far toward a thinned-out edge or end (0 in the middle, 1 at the edge).
             // Tubes: how far along the strand (0 at the root, 1 at the tip).
-            m.tangents[idx * 4 + 3] = s.ribbon ? std::max(std::fabs(float(j) - 1.0f), std::clamp((frac - 0.55f) / 0.45f, 0.0f, 1.0f)) : frac;
+            m.tangents[idx * 4 + 3] = s.ribbon ? std::max(std::fabs(float(j) - 1.0f), std::clamp((frac - 0.55f) / 0.45f, 0.0f, 1.0f))
+                                               : s.aux_along ? frac : 0.0f;
             float t = std::clamp((frac - 0.45f) / 0.55f, 0.0f, 1.0f);   // the last half fades
             t = s.tip.a > 0 ? t * t * (3 - 2 * t) : 0.0f;
             auto ch = [&](unsigned char a, unsigned char b) {
@@ -253,6 +255,10 @@ void Character::step_strands(float dt) {
     for (auto& s : strands_) {
         const Matrix& W = W_[s.joint];
         const int count = int(s.anchor.size());
+        // The hairstyle was set on an upright head: a head lying on the ground lets go of it (the
+        // hair falls where gravity takes it, and lies on the floor).
+        const float upright = std::clamp(W.m5, 0.0f, 1.0f), hold = upright * upright * (3 - 2 * upright);
+        const float floor_y = pos_.y;
         for (int k = 0; k < count; ++k) {
             Vector3* p = &s.p[size_t(k) * s.n];
             Vector3* q = &s.prev[size_t(k) * s.n];
@@ -264,7 +270,7 @@ void Character::step_strands(float dt) {
                 const Vector3 v = Vector3Scale(Vector3Subtract(p[i], q[i]), 0.95f);
                 q[i] = p[i];
                 p[i] = Vector3Add(p[i], Vector3Add(v, grav));
-                p[i] = Vector3Lerp(p[i], rest_at(i), s.stiff[k] * (1.0f - 0.45f * float(i) / float(s.n - 1)));   // firm at the root
+                p[i] = Vector3Lerp(p[i], rest_at(i), hold * s.stiff[k] * (1.0f - 0.45f * float(i) / float(s.n - 1)));   // firm at the root
             }
             for (int it = 0; it < 3; ++it) {
                 for (int i = 0; i + 1 < s.n; ++i) {
@@ -281,6 +287,7 @@ void Character::step_strands(float dt) {
                         const float l = Vector3Length(off), r = c.r + (s.ribbon ? 0.003f : s.radius[k]);
                         if (l < r && l > 1e-6f) p[i] = Vector3Add(cq, Vector3Scale(off, r / l));
                     }
+                for (int i = 1; i < s.n; ++i) p[i].y = std::max(p[i].y, floor_y + (s.ribbon ? 0.003f : s.radius[k]));
             }
         }
         s.live = true;
@@ -1376,13 +1383,16 @@ const Grip& Character::view_grip() const {
 
 void Character::draw(const Material& m, bool shadow_caster) const {
     static unsigned shader = 0;
-    static int skin_loc = -1, hidden_loc = -1;
+    static int skin_loc = -1, hidden_loc = -1, drowned_loc = -1;
     if (shader != m.shader.id) {
         shader = m.shader.id;
         skin_loc = GetShaderLocation(m.shader, "u_skin");
         hidden_loc = GetShaderLocation(m.shader, "u_hidden");
+        drowned_loc = GetShaderLocation(m.shader, "u_drowned");
     }
     const int hidden = int(hidden_), none = 0;
+    const float drowned = kind == Kind::Drowned ? 1.0f : 0.0f;   // everything they wear came out of the canal
+    SetShaderValue(m.shader, drowned_loc, &drowned, SHADER_UNIFORM_FLOAT);
     if (!skinned_.empty()) {
         const int on = 1, off = 0;
         SetShaderValue(m.shader, skin_loc, &on, SHADER_UNIFORM_INT);
