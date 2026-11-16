@@ -310,7 +310,8 @@ def auto_story(spec, rng):
     at = lambda t: t.get("pos0") or t["pos"]   # (as the street stood before its cordon: a rebuild tells it the same way)
     keep_off = [(at(i)[0], at(i)[2]) for i in spec.get("interactables", [])] + \
                [(at(sp)[0], at(sp)[2]) for sp in spec.get("spawns", {}).values()] + [(at(e)[0], at(e)[2]) for e in spec.get("enemies", [])]
-    xs, zs, ok = cameras.open_floor({**spec, "props": [p for p in spec["props"] if not p.get("barricade")]})
+    xs, zs, ok = cameras.open_floor({**spec, "props": [{**p, "size": p["size0"]} if "size0" in p else p   # (a thing as it stood when the night began:
+                                                       for p in spec["props"] if not p.get("barricade")]})   #  the same dead on every run)
     cells = [(float(xs[i]), float(zs[k])) for i in range(len(xs)) for k in range(len(zs)) if ok[i, k]]
     (bx0, bz0), (bx1, bz1) = spec["bounds"]["min"], spec["bounds"]["max"]
     area = (bx1 - bx0) * (bz1 - bz0)
@@ -379,7 +380,7 @@ for _r in filter(None, __import__("os").environ.get("DW_DRESSED", "").split(",")
 # The rooms whose plates show the second look (2026-11): the Amsterdam tram's five sections, wheelie
 # bins for dustbins. A room joins in the commit that brings its re-rendered plates. DW_LOOK2=a,b,...
 # adds rooms for a build of the next ones to render (into a scratch DW_ROOMS).
-LOOK2 = {"rokin_noord", "rokin_zuid"}
+LOOK2 = {"dam", "damrak_zuid", "rokin_noord", "rokin_zuid"}
 for _r in filter(None, __import__("os").environ.get("DW_LOOK2", "").split(",")):
     LOOK2.add(_r)
 BINS = ["sf:bin_green", "sf:bin_blue", "sf:bin_orange"]   # licensed models (tools/assets/models.json): what Amsterdam puts out, not a film's dustbin
@@ -607,6 +608,7 @@ def leavings(spec, n=None):
                 p["model"] = BINS[int(abs(p["pos"][0] * 31 + p["pos"][2] * 17)) % len(BINS)]
                 p.pop("scale", None)
             if p["type"] == "bus" and p["size"][0] > 14:   # (a rigid city bus, a licensed model: the bendy one was our own smooth body)
+                p.setdefault("size0", list(p["size"]))   # (the story placed its dead round the bendy one: they stay where they fell)
                 p["size"] = [12.0, p["size"][1], p["size"][2]]
     rng = np.random.default_rng(sum(map(ord, spec["id"])))   # (the same street, the same mess, every run)
     if spec["id"] in DRESSED:
