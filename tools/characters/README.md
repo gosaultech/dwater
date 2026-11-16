@@ -123,9 +123,9 @@ What makes them read as bodies rather than painted mannequins:
   slivers), with weights blended along it.
 - **Eyes** are rings round the pupil (`cast.eyeball`), so a clouded iris stays round and crisp.
 
-Sanne's hair is grown in the engine from 220 scalp anchors as flat ribbons ("hair cards")
-rather than tubes. Each ribbon lies against the skull, and its edges and ends are stippled away
-into single hairs by the shader (`MAT_WETHAIR`).
+Sanne's hair is grown in the engine from 220 scalp anchors as thin tubes drawn out to a point:
+wet rat-tails, many hairs stuck together (`MAT_WETHAIR`; the shape is `dw/strand_tube.hpp`, the
+same as the survivor's locs). They hold their fall only while her head is upright.
 
 ## Files
 
