@@ -147,14 +147,13 @@
   "props": [
     {
       "type": "model",
-      "model": "ph:metal_trash_can",
+      "model": "sf:bin_green",
       "pos": [
         5.0,
         0.0,
         0.6
       ],
       "yaw": 0,
-      "scale": 1.0,
       "size": [
         0.5,
         1.0,
@@ -163,14 +162,13 @@
     },
     {
       "type": "model",
-      "model": "ph:metal_trash_can",
+      "model": "sf:bin_green",
       "pos": [
         5.7,
         0.0,
         0.6
       ],
       "yaw": 20,
-      "scale": 1.0,
       "size": [
         0.5,
         1.0,
@@ -258,35 +256,22 @@
       "type": "model",
       "model": "ph:trashbag",
       "pos": [
-        7.11,
+        3.41,
         0.0,
-        2.9
+        0.75
       ],
-      "yaw": 64.6,
+      "yaw": 219.6,
       "collide": false,
       "catastrophe": true,
       "catastrophe_drift": true
     },
     {
       "type": "model",
-      "model": "ph:wooden_military_crate",
+      "model": "ph:dry_branches_medium_01",
       "pos": [
-        16.08,
+        12.84,
         0.0,
-        1.83
-      ],
-      "yaw": 356.4,
-      "collide": false,
-      "catastrophe": true,
-      "catastrophe_drift": true
-    },
-    {
-      "type": "model",
-      "model": "ph:compost_bag_02",
-      "pos": [
-        2.32,
-        0.0,
-        2.88
+        0.38
       ],
       "yaw": 357.5,
       "collide": false,
@@ -297,24 +282,11 @@
       "type": "model",
       "model": "ph:trashbag",
       "pos": [
-        12.63,
+        13.32,
         0.0,
-        0.87
+        0.46
       ],
-      "yaw": 311.0,
-      "collide": false,
-      "catastrophe": true,
-      "catastrophe_drift": true
-    },
-    {
-      "type": "model",
-      "model": "ph:trashbag",
-      "pos": [
-        12.7,
-        0.0,
-        1.04
-      ],
-      "yaw": 72.1,
+      "yaw": 136.7,
       "collide": false,
       "catastrophe": true,
       "catastrophe_drift": true
@@ -323,13 +295,12 @@
       "type": "model",
       "model": "ph:can_rusted",
       "pos": [
-        8.1,
+        7.09,
         0.0,
-        0.71
+        2.84
       ],
-      "yaw": 353.7,
+      "yaw": 244.9,
       "collide": false,
-      "tip": 90,
       "catastrophe": true,
       "catastrophe_drift": true
     },
@@ -337,93 +308,27 @@
       "type": "model",
       "model": "ph:cardboard_box_01",
       "pos": [
-        1.39,
+        6.66,
         0.0,
-        0.84
+        2.84
       ],
-      "yaw": 293.3,
+      "yaw": 197.5,
       "collide": false,
       "catastrophe": true,
       "catastrophe_drift": true
     },
     {
       "type": "model",
-      "model": "ph:can_rusted",
+      "model": "ph:dry_branches_medium_01",
       "pos": [
-        15.66,
+        13.25,
         0.0,
-        2.54
+        2.96
       ],
-      "yaw": 109.4,
-      "collide": false,
-      "tip": 90,
-      "catastrophe": true,
-      "catastrophe_drift": true
-    },
-    {
-      "type": "model",
-      "model": "ph:plastic_container",
-      "pos": [
-        3.63,
-        0.0,
-        2.92
-      ],
-      "yaw": 76.4,
+      "yaw": 217.1,
       "collide": false,
       "catastrophe": true,
       "catastrophe_drift": true
-    },
-    {
-      "type": "model",
-      "model": "ph:trashbag",
-      "pos": [
-        14.11,
-        0.0,
-        2.92
-      ],
-      "yaw": 77.6,
-      "collide": false,
-      "catastrophe": true,
-      "catastrophe_drift": true
-    },
-    {
-      "type": "model",
-      "model": "ph:plastic_crate_03",
-      "pos": [
-        4.18,
-        0.0,
-        1.53
-      ],
-      "yaw": 242.9,
-      "collide": false,
-      "catastrophe": true,
-      "catastrophe_drift": true
-    },
-    {
-      "type": "model",
-      "model": "ph:plastic_crate_03",
-      "pos": [
-        0.95,
-        0.0,
-        2.88
-      ],
-      "yaw": 168.0,
-      "collide": false,
-      "catastrophe": true,
-      "catastrophe_drift": true
-    },
-    {
-      "type": "model",
-      "model": "ph:old_tyre",
-      "pos": [
-        20.38,
-        0.0,
-        0.38
-      ],
-      "yaw": 93.8,
-      "collide": false,
-      "tip": 90,
-      "catastrophe_fg": true
     }
   ],
   "walls": {
