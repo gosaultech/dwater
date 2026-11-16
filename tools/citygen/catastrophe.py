@@ -374,13 +374,13 @@ AUTO = {"apotheek", "beurs_zaal", "bioscoop", "bloemenmarkt", "centraal_hal", "d
 
 STORIES = {"rokin_zuid": rokin_zuid, "rokin_noord": rokin_noord, "dam": dam, "stationsplein": stationsplein}
 ACTIVE = {"dam", "rokin_noord", "rokin_zuid", "stationsplein"}   # the hand-told streets whose plates are rendered (others wait for theirs)
-DRESSED = {"apotheek", "beurs_zaal", "bioscoop", "bloemenmarkt", "centraal_hal", "dam", "damrak_noord", "damrak_zuid", "herengracht", "hotel_bar", "hotel_lobby", "kalversteeg", "kalverstraat", "kalverstraat_noord", "metro_centraal", "metro_rokin", "muntplein", "nieuwe_kerk", "reguliersbreestraat", "rembrandtplein", "rokin_noord", "rokin_zuid", "station_noord", "stationsplein", "thorbeckeplein", "warenhuis"}   # the rooms whose plates show dress() (the night's leavings by what each place was), not the old scatter
+DRESSED = {"apotheek", "beurs_zaal", "bioscoop", "bloemenmarkt", "centraal_hal", "dam", "damrak_noord", "damrak_zuid", "herengracht", "hotel_bar", "hotel_lobby", "kalversteeg", "kalverstraat", "kalverstraat_noord", "metro_centraal", "metro_rokin", "muntplein", "nieuwe_kerk", "reguliersbreestraat", "rembrandtplein", "rokin_noord", "rokin_zuid", "rondvaartboot", "station_noord", "stationsplein", "thorbeckeplein", "warenhuis"}   # the rooms whose plates show dress() (the night's leavings by what each place was), not the old scatter
 for _r in filter(None, __import__("os").environ.get("DW_DRESSED", "").split(",")):
     DRESSED.add(_r)
 # The rooms whose plates show the second look (2026-11): the Amsterdam tram's five sections, wheelie
 # bins for dustbins. A room joins in the commit that brings its re-rendered plates. DW_LOOK2=a,b,...
 # adds rooms for a build of the next ones to render (into a scratch DW_ROOMS).
-LOOK2 = {"apotheek", "beurs_zaal", "bioscoop", "bloemenmarkt", "centraal_hal", "dam", "damrak_noord", "damrak_zuid", "herengracht", "hotel_bar", "hotel_lobby", "kalversteeg", "kalverstraat", "kalverstraat_noord", "metro_centraal", "metro_rokin", "muntplein", "nieuwe_kerk", "reguliersbreestraat", "rembrandtplein", "rokin_noord", "rokin_zuid", "station_noord", "stationsplein", "thorbeckeplein", "warenhuis"}
+LOOK2 = {"apotheek", "beurs_zaal", "bioscoop", "bloemenmarkt", "centraal_hal", "dam", "damrak_noord", "damrak_zuid", "herengracht", "hotel_bar", "hotel_lobby", "kalversteeg", "kalverstraat", "kalverstraat_noord", "metro_centraal", "metro_rokin", "muntplein", "nieuwe_kerk", "reguliersbreestraat", "rembrandtplein", "rokin_noord", "rokin_zuid", "rondvaartboot", "station_noord", "stationsplein", "thorbeckeplein", "warenhuis"}
 for _r in filter(None, __import__("os").environ.get("DW_LOOK2", "").split(",")):
     LOOK2.add(_r)
 BINS = ["sf:bin_green", "sf:bin_blue", "sf:bin_orange"]   # licensed models (tools/assets/models.json): what Amsterdam puts out, not a film's dustbin
@@ -473,6 +473,7 @@ INDOORS = {   # a hall's or a shop's use that night: by which of its things, wha
 USE = {"nieuwe_kerk": "shelter", "centraal_hal": "shelter", "beurs_zaal": "shelter", "metro_centraal": "shelter",
        "metro_rokin": "shelter", "warenhuis": "shop", "apotheek": "shop", "bioscoop": "lobby", "hotel_lobby": "lobby",
        "hotel_bar": "bar", "rondvaartboot": "shelter"}
+CABINS = {"rondvaartboot"}   # rooms that are one narrow cabin and its landing (the tour boat): belongings dropped where people got off
 STOPS = {"vehicle", "bus", "tram", "tram_section", "light_tower", "evac_board", "kiosk", "bench", "sandbags", "aid_post"}
 SETTLE = {"model", "bike", "luggage", "leaflets", "broken_glass", "body_bag", "sandbags", "blood", "scorch", "evac_board",
           "fire_pump", "boards", "trestle_table"}   # things that rest on the street: on the pavement where they stand
@@ -574,7 +575,7 @@ def dress(spec, rng):
                 if put(BINS[int(rng.integers(len(BINS)))] if look2 else "ph:metal_trash_can", x + 0.55 * math.cos(a), z + 0.55 * math.sin(a), 0.4 if look2 else 0.35,
                        tip=None if look2 and rng.random() < 0.5 else 90):
                     put("ph:trashbag", x + 1.1 * math.cos(a), z + 1.1 * math.sin(a), 0.3)
-    else:
+    if not outdoor or spec["id"] in USE:   # (a boat at its pier is out of doors, but it was a shelter all the same)
         # 5. indoors: what the night's use of the hall left by its beds, tables and counters
         for p in spec["props"]:
             for near, things, often in INDOORS.get(USE.get(spec["id"], ""), []):
@@ -587,6 +588,16 @@ def dress(spec, rng):
                     lx, lz = math.cos(side) * (p["size"][0] / 2 + 0.7), math.sin(side) * (p["size"][2] / 2 + 0.7)
                     if put(ref, p["pos"][0] + lx * math.cos(a) + lz * math.sin(a), p["pos"][2] - lx * math.sin(a) + lz * math.cos(a), 0.3, tip=tip):
                         break
+    if spec["id"] in CABINS:   # what people carried off the boat, dropped where they landed: on wide floor, never in the one-person aisle
+        wide = ok.copy()
+        for di in (-2, -1, 1, 2):
+            for dk in (-2, -1, 1, 2):
+                wide &= np.roll(np.roll(ok, di, axis=0), dk, axis=1)
+        wide[:2, :] = wide[-2:, :] = wide[:, :2] = wide[:, -2:] = False
+        cells = np.argwhere(wide)
+        for _ in range(3 if len(cells) else 0):
+            i, k = cells[int(rng.integers(len(cells)))]
+            clump(float(xs[i]), float(zs[k]), BELONGINGS, int(rng.integers(1, 3)), 0.6)
     # 4. what people dropped on their way out: belongings near the doors they left by
     exits = [(i["pos"][0], i["pos"][2]) for i in spec.get("interactables", []) if i.get("kind") in ("door", "end")]
     for ex, ez in exits:
