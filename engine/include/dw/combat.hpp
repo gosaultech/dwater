@@ -30,11 +30,11 @@ struct ItemSpec {
 inline const ItemSpec& item_spec(int i) {
     static const ItemSpec T[I_COUNT] = {
         {"", "", 0, 0, ""},
-        {"handgun", "M92FS", 1, 0,
-         "A Beretta M92FS Inox, stainless steel. Police issue: you took it from an officer on the Herengracht. She won't need it."},
+        {"handgun", "Corvo C9", 1, 0,
+         "A Corvo C9 Inox, stainless steel. Police issue: you took it from an officer on the Herengracht. She won't need it."},
         {"handgun_ammo", "9mm Rounds", 60, 0, "Pistol ammunition. Make every one count."},
-        {"shotgun", "Remington 870", 1, 0,
-         "An old Remington 870 police gun, walnut and blued steel: pump action, six in the tube and one in the chamber. "
+        {"shotgun", "Halvorsen 79", 1, 0,
+         "An old Halvorsen Model 79 police gun, walnut and blued steel: pump action, six in the tube and one in the chamber. "
          "From the rack of a police van nose-down in the Prinsengracht."},
         {"shotgun_shells", "Shotgun Shells", 30, 0, "12-gauge buckshot. At close range it puts anything down."},
         // Med kits: one to a slot, used from the case (time stands still). Nothing else heals.
@@ -115,11 +115,13 @@ struct WeaponSpec {
     float rack_time;             // an empty pump gun: the first shell also has to be racked into the chamber
 };
 inline const WeaponSpec& weapon_spec(Weapon w) {
-    // The balance table. The M92FS holds 15 like the real one. The Remington 870 holds 6 in its
-    // extended tube and 1 in the chamber; fire_interval includes pumping the next one in.
+    // The balance table. The names are invented makes (no real brand appears in the game); the
+    // guns are modelled on a 15-round 9 mm service pistol (code name m92fs) and a pump-action
+    // police shotgun (r870): 6 in its extended tube and 1 in the chamber; fire_interval includes
+    // pumping the next one in.
     static const WeaponSpec T[int(Weapon::Count)] = {
-        {"M92FS", I_HANDGUN, I_HANDGUN_AMMO, 15, 0.42f, 1.4f, 10.0f, 1, 0.0f, 25.0f, 0.12f, 4.0f, 1, 0, 16.0f, false, 0.0f},
-        {"Remington 870", I_SHOTGUN, I_SHELLS, 7, 0.8f, 0.5f, 8.0f, 8, 6.5f, 12.0f, 0.0f, 1.0f, 2, 5, 22.0f, true, 0.4f},
+        {"Corvo C9", I_HANDGUN, I_HANDGUN_AMMO, 15, 0.42f, 1.4f, 10.0f, 1, 0.0f, 25.0f, 0.12f, 4.0f, 1, 0, 16.0f, false, 0.0f},
+        {"Halvorsen 79", I_SHOTGUN, I_SHELLS, 7, 0.8f, 0.5f, 8.0f, 8, 6.5f, 12.0f, 0.0f, 1.0f, 2, 5, 22.0f, true, 0.4f},
     };
     return T[std::clamp(int(w), 0, int(Weapon::Count) - 1)];
 }

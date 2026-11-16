@@ -158,6 +158,10 @@ void main() {
     gW = pow(abs(normalize(vRestN)), vec3(4.0));
     gW /= max(gW.x + gW.y + gW.z, 1e-4);
     vec2 hs = vec2(0.0); float sk = 0.0;   // a detail map's slope, and how strongly it bumps the surface
+    // How sharply the surface turns here (1 / metres): high along a hard part's bevelled edges,
+    // which is where a carried gun's finish rubs through and its steel polishes bright.
+    float turn = length(fwidth(normalize(vNormal))) / max(length(fwidth(vWorld)), 1e-6);
+    float edge = smoothstep(90.0, 380.0, turn);
     vec3 N = normalize(vNormal);
     if (!gl_FrontFacing) N = -N;   // cloth is single-skinned: light both sides
     vec3 Ng = N;                    // the true surface normal, before any bump: shadow lookups push out along it
@@ -277,7 +281,15 @@ void main() {
         if (mat == 9) albedo = mix(albedo, albedo * vec3(1.0, 0.72, 0.68), smoothstep(0.86, 0.97, ridge(p * 900.0 + fbm(p * 300.0) * 2.0)) * 0.6);
         spec = 0.9; gloss = 260.0; wrap = 0.25; rim = 0.1;
     }
-    else if (mat == 11) { albedo *= mix(0.7, 1.0, fbm(p * 50.0)); spec = 0.6; gloss = 60.0; metal = 0.18; }
+    else if (mat == 11) {   // finished metal (blued, black oxide, plated): fine scratches; a dark finish worn through to grey steel on its edges and where it rubs
+        vec2 d = stamp(u_dMetal, p, u_dTile[5], hs); sk = 1.0;
+        float dark = 1.0 - smoothstep(0.02, 0.16, dot(albedo, vec3(0.33)));   // (only a dark finish shows the steel under it)
+        float scratch = smoothstep(1.15, 1.5, d.x);   // (the stamp's scratches are its brightest marks)
+        float wear = clamp(edge * 0.55 + scratch * 0.26 + d.y * smoothstep(0.5, 0.8, fbm(p * 11.0)) * 0.12, 0.0, 1.0);
+        albedo *= mix(0.7, 1.0, fbm(p * 50.0));
+        albedo = mix(albedo, lin(vec3(0.42, 0.43, 0.45)), wear * dark * 0.75);
+        spec = mix(0.5, 0.9, wear); gloss = mix(44.0, 85.0, wear) * mix(1.0, 0.7, d.y * (1.0 - edge)); metal = mix(0.1, 0.45, wear * dark);
+    }
     else if (mat == 12) {     // raw flesh: fibres, wet
         float fib = abs(sin(p.y * 260.0 + fbm(p * 20.0) * 5.0));
         albedo *= mix(0.55, 1.15, fib); h = fib; bk = 0.0015; spec = 0.75; gloss = 70.0; wrap = 0.5; sss = vec3(0.35, 0.02, 0.02);
@@ -384,7 +396,12 @@ void main() {
         if (dot(g, g) > 1e-20) { strand = normalize(g); aniso = 0.25; }
     } else if (mat == 25) {   // brushed stainless steel: fine streaks along the part; mostly it mirrors the room
         float br = fbm(vec3(p.x * 900.0, p.y * 12.0, p.z * 900.0));
-        albedo *= mix(0.3, 0.4, br); h = br * 0.3; bk = 0.0002; spec = 1.1; gloss = 55.0; wrap = 0.1; rim = 0.3; metal = 0.72;
+        vec2 d = stamp(u_dMetal, p, u_dTile[5], hs); sk = 1.2;
+        // Carried, not boxed: scratches across the brushing, handled patches gone dull, the edges
+        // polished brighter than the flats.
+        albedo *= mix(0.13, 0.18, br) * mix(0.82, 1.2, d.x) * mix(1.0, 0.86, d.y * (1.0 - edge));
+        h = br * 0.3; bk = 0.0002; spec = 1.1 + 0.5 * edge; gloss = mix(55.0, 30.0, d.y) + 45.0 * edge; wrap = 0.1; rim = 0.3;
+        metal = 0.55 * mix(1.0, 0.8, d.y) + 0.2 * edge;
     } else if (mat == 26) {   // stippled rubber grips: small raised dots, scattered (fade to their average when too small to see)
         float aa = clamp(1.5 - length(fwidth(p)) * 700.0, 0.0, 1.0);
         vec3 q = p * 560.0, c = floor(q);
@@ -392,20 +409,32 @@ void main() {
         float k = mix(0.3, 1.0 - smoothstep(0.16, 0.33, length(f)), aa);
         albedo *= mix(0.86, 1.14, k) * mix(0.93, 1.04, fbm(p * 240.0)); h = k; bk = 0.0005; spec = 0.07; gloss = 14.0; wrap = 0.2; rim = 0.15;
     } else if (mat == 41) {   // gun furniture: black synthetic, faintly stippled
-        albedo *= mix(0.85, 1.05, fbm(p * 400.0)); h = fbm(p * 900.0); bk = 0.0003; spec = 0.12; gloss = 18.0; wrap = 0.15; rim = 0.2;
+        vec2 d = stamp(u_dMetal, p, u_dTile[5], hs); sk = 0.6;   // (plastic scratches too, and shines where it's handled)
+        albedo *= mix(0.85, 1.05, fbm(p * 400.0)) * mix(0.96, 1.12, d.x * d.y + edge * 0.5); h = fbm(p * 900.0); bk = 0.0003;
+        spec = 0.12 + 0.14 * max(edge, d.y * 0.6); gloss = mix(18.0, 40.0, max(edge, d.y * 0.6)); wrap = 0.15; rim = 0.2;
+    } else if (mat == 42) {   // card and paper: matte and fibrous, scuffed pale where its edges and corners have rubbed
+        float fib = fbm(vec3(p.x * 700.0, p.y * 90.0, p.z * 700.0));
+        albedo *= mix(0.9, 1.05, fib) * mix(0.86, 1.06, fbm(p * 22.0));
+        albedo = mix(albedo, vec3(0.42, 0.39, 0.33), edge * 0.45 * smoothstep(0.35, 0.65, fbm(p * 60.0)));
+        h = fib; bk = 0.00025; spec = 0.03; gloss = 8.0; wrap = 0.3; rim = 0.1;
     } else if (mat == 40) {   // blood: dark red and wet, thicker (darker) where it pools
         albedo *= mix(0.75, 1.1, fbm(p * 90.0)); h = fbm(p * 60.0) * 0.3; bk = 0.0004; spec = 0.6; gloss = 90.0; wrap = 0.3;
         sss = vec3(0.08, 0.0, 0.0);
-    } else if (mat == 39) {   // oiled walnut, under a soft satin sheen (duller in the open pores of the dark lines).
-        // The gun's length runs along y here: the grain lines run with it, stacked up its height and
-        // wandering slowly as the fibres did round the tree's knots; a darker figure drifts through.
-        // Lines finer than a pixel fade to their average rather than shimmer.
-        float aa = clamp(1.6 - length(fwidth(p)) * 450.0, 0.0, 1.0);
-        float wander = fbm(vec3(p.x * 20.0, p.y * 3.5, p.z * 20.0));
-        float g = mix(0.5, sin(p.z * 520.0 + p.x * 140.0 + wander * 18.0) * 0.5 + 0.5, aa);
+    } else if (mat == 39) {   // oiled walnut: a scan of walnut veneer laid along the part
+        // The gun's length runs along y here, so the grain does too: the veneer is stamped from
+        // the sides and from above with its grain along y (the plain three-way stamp would run it
+        // across the stock on two of its faces). A darker figure drifts through it; the oil finish
+        // is a soft satin, duller in the open pores of the dark lines.
+        float t = u_dTile[4] * 0.42;   // (the scan is a metre of veneer: brought down to a stock's scale)
+        vec4 sa = textureGrad(u_dWalnut, p.yz / t, gQx.yz / t, gQy.yz / t), sb = textureGrad(u_dWalnut, p.yx / t, gQx.yx / t, gQy.yx / t);
+        float top = gW.z / max(gW.x + gW.z, 1e-3);
+        vec4 m = mix(sa, sb, top);
+        hs += mix(stampSlope(sa, gQx.yz, gQy.yz), stampSlope(sb, gQx.yx, gQy.yx), top); sk = 1.0;
+        float g = clamp(m.b * 2.0, 0.0, 2.0);
         float fig = fbm(vec3(p.x * 28.0, p.y * 5.0, p.z * 28.0));
-        albedo *= mix(0.86, 1.06, g) * mix(0.7, 1.12, fig) * mix(0.94, 1.03, fbm(p * 90.0));
-        h = g * 0.3 * aa + fbm(p * 160.0) * 0.2; bk = 0.0005; spec = mix(0.06, 0.13, g); gloss = 22.0; wrap = 0.3;
+        albedo *= clamp(pow(g, 4.0), 0.35, 1.9) * mix(0.55, 1.2, fig) * mix(0.94, 1.03, fbm(p * 90.0));
+        albedo = mix(albedo, albedo * vec3(1.25, 1.05, 0.8), edge * 0.5);   // rubbed pale along its edges
+        h = fbm(p * 160.0); bk = 0.0002; spec = mix(0.07, 0.2, m.a) + 0.06 * edge; gloss = mix(18.0, 46.0, m.a); wrap = 0.3;
     } else if (mat == 38) {   // a drop of water: dark and glassy, it shows only where it catches the light
         spec = 1.4; gloss = 320.0; wrap = 0.0; rim = 0.5;
     } else if (mat == 24) {   // raw dermis where the outer skin slipped off: wet and pink

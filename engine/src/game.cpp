@@ -15,6 +15,7 @@
 #include <cstring>
 
 #include "cast_guns.hpp"
+#include "cast_items.hpp"
 #include "dw/shaders.hpp"
 
 namespace dw {
@@ -1558,7 +1559,7 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     std::string w = who, at_joint, opts;
     if (const auto k = w.find('/'); k != std::string::npos) { opts = w.substr(k); w.resize(k); }
     if (const auto k = w.find('@'); k != std::string::npos) { at_joint = w.substr(k + 1); w.resize(k); }
-    if (w == "m92fs" || w == "r870") return gun_view(w, opts, orbit, elev, dist, tx, ty, fovy, png);
+    if (w == "m92fs" || w == "r870" || w.rfind("item", 0) == 0) return gun_view(w, opts, orbit, elev, dist, tx, ty, fovy, png);
     const bool survivor = w == "survivor";
     const int variant = !survivor && w.size() > 7 ? std::atoi(w.c_str() + 7) : 0;
     upload_studio_lights();
@@ -1721,7 +1722,13 @@ bool Game::gun_view(const std::string& who, const std::string& opts, float orbit
     for (auto& sm : shadows_) sm.light = sm.dyn = -1;   // no characters: no shadow maps
     bind_shadows();
     const cast::Stock furniture = opts.find("/synthetic") != std::string::npos ? cast::Stock::Synthetic : cast::Stock::Walnut;
-    cast::GunParts gp = who == "m92fs" ? cast::m92fs() : cast::r870(MatrixIdentity(), furniture);   // (straight, not as held)
+    const bool item = who.rfind("item", 0) == 0;   // "item5": a thing from the case (an Item id), as it stands
+    cast::GunParts gp = item ? cast::GunParts{} : who == "m92fs" ? cast::m92fs() : cast::r870(MatrixIdentity(), furniture);   // (straight, not as held)
+    if (item) {
+        const cast::ItemModel im = cast::item_model(std::atoi(who.c_str() + 4));
+        gp.fixed = im.mesh;
+        gp.centre = im.centre;
+    }
     Mesh fixed = upload(gp.fixed), moving = upload(gp.moving);
     if (const auto k = opts.find("/obj="); k != std::string::npos) {   // the meshes as OBJ files (wrist space), for matching photos
         const std::string stem = opts.substr(k + 5, opts.find('/', k + 1) - (k + 5));
@@ -1740,7 +1747,7 @@ bool Game::gun_view(const std::string& who, const std::string& opts, float orbit
     lay.m0 = 0; lay.m4 = -1; lay.m8 = 0;
     lay.m1 = 0; lay.m5 = 0; lay.m9 = -1;
     lay.m2 = 1; lay.m6 = 0; lay.m10 = 0;
-    const Matrix M = MatrixMultiply(MatrixTranslate(-gp.centre.x, -gp.centre.y, -gp.centre.z), lay);
+    const Matrix M = MatrixMultiply(MatrixTranslate(-gp.centre.x, -gp.centre.y, -gp.centre.z), item ? MatrixIdentity() : lay);
     const Matrix Mm = MatrixMultiply(MatrixTranslate(gp.travel.x * back, gp.travel.y * back, gp.travel.z * back), M);
     const float a = orbit * DEG2RAD, e = elev * DEG2RAD;
     Camera3D cam{};
