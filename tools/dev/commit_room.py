@@ -6,7 +6,10 @@
 # commits the plates, the spec and the generator, and pushes. Used by hand or by auto_commit.sh
 # after render_queue.sh logs "ok <room>".
 #
-#   python3 tools/dev/commit_room.py <room> "<what the plates now show>"
+#   python3 tools/dev/commit_room.py <room>[,<room>...] "<what the plates now show>"
+#
+# Several rooms finished together are committed together: the generator's tests read every room's
+# spec on disk, so one room's new spec must not be tested before its set membership is.
 #
 # ELI5: the stage manager's sign-off. A new backdrop only goes up once the prop list has been
 # updated to match it, and the list is checked before the curtain.
@@ -38,9 +41,11 @@ def run(cmd: list[str]) -> subprocess.CompletedProcess:
 
 
 def main(argv: list[str]) -> int:
-    room, what = argv[1], (argv[2] if len(argv) > 2 else "the second look")
-    before = GEN.read_text()
-    after = add_to_set(add_to_set(before, "DRESSED", room), "LOOK2", room)
+    rooms, what = [r for r in argv[1].split(",") if r], (argv[2] if len(argv) > 2 else "the second look")
+    room = ", ".join(rooms)
+    before = after = GEN.read_text()
+    for r in rooms:
+        after = add_to_set(add_to_set(after, "DRESSED", r), "LOOK2", r)
     GEN.write_text(after)
     tests = subprocess.run([sys.executable, "-m", "unittest", "tests.test_catastrophe", "tests.test_cameras"],
                            cwd=REPO / "tools" / "citygen", capture_output=True, text=True)
@@ -48,7 +53,7 @@ def main(argv: list[str]) -> int:
         GEN.write_text(before)   # (nothing half-done: the sets go back)
         print(f"[commit_room] {room}: tests failed, not committed\n{tests.stderr[-1500:]}")
         return 1
-    run(["git", "add", f"game/assets/rooms/{room}", f"game/data/rooms/{room}.json", "tools/citygen/catastrophe.py"])
+    run(["git", "add", "tools/citygen/catastrophe.py"] + [f for r in rooms for f in (f"game/assets/rooms/{r}", f"game/data/rooms/{r}.json")])
     msg = f"Plates: {room} re-rendered at 2048x1152 ({what})\n\n{TRAILER}"
     c = run(["git", "commit", "-q", "-m", msg])
     if c.returncode != 0:
