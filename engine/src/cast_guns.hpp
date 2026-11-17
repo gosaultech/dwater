@@ -37,6 +37,11 @@ constexpr float MAG_PLATE_TOP = -116.95f;
 // has it (the space the gun is built in): from under the loading port, nose up, into the port and
 // level under the tube (s = 0.75), then pushed forward into the tube (s = 1).
 Matrix shell_in(float s);
+// Lettering in the guns' plain stroke font, printed on anything flat: thin bars a hair proud of
+// the plane through `at` that `right` and `up` span (unit vectors; the print faces right x up).
+// `h`: the capitals' height (m); `stroke`: half a stroke's width (m). Centred on `at`.
+// (Capitals, a few digits, m, and . - only: see FONT in cast_guns.cpp.)
+void print_text(MeshBuilder& b, const char* text, Vector3 at, Vector3 right, Vector3 up, float h, float stroke);
 // The 870's furniture: the oiled walnut of the classic police guns (the survivor's), or black synthetic.
 enum class Stock { Walnut, Synthetic };
 GunParts r870(const Matrix& hold, Stock stock = Stock::Walnut);

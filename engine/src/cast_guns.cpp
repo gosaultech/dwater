@@ -14,6 +14,8 @@
 //    the back of the receiver, the ejection port in the front half, as in the photos.)
 //  * What goes into them: the M92FS's 15-round magazine (a blued box on a black base plate, the
 //    top round in its lips) and a 2 3/4-inch 12-gauge buckshot shell, red on a brass head.
+// Their markings are invented (no real maker's name appears in the game): the pistol is a "Corvo
+// C9" of Armi Corvo, Gardone V.T.; the shotgun a "Halvorsen Model 79".
 // Gun space: u runs forward along the bore (the pistol's from the rear of the frame's rails, 6 mm
 // behind the slide; the shotgun's from the back of the receiver), v up from the bore's
 // centreline, w across to the gun's right (all mm). It's placed in the right hand's wrist space,
@@ -36,10 +38,10 @@ constexpr float MM = 0.001f;
 constexpr float P_Y0 = -0.0315f, P_Z0 = -0.066f;
 Outline pistol(const Outline& o) { return o.scaled(-MM, P_Y0, P_Z0); }
 Vector3 pistol_at(float u, float v, float w = 0) { return {w * MM, P_Y0 - u * MM, P_Z0 - v * MM}; }
-// Satin stainless slide and barrel; the frame's alloy a shade greyer; black oxide on the controls
-// and sights; dark grey rubber grips.
-const Color INOX{206, 207, 209, 255}, ALLOY{190, 190, 192, 255}, OXIDE{24, 24, 26, 255}, RUBBER{74, 74, 78, 255},
-    STIPPLE{86, 86, 90, 255}, GROOVE{96, 96, 100, 255}, BORE{8, 8, 10, 255}, DOT{236, 234, 226, 255}, FIRE_DOT{196, 22, 20, 255}, GAP{14, 14, 15, 255},
+// Satin stainless slide and barrel; the frame's anodised alloy darker and matte; black oxide on
+// the controls and sights; black checkered grips.
+const Color INOX{206, 207, 209, 255}, ALLOY{108, 110, 116, 255}, OXIDE{24, 24, 26, 255}, RUBBER{30, 30, 33, 255},
+    STIPPLE{38, 38, 41, 255}, GROOVE{96, 96, 100, 255}, BORE{8, 8, 10, 255}, DOT{236, 234, 226, 255}, FIRE_DOT{196, 22, 20, 255}, GAP{14, 14, 15, 255},
     MAG{26, 26, 28, 255}, MAG_BOX{40, 41, 46, 255}, CASE{181, 145, 72, 255}, JACKET{178, 112, 64, 255};
 // ── Roll marks ──────────────────────────────────────────────────────────────────
 // Lettering stamped into steel, in a plain stroke font: each glyph a few pen strokes on a grid 4
@@ -68,6 +70,14 @@ const Glyph FONT[] = {
     {'U', 5.4f, "0,6 0,1 1,0 3,0 4,1 4,6"},
     {'V', 5.4f, "0,6 2,0 4,6"},
     {'Y', 5.4f, "0,6 2,3 4,6|2,3 2,0"},
+    {'H', 5.4f, "0,0 0,6|4,0 4,6|0,3 4,3"},
+    {'K', 5.4f, "0,0 0,6|4,6 0,2.4|1.5,3.5 4,0"},
+    {'W', 6.4f, "0,6 1.2,0 2.5,4 3.8,0 5,6"},
+    {'0', 5.4f, "1,0 0,1 0,5 1,6 3,6 4,5 4,1 3,0 1,0"},
+    {'1', 4.2f, "0.6,4.8 2,6 2,0"},
+    {'7', 5.4f, "0,6 4,6 1.6,0"},
+    {'Z', 5.4f, "0,6 4,6 0,0 4,0"},
+    {'5', 5.4f, "4,6 0.3,6 0,3.4 1,3.8 3,3.8 4,2.8 4,1 3,0 1,0 0,1"},
     {'2', 5.4f, "0,5 1,6 3,6 4,5 4,4 0,0 4,0"},
     {'9', 5.4f, "4,4 3,3 1,3 0,4 0,5 1,6 3,6 4,5 4,1 3,0 1,0 0,1"},
     {'m', 5.4f, "0,0 0,4|0,3 1,4 1.6,4 2,3 2,0|2,3 2.6,4 3.4,4 4,3 4,0"},
@@ -78,7 +88,8 @@ const Glyph FONT[] = {
 
 // One stroke from a to b (gun mm, on the face at w = `w`), `half` mm either side of the line: a
 // block from a hair proud of the face to a little inside it, square-ended so strokes meet cleanly.
-void cut_stroke(MeshBuilder& b, Vector2 a, Vector2 c, float w, float half) {
+using Place = Outline (*)(const Outline&);   // gun millimetres -> wrist space (the pistol's or the shotgun's)
+void cut_stroke(MeshBuilder& b, Vector2 a, Vector2 c, float w, float half, Place place = pistol) {
     Vector2 d = Vector2Subtract(c, a);
     const float len = Vector2Length(d);
     d = len > 1e-6f ? Vector2Scale(d, half / len) : Vector2{half, 0};
@@ -87,13 +98,13 @@ void cut_stroke(MeshBuilder& b, Vector2 a, Vector2 c, float w, float half) {
     bar.to(a.x - d.x - n.x, a.y - d.y - n.y).to(c.x + d.x - n.x, c.y + d.y - n.y).to(c.x + d.x + n.x, c.y + d.y + n.y)
         .to(a.x - d.x + n.x, a.y - d.y + n.y);
     const float out = w < 0 ? -1.0f : 1.0f, proud = 0.04f, sunk = 0.15f;   // mm
-    b.slab(pistol(bar).p, (w + out * (proud - sunk) / 2) * MM, (proud + sunk) / 2 * MM, 0, 0);
+    b.slab(place(bar).p, (w + out * (proud - sunk) / 2) * MM, (proud + sunk) / 2 * MM, 0, 0);
 }
 
-// `text` on a flat side of the pistol: its first letter's bottom left (as you read it) at gun
+// `text` on a flat side of a gun: its first letter's bottom left (as you read it) at gun
 // (u0, v0), letters `h` mm tall, reading toward the muzzle (`along` +1, the right side) or the
 // back (-1, the left side: seen from there the muzzle points left).
-void engrave(MeshBuilder& b, const char* text, float u0, float v0, float w, float h, float along) {
+void engrave(MeshBuilder& b, const char* text, float u0, float v0, float w, float h, float along, Place place = pistol) {
     const float s = h / 6, half = 0.12f;
     float pen = 0;
     for (const char* ch = text; *ch; ++ch) {
@@ -110,7 +121,7 @@ void engrave(MeshBuilder& b, const char* text, float u0, float v0, float w, floa
                 const float x = std::strtof(p, &e);
                 const float y = std::strtof(e + 1, &e);
                 const Vector2 at{u0 + along * (pen + x) * s, v0 + y * s};
-                if (have) cut_stroke(b, last, at, w, half);
+                if (have) cut_stroke(b, last, at, w, half, place);
                 last = at;
                 have = true;
                 p = e;
@@ -140,9 +151,55 @@ Outline rifle(const Outline& o) { return o.scaled(-MM, R_Y0, R_Z0); }
 Vector3 rifle_at(float u, float v, float w = 0) { return {w * MM, R_Y0 - u * MM, R_Z0 - v * MM}; }
 // Blued steel, a gold trigger, the bolt bright in its port; the furniture oiled walnut (or black
 // synthetic).
-const Color BLUED{24, 26, 32, 255}, GILT{178, 140, 64, 255}, POLY{27, 27, 29, 255}, WALNUT{104, 54, 30, 255}, PAD{16, 16, 17, 255},
+const Color BLUED{24, 26, 32, 255}, GILT{178, 140, 64, 255}, POLY{27, 27, 29, 255}, WALNUT{74, 42, 26, 255}, PAD{16, 16, 17, 255},
     SLOT{12, 12, 13, 255}, BOLT{196, 198, 200, 255}, BEAD{232, 222, 190, 255}, SHELL_BRASS{176, 136, 62, 255}, HULL{128, 22, 20, 255};
 }  // namespace
+
+void print_text(MeshBuilder& b, const char* text, Vector3 at, Vector3 right, Vector3 up, float h, float stroke) {
+    const Vector3 out = Vector3CrossProduct(right, up);
+    Matrix M = MatrixIdentity();   // the builder's x -> out of the surface, y -> along the line, z -> up the letters
+    M.m0 = out.x; M.m1 = out.y; M.m2 = out.z;
+    M.m4 = right.x; M.m5 = right.y; M.m6 = right.z;
+    M.m8 = up.x; M.m9 = up.y; M.m10 = up.z;
+    M.m12 = at.x; M.m13 = at.y; M.m14 = at.z;
+    b.transform(M);
+    const float s = h / 6;
+    float pen = -text_width(text, h) / 2;
+    for (const char* ch = text; *ch; ++ch) {
+        const Glyph* g = nullptr;
+        for (const Glyph& f : FONT)
+            if (f.c == *ch) g = &f;
+        if (!g) continue;
+        const char* p = g->strokes;
+        while (*p) {
+            Vector2 last{};
+            bool have = false;
+            while (*p && *p != '|') {
+                char* e;
+                const float x = std::strtof(p, &e);
+                const float y = std::strtof(e + 1, &e);
+                const Vector2 pt{pen + x * s, (y - 3) * s};
+                if (have) {
+                    Vector2 d = Vector2Subtract(pt, last);
+                    const float len = Vector2Length(d);
+                    d = len > 1e-9f ? Vector2Scale(d, stroke / len) : Vector2{stroke, 0};
+                    const Vector2 n{-d.y, d.x};
+                    Outline bar;
+                    bar.to(last.x - d.x - n.x, last.y - d.y - n.y).to(pt.x + d.x - n.x, pt.y + d.y - n.y)
+                        .to(pt.x + d.x + n.x, pt.y + d.y + n.y).to(last.x - d.x + n.x, last.y - d.y + n.y);
+                    b.slab(bar.p, 0.00001f, 0.00012f, 0, 0);
+                }
+                last = pt;
+                have = true;
+                p = e;
+                while (*p == ' ') ++p;
+            }
+            if (*p == '|') ++p;
+        }
+        pen += g->advance * s;
+    }
+    b.transform(MatrixIdentity());
+}
 
 Vector3 m92fs_at(float u, float v, float w) { return pistol_at(u, v, w); }
 Vector3 r870_at(float u, float v, float w) { return rifle_at(u, v, w); }
@@ -224,13 +281,13 @@ GunParts m92fs(const Matrix& hold) {
     s.ellipsoid(pistol_at(194.9f, 15.4f), {1.0f * MM, 0.25f * MM, 1.0f * MM}, 10, 4);
     // The red dot under the right-hand lever: showing means ready to fire.
     s.color(FIRE_DOT).ellipsoid(pistol_at(21.5f, -4, 12.02f), {0.25f * MM, 1.3f * MM, 1.3f * MM}, 10, 4);
-    // The roll marks, on the flats ahead of the serrations. Left (read with the muzzle to your
-    // left): the maker and the town, and under them PB in an oval. Right, under the ejection port:
-    // the model and the calibre.
+    // The roll marks, on the flats ahead of the serrations (an invented maker's). Left (read with
+    // the muzzle to your left): the maker and the town, and under them AC in an oval. Right, under
+    // the ejection port: the model and the calibre.
     {
-        const char* maker = "PIETRO BERETTA GARDONE V.T. - MADE IN ITALY";
-        const char* model = "MOD. 92FS - CAL. 9mm PARABELLUM - PATENTED";
-        s.material(MAT_METAL).color(Color{70, 71, 75, 255});   // the cuts catch the shadow
+        const char* maker = "ARMI CORVO - GARDONE V.T. - MADE IN ITALY";
+        const char* model = "MOD. C9 - CAL. 9mm PARABELLUM - PATENTED";
+        s.material(MAT_METAL).color(Color{38, 39, 43, 255});   // the cuts catch the shadow
         const float h = 2.2f, mid = 124;
         engrave(s, maker, mid + text_width(maker, h) / 2, -7.0f, -12, h, -1);
         engrave(s, model, mid - text_width(model, h) / 2, -9.5f, 12, h, 1);
@@ -239,7 +296,7 @@ GunParts m92fs(const Matrix& hold) {
             const float a0 = 2 * PI * float(i) / 28, a1 = 2 * PI * float(i + 1) / 28;
             cut_stroke(s, {ou + ra * std::cos(a0), ov + rb * std::sin(a0)}, {ou + ra * std::cos(a1), ov + rb * std::sin(a1)}, -12, 0.12f);
         }
-        engrave(s, "PB", ou + text_width("PB", 2.6f) / 2 - 0.25f, ov - 1.3f, -12, 2.6f, -1);
+        engrave(s, "AC", ou + text_width("AC", 2.6f) / 2 - 0.25f, ov - 1.3f, -12, 2.6f, -1);
     }
 
     // ── The rest (it stays put) ──────────────────────────────────────────────────
@@ -254,8 +311,9 @@ GunParts m92fs(const Matrix& hold) {
     f.tube(pistol_at(207.9f, -12), pistol_at(208.1f, -12), 3.3f * MM, 3.3f * MM, 16);                               // the spring's hole...
     f.material(MAT_STEEL).color(ALLOY).tube(pistol_at(207.5f, -12), pistol_at(208.15f, -12), 2 * MM, 2 * MM, 12);  // ... and the guide rod's end
 
-    // The frame, satin alloy. Above: the rails under the slide and the dust cover out front.
-    f.material(MAT_STEEL).color(ALLOY);
+    // The frame: anodised alloy, a matte grey a shade darker than the slide's stainless (a finished
+    // metal, not a mirror). Above: the rails under the slide and the dust cover out front.
+    f.material(MAT_METAL).color(ALLOY);
     Outline upper;
     upper.to(-4, -17.2f).to(192, -17.2f).curve(194, -17.2f, 194, -19.2f, 2).to(194, -24.5f).curve(194, -28.5f, 189.5f, -28.5f, 3)
         .to(56, -28.5f).to(54, -33).to(0, -33).to(-4, -26);
@@ -284,7 +342,7 @@ GunParts m92fs(const Matrix& hold) {
         f.tube(pistol_at(a.x, a.y, w), pistol_at(b.x, b.y, w), 0.5f * MM, 0.5f * MM, 6);
     }
     // The trigger, stainless, raked forward in double action, its face curved for the finger.
-    f.color(INOX);
+    f.material(MAT_STEEL).color(INOX);
     Outline trig;
     trig.to(72, -28).to(78, -28).curve(81, -37.5f, 86.5f, -47.5f, 4).curve(87.5f, -50, 85.5f, -51.3f, 2).to(84, -51.5f)
         .curve(73.5f, -46, 71.5f, -33.5f, 4);
@@ -330,8 +388,8 @@ GunParts m92fs(const Matrix& hold) {
     bar.to(64, -19).to(86, -19).curve(89, -19, 89, -22, 2).curve(89, -26.5f, 86, -26.5f, 2).to(64, -26.5f);
     f.slab(pistol(bar).p, 11.05f * MM, 0.45f * MM, 0.3f * MM, 1);
 
-    // The grips: dark grey rubber, a smooth border round a stippled field, two screws and the
-    // Beretta medallion between them, toward the front of the grip.
+    // The grips: black, a smooth border round a checkered field, two screws and the maker's
+    // medallion between them, toward the front of the grip.
     Outline panel;
     panel.to(2.5f, -25.5f).to(48, -25.5f).to(47.5f, -42).to(43.2f, -56.8f).to(30.7f, -106.5f)
         .curve(29.7f, -112, 25.5f, -112, 2).to(-15, -112).curve(-18, -112, -17.7f, -108.5f, 2).to(3, -53)
@@ -478,6 +536,15 @@ GunParts r870(const Matrix& hold, Stock stock) {
     pin.arc(0, 0, 2.4f, 0, 2 * PI * 15 / 16, 15);
     f.color(Color{58, 60, 66, 255});
     for (const float u : {14.0f, 98.0f}) f.slab(rifle(pin.scaled(1, u, -30)).p, 0, 16.2f * MM, 0.3f * MM, 1);
+    // The roll marks (an invented maker's): the name and model on the receiver's left, the gauge
+    // on its right behind the ejection port.
+    {
+        MeshBuilder e(fixed);
+        e.material(MAT_DEFAULT).color(Color{120, 122, 128, 255});   // (the cuts show the steel under the bluing)
+        const char* name = "HALVORSEN MODEL 79";
+        engrave(e, name, 105 + text_width(name, 3.4f) / 2, -24, -16, 3.4f, -1, rifle);
+        engrave(e, "12 GA.", 40, -24, 16, 3.4f, 1, rifle);
+    }
     // The trigger group under the back of the receiver: the plate, the guard, the gold trigger, the
     // cross-bolt safety behind it, and the action release lever ahead of the guard on the left.
     f.color(BLUED);

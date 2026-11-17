@@ -1,7 +1,13 @@
 <!-- damned_waters/docs/handoff/characters_session_prompt.md -->
 <!-- Purpose: the brief for the next session (characters, hair, enemies, weapons and items), written so a brand-new session can pick up without this one. Paste the block below as the first message. -->
 
-# Next session: the cast and their kit
+# The cast and their kit
+
+**Status (2026-11-16): a first pass of all four is done and pushed on `claude/bold-planck-j88j0x`
+(not merged), and a second pass fixed the pistol's finish, the Drowned's faces and his hairstyle.**
+See "The cast pass" in `session_memory.md` for what changed, what is left and what was learned. A
+second session on the cast can start from the block below; note that `--still` takes world
+coordinates, and that `--view item<N>` shows a thing from the case.
 
 Paste this as the first message of a new Claude Code session on `gosaultech/dwater`:
 
@@ -61,9 +67,10 @@ uncommitted). I pay for tokens: keep image reviews lean. Open a PR and merge whe
   - `damned_waters --sheet out --only survivor` (studio turnaround; `--only drowned0`, ...).
   - `damned_waters --view survivor@head,20,5,0.7,0,1.6,30 out.png` (one close shot; who:
     `survivor`, `drowned[N]`, `@head|@chest|@pelvis|@hand`, or a gun `m92fs | r870`).
-  - `damned_waters --room voorkamer --still 3.6,2.6,200 out.png --shot a` (in a lit room); the
-    street look is best judged in `rokin_noord` (shots e, l) at night with rain.
-- **Tests**: `<build>/dw_tests` (199 at the end of the last session), the tool suites in
+  - `damned_waters --room voorkamer --still -3.38,5.17,20 out.png --shot a` (in a lit room; the
+    position is in world metres, the room's `origin` plus the spot in it); the street look is best
+    judged in `rokin_noord` (`--still 901.9,-200.1,60 --shot e`) at night with rain.
+- **Tests**: `<build>/dw_tests` (206 after the cast pass), the tool suites in
   `tools/*/tests`, `--capture <dir>` (97 setups) and `--walkthrough <report.txt>` (255 trials,
   0 failed). Run all of them before asking for a merge.
 

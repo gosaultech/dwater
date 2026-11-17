@@ -1,12 +1,16 @@
 // damned_waters/engine/tests/test_guns.cpp
 // Purpose: GoogleTest suite for the survivor's guns (cast_guns.cpp): they come out the size of the
-// real ones (a Beretta M92FS, a Remington 870 with an 18.5-inch barrel), their moving parts travel the
-// right way, every part is a closed surface facing outward, and aiming the 870 up or down bends him
-// at the waist without breaking his hold.
+// real ones they are modelled on (code names m92fs and r870), their moving parts travel the right
+// way, every part is a closed surface facing outward, aiming the shotgun up or down bends him at
+// the waist without breaking his hold; lettering prints where it is asked for; and no real maker's
+// name is shown to the player.
 #include <gtest/gtest.h>
+
+#include <string>
 
 #include "../src/cast_guns.hpp"   // (brings raylib and raymath)
 #include "dw/character.hpp"       // Character::pitched (inline: no need to link the character)
+#include "dw/combat.hpp"
 
 using namespace dw;
 
@@ -161,4 +165,44 @@ TEST(Guns, AimingUpOrDownPitchesTheWholeUpperBody) {
     const Vector3 ahead = Vector3Transform({0, 0, -1}, rig(Character::pitched({}, 0.3f)));   // up is up
     EXPECT_NEAR(ahead.y, std::sin(0.3f), 1e-5f);
     EXPECT_NEAR(ahead.z, -std::cos(0.3f), 1e-5f);
+}
+
+TEST(Guns, LetteringPrintsCentredFlatOnItsPlaneAndSkipsWhatTheFontLacks) {
+    // On a wall facing +z, a metre up: "12 GA" five millimetres tall.
+    MeshData d;
+    MeshBuilder b(d);
+    const Vector3 at{0.3f, 1.0f, 0.2f};
+    cast::print_text(b, "12 GA", at, {1, 0, 0}, {0, 1, 0}, 0.005f, 0.0004f);
+    ASSERT_GT(d.count(), 0u);
+    const Box box = bounds(d);
+    EXPECT_NEAR((box.lo.x + box.hi.x) / 2, at.x, 0.0015f);     // centred along the line
+    EXPECT_NEAR((box.lo.y + box.hi.y) / 2, at.y, 0.0006f);     // and on the letters' height
+    EXPECT_GE(box.hi.y - box.lo.y, 0.005f);                    // the capitals' height, plus the pen's
+    EXPECT_LE(box.hi.y - box.lo.y, 0.005f + 3 * 0.0004f);      // width at each end (a slanted stroke: its corner)
+    EXPECT_GT(box.lo.z, at.z - 0.0002f);                       // a hair into the surface,
+    EXPECT_LT(box.hi.z, at.z + 0.0002f);                       // a hair proud of it
+    EXPECT_GT(volume(d), 0);                                   // closed bars, facing outward
+    // A letter the font does not have prints nothing (and breaks nothing); the builder is left as it was.
+    MeshData e;
+    MeshBuilder be(e);
+    cast::print_text(be, "~", at, {1, 0, 0}, {0, 1, 0}, 0.005f, 0.0004f);
+    EXPECT_EQ(e.count(), 0u);
+    be.tube({0, 0, 0}, {0, 0.01f, 0}, 0.001f, 0.001f, 6);
+    EXPECT_LT(bounds(e).hi.y, 0.02f);                          // (not still printing a metre up)
+}
+
+TEST(Guns, NoRealMakersNameIsShownToThePlayer) {
+    // The user's rule: every business name is invented. The guns are modelled on real ones, but what
+    // the status screen calls them, and says about them, names no maker.
+    const char* real[] = {"Beretta", "BERETTA", "Remington", "REMINGTON", "M92", "92FS", "870"};
+    auto clean = [&](const std::string& text) {
+        for (const char* r : real)
+            if (text.find(r) != std::string::npos) return false;
+        return true;
+    };
+    for (int i = 0; i < I_COUNT; ++i) {
+        EXPECT_TRUE(clean(item_spec(i).name)) << item_spec(i).name;
+        EXPECT_TRUE(clean(item_spec(i).desc)) << item_spec(i).name;
+    }
+    for (int w = 0; w < int(Weapon::Count); ++w) EXPECT_TRUE(clean(weapon_spec(Weapon(w)).name)) << weapon_spec(Weapon(w)).name;
 }

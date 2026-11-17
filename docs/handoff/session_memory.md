@@ -1,12 +1,61 @@
 <!-- damned_waters/docs/handoff/session_memory.md -->
 <!-- Purpose: the memory between sessions: where the work stands, how it is made, what was learned, what is open. Update it at the end of each session. -->
 
-# Where Damned Waters stands (last updated 2026-11-16)
+# Where Damned Waters stands (last updated 2026-11-16, after the cast pass)
 
-**Next session's brief: `docs/handoff/characters_session_prompt.md`** (characters, his hair, the
-Drowned, guns and items; engine-side, no re-render). Dutch plates, abandoned cars and the bus's
-livery come after, in a session of their own (they need a re-render of about ten streets). The second look (below) is
-finished and merged into `claude/inspiring-turing-gl0kys`.
+**The cast pass (2026-11-16, evening) is done and pushed on `claude/bold-planck-j88j0x`, NOT merged:
+open the PR when the user asks to play it.** It was the brief in
+`docs/handoff/characters_session_prompt.md` (its status block says what is done and what is left).
+Dutch plates, abandoned cars and the bus's livery come after, in a session of their own (they need
+a re-render of about ten streets). The second look (below) is merged.
+
+## The cast pass (2026-11-16: read this first)
+All engine-side (no background re-rendered). The user saw the before/after sheets (survivor, the
+Drowned, guns and items, then the second pass) and has not asked for the merge yet.
+- **Done:**
+  - Locs: `dw/strand_tube.hpp` (a smooth lumpy rope per loc, rounded tip), a frayed outline and a
+    half shadow in `CHAR_FS` (mat 35). Sanne's hair: the same tubes drawn to a point (rat-tails).
+    Hair lets go of its style when the head lies down, and lies on the floor.
+  - Detail maps: `tools/assets/detail_maps.py` -> `engine/assets/detail/*.png` (7.7 MB, in git),
+    `dw/detail.hpp`, `stamp()` in `CHAR_FS`. Skin, leather, denim, cotton, walnut, gun metal.
+  - Skin: light bleed (`bleed`), pores, the lid's shadow on the eye.
+  - The Drowned: mat 2 repainted (wax, livor, rot, veins, mould, silt, slippage), a blood bib,
+    fouled clothes (`u_drowned`, `soak`), milky bloodshot eyes, darker mouths and guts.
+  - Guns: edge wear from how sharply the surface turns (`edge`), walnut scan, invented makers
+    (Armi Corvo C9, Halvorsen Model 79: roll marks, status screen, a test). Items rebuilt with
+    `crate()` and `cast::print_text`; `MAT_CARD`; `--view item<N>`.
+- **Second pass (2026-11-17, at the user's ask: "get the pistol, the drowned faces and hairstyle
+  where you want"):**
+  - The Drowned's faces: `drowned.stretch_down` draws the jaw down and leaves the face above the
+    mouth (it had made the upper lip a snout); the three `.dwc` files are rebuilt. Teeth have gaps
+    and rot; dead flesh is dark and clotted. The MakeHuman fetch works from the container
+    (`build_characters.py` clones it in seconds, and rebuilds are byte-identical).
+  - The pistol: brushed stainless slide (a sheen across the brushing), a matte anodised alloy
+    frame a shade darker, black checkered grips (mat 26 is now checkering, not stipple).
+  - His hair: swept back off the brow and layered (`cast_survivor.cpp`: `away`, `frontness`,
+    `upstream`, and a hug that keeps each loc lying on the head), so from above it is thatch, not
+    spokes round the crown.
+  - `--view <who>@face,...` frames a face squarely however the head hangs.
+- **Left:** the pistol's shape is unchanged (only its finishes); the Drowned's torn mouth corners
+  are still painted a bright red in the body files; his hands and hoodie are untouched;
+  `cast_drowned.cpp` (the procedural fallback) and the ribbon path in `Character::step_strands`
+  are unused.
+- **Lessons:**
+  - `--still x,z,yaw` takes WORLD metres: the room's `origin` plus the spot in the room. With
+    room-local numbers he stands somewhere off screen and the still shows an empty room.
+  - In `CHAR_FS`, `p` (`vSurf`) carries a random offset per part (so no two parts share a pattern):
+    never read height from `p.y`. Height on the standing body is `up` (`vRest.y`, skinned parts
+    only). The old "mud up the legs" read `p.y` and never worked until this session.
+  - Texture lookups inside the material branches must use `textureGrad` with derivatives taken
+    before any branch (`gQx`, `gQy`), or mip levels break at material borders.
+  - Detail maps sit on texture units 8 to 13 for the whole run (`Game::bind_detail`); raylib's
+    materials and batches use 0 to 4.
+  - A "bug" over his head in a Rokin still was a graffiti tag in the plate. Before chasing a
+    stray shape, render with him somewhere else: if it stays put, it is painted.
+  - A flat blued face goes uniformly pale in the catalogue view at some angles (it mirrors the
+    softbox): judge gun finishes from two angles.
+  - A worker restart mid-session kept the tree, the build and the scratchpad; a replaced
+    container does not. Each step was committed and pushed as it stood up.
 
 ## The look overhaul (2026-11-11 onward, IN PROGRESS: read this first)
 The user's verdict on the whole city at 2048x1152: "far from a polished product"; the debris was
@@ -66,9 +115,8 @@ this look like an Amsterdam tram... it will look goofy and out of place otherwis
     with `polyhaven.py fetch`, `photos.py fetch`, `sketchfab.py fetch`, `decals.py make`.
 - **Still open:** Dutch number plates (the licensed cars carry foreign ones); the city bus says
   "TOWN BUS"; abandoned cars along the streets (RE3 has them everywhere); the Beurs mortuary's rows
-  of bags are still our own; characters beyond the shading pass (faces, lighting contrast; the user
-  chose to keep the generated bodies and make them look better: "option A"); the army truck's
-  badge cap is unverified; textures at 2k need a machine with more than 15 GB.
+  of bags are still our own; the army truck's badge cap is unverified; textures at 2k need a
+  machine with more than 15 GB. (Characters: see "The cast pass" above.)
 - **Lesson, the hard way:** after a long idle the container is replaced: everything uncommitted,
   the scratchpad and /opt are gone (a whole tram model was lost once). Commit and push work in
   progress as soon as it stands up; keep tools in the repo, not the scratchpad. The environment

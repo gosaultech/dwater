@@ -12,6 +12,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
+import drowned as dr  # noqa: E402
 import dwc  # noqa: E402
 import garments as gm  # noqa: E402
 import rig  # noqa: E402
@@ -36,6 +37,20 @@ def grid(n):
             a, b, c, d = y * n + x, y * n + x + 1, (y + 1) * n + x + 1, (y + 1) * n + x
             tris += [[a, b, c], [a, c, d]]
     return P, np.tile([0.0, 0.0, 1.0], (len(P), 1)), np.array(tris)
+
+
+class DeathMaskTests(unittest.TestCase):
+    def test_the_scream_draws_the_jaw_down_and_leaves_the_face_above_the_mouth(self):
+        # Points 0 to 12 cm under the eyes, the mouth 6 cm under them.
+        below = np.linspace(0, 0.12, 13)
+        down = dr.stretch_down(below, 0.06, stretch=0.42, upper=0.05)
+        self.assertAlmostEqual(float(down[0]), 0.0)
+        self.assertTrue((np.diff(down) > 0).all())                        # nothing folds over
+        self.assertLess(float(down[6]), 0.004)                            # the lips: barely moved (it was a snout)
+        self.assertGreater(float(down[12] - down[6]), 0.02)               # the chin: drawn well down
+        steep = np.diff(down)
+        self.assertAlmostEqual(float(steep[:6].max()), 0.05 * 0.01, places=6)
+        self.assertAlmostEqual(float(steep[6:].min()), 0.42 * 0.01, places=6)
 
 
 class WeightTests(unittest.TestCase):

@@ -24,6 +24,7 @@
 #include "dw/combat.hpp"
 #include "dw/mesh_builder.hpp"
 #include "dw/reload.hpp"
+#include "dw/strand_tube.hpp"
 #include "dw/two_bone.hpp"
 
 namespace dw {
@@ -84,6 +85,7 @@ public:
     void unload();
     Vector3 joint(int j) const { return {W_[j].m12, W_[j].m13, W_[j].m14}; }
     Vector3 head_point() const { return Vector3Transform(head_c_, W_[J_HEAD]); }        // centre of the skull
+    Vector3 head_up() const { return Vector3Normalize({W_[J_HEAD].m4, W_[J_HEAD].m5, W_[J_HEAD].m6}); }           // the way the crown points
     Vector3 face_dir() const { return Vector3Normalize({-W_[J_HEAD].m8, -W_[J_HEAD].m9, -W_[J_HEAD].m10}); }
     Kind kind = Kind::Survivor;
     bool mirror = false;   // lying dead: sprawled the other way round (the other arm reaching, the face turned the other way)
@@ -260,6 +262,13 @@ private:
         int mat = 0;
         float taper = 0.22f;                    // how much thinner the end is than the root (0..1)
         float lump = 0.09f;                     // how uneven the thickness is along it (palm-rolled locs)
+        // Tubes only (dw/strand_tube.hpp): rings drawn per simulated segment, how far the rope wanders
+        // off its line (m), how thick it is at the scalp, and how much wider than `radius` it is drawn
+        // (the shader frays that margin into loose hairs: a fuzzy outline).
+        int sub = 1;
+        float wave = 0.0f, root = 1.0f, fluff = 1.0f;
+        std::vector<float> shade;               // per strand, optional: 1 = out in the light, less = under other hair
+        bool aux_along = false;                 // tubes: give the shader how far along the strand each point is (0 root .. 1 tip)
         // Ribbons instead of tubes (long hair as "cards"): flat strips `radius` wide that lie against
         // the head, facing away from the skull's axis (axisA-axisB, joint space); their edges and ends
         // thin out into single hairs (the shader stipples them away).
@@ -337,6 +346,8 @@ private:
     std::vector<Skinned> skinned_;
     std::vector<Anchor> anchors_;
     std::vector<Strands> strands_;
+    std::vector<strand::Ring> ring_scratch_;   // per-frame scratch for the tubes, kept to avoid reallocating
+    std::vector<float> circle_scratch_;
     std::vector<DripSource> drip_src_;
     std::vector<Drip> drips_;
     Mesh drip_mesh_{}, blood_drip_mesh_{};

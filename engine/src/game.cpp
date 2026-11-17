@@ -15,6 +15,7 @@
 #include <cstring>
 
 #include "cast_guns.hpp"
+#include "cast_items.hpp"
 #include "dw/shaders.hpp"
 
 namespace dw {
@@ -59,6 +60,22 @@ bool Game::init(const std::string& room_id) {
     l_fogr_ = GetShaderLocation(char_, "u_fogRange");
     char_mat_ = LoadMaterialDefault();
     char_mat_.shader = char_;
+    // The detail maps (dw/detail.hpp): loaded once, each on its own texture unit for good.
+    float tiles[detail::COUNT];
+    for (int i = 0; i < detail::COUNT; ++i) {
+        Image img = LoadImage((root + "/engine/assets/detail/" + detail::MAPS[i].name + ".png").c_str());
+        if (!img.data) img = GenImageColor(1, 1, Color{128, 128, 128, 128});   // missing: flat, the material's own colour
+        detail_[i] = LoadTextureFromImage(img);
+        UnloadImage(img);
+        GenTextureMipmaps(&detail_[i]);
+        SetTextureFilter(detail_[i], TEXTURE_FILTER_ANISOTROPIC_8X);
+        SetTextureWrap(detail_[i], TEXTURE_WRAP_REPEAT);
+        const int unit = detail::FIRST_UNIT + i;
+        SetShaderValue(char_, GetShaderLocation(char_, detail::MAPS[i].uniform), &unit, SHADER_UNIFORM_INT);
+        tiles[i] = detail::MAPS[i].tile;
+    }
+    SetShaderValueV(char_, GetShaderLocation(char_, "u_dTile"), tiles, SHADER_UNIFORM_FLOAT, detail::COUNT);
+    bind_detail();
     blob_ = LoadShaderFromMemory(nullptr, shaders::BLOB_FS);
     l_blob_ = GetShaderLocation(blob_, "u_strength");
     blob_mat_ = LoadMaterialDefault();
@@ -121,6 +138,7 @@ void Game::shutdown() {
     fx_.shutdown();
     sfx_.shutdown();
     UnloadMesh(blob_mesh_);
+    for (auto& t : detail_) UnloadTexture(t);
     UnloadShader(plate_); UnloadShader(char_); UnloadShader(blob_); UnloadShader(post_); UnloadShader(rain_sh_); UnloadShader(splash_sh_);
     UnloadRenderTexture(rt_);
     for (auto& sm : shadows_) {
@@ -284,7 +302,16 @@ void Game::render_shadows(const std::vector<const Character*>& casters, const st
     }
 }
 
+void Game::bind_detail() {
+    for (int i = 0; i < detail::COUNT; ++i) {
+        rlActiveTextureSlot(detail::FIRST_UNIT + i);
+        rlEnableTexture(detail_[i].id);
+    }
+    rlActiveTextureSlot(0);
+}
+
 void Game::bind_shadows() {
+    bind_detail();   // (cheap, and safe against anything that used those units since)
     int which[2], dyn_map[2] = {-1, -1};
     Vector4 pl[2];
     for (int k = 0; k < 2; ++k) {
@@ -1532,7 +1559,7 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     std::string w = who, at_joint, opts;
     if (const auto k = w.find('/'); k != std::string::npos) { opts = w.substr(k); w.resize(k); }
     if (const auto k = w.find('@'); k != std::string::npos) { at_joint = w.substr(k + 1); w.resize(k); }
-    if (w == "m92fs" || w == "r870") return gun_view(w, opts, orbit, elev, dist, tx, ty, fovy, png);
+    if (w == "m92fs" || w == "r870" || w.rfind("item", 0) == 0) return gun_view(w, opts, orbit, elev, dist, tx, ty, fovy, png);
     const bool survivor = w == "survivor";
     const int variant = !survivor && w.size() > 7 ? std::atoi(w.c_str() + 7) : 0;
     upload_studio_lights();
@@ -1614,6 +1641,16 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     cam.position = {at.x + dist * std::sin(a) * std::cos(e), at.y + dist * std::sin(e), at.z - dist * std::cos(a) * std::cos(e)};
     cam.target = at;
     cam.up = {0, 1, 0};
+    if (at_joint == "face") {   // square to the face however the head hangs: the orbit turns in the head's own frame
+        const Vector3 up = c.head_up(), f = c.face_dir(), right = Vector3CrossProduct(up, f);
+        at = Vector3Add(Vector3Add(c.head_point(), Vector3Scale(right, tx)), Vector3Scale(up, ty));
+        const float oa = orbit * DEG2RAD;
+        const Vector3 dir = Vector3Add(Vector3Add(Vector3Scale(f, std::cos(oa) * std::cos(e)), Vector3Scale(right, std::sin(oa) * std::cos(e))),
+                                       Vector3Scale(up, std::sin(e)));
+        cam.position = Vector3Add(at, Vector3Scale(dir, dist));
+        cam.target = at;
+        cam.up = up;
+    }
     if (c.grip_view >= 0) {   // a grip: orbit the gun in its own frame (orbit 90 = its right side, 0 = muzzle-on)
         const Matrix G = c.grip_view_frame();
         const Vector3 centre = c.grip_view == 0 || c.grip_view == 3 ? cast::m92fs_at(40 + tx * 1000, -55 + ty * 1000)
@@ -1695,7 +1732,13 @@ bool Game::gun_view(const std::string& who, const std::string& opts, float orbit
     for (auto& sm : shadows_) sm.light = sm.dyn = -1;   // no characters: no shadow maps
     bind_shadows();
     const cast::Stock furniture = opts.find("/synthetic") != std::string::npos ? cast::Stock::Synthetic : cast::Stock::Walnut;
-    cast::GunParts gp = who == "m92fs" ? cast::m92fs() : cast::r870(MatrixIdentity(), furniture);   // (straight, not as held)
+    const bool item = who.rfind("item", 0) == 0;   // "item5": a thing from the case (an Item id), as it stands
+    cast::GunParts gp = item ? cast::GunParts{} : who == "m92fs" ? cast::m92fs() : cast::r870(MatrixIdentity(), furniture);   // (straight, not as held)
+    if (item) {
+        const cast::ItemModel im = cast::item_model(std::atoi(who.c_str() + 4));
+        gp.fixed = im.mesh;
+        gp.centre = im.centre;
+    }
     Mesh fixed = upload(gp.fixed), moving = upload(gp.moving);
     if (const auto k = opts.find("/obj="); k != std::string::npos) {   // the meshes as OBJ files (wrist space), for matching photos
         const std::string stem = opts.substr(k + 5, opts.find('/', k + 1) - (k + 5));
@@ -1714,7 +1757,7 @@ bool Game::gun_view(const std::string& who, const std::string& opts, float orbit
     lay.m0 = 0; lay.m4 = -1; lay.m8 = 0;
     lay.m1 = 0; lay.m5 = 0; lay.m9 = -1;
     lay.m2 = 1; lay.m6 = 0; lay.m10 = 0;
-    const Matrix M = MatrixMultiply(MatrixTranslate(-gp.centre.x, -gp.centre.y, -gp.centre.z), lay);
+    const Matrix M = MatrixMultiply(MatrixTranslate(-gp.centre.x, -gp.centre.y, -gp.centre.z), item ? MatrixIdentity() : lay);
     const Matrix Mm = MatrixMultiply(MatrixTranslate(gp.travel.x * back, gp.travel.y * back, gp.travel.z * back), M);
     const float a = orbit * DEG2RAD, e = elev * DEG2RAD;
     Camera3D cam{};

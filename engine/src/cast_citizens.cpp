@@ -134,10 +134,13 @@ Character build_citizen(const std::string& id, int variant) {
         hair.n = 14;
         hair.sides = 5;
         hair.mat = MAT_WETHAIR;
-        hair.col = {42, 32, 26, 255};
-        hair.taper = 0.5f;
-        hair.lump = 0.0f;
-        hair.ribbon = true;
+        hair.col = {34, 27, 23, 255};
+        // Soaked hair hangs in rat-tails: thin ropes of many hairs stuck together, each drawn out to
+        // a point (dw/strand_tube.hpp), not flat cards.
+        hair.taper = 0.86f;
+        hair.lump = 0.16f;
+        hair.sub = 2;
+        hair.wave = 0.002f;
         hair.axisA = {0, y0, z0};
         hair.axisB = {0, y0, z1};
         unsigned h = 0x6C8E9CF5u;
@@ -156,7 +159,7 @@ Character build_citizen(const std::string& id, int variant) {
             const bool curtain = p0.z < -0.02f && std::fabs(p0.x) < 0.055f;       // the front of the scalp
             const float part = p0.x < 0 ? -1.0f : 1.0f;                               // which side of the parting
             const float len = curtain ? 0.3f + 0.06f * rnd() : 0.36f + 0.08f * rnd();
-            const float seg = len / float(hair.n - 1), radius = 0.01f + 0.012f * rnd();   // ribbon width
+            const float seg = len / float(hair.n - 1), radius = 0.0028f + 0.0034f * rnd();   // a rat-tail's thickness at the scalp
             Vector3 p = Vector3Subtract(p0, Vector3Scale(n, 0.002f));
             hair.anchor.push_back(p);
             hair.rest.push_back(p);

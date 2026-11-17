@@ -88,9 +88,10 @@ Ring*, 2002). That **death mask** is built in three layers:
    lids, lips and neck, are set to a scream of terror and pushed past what a living face can do
    (`drowned.death_mask`). They give inner brows raised, lids wide, the lower lip dragged
    down, and the neck's cords standing out. The crooked side screams harder.
-2. **Distortion.** `drowned.distort` warps the face itself: the lower face is drawn a third
-   longer than a face can go and dragged off to one side, more and more toward the chin, and the
-   eye sockets sink. In the engine the jaw then hangs open 54 degrees, skewed to the same side.
+2. **Distortion.** `drowned.distort` warps the face itself: the jaw and chin are drawn down
+   further than a face can go (the face above the mouth hardly at all: stretched too, it became a
+   snout) and dragged off to one side, more and more toward the chin, and the eye sockets sink.
+   In the engine the jaw then hangs open 54 degrees, skewed to the same side.
 3. **Paint and parts.** Charcoal-grey waterlogged skin, sockets bruised almost black, eyes that
    are dark hollows with a milky glint rolled up under the lids, and forehead furrows (the
    shader reads where from the body's aux). The back of MakeHuman's mouth pocket, which the
@@ -123,9 +124,9 @@ What makes them read as bodies rather than painted mannequins:
   slivers), with weights blended along it.
 - **Eyes** are rings round the pupil (`cast.eyeball`), so a clouded iris stays round and crisp.
 
-Sanne's hair is grown in the engine from 220 scalp anchors as flat ribbons ("hair cards")
-rather than tubes. Each ribbon lies against the skull, and its edges and ends are stippled away
-into single hairs by the shader (`MAT_WETHAIR`).
+Sanne's hair is grown in the engine from 220 scalp anchors as thin tubes drawn out to a point:
+wet rat-tails, many hairs stuck together (`MAT_WETHAIR`; the shape is `dw/strand_tube.hpp`, the
+same as the survivor's locs). They hold their fall only while her head is upright.
 
 ## Files
 
