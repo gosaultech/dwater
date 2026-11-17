@@ -38,10 +38,10 @@ constexpr float MM = 0.001f;
 constexpr float P_Y0 = -0.0315f, P_Z0 = -0.066f;
 Outline pistol(const Outline& o) { return o.scaled(-MM, P_Y0, P_Z0); }
 Vector3 pistol_at(float u, float v, float w = 0) { return {w * MM, P_Y0 - u * MM, P_Z0 - v * MM}; }
-// Satin stainless slide and barrel; the frame's alloy a shade greyer; black oxide on the controls
-// and sights; dark grey rubber grips.
-const Color INOX{206, 207, 209, 255}, ALLOY{190, 190, 192, 255}, OXIDE{24, 24, 26, 255}, RUBBER{74, 74, 78, 255},
-    STIPPLE{86, 86, 90, 255}, GROOVE{96, 96, 100, 255}, BORE{8, 8, 10, 255}, DOT{236, 234, 226, 255}, FIRE_DOT{196, 22, 20, 255}, GAP{14, 14, 15, 255},
+// Satin stainless slide and barrel; the frame's anodised alloy darker and matte; black oxide on
+// the controls and sights; black checkered grips.
+const Color INOX{206, 207, 209, 255}, ALLOY{108, 110, 116, 255}, OXIDE{24, 24, 26, 255}, RUBBER{30, 30, 33, 255},
+    STIPPLE{38, 38, 41, 255}, GROOVE{96, 96, 100, 255}, BORE{8, 8, 10, 255}, DOT{236, 234, 226, 255}, FIRE_DOT{196, 22, 20, 255}, GAP{14, 14, 15, 255},
     MAG{26, 26, 28, 255}, MAG_BOX{40, 41, 46, 255}, CASE{181, 145, 72, 255}, JACKET{178, 112, 64, 255};
 // ── Roll marks ──────────────────────────────────────────────────────────────────
 // Lettering stamped into steel, in a plain stroke font: each glyph a few pen strokes on a grid 4
@@ -287,7 +287,7 @@ GunParts m92fs(const Matrix& hold) {
     {
         const char* maker = "ARMI CORVO - GARDONE V.T. - MADE IN ITALY";
         const char* model = "MOD. C9 - CAL. 9mm PARABELLUM - PATENTED";
-        s.material(MAT_METAL).color(Color{70, 71, 75, 255});   // the cuts catch the shadow
+        s.material(MAT_METAL).color(Color{38, 39, 43, 255});   // the cuts catch the shadow
         const float h = 2.2f, mid = 124;
         engrave(s, maker, mid + text_width(maker, h) / 2, -7.0f, -12, h, -1);
         engrave(s, model, mid - text_width(model, h) / 2, -9.5f, 12, h, 1);
@@ -311,8 +311,9 @@ GunParts m92fs(const Matrix& hold) {
     f.tube(pistol_at(207.9f, -12), pistol_at(208.1f, -12), 3.3f * MM, 3.3f * MM, 16);                               // the spring's hole...
     f.material(MAT_STEEL).color(ALLOY).tube(pistol_at(207.5f, -12), pistol_at(208.15f, -12), 2 * MM, 2 * MM, 12);  // ... and the guide rod's end
 
-    // The frame, satin alloy. Above: the rails under the slide and the dust cover out front.
-    f.material(MAT_STEEL).color(ALLOY);
+    // The frame: anodised alloy, a matte grey a shade darker than the slide's stainless (a finished
+    // metal, not a mirror). Above: the rails under the slide and the dust cover out front.
+    f.material(MAT_METAL).color(ALLOY);
     Outline upper;
     upper.to(-4, -17.2f).to(192, -17.2f).curve(194, -17.2f, 194, -19.2f, 2).to(194, -24.5f).curve(194, -28.5f, 189.5f, -28.5f, 3)
         .to(56, -28.5f).to(54, -33).to(0, -33).to(-4, -26);
@@ -341,7 +342,7 @@ GunParts m92fs(const Matrix& hold) {
         f.tube(pistol_at(a.x, a.y, w), pistol_at(b.x, b.y, w), 0.5f * MM, 0.5f * MM, 6);
     }
     // The trigger, stainless, raked forward in double action, its face curved for the finger.
-    f.color(INOX);
+    f.material(MAT_STEEL).color(INOX);
     Outline trig;
     trig.to(72, -28).to(78, -28).curve(81, -37.5f, 86.5f, -47.5f, 4).curve(87.5f, -50, 85.5f, -51.3f, 2).to(84, -51.5f)
         .curve(73.5f, -46, 71.5f, -33.5f, 4);
@@ -387,8 +388,8 @@ GunParts m92fs(const Matrix& hold) {
     bar.to(64, -19).to(86, -19).curve(89, -19, 89, -22, 2).curve(89, -26.5f, 86, -26.5f, 2).to(64, -26.5f);
     f.slab(pistol(bar).p, 11.05f * MM, 0.45f * MM, 0.3f * MM, 1);
 
-    // The grips: dark grey rubber, a smooth border round a stippled field, two screws and the
-    // maker's medallion between them, toward the front of the grip.
+    // The grips: black, a smooth border round a checkered field, two screws and the maker's
+    // medallion between them, toward the front of the grip.
     Outline panel;
     panel.to(2.5f, -25.5f).to(48, -25.5f).to(47.5f, -42).to(43.2f, -56.8f).to(30.7f, -106.5f)
         .curve(29.7f, -112, 25.5f, -112, 2).to(-15, -112).curve(-18, -112, -17.7f, -108.5f, 2).to(3, -53)

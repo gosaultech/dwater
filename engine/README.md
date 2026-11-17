@@ -732,23 +732,31 @@ as people and objects rather than smooth clay:
     into loose hairs (the rope is drawn a little fat and its outline eaten away), which catch the
     light from behind. Locs rooted low on the head sit in the shade of those above; all of them
     cast a half shadow on his brow and shoulders (every other texel of the shadow map).
+  - He wears them swept back: off the brow, over the top and down the back of the head, each
+    lying on the ones rooted behind it, so from the game's cameras (above) it is a head of hair
+    and not spokes round the crown.
   - Hair holds its style only while the head is upright: on a body lying down it falls and lies
     on the floor. Sanne's long hair uses the same tubes drawn to a point: wet rat-tails.
 - **The Drowned.** Skin swollen and wrinkled (the skin stamp at twice its size, cut deep), waxy
   in patches, livid where blood settled, green going to black over the belly and neck, veined,
   spotted with mould, silt in every crease, and a hard wet glint only where it weeps. Their
   clothes are soaked, silted, streaked and green with weed, and blood from the scream runs from
-  the chin down the chest. The shader knows true height on the standing body (`vRest`), which is
+  the chin down the chest. The scream itself drags the jaw down and leaves the face above the
+  mouth a face (`tools/characters/drowned.py`); the teeth are a row with gaps, brown and black. The shader knows true height on the standing body (`vRest`), which is
   also what puts the flood's mud on the survivor's legs and not on his collar.
 - **Guns.** The shader finds a hard part's edges by how sharply the surface turns there: a
   blued finish wears through to grey steel, stainless polishes bright, walnut rubs pale. The
-  shotgun's wood is the walnut scan laid with its grain along the gun.
+  shotgun's wood is the walnut scan laid with its grain along the gun. The pistol is three
+  finishes, as the real thing is: a brushed stainless slide (light smears into a band across the
+  brushing, the same sheen hair has), a matte anodised frame a shade darker, and black grips cut
+  with checkering.
   - Their makers are invented, on the roll marks and on the status screen (a test holds the
     rule): the pistol is an Armi Corvo C9, the shotgun a Halvorsen Model 79.
 - **The things in the case** (`cast_items.cpp`) have flat faces with eased edges and printed
   lettering (`cast::print_text`, the guns' stroke font) in place of rounded pillows. Card scuffs
   pale on its corners.
 - **Looking at them:** `--view survivor@head,25,5,0.55,0,-0.03,30 out.png`, `--view drowned1,...`,
+  `--view drowned0@face,0,0,0.6,0,-0.08,30 out.png` (square to the face however the head hangs),
   `--view r870/bg=dark,20,12,1.25,0,0,30 out.png`, `--view item4/bg=dark,25,25,0.45,0,0,30 out.png`
   (an Item id), and in a room `--room voorkamer --still -3.38,5.17,20 out.png --shot a` (the
   position is in WORLD metres: the room's `origin` plus the spot in the room).

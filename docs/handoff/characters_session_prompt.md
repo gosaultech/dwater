@@ -4,8 +4,8 @@
 # The cast and their kit
 
 **Status (2026-11-16): a first pass of all four is done and pushed on `claude/bold-planck-j88j0x`
-(not merged).** See "The cast pass" in `session_memory.md` for what changed, what is left (the
-pistol's finish, the Drowned's face geometry, his hairstyle from above) and what was learned. A
+(not merged), and a second pass fixed the pistol's finish, the Drowned's faces and his hairstyle.**
+See "The cast pass" in `session_memory.md` for what changed, what is left and what was learned. A
 second session on the cast can start from the block below; note that `--still` takes world
 coordinates, and that `--view item<N>` shows a thing from the case.
 

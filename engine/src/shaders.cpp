@@ -409,19 +409,29 @@ void main() {
         vec3 g = (dFdx(p.y) * r1 + dFdy(p.y) * r2) * sign(dot(dpx, r1));
         if (dot(g, g) > 1e-20) { strand = normalize(g); aniso = 0.25; }
     } else if (mat == 25) {   // brushed stainless steel: fine streaks along the part; mostly it mirrors the room
-        float br = fbm(vec3(p.x * 900.0, p.y * 12.0, p.z * 900.0));
+        float aab = clamp(1.5 - length(fwidth(p)) * 2600.0, 0.0, 1.0);
+        float br = mix(0.5, fbm(vec3(p.x * 2600.0, p.y * 14.0, p.z * 2600.0)), aab);
         vec2 d = stamp(u_dMetal, p, u_dTile[5], hs); sk = 1.2;
         // Carried, not boxed: scratches across the brushing, handled patches gone dull, the edges
         // polished brighter than the flats.
-        albedo *= mix(0.13, 0.18, br) * mix(0.82, 1.2, d.x) * mix(1.0, 0.86, d.y * (1.0 - edge));
-        h = br * 0.3; bk = 0.0002; spec = 1.1 + 0.5 * edge; gloss = mix(55.0, 30.0, d.y) + 45.0 * edge; wrap = 0.1; rim = 0.3;
-        metal = 0.55 * mix(1.0, 0.8, d.y) + 0.2 * edge;
-    } else if (mat == 26) {   // stippled rubber grips: small raised dots, scattered (fade to their average when too small to see)
-        float aa = clamp(1.5 - length(fwidth(p)) * 700.0, 0.0, 1.0);
-        vec3 q = p * 560.0, c = floor(q);
-        vec3 f = fract(q) - 0.5 - (vec3(hash(c), hash(c + 3.7), hash(c + 7.1)) - 0.5) * 0.45;
-        float k = mix(0.3, 1.0 - smoothstep(0.16, 0.33, length(f)), aa);
-        albedo *= mix(0.86, 1.14, k) * mix(0.93, 1.04, fbm(p * 240.0)); h = k; bk = 0.0005; spec = 0.07; gloss = 14.0; wrap = 0.2; rim = 0.15;
+        albedo *= mix(0.085, 0.13, br) * mix(0.82, 1.2, d.x) * mix(1.0, 0.86, d.y * (1.0 - edge));
+        h = br; bk = 0.00012; spec = 0.55 + 0.6 * edge; gloss = mix(60.0, 30.0, d.y) + 45.0 * edge; wrap = 0.1; rim = 0.3;
+        metal = 0.42 * mix(1.0, 0.8, d.y) + 0.3 * edge;
+        // Brushing is thousands of fine grooves along the part: light smears into a band across
+        // them, which is what tells brushed steel from grey paint (the hair's sheen, on metal).
+        vec3 dpx = dFdx(vWorld), dpy = dFdy(vWorld), r1 = cross(dpy, N), r2 = cross(N, dpx);
+        vec3 gy = (dFdx(p.y) * r1 + dFdy(p.y) * r2) * sign(dot(dpx, r1));
+        if (dot(gy, gy) > 1e-20) { strand = normalize(gy); aniso = 0.09; }
+    } else if (mat == 26) {   // checkered grips: two sets of grooves crossing at 60 degrees leave rows of small diamonds
+        // (in the panel's own plane, whichever way it faces; finer than a pixel it fades to its average)
+        vec3 w3 = abs(normalize(vRestN));
+        vec2 q = w3.x > max(w3.y, w3.z) ? p.yz : (w3.y > w3.z ? p.xz : p.xy);
+        float aa = clamp(1.5 - length(fwidth(q)) * 1100.0, 0.0, 1.0);
+        vec2 g = vec2(dot(q, vec2(0.866, 0.5)), dot(q, vec2(0.866, -0.5))) / 0.0013;
+        vec2 t = 1.0 - abs(fract(g) * 2.0 - 1.0);                // 0 in a groove, 1 on a ridge
+        float k = mix(0.45, min(t.x, t.y), aa);                  // the diamonds' points
+        albedo *= mix(0.6, 1.25, k) * mix(0.93, 1.04, fbm(p * 240.0)); h = k; bk = 0.0007 * aa;
+        spec = 0.06 + 0.2 * k * k; gloss = mix(14.0, 40.0, k); wrap = 0.2; rim = 0.15;   // the points wear shiny
     } else if (mat == 41) {   // gun furniture: black synthetic, faintly stippled
         vec2 d = stamp(u_dMetal, p, u_dTile[5], hs); sk = 0.6;   // (plastic scratches too, and shines where it's handled)
         albedo *= mix(0.85, 1.05, fbm(p * 400.0)) * mix(0.96, 1.12, d.x * d.y + edge * 0.5); h = fbm(p * 900.0); bk = 0.0003;

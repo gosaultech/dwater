@@ -58,11 +58,14 @@ Character build_survivor() {
                     {J_CHEST, J_CHEST, {-0.07f, 0.03f, -0.1f}, {0.07f, 0.03f, -0.1f}, 0.11f},   // the front of the hoodie
                     {J_HEAD, J_HEAD, {0, 0.0f, -0.035f}, {0, 0.1f, -0.035f}, 0.08f}};          // the face
     auto axis_at = [&](Vector3 p) { return Vector3{0, skA.y, std::clamp(p.z, skA.z, skB.z)}; };   // nearest point on the skull's axis
-    // Medium locs grown in sections all over the scalp, like the director's reference (portrait 3):
-    // each root lifts off the scalp (locs have body), flows away from the crown, and falls once it
-    // clears the skull's widest band. Locs rooted higher lie over the ones below, which gives the
-    // head its volume. At the front they part to the sides and frame the face; three fall forward
-    // over the forehead.
+    // Medium locs grown in sections all over the scalp, like the director's reference (portrait 3),
+    // worn swept back: off the brow, up over the top and down the back of the head, fanning out to
+    // the sides as they go, so the face stays clear and from above (where the game's cameras sit)
+    // they lie over one another like thatch rather than standing out round the crown like spokes.
+    // Each root lifts a little off the scalp (locs have body); a loc falls once it clears the
+    // skull's widest band; the ones rooted further forward lie over the ones behind. At the temples
+    // they hang down and frame the face; two fall forward across the brow. No two keep quite to the
+    // flow, or are quite the same length or thickness.
     Character::Strands locs;
     locs.joint = J_HEAD;
     locs.n = 14;
@@ -76,8 +79,8 @@ Character build_survivor() {
     locs.root = 0.78f;     // slimmer new growth at the scalp
     locs.fluff = 1.3f;     // the margin the shader frays into loose hairs
     locs.taper = 0.26f;
-    locs.col = {31, 25, 21, 255};
-    locs.tip = {60, 45, 33, 255};   // sun-bleached ends
+    locs.col = {37, 30, 25, 255};
+    locs.tip = {70, 52, 38, 255};   // sun-bleached ends
     unsigned h = 0x2545F491u;
     auto rnd = [&h]() { h ^= h << 13; h ^= h >> 17; h ^= h << 5; return float(h & 0xFFFF) / 65535.0f; };
     const Vector3 crown{0.0f, skA.y + skR * 0.95f, 0.018f};
@@ -96,30 +99,36 @@ Character build_survivor() {
         return l < r ? Vector3Add(q, Vector3Scale(d, r / std::max(l, 1e-5f))) : p;
     };
     int forelocks = 0;
+    auto frontness = [](Vector3 p) { return std::clamp((0.095f - p.z) / 0.175f, 0.0f, 1.0f); };   // 1 over the brow, 0 at the nape
     for (const auto& a : c.anchors_) {
         if (a.name.rfind("loc", 0) != 0) continue;
         const Vector3 n = Vector3Normalize(a.dir), p0 = a.pos;
         const float height = std::clamp((p0.y - skA.y) / skR, 0.0f, 1.0f);   // 1 at the crown, 0 at ear level
         const bool front = p0.z < -0.035f;
-        const bool forelock = front && forelocks < 3 && p0.x > -0.012f && p0.x < 0.05f && p0.z < -0.055f;
+        const bool forelock = front && forelocks < 2 && p0.x > 0.0f && p0.x < 0.05f && p0.z < -0.055f;
         forelocks += forelock;
         const float side = p0.x < 0 ? -1.0f : 1.0f;
-        // Which way the loc heads over the scalp from point p: away from the crown; at the front, out
-        // to the sides (the face stays clear); forelocks forward and down over the brow.
+        const float turn = (rnd() - 0.5f) * 0.7f;   // how far this one strays from the flow (radians)
+        // Which way the loc heads over the scalp from point p: back (and, on the brow, up first),
+        // out to its own side, a little away from the crown; forelocks across the brow to the temple.
         auto away = [&](Vector3 p) {
-            if (forelock) return Vector3Normalize({0.8f * side, -0.6f, -0.45f});   // across the brow toward the temple
-            Vector3 w = on_skull(p, Vector3Subtract(p, crown));
-            if (front) w = on_skull(p, Vector3Add(Vector3Scale(w, 0.55f), {side * 1.0f, -0.25f, 0.2f}));
-            return w;
+            if (forelock) return Vector3Normalize({0.9f * side, -0.55f, -0.3f});
+            const Vector3 radial = Vector3Normalize(Vector3Subtract(p, axis_at(p)));
+            const float f = frontness(p);
+            Vector3 flow = Vector3Scale(Vector3Normalize(Vector3Subtract(p, crown)), 0.45f * (1.0f - f));
+            flow = Vector3Add(flow, {side * (0.25f + 0.55f * (1.0f - height)), 0.85f * f * (1.0f - std::max(radial.y, 0.0f)) - 0.2f * (1.0f - f), 0.9f});
+            return Vector3RotateByAxisAngle(on_skull(p, flow), radial, turn);
         };
-        const float len = forelock ? 0.1f + 0.03f * rnd() : 0.16f + 0.06f * rnd();   // the jaw at the front, the neck behind
+        // The ones off the brow have the whole head to cross before they hang.
+        const float len = forelock ? 0.1f + 0.03f * rnd() : 0.18f + 0.09f * rnd() + 0.08f * frontness(p0) * height;
         const float seg = len / float(locs.n - 1);
-        const float radius = 0.0052f + 0.0018f * rnd();
-        const float R = skR + radius + 0.003f + 0.011f * height;   // higher roots lie over lower ones
+        const float radius = 0.0054f + 0.0022f * rnd();
+        const float upstream = std::clamp(0.35f * height + 0.65f * frontness(p0), 0.0f, 1.0f);
+        const float R = skR + radius + 0.003f + 0.015f * upstream;   // rooted further forward: over the ones behind
         Vector3 p = Vector3Subtract(p0, Vector3Scale(n, 0.003f));      // rooted in the scalp, no gap
         locs.anchor.push_back(p);
         locs.rest.push_back(p);
-        Vector3 dir = Vector3Normalize(Vector3Add(Vector3Scale(n, 0.6f), Vector3Scale(away(p0), 0.6f)));   // the root lifts
+        Vector3 dir = Vector3Normalize(Vector3Add(Vector3Scale(n, 0.4f), Vector3Scale(away(p0), 0.8f)));   // the root lifts
         for (int i = 1; i < locs.n; ++i) {
             const Vector3 radial = Vector3Normalize(Vector3Subtract(p, axis_at(p)));
             const float leave = forelock ? 0.6f : std::clamp((0.3f - radial.y) / 0.4f, 0.0f, 1.0f);
@@ -127,6 +136,14 @@ Character build_survivor() {
             const Vector3 want = Vector3Normalize(Vector3Lerp(away(p), fall, leave));
             dir = Vector3Normalize(Vector3Lerp(dir, want, i == 1 ? 0.25f : 0.45f));
             p = Vector3Add(p, Vector3Scale(dir, seg));
+            if (!forelock) {   // over the skull it lies on the hair beneath it, it doesn't stand off the head
+                const Vector3 ax = axis_at(p), off = Vector3Subtract(p, ax);
+                const float d = Vector3Length(off), most = R + 0.004f + 0.05f * leave;
+                if (d > most) {
+                    p = Vector3Add(ax, Vector3Scale(off, most / d));
+                    dir = Vector3Normalize(Vector3Subtract(p, locs.rest.back()));
+                }
+            }
             p = push_out(p, skA, skB, i < 2 ? skR : R);                 // never inside the skull (or the locs below)
             p = push_out(p, faceA, faceB, faceR + radius + 0.004f);      // nor the face
             locs.rest.push_back(p);
@@ -134,7 +151,7 @@ Character build_survivor() {
         locs.seg.push_back(seg);
         locs.radius.push_back(radius);
         locs.stiff.push_back(forelock ? 0.28f : 0.22f);
-        locs.shade.push_back(0.55f + 0.45f * height);   // rooted low on the head: under the ones above
+        locs.shade.push_back(0.66f + 0.34f * upstream);   // under the ones that lie over it: in their shade
     }
     c.add_strands(std::move(locs));
     MeshData d;

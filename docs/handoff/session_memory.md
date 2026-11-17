@@ -10,8 +10,8 @@ Dutch plates, abandoned cars and the bus's livery come after, in a session of th
 a re-render of about ten streets). The second look (below) is merged.
 
 ## The cast pass (2026-11-16: read this first)
-All engine-side (no background re-rendered). The user saw three before/after sheets (survivor,
-the Drowned, guns and items) and had not answered yet when the session ended.
+All engine-side (no background re-rendered). The user saw the before/after sheets (survivor, the
+Drowned, guns and items, then the second pass) and has not asked for the merge yet.
 - **Done:**
   - Locs: `dw/strand_tube.hpp` (a smooth lumpy rope per loc, rounded tip), a frayed outline and a
     half shadow in `CHAR_FS` (mat 35). Sanne's hair: the same tubes drawn to a point (rat-tails).
@@ -24,15 +24,22 @@ the Drowned, guns and items) and had not answered yet when the session ended.
   - Guns: edge wear from how sharply the surface turns (`edge`), walnut scan, invented makers
     (Armi Corvo C9, Halvorsen Model 79: roll marks, status screen, a test). Items rebuilt with
     `crate()` and `cast::print_text`; `MAT_CARD`; `--view item<N>`.
-- **Left, by how much it would show:**
-  - The pistol's stainless still reads plain and flat (the shotgun came out much better).
-  - The Drowned's FACES are unchanged geometry (the stretched jaw reads as a snout from some
-    angles): that is `tools/characters/drowned.py`, which needs the MakeHuman data fetched
-    (not tried this session) and the `.dwc` files rebuilt.
-  - His hairstyle from straight above (the game's angle) is a round mop: the rest shape in
-    `cast_survivor.cpp` could part and layer better. His hands and the hoodie are untouched.
-  - `cast_drowned.cpp` (the procedural fallback, unused while the `.dwc` files exist) is untouched;
-    the ribbon path in `Character::step_strands` is now unused.
+- **Second pass (2026-11-17, at the user's ask: "get the pistol, the drowned faces and hairstyle
+  where you want"):**
+  - The Drowned's faces: `drowned.stretch_down` draws the jaw down and leaves the face above the
+    mouth (it had made the upper lip a snout); the three `.dwc` files are rebuilt. Teeth have gaps
+    and rot; dead flesh is dark and clotted. The MakeHuman fetch works from the container
+    (`build_characters.py` clones it in seconds, and rebuilds are byte-identical).
+  - The pistol: brushed stainless slide (a sheen across the brushing), a matte anodised alloy
+    frame a shade darker, black checkered grips (mat 26 is now checkering, not stipple).
+  - His hair: swept back off the brow and layered (`cast_survivor.cpp`: `away`, `frontness`,
+    `upstream`, and a hug that keeps each loc lying on the head), so from above it is thatch, not
+    spokes round the crown.
+  - `--view <who>@face,...` frames a face squarely however the head hangs.
+- **Left:** the pistol's shape is unchanged (only its finishes); the Drowned's torn mouth corners
+  are still painted a bright red in the body files; his hands and hoodie are untouched;
+  `cast_drowned.cpp` (the procedural fallback) and the ribbon path in `Character::step_strands`
+  are unused.
 - **Lessons:**
   - `--still x,z,yaw` takes WORLD metres: the room's `origin` plus the spot in the room. With
     room-local numbers he stands somewhere off screen and the still shows an empty room.
