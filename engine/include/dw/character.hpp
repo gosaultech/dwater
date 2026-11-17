@@ -85,6 +85,7 @@ public:
     void unload();
     Vector3 joint(int j) const { return {W_[j].m12, W_[j].m13, W_[j].m14}; }
     Vector3 head_point() const { return Vector3Transform(head_c_, W_[J_HEAD]); }        // centre of the skull
+    Vector3 head_up() const { return Vector3Normalize({W_[J_HEAD].m4, W_[J_HEAD].m5, W_[J_HEAD].m6}); }           // the way the crown points
     Vector3 face_dir() const { return Vector3Normalize({-W_[J_HEAD].m8, -W_[J_HEAD].m9, -W_[J_HEAD].m10}); }
     Kind kind = Kind::Survivor;
     bool mirror = false;   // lying dead: sprawled the other way round (the other arm reaching, the face turned the other way)

@@ -69,18 +69,27 @@ def death_mask(amount: float = 1.0, crooked: float = 0.0, ethnicity: str = "cauc
     return out
 
 
-def distort(b: Body, face, crooked: float = 0.0, stretch: float = 0.32, sink: float = 0.005) -> None:
-    """Warp the face the way the scream left it: the lower face drawn down longer than a face can
-    go, dragged off toward the crooked side (-1..1) more and more toward the chin, and the eye
-    sockets sunk deep. In place, before anything is built on the body; normals are rebuilt.
-    Rebuild the Face landmarks afterwards (the mouth has moved)."""
+def stretch_down(below: np.ndarray, to_mouth: float, stretch: float, upper: float) -> np.ndarray:
+    """How far a point `below` (m) under the eyes is drawn down: a little (`upper` per metre) as far
+    as the mouth, `to_mouth` under the eyes, and `stretch` per metre from there on. It is the jaw
+    that a scream drags down; drawing the whole face out the same made the upper lip a snout."""
+    below = np.asarray(below, float)
+    return upper * np.minimum(below, to_mouth) + stretch * np.clip(below - to_mouth, 0, None)
+
+
+def distort(b: Body, face, crooked: float = 0.0, stretch: float = 0.42, sink: float = 0.005, upper: float = 0.05) -> None:
+    """Warp the face the way the scream left it: the jaw and chin drawn down longer than a face can
+    go (the face above the mouth hardly at all), dragged off toward the crooked side (-1..1) more
+    and more toward the chin, and the eye sockets sunk deep. In place, before anything is built on
+    the body; normals are rebuilt. Rebuild the Face landmarks afterwards (the mouth has moved)."""
     import body as bm
     V = b.V
     head = b.weight_of("head", "jaw")
     rel = V - face.head
     w = head * np.clip(-rel[:, 2] / 0.06, 0, 1)                     # the face, not the back of the skull
-    below = np.clip(np.mean([e[1] for e in face.eyes]) - V[:, 1], 0, None)   # metres below the eyes
-    V[:, 1] -= w * stretch * below
+    eyes_y = np.mean([e[1] for e in face.eyes])
+    below = np.clip(eyes_y - V[:, 1], 0, None)                      # metres below the eyes
+    V[:, 1] -= w * stretch_down(below, eyes_y - face.mouth[1], stretch, upper)
     V[:, 0] += w * crooked * 1.6 * below ** 2
     for e in face.eyes:                                              # the sockets (and the eyes in them) sink
         k = np.clip(1 - np.linalg.norm(V - e, axis=1) / 0.026, 0, 1) ** 1.5 * head

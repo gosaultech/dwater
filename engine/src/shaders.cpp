@@ -293,6 +293,11 @@ void main() {
     else if (mat == 12) {     // raw flesh: fibres, wet
         float fib = abs(sin(p.y * 260.0 + fbm(p * 20.0) * 5.0));
         albedo *= mix(0.55, 1.15, fib); h = fib; bk = 0.0015; spec = 0.75; gloss = 70.0; wrap = 0.5; sss = vec3(0.35, 0.02, 0.02);
+        if (u_drowned > 0.5) {   // long dead: not red meat but dark, clotted and brown, wet only in patches
+            float clot = smoothstep(0.35, 0.7, fbm(p * 28.0 + 2.0));
+            albedo = mix(albedo * vec3(0.42, 0.34, 0.34), lin(vec3(0.12, 0.05, 0.04)), clot * 0.8);
+            spec = mix(0.6, 0.12, clot); sss = vec3(0.1, 0.01, 0.01);
+        }
     } else if (mat == 14) {   // leeches: ringed, slick
         float rg = sin(p.y * 600.0) * 0.5 + 0.5; albedo *= mix(0.55, 1.1, rg); h = rg; bk = 0.0008; spec = 0.9; gloss = 100.0;
     } else if (mat == 15) { albedo *= mix(0.4, 1.0, fbm(p * 90.0)); spec = 0.04; gloss = 8.0; }
@@ -303,7 +308,16 @@ void main() {
         spec = 0.6; gloss = 200.0; wrap = 0.2; rim = 0.1;
         sss = vec3(0.03, 0.035, 0.035);
     } else if (mat == 17) {   // teeth: yellowed, stained at the gumline
-        albedo *= mix(0.7, 1.05, fbm(p * 90.0)); h = fbm(p * 200.0); bk = 0.0006; spec = 0.35; gloss = 50.0; wrap = 0.3;
+        // A row of teeth, not a strip of enamel: a dark gap every tooth's width along the jaw (the
+        // rest pose's x), each tooth its own shade. The Drowned's are brown at the gum, some black.
+        float along = vRest.x / 0.0078, tooth = floor(along), gap = abs(fract(along) - 0.5) * 2.0;
+        float each = hash(vec3(tooth, 3.0, 7.0));
+        albedo *= mix(0.7, 1.05, fbm(p * 90.0)) * mix(0.82, 1.06, each) * (1.0 - 0.75 * smoothstep(0.72, 0.98, gap));
+        if (u_drowned > 0.5) {
+            albedo = mix(albedo, lin(vec3(0.2, 0.13, 0.07)), smoothstep(0.3, 0.75, fbm(p * 140.0 + 5.0)) * 0.7);
+            albedo *= mix(1.0, 0.18, step(0.78, each));   // rotted through
+        }
+        h = fbm(p * 200.0) - smoothstep(0.72, 0.98, gap); bk = 0.0006; spec = 0.35; gloss = 50.0; wrap = 0.3;
     } else if (mat == 18) {   // bone: dirty ivory, pitted, wet
         albedo *= mix(0.78, 1.06, fbm(p * 45.0)); h = fbm(p * 150.0); bk = 0.0012; spec = 0.3; gloss = 35.0; wrap = 0.3;
     } else if (mat == 19) {   // tongue: swollen, papillae, glossy

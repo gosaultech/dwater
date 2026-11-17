@@ -1641,6 +1641,16 @@ bool Game::studio_view(const std::string& spec, const std::string& png) {
     cam.position = {at.x + dist * std::sin(a) * std::cos(e), at.y + dist * std::sin(e), at.z - dist * std::cos(a) * std::cos(e)};
     cam.target = at;
     cam.up = {0, 1, 0};
+    if (at_joint == "face") {   // square to the face however the head hangs: the orbit turns in the head's own frame
+        const Vector3 up = c.head_up(), f = c.face_dir(), right = Vector3CrossProduct(up, f);
+        at = Vector3Add(Vector3Add(c.head_point(), Vector3Scale(right, tx)), Vector3Scale(up, ty));
+        const float oa = orbit * DEG2RAD;
+        const Vector3 dir = Vector3Add(Vector3Add(Vector3Scale(f, std::cos(oa) * std::cos(e)), Vector3Scale(right, std::sin(oa) * std::cos(e))),
+                                       Vector3Scale(up, std::sin(e)));
+        cam.position = Vector3Add(at, Vector3Scale(dir, dist));
+        cam.target = at;
+        cam.up = up;
+    }
     if (c.grip_view >= 0) {   // a grip: orbit the gun in its own frame (orbit 90 = its right side, 0 = muzzle-on)
         const Matrix G = c.grip_view_frame();
         const Vector3 centre = c.grip_view == 0 || c.grip_view == 3 ? cast::m92fs_at(40 + tx * 1000, -55 + ty * 1000)

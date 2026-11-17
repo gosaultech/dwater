@@ -16,7 +16,8 @@
 //                                   (--only pieter,survivor: just those subjects)
 //   ./damned_waters --view survivor,25,10,0.6,0,0.9,30 out.png   one full-resolution studio shot
 //                                   (who, orbit, elevation, distance, target x, target height, fov), then exit;
-//                                   who: survivor | drowned[N] [@head | @chest | @pelvis | @hand],
+//                                   who: survivor | drowned[N] [@head | @chest | @pelvis | @hand | @face: square
+//                                   to the face however the head hangs],
 //                                   or a gun, catalogue-lit: m92fs | r870 (see Game::gun_view),
 //                                   or a thing from the case the same way: item2 .. item9 (an Item id)
 //   ./damned_waters --fitgrips      a tool: fit his hands to both guns as people hold them, write
