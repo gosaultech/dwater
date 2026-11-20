@@ -10,6 +10,7 @@
 # ELI5: the city's famous faces. A street of houses can be made from one recipe with the numbers
 # changed; a landmark needs its own recipe, because everyone knows what it should look like.
 import math
+import random
 
 import bpy
 from mathutils import Vector
@@ -96,7 +97,17 @@ def munttoren(root, p, w, h, d):
     q.build("quoins", stone, root, smooth=False)
     # the doorway on the square (+z): a shop's warm light behind its glass, in a stone surround
     lbox(root, "door_surround", (-1.15, 0.9, d / 2 - 0.02), (1.15, 3.8, d / 2 + 0.06), stone)
-    lbox(root, "door_glass", (-0.85, 0.9, d / 2 + 0.06), (0.85, 3.5, d / 2 + 0.08), emit((1.0, 0.62, 0.3), 0.45, "munt_door"))
+    # (a lit shop inside, seen through dark glass in a frame: a flat glowing panel here read as a
+    # blank white board stuck on the tower)
+    # (the tower is solid, so the shop's room is a picture on the surround's face with the glass and
+    # its frame just in front: the panorama gives it its depth)
+    rng = random.Random(1620)
+    street.room_card(root, -0.85, 0.85, 0.9, 3.5, d / 2 + 0.065, "warm_bar", 1.1, rng, span_u=0.1, span_v=0.32)
+    lbox(root, "door_glass", (-0.85, 0.9, d / 2 + 0.085), (0.85, 3.5, d / 2 + 0.09), M("glass"))
+    frame = M({"color": [0.03, 0.035, 0.03], "rough": 0.4})
+    for a, b in ((-0.85, -0.78), (0.78, 0.85), (-0.04, 0.04)):   # two stiles and the meeting rail of a pair of doors
+        lbox(root, "door_frame", (a, 0.9, d / 2 + 0.06), (b, 3.5, d / 2 + 0.12), frame)
+    lbox(root, "door_frame", (-0.85, 2.7, d / 2 + 0.06), (0.85, 2.76, d / 2 + 0.12), frame)   # the transom
     for n_out in ((0, 1), (1, 0), (0, -1), (-1, 0)):   # lancet windows, two up each face
         nx, nz = n_out
         rx, rz = nz, -nx

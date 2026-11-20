@@ -136,14 +136,26 @@ def ball(parent, name, c, r, m, seg=8):
     return kit.lathe(parent, name, prof, m, at=c, segments=seg)
 
 
-def room_card(parent, u0, u1, v0, v1, n, room, strength, rng, span_u=0.08, span_v=0.3):
+def room_card(parent, u0, u1, v0, v1, n, room, strength, rng, span_u=0.08, span_v=0.3, shell=None):
     """The room behind a window: a card with a patch of a CC0 interior panorama on it (see
-    surfaces.room_card), a different patch for every window."""
+    surfaces.room_card), a different patch for every window. shell: the depth (local z) of the
+    wall's inside face; when given, the card is the back of a closed, dark box from there to it (its
+    sides, top, floor and back), so the picture can only be seen through the window. Without it, a
+    house with no side walls (a stage flat: most of a row, and every house of the next district
+    over) showed its rooms from the side or behind as big pictures standing in the street."""
     corners = [(u0, v0, n), (u1, v0, n), (u1, v1, n), (u0, v1, n)]
     ob = builders._mesh_object("room", [g2b(c) for c in corners], [(0, 1, 2, 3)], [[(0, 0), (1, 0), (1, 1), (0, 1)]],
                                M({"room": room, "strength": strength, "span_u": span_u, "span_v": span_v}), parent)
     ob["room_u"] = rng.random()
     ob["room_v"] = rng.uniform(0.32, 0.4)
+    if shell is not None and shell > n:
+        dark = M({"color": [0.03, 0.026, 0.022], "rough": 0.9, "noise": 0.2})
+        t = 0.02
+        lbox(parent, "room_shell", (u0 - t, v0 - t, n - t), (u1 + t, v1 + t, n - 0.005), dark)   # behind the card
+        lbox(parent, "room_shell", (u0 - t, v0 - t, n - t), (u0, v1 + t, shell), dark)           # its sides
+        lbox(parent, "room_shell", (u1, v0 - t, n - t), (u1 + t, v1 + t, shell), dark)
+        lbox(parent, "room_shell", (u0 - t, v0 - t, n - t), (u1 + t, v0, shell), dark)           # its floor and ceiling
+        lbox(parent, "room_shell", (u0 - t, v1, n - t), (u1 + t, v1 + t, shell), dark)
     return ob
 
 
@@ -324,7 +336,8 @@ def window(root, u0, u1, v0, v1, T, trim, stone, glass, rng, lit, shutters):
         lbox(root, "bar", (u0, vv - 0.01, d0 - 0.04), (u1, vv + 0.01, d0 - 0.015), trim)
     lbox(root, "glass", (u0, v0, d0 - 0.032), (u1, v1, d0 - 0.028), glass)
     on = rng.random() < lit
-    room_card(root, u0 - 0.15, u1 + 0.15, v0 - 0.15, v1 + 0.15, -T - 0.7, rng.choice(_ROOMS), rng.uniform(0.9, 1.8) if on else 0.03, rng)
+    room_card(root, u0 - 0.15, u1 + 0.15, v0 - 0.15, v1 + 0.15, -T - 0.7, rng.choice(_ROOMS), rng.uniform(0.9, 1.8) if on else 0.03, rng,
+              shell=-T)
     if rng.random() < 0.55:   # curtains, half drawn
         cw = (u1 - u0) * rng.uniform(0.16, 0.38)
         cm = M({"color": rng.choice(CURTAINS), "rough": 0.95, "noise": 0.3})
@@ -348,7 +361,7 @@ def front_door(root, door, stoop, trim, stone, glass, rng, lit):
         cy = v0 + (v1 - 0.55 - v0) * pv
         kit.soft(root, "door_panel", ((u0 + u1) / 2, cy, -0.17), ((u1 - u0) * 0.66, (v1 - v0) * 0.26, 0.03), paint, 0.01, 2)
     lbox(root, "fanlight", (u0, v1 - 0.55, -0.2), (u1, v1, -0.19), glass)
-    room_card(root, u0, u1, v1 - 0.55, v1, -0.6, rng.choice(_ROOMS), 1.2 if rng.random() < lit * 2 else 0.03, rng)
+    room_card(root, u0, u1, v1 - 0.55, v1, -0.6, rng.choice(_ROOMS), 1.2 if rng.random() < lit * 2 else 0.03, rng, shell=-0.21)
     for i in range(1, 4):
         uu = u0 + (u1 - u0) * i / 4
         lbox(root, "fan_bar", (uu - 0.012, v1 - 0.55, -0.2), (uu + 0.012, v1, -0.17), trim)
@@ -460,7 +473,7 @@ def shopfront(root, f, W, s0, rng):
             rod(root, "push_bar", (b - 0.16, 0.8, -0.11), (b - 0.16, 1.5, -0.11), 0.015, 0.015, M("brass"))
     if not enter:
         room_card(root, u0 - 0.2, u1 + 0.2, -0.1, top_v + 0.2, -1.6, sh.get("room", "warm_bar"), sh.get("glow", 1.6), rng,
-                  span_u=0.06 * W, span_v=0.32)
+                  span_u=0.06 * W, span_v=0.32, shell=-0.21)
     # the shop's light out through its window, warm, onto the pavement and whatever stands there
     area_light(root, (W / 2, top_v * 0.55, -0.5), u1 - u0 - 0.2, top_v * 0.8, sh.get("power", 90.0) * W,
                tuple(sh.get("light", (1.0, 0.72, 0.45))))
