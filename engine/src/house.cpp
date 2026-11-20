@@ -92,9 +92,11 @@ std::vector<Doorway> doorways(const std::vector<RoomSpec>& rooms) {
     return out;
 }
 
-int room_at(const std::vector<RoomSpec>& rooms, int storey, float x, float z, int prefer) {
-    if (prefer >= 0 && prefer < int(rooms.size()) && rooms[size_t(prefer)].floor == storey && rooms[size_t(prefer)].bounds.has(x, z))
-        return prefer;
+int room_at(const std::vector<RoomSpec>& rooms, int storey, float x, float z, int prefer, float stay) {
+    if (prefer >= 0 && prefer < int(rooms.size()) && rooms[size_t(prefer)].floor == storey) {
+        const Rect2& b = rooms[size_t(prefer)].bounds;
+        if (Rect2{b.x0 - stay, b.z0 - stay, b.x1 + stay, b.z1 + stay}.has(x, z)) return prefer;
+    }
     for (size_t i = 0; i < rooms.size(); ++i)
         if (rooms[i].floor == storey && rooms[i].bounds.has(x, z)) return int(i);
     return -1;

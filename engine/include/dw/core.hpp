@@ -34,9 +34,11 @@ struct ShotZone { std::string id; Rect2 zone; int priority = 0; };
 
 // Stay on the current shot while inside its zone (hysteresis at thresholds);
 // otherwise the highest-priority zone containing the player; else keep current.
-inline std::string select_shot(const std::vector<ShotZone>& shots, const std::string& current, float x, float z) {
+// stay: the current shot is kept until he is this far past its zone (m), so standing on the line
+// between two zones, or a step back and forth across it, never cuts the picture to and fro.
+inline std::string select_shot(const std::vector<ShotZone>& shots, const std::string& current, float x, float z, float stay = 0.0f) {
     for (const auto& s : shots)
-        if (s.id == current && s.zone.has(x, z)) return current;
+        if (s.id == current && Rect2{s.zone.x0 - stay, s.zone.z0 - stay, s.zone.x1 + stay, s.zone.z1 + stay}.has(x, z)) return current;
     const ShotZone* best = nullptr;
     for (const auto& s : shots)
         if (s.zone.has(x, z) && (!best || s.priority > best->priority)) best = &s;

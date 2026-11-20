@@ -74,3 +74,19 @@ TEST(Sweep, BentLimbIsContinuousAndFinite) {
     for (float v : s.data.pos) ASSERT_TRUE(std::isfinite(v));
     for (float v : s.data.nrm) ASSERT_TRUE(std::isfinite(v));
 }
+
+TEST(ShotSelector, AStepBackAndForthAcrossAZoneLineNeverCutsToAndFro) {
+    // Two zones meeting at x = 5. On the line, and a foot either side of it, the picture stays put;
+    // a real step into the next zone cuts once.
+    const std::vector<ShotZone> z = {{"a", {0, 0, 5, 5}, 0}, {"b", {5, 0, 10, 5}, 0}};
+    std::string cur = "a";
+    int cuts = 0;
+    for (int f = 0; f < 200; ++f) {   // dithering 0.3 m either side of the line
+        const float x = 5.0f + 0.3f * std::sin(float(f) * 0.7f);
+        const std::string next = select_shot(z, cur, x, 2.5f, 0.35f);
+        cuts += next != cur;
+        cur = next;
+    }
+    EXPECT_EQ(cuts, 0);
+    EXPECT_EQ(select_shot(z, "a", 5.5f, 2.5f, 0.35f), "b");   // a real step over: the cut
+}

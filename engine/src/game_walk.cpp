@@ -2,7 +2,8 @@
 // Purpose: the walk-through (--walkthrough REPORT), a tool and a test: it holds the stick through
 // every doorway, passage and staircase of the game, both ways, walking and running, and writes where
 // he came out. OK: on into the next room the way he was pushed. BOUNCED: back where he came from.
-// STUCK: never through, or no headway past it. A held stick must never turn him round at a cut.
+// STUCK: never through, or no headway past it. JITTER: the picture cut to and fro (more than four
+// cuts on one way through). A held stick must never turn him round at a cut.
 // Also noted (not a failure): FLIP, where letting go and pushing the same way again on the new
 // camera walks him back (the cameras either side face each other).
 // ELI5: a crash-test dummy walked through every door of the building with its foot on the gas.
@@ -84,6 +85,8 @@ int Game::walkthrough(const std::string& report) {
         const float c40 = std::cos(40 * DEG2RAD), s40 = std::sin(40 * DEG2RAD);
         const Vector2 steered{stick.x * c40 - stick.y * s40, stick.x * s40 + stick.y * c40};
         bool pressed = false;
+        int cuts = 0;   // the picture cutting (room or shot): more than a few on one way through is it cutting to and fro
+        std::string was = rooms_[size_t(room_)].id + "/" + shot_;
         for (int f = 0; f < 60 * 8 && after < 60 * 2; ++f) {
             staged_in_ = steer && after > 15 ? steered : stick;
             if (!crossed && !pressed && f == 60 * 3 && press) {   // not through by now: a door that wants Cross
@@ -108,6 +111,9 @@ int Game::walkthrough(const std::string& report) {
                          what, f, rooms_[size_t(room_)].id.c_str(), player_.x - rooms_[size_t(room_)].bounds.x0, player_.z - rooms_[size_t(room_)].bounds.z0,
                          vel_.x, vel_.y, frame_fwd_.x, frame_fwd_.y, int(frame_.holding), staged_in_.x, staged_in_.y, int(beat_.busy()));
             if (crossed && room_ == from) bounced = true;
+            const std::string now = rooms_[size_t(room_)].id + "/" + shot_;
+            cuts += now != was;
+            was = now;
         }
         const float progress = crossed ? ((player_.x - ax) * adx + (player_.z - az) * adz) / std::hypot(adx, adz) : 0;
         const float heading = angle_deg(vel_.x, vel_.y, adx, adz) - (steer ? 40.0f : 0.0f);
@@ -120,16 +126,16 @@ int Game::walkthrough(const std::string& report) {
             repress = angle_deg(player_.x - bx, player_.z - bz, adx, adz);
         }
         staged_in_ = {};
-        const char* verdict = bounced ? "BOUNCED" : !crossed || progress < (steer ? 0.75f : 1.0f) || heading > 100 ? "STUCK" : "OK";
+        const char* verdict = bounced ? "BOUNCED" : !crossed || progress < (steer ? 0.75f : 1.0f) || heading > 100 ? "STUCK" : cuts > 4 ? "JITTER" : "OK";
         const bool flip = crossed && !bounced && repress > (steer ? 160.0f : 120.0f);
         ++trials;
         fails += std::string(verdict) != "OK";
         flips += flip;
         char line[640];
         const RoomSpec& at = rooms_[size_t(room_ >= 0 ? room_ : from)];
-        std::snprintf(line, sizeof line, "%-7s %-4s %-22s -> %-22s %-5s progress %5.1f m heading %5.1f  cams %-26s -> %-26s turn %5.1f  repress %5.1f%s  [from %.2f,%.2f; ends in %s at %.2f,%.2f]",
+        std::snprintf(line, sizeof line, "%-7s %-4s %-22s -> %-22s %-5s progress %5.1f m heading %5.1f  cams %-26s -> %-26s turn %5.1f  repress %5.1f cuts %d%s  [from %.2f,%.2f; ends in %s at %.2f,%.2f]",
                       verdict, flip ? "FLIP" : "", rooms_[size_t(from)].id.c_str(), rooms_[size_t(to)].id.c_str(), what, progress, heading,
-                      shot0.c_str(), shot1.c_str(), crossed ? angle_deg(f0.x, f0.z, f1.x, f1.z) : 0.0f, repress, stairs ? "  (stairs)" : "",
+                      shot0.c_str(), shot1.c_str(), crossed ? angle_deg(f0.x, f0.z, f1.x, f1.z) : 0.0f, repress, cuts, stairs ? "  (stairs)" : "",
                       x - rooms_[size_t(from)].bounds.x0, z - rooms_[size_t(from)].bounds.z0, at.id.c_str(), player_.x - at.bounds.x0, player_.z - at.bounds.z0);
         out << line << "\n";
     };

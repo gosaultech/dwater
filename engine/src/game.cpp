@@ -543,10 +543,13 @@ void Game::update(float dt) {
     update_fx(g);   // (the street's fires, sparks and beacons: they pause with the game)
     for (Vector3 at; fx_.landed(at);) sfx_.play_at("mag_drop", at, ear(), ear_right(), 0.9f, 0.08f);   // an empty magazine on the floor
     sfx_.update();
-    // Through a doorway into the next room: no loading, just a cut to its camera.
-    if (const int r = house::room_at(rooms_, storey_, player_.x, player_.z, room_); r >= 0 && r != room_) enter_room(r);
+    // Through a doorway into the next room: no loading, just a cut to its camera. Once he's a step
+    // (STAY) past the line, not on it: a foot either side of a doorway's line or a zone's edge never
+    // cuts the picture to and fro (each cut turns the screen's directions round).
+    constexpr float STAY = 0.35f;
+    if (const int r = house::room_at(rooms_, storey_, player_.x, player_.z, room_, STAY); r >= 0 && r != room_) enter_room(r);
     if (peek_ < 0) {
-        std::string next = select_shot(spec_.zones(), shot_, player_.x, player_.z);
+        std::string next = select_shot(spec_.zones(), shot_, player_.x, player_.z, STAY);
         if (next != shot_) cut_to(next);
     }
     if (std::hypot(player_.x - stream_at_.x, player_.z - stream_at_.y) > streaming::RESTREAM) stream_plates();

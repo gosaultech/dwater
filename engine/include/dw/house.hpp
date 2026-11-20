@@ -43,7 +43,9 @@ std::vector<Doorway> doorways(const std::vector<RoomSpec>& rooms);
 
 // The room on `storey` whose floor holds (x, z); `prefer` wins where two touch. -1: none (in a
 // doorway, inside a wall).
-int room_at(const std::vector<RoomSpec>& rooms, int storey, float x, float z, int prefer = -1);
+// stay: the preferred room is kept until he is this far past its bounds (m): a step back and forth
+// across a doorway's line never cuts between the rooms' cameras to and fro.
+int room_at(const std::vector<RoomSpec>& rooms, int storey, float x, float z, int prefer = -1, float stay = 0.0f);
 
 // Does the segment a-b cross any of these boxes? (Walls and shut doors block sight; props don't.)
 bool crosses(const std::vector<Obb2>& boxes, float ax, float az, float bx, float bz);
