@@ -282,9 +282,16 @@ void Effects::update(float dt) {
 }
 
 void Effects::draw(const Material& m) const {
-    for (const auto& s : splats_)
+    // Pools and spatters lie on the painted floor, whose depth is only known to a pixel: seen at a
+    // low angle a stain a few millimetres above it fights the floor in bands. Drawn a little along
+    // the line to the camera instead (1.5 percent of the way), they sit in front of the floor
+    // wherever they land and stay where they are on the screen.
+    for (const auto& s : splats_) {
+        Vector3 at{s.p.x, s.p.y + 0.0035f + s.r * 0.004f, s.p.z};
+        at = Vector3Lerp(at, eye, 0.015f);
         DrawMesh(splat_mesh_[s.shape], m, MatrixMultiply(MatrixMultiply(MatrixScale(s.r, 1, s.r), MatrixRotateY(s.yaw)),
-                                                        MatrixTranslate(s.p.x, s.p.y + 0.0035f + s.r * 0.004f, s.p.z)));
+                                                        MatrixTranslate(at.x, at.y, at.z)));
+    }
     for (const auto& d : drops_) {
         const float stretch = 1 + 0.35f * Vector3Length(d.v);
         DrawMesh(drop_mesh_, m, MatrixMultiply(MatrixScale(d.r, d.r * stretch, d.r), MatrixTranslate(d.p.x, d.p.y, d.p.z)));

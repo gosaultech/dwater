@@ -423,9 +423,30 @@ TEST(HeldFrame, LetGoAndTheNewCameraTakesOver) {
     HeldFrame h;
     const Vector2 down{0, -1}, cam_a{0, -1}, cam_b{0, 1};
     h.update(DT, down, true, cam_a);
-    for (int i = 0; i < 12; ++i) h.update(DT, {}, false, cam_b);   // a fifth of a second at the centre
+    for (int i = 0; i < 120; ++i) h.update(DT, {}, false, cam_b);   // two seconds at the centre on the new shot
     const Vector2 f = h.update(DT, down, true, cam_b);
     EXPECT_LT(deg_between(f, cam_b), 1.0f);
+}
+
+TEST(HeldFrame, LettingGoForAMomentAtACutDoesNotTurnHimRound) {
+    // The play-test's "the controls change direction going into another room": a keyboard player
+    // lifts a finger as the picture cuts and presses the same key again; he must go on, not back.
+    const Vector2 down{0, -1}, cam_a{0, -1}, cam_b{0, 1};
+    for (int frames_off : {6, 20, 40, 70}) {   // a tenth of a second .. over a second
+        HeldFrame h;
+        Vector2 f = h.update(DT, down, true, cam_a);
+        const Vector2 went = stick_world(down, f);
+        for (int i = 0; i < 10; ++i) f = h.update(DT, down, true, cam_b);   // through the cut
+        for (int i = 0; i < frames_off; ++i) f = h.update(DT, {}, false, cam_b);
+        f = h.update(DT, down, true, cam_b);
+        EXPECT_LT(deg_between(stick_world(down, f), went), 1.0f) << frames_off << " frames let go";
+    }
+    // ... but pushing a clearly different way does take the new camera's directions.
+    HeldFrame g;
+    g.update(DT, down, true, cam_a);
+    for (int i = 0; i < 10; ++i) g.update(DT, down, true, cam_b);
+    for (int i = 0; i < 20; ++i) g.update(DT, {}, false, cam_b);
+    EXPECT_LT(deg_between(g.update(DT, {1, 0}, true, cam_b), cam_b), 1.0f);
 }
 
 TEST(HeldFrame, AReGripKeepsTheFrameButANewLineDoesNot) {

@@ -299,17 +299,24 @@ inline bool back_turn_shares_dodge(Scheme s) { return pad_button(s, ACT_DODGE) =
 // The camera directions the stick is read by. Movement is camera-relative, and a cut can turn the
 // camera round. So while the stick stays pushed he keeps going by the camera he set off on, through
 // any cut and through a thumb correcting his line; the new camera takes over once the stick is let
-// go, or at a correction when it agrees with the old one. A thumb back through the centre for a
-// moment in the same direction (a re-grip) doesn't let go. ELI5: a driver steers by the road, not
-// by whichever camera is filming the car; the film can cut all it likes.
+// go for a while, or at a correction when it agrees with the old one. Letting go for a moment and
+// pushing the same way again (a re-grip, a keyboard player lifting a finger) doesn't count as
+// letting go: half a second at the centre still keeps the old frame, and for a second and a half
+// after a cut so does pushing the same way again, since that's him going on the way he was going,
+// not asking to turn round because the picture did. ELI5: a driver steers by the road, not by
+// whichever camera is filming the car; the film can cut all it likes.
 struct HeldFrame {
     static constexpr float TURN = 35.0f * DEG2RAD;   // the stick turned this far: a correction (or a new line)
     static constexpr float AGREE = 45.0f * DEG2RAD;  // cameras this close: a correction takes the new one
-    static constexpr float GRACE = 0.15f;            // s at the centre that still counts as a re-grip
+    static constexpr float GRACE = 0.5f;             // s at the centre that still counts as a re-grip
+    static constexpr float AFTER_CUT = 1.5f;         // s after a cut that pushing the same way again still goes on
     bool holding = false;
     Vector2 fwd{0, -1};   // the camera's forward on the floor (x, z) the stick is read by; its right is (-fwd.y, fwd.x)
     Vector2 in{};         // the stick when the frame was taken or last corrected
     float idle = 0;       // s the stick has been at the centre
+    bool kept = false;    // a frame is remembered (fwd, in), even while let go
+    Vector2 last_cam{0, 0};
+    float since_cut = 99; // s since the camera last cut to a different direction
 
     static float angle(Vector2 a, Vector2 b) {
         const float la = std::hypot(a.x, a.y), lb = std::hypot(b.x, b.y);
@@ -320,17 +327,25 @@ struct HeldFrame {
         const float l = std::hypot(v.x, v.y);
         return l < 1e-6f ? Vector2{0, -1} : Vector2{v.x / l, v.y / l};
     }
-    void take(Vector2 frame_fwd, Vector2 stick) { holding = true; fwd = unit(frame_fwd); in = stick; idle = 0; }
+    void take(Vector2 frame_fwd, Vector2 stick) { holding = kept = true; fwd = unit(frame_fwd); in = stick; idle = 0; }
     // Every frame. pushed: the stick asks for a gait (it isn't at the centre); cam: the camera's
     // forward on the floor now. Returns the forward to read the stick by.
     Vector2 update(float dt, Vector2 stick, bool pushed, Vector2 cam) {
         cam = unit(cam);
+        since_cut += dt;
+        if (last_cam.x != 0 || last_cam.y != 0) {
+            if (angle(cam, last_cam) > 1.0f * DEG2RAD) since_cut = 0;
+        }
+        last_cam = cam;
         if (!pushed) {
             idle += dt;
             if (idle > GRACE) holding = false;
             return holding ? fwd : cam;
         }
-        if (holding && idle > 0 && angle(stick, in) > TURN) holding = false;   // through the centre to a new line
+        const bool same_line = kept && angle(stick, in) <= TURN;
+        if (holding && idle > 0 && !same_line) holding = false;   // through the centre to a new line
+        // Let go just after a cut, then on the same way again: still going on, not turned round.
+        if (!holding && same_line && since_cut < AFTER_CUT && angle(cam, fwd) > AGREE) { holding = true; }
         idle = 0;
         if (!holding) {
             take(cam, stick);

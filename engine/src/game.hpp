@@ -84,6 +84,8 @@ public:
     // A still of the room (--still): the survivor standing at (x, z) facing yaw (degrees), no
     // Drowned, seen from `shot` (empty: whichever shot covers him). Render and present after.
     void pose_still(float x, float z, float yaw_deg, const std::string& shot);
+    void hold_stick(Vector2 m) { staged_in_ = m; }   // (--clip: play on with the stick held, as captures do)
+    std::string where() const;                        // (--clip: the room, the shot and his heading, for the log)
     // The walk-through (game_walk.cpp): the stick held through every doorway and staircase, both
     // ways, walking and running; a line per try in `report`. Returns how many went wrong.
     int walkthrough(const std::string& report);
@@ -285,6 +287,7 @@ private:
     Texture2D detail_[detail::COUNT]{};   // the tiling detail maps (dw/detail.hpp)
     Mesh blob_mesh_{};
     RenderTexture2D rt_{};
+    RenderTexture2D scene_{};   // a copy of the frame as it stands before the rain: what each drop is lit by
     Character hero_;
     Actor player_;
     std::vector<Enemy> enemies_;
@@ -361,6 +364,7 @@ private:
     bool view_establish_ = false;                // ... or opens wide (the first time in a big space)
     bool establish_ = true;                      // (off for the capture setups, stills and the walk-through)
     float item_push_ = 1;                        // a little closer while a pickup is within reach
+    int l_rScene_ = -1;
     int l_rWin_ = -1, l_sWin_ = -1, l_fill_ = -1, l_wet_ = -1;
     // The live layer over the painting (dw/fxlive.hpp, game_fx.cpp): flames, smoke, sparks, beacons.
     Shader fire_sh_{}, smoke_sh_{}, glow_sh_{};

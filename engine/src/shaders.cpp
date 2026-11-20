@@ -150,7 +150,9 @@ void main() {
         if (vMat == 8 && vAux > 0.0 && hash(floor(vec3(vSurf.x * 1400.0, vSurf.y * 380.0, vSurf.z * 1400.0))) < vAux) discard;
         // Locs let half the light through: every other texel of the map, which the 3 x 3 lookup
         // blurs into a soft half shadow on his brow and shoulders.
-        if (vMat == 35 && mod(floor(gl_FragCoord.x) + floor(gl_FragCoord.y), 2.0) < 0.5) discard;
+        // Locs let light through: a stable dapple of gaps along each rope (in its own space, so it
+        // moves with the hair, not with the screen: a screen-space checker crawled as static over him).
+        if (vMat == 35 && hash(vec3(floor(vSurf.y * 55.0), floor(fract(vSurf.x) * 3.0), floor(vSurf.z))) < 0.45) discard;
         finalColor = vec4(1.0);
         return;
     }
@@ -341,7 +343,7 @@ void main() {
     } else if (mat == 28) {   // chunky cable knit, projected three ways by which way the cloth faces at rest
         vec3 w = pow(abs(normalize(vRestN)), vec3(6.0));
         w /= max(w.x + w.y + w.z, 1e-4);
-        float aa = clamp((1.3 - length(fwidth(p)) * 110.0) / 0.8, 0.0, 1.0);
+        float aa = clamp((1.3 - length(fwidth(p)) * 260.0) / 0.8, 0.0, 1.0);   // (stitches under ~3 pixels: their average)
         float k = knit(p.xy, aa) * w.z + knit(p.zy, aa) * w.x + knit(p.xz, aa) * w.y;
         albedo *= mix(0.66, 1.05, k) * mix(0.93, 1.03, fbm(p * 30.0));
         h = k; bk = 0.0024; spec = 0.02; gloss = 6.0; wrap = 0.55; rim = 0.55;
@@ -550,13 +552,24 @@ void main() {
     if (u_wet > 0.0) {
         float up = smoothstep(0.1, 0.75, Ng.y);
         float w = u_wet * clamp(0.22 + up * (0.55 + 0.45 * fbm(p * 9.0)), 0.0, 1.0);
-        float drops = pow(noise(p * 700.0), 9.0) * up * u_wet;
+        // (drops a millimetre or two across: where a pixel covers more than that, they would only
+        // sparkle at random from frame to frame, the "static" of a sequinned jacket. Gone by then.)
+        float dropsAA = clamp(1.6 - length(fwidth(p)) * 1400.0, 0.0, 1.0);
+        float drops = pow(noise(p * 700.0), 9.0) * up * u_wet * dropsAA;
         if (garment) { albedo *= 1.0 - 0.32 * w; spec = mix(spec, 0.2, w); gloss = mix(gloss, 34.0, w); fuzz *= 1.0 - 0.6 * w; }
         else if (mat == 1 || mat == 29) { spec += 0.22 * w; gloss = mix(gloss, 60.0, w); }
         else if (mat == 8 || mat == 35 || mat == 37) { albedo *= 1.0 - 0.25 * w; spec += 0.2 * w; gloss = mix(gloss, 50.0, w); }
         spec += drops * 1.5; gloss = mix(gloss, 180.0, clamp(drops * 3.0, 0.0, 1.0));
     }
     float ao = mix(vAo, vAo * vAo, 0.55);   // deeper in the creases and under the arms than the bake alone
+    // Specular anti-aliasing: where the bumped normal swings a long way between neighbouring pixels
+    // (fine detail seen from the game's distance), a tight highlight would land on one pixel and not
+    // the next and flicker as he moves. Widen it by how much the normal varies across the pixel
+    // (after Kaplanyan's filtering), so it reads as the sheen it would be.
+    vec3 dN = fwidth(N);
+    float nvar = min(dot(dN, dN), 0.25);
+    float soften = 1.0 / (1.0 + gloss * nvar * 2.0);
+    spec *= mix(1.0, soften, 0.6); gloss *= soften; aniso *= soften;
 
     vec3 col = albedo * mix(u_ambBottom, u_ambTop, N.y * 0.5 + 0.5) * ao;
     for (int i = 0; i < 8; i++) {
@@ -571,8 +584,12 @@ void main() {
             if (type == 1) att *= smoothstep(u_lightDir[i].w, mix(u_lightDir[i].w, 1.0, 0.3), dot(-L, normalize(u_lightDir[i].xyz)));
         }
         vec3 lc = u_lightCol[i].rgb * att;
-        if (i == u_shadowLight[0]) lc *= 0.06 + 0.94 * shadowIn(texture1, u_shadowVP[0], vWorld + Ng * 0.012);
-        else if (i == u_shadowLight[1]) lc *= 0.06 + 0.94 * shadowIn(texture2, u_shadowVP[1], vWorld + Ng * 0.012);
+        // Shadow lookups pushed out along the surface and, the more it turns away from the light,
+        // toward the light: a body lying in a lamp's grazing light otherwise shadows itself in stripes.
+        float graze = 1.0 - clamp(dot(Ng, L), 0.0, 1.0);
+        vec3 Ps = vWorld + Ng * 0.012 + L * (0.004 + 0.03 * graze);
+        if (i == u_shadowLight[0]) lc *= 0.06 + 0.94 * shadowIn(texture1, u_shadowVP[0], Ps);
+        else if (i == u_shadowLight[1]) lc *= 0.06 + 0.94 * shadowIn(texture2, u_shadowVP[1], Ps);
         float ndl = dot(N, L);
         vec3 wr = wrap * bleed;
         col += albedo * max((ndl + wr) / (1.0 + wr), 0.0) * lc * ao;
@@ -780,6 +797,7 @@ const char* RAIN_FS = R"(#version 330
 in vec2 fragTexCoord; in vec4 fragColor; out vec4 finalColor;
 uniform float u_time; uniform float u_dist; uniform float u_seed;
 uniform sampler2D u_plate; uniform vec2 u_screen; uniform vec4 u_win;   // (the window over the background: x0, y0, w, h)
+uniform sampler2D u_scene;   // the frame so far, painting and people: what's behind each drop
 float h1(float n) { return fract(sin(n * 91.345 + u_seed * 47.13) * 43758.5453); }
 void main() {
     vec2 p = fragTexCoord;
@@ -797,11 +815,10 @@ void main() {
     float across = 1.0 - smoothstep(core, core + px, abs(x));
     float thin = min(1.0, (2.0 * core + 0.6 * px) / (2.0 * px));   // thinner than a pixel: fainter
     float down = smoothstep(0.0, 0.04, along) * (1.0 - smoothstep(len * 0.55, len, along));
-    vec2 uv = u_win.xy + vec2(gl_FragCoord.x / u_screen.x, 1.0 - gl_FragCoord.y / u_screen.y) * u_win.zw;
-    vec3 bg = texture(u_plate, uv).rgb;
+    vec3 bg = texture(u_scene, gl_FragCoord.xy / u_screen).rgb;
     float l = dot(bg, vec3(0.2126, 0.7152, 0.0722));
-    float lit = 0.18 + 0.82 * smoothstep(0.02, 0.35, l);
-    float a = across * thin * down * lit * mix(0.55, 0.3, clamp(u_dist / 34.0, 0.0, 1.0));
+    float lit = 0.1 + 0.9 * smoothstep(0.03, 0.4, l);
+    float a = across * thin * down * lit * mix(0.5, 0.28, clamp(u_dist / 34.0, 0.0, 1.0));
     vec3 c = mix(vec3(0.58, 0.63, 0.7), bg * 1.8 + 0.12, 0.45);
     finalColor = vec4(c, a * fragColor.a);
 })";

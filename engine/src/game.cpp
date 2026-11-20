@@ -104,6 +104,8 @@ bool Game::init(const std::string& room_id) {
     l_dynCol_ = GetShaderLocation(plate_, "u_dynCol");
     l_dynDir_ = GetShaderLocation(plate_, "u_dynDir");
     rt_ = LoadRenderTexture(W, H);
+    scene_ = LoadRenderTexture(W, H);
+    l_rScene_ = GetShaderLocation(rain_sh_, "u_scene");
     init_shadows();
     near_ = float(rlGetCullDistanceNear());
     far_ = float(rlGetCullDistanceFar());
@@ -141,6 +143,7 @@ void Game::shutdown() {
     for (auto& t : detail_) UnloadTexture(t);
     UnloadShader(plate_); UnloadShader(char_); UnloadShader(blob_); UnloadShader(post_); UnloadShader(rain_sh_); UnloadShader(splash_sh_);
     UnloadRenderTexture(rt_);
+    UnloadRenderTexture(scene_);
     for (auto& sm : shadows_) {
         rlUnloadTexture(sm.rt.depth.id);
         rlUnloadTexture(sm.rt.texture.id);
@@ -1455,6 +1458,11 @@ void Game::pose_still(float x, float z, float yaw_deg, const std::string& shot) 
     update_view(0);
 }
 
+std::string Game::where() const {
+    return spec_.id + " shot " + shot_ + " at " + std::to_string(player_.x) + "," + std::to_string(player_.z) + " heading " +
+           std::to_string(int(std::lround(player_.yaw * RAD2DEG)));
+}
+
 void Game::upload_studio_lights() {
     // Neutral three-point rig for judging a model: warm key front-left, cold fill, cold rim behind.
     const Vector4 pos[8] = {{-1.3f, 2.7f, -1.7f, 8.0f}, {1.6f, 1.2f, -1.3f, 8.0f}, {0.4f, 2.5f, 1.9f, 8.0f}};
@@ -1850,6 +1858,7 @@ void Game::render() {
         if (e.active) e.body.draw(char_mat_);
     for (const auto& c : corpses_)   // the dead in the streets, the ones near enough to be seen
         if (std::hypot(c.at.x - cam_.position.x, c.at.z - cam_.position.z) < 40.0f) c.body.draw(char_mat_);
+    fx_.eye = cam_.position;
     fx_.draw(char_mat_);   // blood, brass, what came off
     draw_loot();           // what's lying about to be picked up
     draw_leaves();         // the doors, where they hang now
@@ -1912,6 +1921,15 @@ void Game::draw_rain() const {
         rlDrawRenderBatchActive();
         EndShaderMode();
     }
+    // The frame as it stands (painting and people): each drop is lit by whatever is behind it. Lit
+    // by the painting alone, rain in front of him glowed with the street behind him, a crawl of
+    // bright streaks over his dark coat (the play-test's "covered in static").
+    rlDrawRenderBatchActive();
+    rlBindFramebuffer(RL_READ_FRAMEBUFFER, rt_.id);
+    rlBindFramebuffer(RL_DRAW_FRAMEBUFFER, scene_.id);
+    rlBlitFramebuffer(0, 0, W, H, 0, 0, W, H, 0x00004000);   // (GL_COLOR_BUFFER_BIT)
+    rlBindFramebuffer(RL_READ_FRAMEBUFFER, rt_.id);
+    rlBindFramebuffer(RL_DRAW_FRAMEBUFFER, rt_.id);
     BeginShaderMode(rain_sh_);
     SetShaderValue(rain_sh_, l_rTime_, &t, SHADER_UNIFORM_FLOAT);
     SetShaderValue(rain_sh_, l_rScreen_, screen, SHADER_UNIFORM_VEC2);
@@ -1922,6 +1940,7 @@ void Game::draw_rain() const {
         SetShaderValue(rain_sh_, l_rDist_, &s.dist, SHADER_UNIFORM_FLOAT);
         SetShaderValue(rain_sh_, l_rSeed_, &seed, SHADER_UNIFORM_FLOAT);
         SetShaderValueTexture(rain_sh_, l_rPlate_, plate->first);
+        SetShaderValueTexture(rain_sh_, l_rScene_, scene_.texture);
         const float uv[4][2] = {{s.u0, s.v0}, {s.u1, s.v0}, {s.u1, s.v1}, {s.u0, s.v1}};
         rlBegin(RL_QUADS);
         rlColor4ub(255, 255, 255, 255);

@@ -40,6 +40,7 @@ public:
     void follow_flash(Vector3 at, Vector3 dir) { if (flash_t_ > 0) { flash_at_ = at; flash_dir_ = Vector3Normalize(dir); } }
     void update(float dt);
     void draw(const Material& m) const;          // blood, brass, pieces: solid
+    Vector3 eye{};                               // the camera, for this frame's draw (floor stains are drawn a little toward it)
     void draw_flash(const Material& m) const;    // the muzzle flash: draw last, blending additively, no depth writes
     // The flash as a light: where, how bright (0 when dark), and its colour.
     Vector3 flash_pos() const { return flash_at_; }
