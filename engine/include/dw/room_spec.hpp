@@ -74,6 +74,12 @@ struct RoomSpec {
     void opening_ends(const Opening& o, float& ax, float& az, float& bx, float& bz) const;
 };
 
+}  // namespace dw
+#include <nlohmann/json_fwd.hpp>
+namespace dw {
+// Whether a prop in a RoomSpec stands in his way, and if so its footprint (room_spec.cpp says the
+// rule). sizes: a Poly Haven model's real size (across, deep, high; m) by its id.
+bool solid_footprint(const nlohmann::json& prop, const std::map<std::string, V3>& sizes, Obb2& out);
 constexpr float WALL_T = 0.3f;   // wall thickness: walls grow outward from a room's bounds (as Blender builds them)
 
 std::string repo_root();

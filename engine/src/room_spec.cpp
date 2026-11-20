@@ -4,6 +4,7 @@
 #include "dw/room_spec.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 
 #include <fstream>
@@ -15,6 +16,25 @@ using json = nlohmann::json;
 constexpr float DEG = kPi / 180.0f;
 
 V3 v3(const json& a) { return {a.at(0).get<float>(), a.at(1).get<float>(), a.at(2).get<float>()}; }
+
+// The real size (m: across, deep, high) of each Poly Haven model the sets use, from the asset ledger
+// (tools/assets/manifest.json, written by tools/assets/polyhaven.py), read once.
+const std::map<std::string, V3>& ledger_sizes() {
+    static const std::map<std::string, V3> sizes = [] {
+        std::map<std::string, V3> m;
+        std::ifstream f(repo_root() + "/tools/assets/manifest.json");
+        if (!f) return m;
+        try {
+            const json d = json::parse(f);
+            for (const auto& [id, a] : d.value("assets", json::object()).items())
+                if (a.contains("dimensions_mm") && a["dimensions_mm"].size() == 3)
+                    m[id] = {a["dimensions_mm"][0].get<float>() / 1000, a["dimensions_mm"][1].get<float>() / 1000,
+                             a["dimensions_mm"][2].get<float>() / 1000};
+        } catch (const std::exception&) {}
+        return m;
+    }();
+    return sizes;
+}
 Rect2 rect(const json& lo, const json& hi) { return {lo[0].get<float>(), lo[1].get<float>(), hi[0].get<float>(), hi[1].get<float>()}; }
 }  // namespace
 
@@ -152,11 +172,73 @@ RoomSpec RoomSpec::load(const std::string& path) {
     }
     r.wall_count = r.colliders.size();
     for (const auto& p : d.value("props", json::array())) {
-        if (!p.value("collide", true) || !p.contains("size")) continue;
-        V3 pos = v3(p["pos"]), sz = v3(p["size"]);
-        r.colliders.push_back({pos.x, pos.z, sz.x / 2, sz.z / 2, p.value("yaw", 0.0f) * DEG});
+        Obb2 c{};
+        if (!solid_footprint(p, ledger_sizes(), c)) continue;
+        // Something the set builder didn't make solid never shuts him (or one of them) out of where
+        // he comes in or they stand.
+        const bool inferred = !(p.value("collide", true) && p.contains("size"));
+        bool in_way = false;
+        for (const auto& [k, s] : r.spawns) { float x = s.pos.x, z = s.pos.z; in_way = in_way || resolve_circle_obb(x, z, 0.4f, c); }
+        for (const auto& e : r.enemies) { float x = e.pos.x, z = e.pos.z; in_way = in_way || resolve_circle_obb(x, z, 0.4f, c); }
+        if (inferred && in_way) continue;
+        r.colliders.push_back(c);
     }
     return r;
+}
+
+// Whether a prop stands in his way, and its footprint. A prop with a "size" that says it collides
+// does, as the set builder meant. Beyond those, what the set builder left without a footprint or
+// marked to let him through, but a person can't walk through: anything standing on the floor
+// knee-high or more and a hand or more across (a bin, a box, a crate, a bag of rubbish, a table, a
+// road block, knocked over or not: a model's size comes from the ledger, or its "fit"), and street
+// railings, windbreaks, a floodlight's base and bicycles still standing. Left to step over or
+// through: what lies flat (a fallen bike, spilled luggage, a body bag), what's small or soft
+// (bottles, cans, branches, bags of rubbish), what hangs off a wall or stands on a table, what you
+// walk into (a stall, an aid tent), and a crowd barrier the set builder opened (a gate).
+bool solid_footprint(const nlohmann::json& p, const std::map<std::string, V3>& sizes, Obb2& out) {
+    if (!p.contains("pos")) return false;
+    const std::string type = p.value("type", "");
+    const V3 pos = v3(p["pos"]);
+    const float yaw = p.value("yaw", 0.0f) * DEG;
+    const bool says_solid = p.value("collide", true) && p.contains("size");
+    if (says_solid && type != "model") {
+        const V3 sz = v3(p["size"]);
+        out = {pos.x, pos.z, sz.x / 2, sz.z / 2, yaw};
+        return true;
+    }
+    if (pos.y > 0.3f) return false;                                    // up on something, or on a wall
+    const float roll = std::fabs(p.value("roll", 0.0f));
+    const bool lying = roll > 45.0f;
+    if (type == "railing" || type == "windbreak" || type == "light_tower" || (type == "bike" && !lying)) {
+        if (!p.contains("size")) return false;
+        const V3 sz = v3(p["size"]);
+        out = {pos.x, pos.z, sz.x / 2, std::max(sz.z / 2, 0.12f), yaw};   // (a railing is a few centimetres: no slipping between frames)
+        return true;
+    }
+    if (type != "model") return false;
+    // A model: its size as placed (a "size" or "fit" says it outright; else the ledger's, scaled).
+    V3 sz{};
+    if (p.contains("size")) sz = v3(p["size"]);
+    else if (p.contains("fit")) sz = v3(p["fit"]);
+    else {
+        const std::string model = p.value("model", "");
+        for (const char* soft : {"branches", "bark", "debris", "trashbag", "boots", "rat", "leaves"})   // (brushed aside, or underfoot)
+            if (model.find(soft) != std::string::npos) return false;
+        const float k = p.value("scale", 1.0f);
+        if (model.rfind("sf:bin_", 0) == 0) sz = {0.58f * k, 1.07f * k, 0.73f * k};   // a wheelie bin (tools/blender/licensed.py: REAL)
+        else if (model.rfind("ph:", 0) == 0) {
+            const auto it = sizes.find(model.substr(3));
+            if (it == sizes.end()) return false;
+            sz = {it->second.x * k, it->second.z * k, it->second.y * k};   // (the ledger's: across, deep, high)
+        } else {
+            return false;
+        }
+    }
+    float w = sz.x, h = sz.y, dpt = sz.z;                             // across, high, deep
+    if (std::fabs(p.value("tip", 0.0f)) > 45.0f) std::swap(h, dpt);   // knocked over: what was its height lies along the floor
+    if (h < 0.3f || std::min(w, dpt) < 0.2f || w * dpt < 0.06f) return false;
+    out = {pos.x, pos.z, w / 2, dpt / 2, yaw};
+    return true;
 }
 
 void RoomSpec::translate(float dx, float dz) {

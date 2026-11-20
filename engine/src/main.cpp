@@ -5,6 +5,8 @@
 //                                   LMB/J/Space fire, R reload, 1/2/F guns, C/Alt dodge, E kick, L flashlight,
 //                                   T tank/modern, F3 debug; Enter after dying to try again
 //                                   (it opens on the title screen; --room id starts straight in that room)
+//   ./damned_waters --room id --shoottest r.txt   a Drowned at many distances and bearings, a shot at it
+//                                   each way players fire; a line per shot in r.txt; exit 3 if any missed
 //   --flashlight                    start with the flashlight on (also for --capture)
 //   ./damned_waters --capture out   stage + screenshot every setup, then exit
 //   ./damned_waters --walkthrough r.txt   hold the stick through every doorway and staircase, both
@@ -53,13 +55,14 @@
 #include "game.hpp"
 
 int main(int argc, char** argv) {
-    std::string capture, sheet, only, view, view_png, room = "gang", still, still_png, shot, walk, clip, clip_out;
+    std::string capture, sheet, only, view, view_png, room = "gang", still, still_png, shot, walk, clip, clip_out, shoot;
     long max_frames = -1;
     bool chose_room = false;
     for (int i = 1; i + 1 < argc; ++i) {
         std::string a = argv[i];
         if (a == "--capture") capture = argv[++i];
         else if (a == "--walkthrough") walk = argv[++i];
+        else if (a == "--shoottest") shoot = argv[++i];
         else if (a == "--sheet") sheet = argv[++i];
         else if (a == "--only") only = argv[++i];
         else if (a == "--view" && i + 2 < argc) { view = argv[++i]; view_png = argv[++i]; }
@@ -95,7 +98,9 @@ int main(int argc, char** argv) {
     double start = GetTime(), worst = 0;
     long frames = 0;
     int status = 0;
-    if (!walk.empty()) {   // a held stick through every doorway and staircase: non-zero if he ever turned back
+    if (!shoot.empty()) {
+        status = game.shoottest(shoot, room) > 0 ? 3 : 0;
+    } else if (!walk.empty()) {   // a held stick through every doorway and staircase: non-zero if he ever turned back
         status = game.walkthrough(walk) > 0 ? 2 : 0;
     } else if (fitreload) {
         dw::Character c = dw::Character::make(dw::Kind::Survivor);

@@ -89,6 +89,7 @@ public:
     // The walk-through (game_walk.cpp): the stick held through every doorway and staircase, both
     // ways, walking and running; a line per try in `report`. Returns how many went wrong.
     int walkthrough(const std::string& report);
+    int shoottest(const std::string& report, const std::string& room);   // (game_shoot.cpp) shots that miss a Drowned in plain sight
     // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
     // only: a comma-separated list of subjects to render (empty: all).
     void model_sheet(const std::string& dir, const std::string& only = "");
@@ -171,6 +172,8 @@ private:
     bool fire_pressed() const;
     Vector3 aim_point(const Enemy& e) const;     // where on the target the gun points (W: the head, S: a leg)
     Vector3 shot_dir() const;                    // the way a shot flies (before any spread)
+    float aim_yaw(const Enemy& e) const;         // the way he faces to put the gun on it
+    bool on_target() const;                      // the gun is on the locked Drowned
     void kill_enemy(Enemy& e);
     void become_crawler(Enemy& e);
     Vector3 ear() const { return {player_.x, 1.6f, player_.z}; }
@@ -307,6 +310,7 @@ private:
     float slowmo_t_ = 0, time_scale_ = 1;        // the slow-motion beat after a perfect dodge (an option)
     Vector3 dodge_dir_{}, knock_{};              // the dodge's direction; being knocked back (m/s)
     int aim_target_ = -1, kick_target_ = -1, gun_ = 0;
+    float fire_wait_ = 0;   // s a pulled trigger waits for the gun to come on target (aim)
     bool kick_done_ = false, kick_counter_ = false;
     Firearm guns_[2];
     Inventory inv_;

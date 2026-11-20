@@ -510,12 +510,30 @@ Vector3 Game::aim_point(const Enemy& e) const {
 // The way a shot flies. Locked on and facing the target, it goes to the aim point (the gun's
 // few degrees of wobble in the pose don't matter, as in the classic games); otherwise straight
 // along his facing at the aim pitch.
+// The way he faces to put the GUN on it, not his chest: the gun sits right of his middle, so he
+// turns a touch left of the target, more the closer it is (as a shooter does).
+float Game::aim_yaw(const Enemy& t) const {
+    const Actor& p = player_;
+    const Vector3 ap = aim_point(t), mz = hero_.muzzle();
+    const float right_x = std::cos(p.yaw), right_z = -std::sin(p.yaw);
+    const float off = std::clamp((mz.x - p.x) * right_x + (mz.z - p.z) * right_z, -0.3f, 0.3f);
+    const float dist = std::max(std::hypot(ap.x - p.x, ap.z - p.z), 0.4f);
+    return yaw_towards(p.x, p.z, ap.x, ap.z) + std::asin(std::clamp(off / dist, -0.6f, 0.6f));
+}
+
+// Is the gun on the locked Drowned (he faces it, give or take LOCK_HALF)? Judged by where he faces,
+// not by the barrel in his animated hands, which lags a frame or two behind and climbs with recoil.
+bool Game::on_target() const {
+    if (aim_target_ < 0 || aim_target_ >= int(enemies_.size())) return false;
+    const Enemy& t = enemies_[size_t(aim_target_)];
+    return t.active && std::fabs(wrap_pi(aim_yaw(t) - player_.yaw)) < LOCK_HALF;
+}
+
 Vector3 Game::shot_dir() const {
     const Vector3 mz = hero_.muzzle();
-    if (aim_target_ >= 0 && aim_target_ < int(enemies_.size()) && enemies_[size_t(aim_target_)].active) {
-        const Vector3 to = Vector3Subtract(aim_point(enemies_[size_t(aim_target_)]), mz), b = hero_.barrel_dir();
-        if (std::fabs(wrap_pi(yaw_towards(0, 0, to.x, to.z) - yaw_towards(0, 0, b.x, b.z))) < LOCK_HALF && Vector3LengthSqr(to) > 1e-4f)
-            return Vector3Normalize(to);
+    if (on_target()) {
+        const Vector3 to = Vector3Subtract(aim_point(enemies_[size_t(aim_target_)]), mz);
+        if (Vector3LengthSqr(to) > 1e-4f) return Vector3Normalize(to);
     }
     const V2 f = forward_from_yaw(player_.yaw);
     return {f.x * std::cos(aim_pitch_), std::sin(aim_pitch_), f.z * std::cos(aim_pitch_)};
@@ -542,17 +560,20 @@ void Game::aim(float dt) {
         if (std::fabs(in_.move.y) > 0.1f) aim_look_ = {0, in_.move.y > 0 ? 1.0f : -1.0f};
         if (in_.wheel != 0) switch_target(in_.wheel < 0 ? 1 : -1);
     }
+    // Nothing locked (none in sight when the gun came up, or the last one fell): the next that comes
+    // into sight is taken, so a Drowned walking in from the side is aimed at without a flick.
+    if (aim_target_ < 0 || (enemies_[size_t(aim_target_)].brain.dead() && enemies_[size_t(aim_target_)].dead_t > 0.6f)) {
+        const int before = aim_target_;
+        enter_aim();
+        if (aim_target_ == before) aim_snap_ = 0;   // (the same: no new snap)
+    }
     const Enemy* t = aim_target_ >= 0 ? &enemies_[size_t(aim_target_)] : nullptr;
     const float turn = in_.pad || !t ? in_.move.x : (std::fabs(in_.move.x) > 0.1f ? in_.move.x : 0.0f);
     const Vector3 ap = t ? aim_point(*t) : Vector3{}, mz = hero_.muzzle();
-    if (t && std::fabs(turn) < 0.2f) {   // snap to it, then follow it round (the left stick or A/D takes over)
-        // Line the GUN up with it, not his chest: the gun sits right of his middle, so he turns a
-        // touch left of the target, more the closer it is (as a shooter does).
-        const float right_x = std::cos(p.yaw), right_z = -std::sin(p.yaw);
-        const float off = std::clamp((mz.x - p.x) * right_x + (mz.z - p.z) * right_z, -0.3f, 0.3f);
-        const float dist = std::max(std::hypot(ap.x - p.x, ap.z - p.z), 0.4f);
-        const float want = yaw_towards(p.x, p.z, ap.x, ap.z) + std::asin(std::clamp(off / dist, -0.6f, 0.6f));
-        p.yaw = step_yaw(p.yaw, want, (aim_snap_ > 0 ? 9.0f : 2.5f) * dt);
+    if (t && std::fabs(turn) < 0.2f) {   // turn onto it fast, then follow it round (the left stick or A/D takes over)
+        const float want = aim_yaw(*t);
+        const float off = std::fabs(wrap_pi(want - p.yaw));
+        p.yaw = step_yaw(p.yaw, want, (off > LOCK_HALF * 0.5f ? 14.0f : 6.0f) * dt);
     } else {
         p.yaw -= turn * AIM_TURN * dt;
     }
@@ -560,7 +581,13 @@ void Game::aim(float dt) {
     float pitch = aim_look_.y * 0.4f;
     if (t) pitch = std::atan2(ap.y - mz.y, std::max(std::hypot(ap.x - mz.x, ap.z - mz.z), 0.3f));   // from the muzzle
     aim_pitch_ += (std::clamp(pitch, -0.8f, 0.55f) - aim_pitch_) * smoothing(12.0f, dt);
-    if (fire_pressed()) fire();
+    // A trigger pulled while he's still turning onto it goes off the moment the gun is on it (half a
+    // second at most), not into the wall beside it: an aimed shot at a Drowned he can see hits it.
+    if (fire_pressed()) fire_wait_ = 0.5f;
+    if (fire_wait_ > 0) {
+        fire_wait_ -= dt;
+        if (!t || on_target() || fire_wait_ <= 0) { fire_wait_ = 0; fire(); }
+    }
     if (in_.hit(ACT_KICK)) try_kick();   // a counter, or a kick at one that's down on its luck
 }
 

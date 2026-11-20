@@ -236,7 +236,7 @@ namespace verbs {
 constexpr float DODGE_TIME = 0.42f, DODGE_IFRAMES = 0.3f, DODGE_SPEED = 6.2f, DODGE_COOLDOWN = 0.35f;
 constexpr float KICK_TIME = 0.5f, KICK_AT = 0.18f, KICK_RANGE = 1.8f, KICK_DAMAGE = 20.0f;
 constexpr float HURT_TIME = 0.45f, HURT_INVULN = 0.9f;
-constexpr float AIM_RANGE = 14.0f, AIM_CONE_DEG = 100.0f, AIM_TURN = 110.0f * kPi / 180.0f;
+constexpr float AIM_RANGE = 25.0f, AIM_CONE_DEG = 100.0f, AIM_TURN = 110.0f * kPi / 180.0f;
 constexpr float QUICK_TURN_TIME = 0.3f;
 // Skill: a dodge started in the last PERFECT_WINDOW before a bite lands is a perfect dodge (the
 // Drowned overbalances past, and the next shot within FOCUS_TIME does FOCUS_MULT damage); a kick

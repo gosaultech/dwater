@@ -302,8 +302,9 @@ TEST(AutoAim, TakesTheNearestInFrontAndIgnoresTheDead) {
     const AimCandidate c[] = {{0, -4, true}, {0, -2, false}, {0, 3, true}, {0.5f, -6, true}};
     EXPECT_EQ(pick_target(0, 0, 0, c, 4), 0);            // yaw 0 looks down -Z
     EXPECT_EQ(pick_target(0, 0, kPi, c, 4), 2);          // turned round
-    const AimCandidate far[] = {{0, -20, true}};
-    EXPECT_EQ(pick_target(0, 0, 0, far, 1), -1);
+    const AimCandidate within[] = {{0, -20, true}}, far[] = {{0, -30, true}};
+    EXPECT_EQ(pick_target(0, 0, 0, within, 1), 0);   // as far as the pistol reaches (25 m): locked
+    EXPECT_EQ(pick_target(0, 0, 0, far, 1), -1);     // beyond it: not
 }
 
 // ── The player's condition ───────────────────────────────────────────────────────
