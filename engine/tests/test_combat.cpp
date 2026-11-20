@@ -334,3 +334,39 @@ TEST(HallEncounter, TheDoorBangsAfterTheFirstDiesThenTwoMoreComeIn) {
     for (float t = 0; t < 2; t += DT) cleared += e.update(DT, 0) == HallEncounter::Event::Cleared;
     EXPECT_EQ(cleared, 1);
 }
+
+// ── The force of the shots (RE2's push-back) ─────────────────────────────────────
+TEST(Impact, ThreePistolRoundsInQuickSuccessionDriveItBackButSpreadOutTheyDoNot) {
+    Impact i;
+    EXPECT_FALSE(i.hit(1.0f));
+    i.tick(0.45f);
+    EXPECT_FALSE(i.hit(1.0f));
+    i.tick(0.45f);
+    EXPECT_TRUE(i.hit(1.0f));   // the third, as fast as the pistol fires
+    EXPECT_FLOAT_EQ(i.force, 0.0f);
+    Impact slow;
+    for (int k = 0; k < 6; ++k) { EXPECT_FALSE(slow.hit(1.0f)) << k; slow.tick(1.5f); }   // one every second and a half: never
+}
+
+TEST(Impact, TwoAtTheHeadOrOneBlastOfBuckshotIsEnough) {
+    Impact head;
+    EXPECT_FALSE(head.hit(1.4f));
+    head.tick(0.45f);
+    EXPECT_TRUE(head.hit(1.4f));
+    Impact blast;
+    EXPECT_TRUE(blast.hit(0.35f * 7));   // seven of eight pellets
+}
+
+TEST(Impact, KnockedBackItReelsWhateverItsImmunityButNotWhenDown) {
+    EnemyBrain b;
+    b.go(EState::Pursuit);
+    b.take_hit(5.0f);   // the first hit staggers; it's immune to the next for a while
+    b.update(0.5f, true, false, 4.0f);
+    b.knock_back(1.0f);
+    EXPECT_EQ(b.state, EState::Stagger);
+    EXPECT_FLOAT_EQ(b.hold, 1.0f);
+    EnemyBrain down;
+    down.go(EState::Floored);
+    down.knock_back(1.0f);
+    EXPECT_EQ(down.state, EState::Floored);
+}

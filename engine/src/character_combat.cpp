@@ -249,6 +249,16 @@ void Character::recoil(float k) {   // added to the twitch offsets, which ease b
     twitch_[J_HEAD].x += 0.05f * k;
 }
 
+void Character::flinch(float k, float side) {   // added to the twitch offsets, which ease back by themselves
+    twitch_[J_SPINE].x += 0.16f * k;
+    twitch_[J_CHEST].x += 0.2f * k;
+    twitch_[J_CHEST].y += 0.22f * k * side;   // turned by the side it took it on
+    twitch_[J_NECK].x += 0.18f * k;
+    twitch_[J_HEAD].x += 0.4f * k;            // the head snaps back
+    twitch_[J_SHO_L].x -= 0.3f * k;           // the arms fling forward and up as the body goes back
+    twitch_[J_SHO_R].x -= 0.3f * k;
+}
+
 void Character::set_weapon(int w) { weapon_ = w; }
 
 // Guns are built in their own space, then held in the right hand as --fitgrips placed them.

@@ -104,6 +104,7 @@ public:
     void sever(int root, MeshData& piece, Vector3& centre);
     bool severed(int region) const { return (hidden_ >> region) & 1u; }
     void recoil(float kick);                  // the gun bucks: arms, shoulders and head jolt
+    void flinch(float k, float side);         // a round goes in: it jerks back (k: how hard; side -1..1: which shoulder took it)
     void set_weapon(int w);                   // the survivor's gun in hand: 0 = M92FS, 1 = Remington 870
     int weapon() const { return weapon_; }
     Vector3 muzzle() const;                   // where the shot leaves the barrel (world)

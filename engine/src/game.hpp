@@ -54,6 +54,7 @@ struct Enemy {
     bool active = false;          // in the room (the second wave waits behind the front door)
     float gurgle = 3, dead_t = 0, push_x = 0, push_z = 0, step = 0;
     float stumble = 0;            // overbalanced by a perfect dodge: its lunge still carrying it on
+    Impact impact;                // the force of the shots it has taken (core.hpp): enough of it drives it back
     float speed = 0.85f, turn = 2.2f, reach = 1.7f, bite = 20;     // m/s, rad/s, m, and what a lunge takes off him
     bool pooled = false;          // blood has started spreading under it
     bool heard = false;           // a noise reached it this frame (a shot, a footstep)

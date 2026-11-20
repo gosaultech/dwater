@@ -677,10 +677,20 @@ void Game::fire() {
         }
         const bool knock = s.knockdown_hits > 0 && t.pellets >= s.knockdown_hits;
         const EHit hit = e.brain.take_hit(t.life, s.stagger_power, knock);
-        float push = 0;
+        // Every round jolts it back; two or three in quick succession drive it back a step, reeling
+        // (Impact, core.hpp): a pistol round 1 (at the head 1.4), each pellet 0.35.
+        const float force = shotgun ? 0.35f * float(t.pellets) : (t.head_pellets > 0 ? 1.4f : 1.0f);
+        const bool driven = hit != EHit::Died && hit != EHit::Floored && e.impact.hit(force);
+        const float side = std::clamp((aim.x * std::cos(e.a.yaw) - aim.z * std::sin(e.a.yaw)) * 2.0f, -1.0f, 1.0f);
+        float push = 0.9f;   // every hit: the round's shove
         if (hit == EHit::Died) { kill_enemy(e); push = shotgun ? 2.5f : 1.2f; }
         else if (hit == EHit::Floored) { say(e, "enemy_alert", 0.7f); push = 3.0f; }
-        else if (hit == EHit::Staggered) { say(e, "enemy_alert", 0.7f); push = 1.2f; }
+        else if (driven) {
+            e.brain.knock_back(1.0f);
+            say(e, "enemy_alert", 0.8f);
+            push = shotgun ? 4.0f : 3.4f;   // about a metre back
+        } else if (hit == EHit::Staggered) { say(e, "enemy_alert", 0.7f); push = 1.4f; }
+        e.body.flinch(driven ? 1.6f : shotgun ? 1.3f : 0.8f, side);
         e.push_x = dx / dl * push;
         e.push_z = dz / dl * push;
         if (!e.brain.dead() && !e.crawling && e.damage.lost_leg()) become_crawler(e);
@@ -866,6 +876,7 @@ void Game::update_enemies(float dt) {
                 continue;
             }
         }
+        e.impact.tick(dt);
         // Momentum from hits and kicks, sliding out.
         a.x += e.push_x * dt;
         a.z += e.push_z * dt;

@@ -91,6 +91,53 @@ int Game::shoottest(const std::string& report, const std::string& room_id) {
                     out << line << "\n";
                     e.active = false;
                 }
+    // The force of the shots: three pistol rounds at the chest of one coming on, as fast as the gun
+    // fires. Each jolts it; the third drives it back a step (Impact, core.hpp). Where it stands after
+    // each, and after the knock-back has played out.
+    {
+        float px = cx, pz = cz, ex = 0, ez = 0;
+        bool placed = false;
+        for (int k = 0; k < 40 && !placed; ++k) {
+            const float a = float(k) * 2.39996f, rr = 0.6f * float(k);
+            px = cx + std::cos(a) * rr;
+            pz = cz + std::sin(a) * rr;
+            ex = px;
+            ez = pz - 5.0f;
+            placed = house::room_at(rooms_, storey_, px, pz, room_) == room_ && house::room_at(rooms_, storey_, ex, ez, room_) == room_ &&
+                     house::first_cross(statics_, px, pz, ex, ez + 2.0f) >= 1.0f;
+        }
+        if (placed) {
+            for (auto& e : enemies_) e.active = false;
+            Enemy& e = enemies_.front();
+            e.active = true;
+            e.a = {ex, ez, yaw_towards(ex, ez, px, pz)};
+            e.brain = {};
+            e.brain.hp = 1000;
+            e.brain.go(EState::Pursuit);
+            e.damage = {};
+            e.impact = {};
+            e.rise = -1;
+            player_ = {px, pz, 0.0f};
+            aim_target_ = -1;
+            set_pmode(PMode::Normal);
+            gun_ = 0;
+            for (auto& g : guns_) { g.mag = g.spec().mag; g.cooldown = 0; }
+            staged_aim_ = true;
+            staged_in_ = {};
+            for (int f = 0; f < 20; ++f) update(DT);
+            const float d0 = std::hypot(e.a.x - player_.x, e.a.z - player_.z);
+            out << "KNOCKBACK pistol, three rounds at the chest: distance " << d0 << " m";
+            for (int shot = 0; shot < 3; ++shot) {
+                fire_wait_ = 0.5f;
+                for (int f = 0; f < 27; ++f) update(DT);   // (0.45 s: as fast as it fires)
+                out << ", " << std::hypot(e.a.x - player_.x, e.a.z - player_.z) << (e.brain.state == EState::Stagger ? " reeling" : "");
+            }
+            for (int f = 0; f < 30; ++f) update(DT);
+            out << ", then " << std::hypot(e.a.x - player_.x, e.a.z - player_.z) << " m\n";
+            staged_aim_ = false;
+            e.active = false;
+        }
+    }
     char tail[160];
     std::snprintf(tail, sizeof tail, "%s: %d setups, %d shots, %d hit (%.0f%%)", rs.id.c_str(), tried, shots, hits, shots > 0 ? 100.0f * float(hits) / float(shots) : 0.0f);
     out << tail << "\n";

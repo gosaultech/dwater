@@ -155,10 +155,37 @@ struct EnemyBrain {
         return EHit::Hurt;
     }
     void kill() { if (!dead()) { hp = 0; go(EState::Dead); } }   // a burst head needs no arithmetic
+    // Driven back by the force of the shots: reeling for `seconds`, whatever its stagger immunity
+    // (it can't come on while it's being pushed back). Not when it's down or dead.
+    void knock_back(float seconds) {
+        if (dead() || state == EState::Floored) return;
+        go(EState::Stagger);
+        hold = seconds;
+        immune = stagger_immunity;
+    }
     // Its lunge met nothing: it stumbles on past, wide open (and kickable) for `seconds`.
     void overbalance(float seconds) { if (!dead()) { go(EState::Stagger); hold = seconds; immune = 0; } }
     // Seconds until its bite lands (-1: it isn't lunging at anything right now).
     float time_to_strike() const { return state == EState::Attack && !struck ? std::max(0.0f, windup - t) : -1.0f; }
+};
+
+// The force of the shots it has taken, as RE2 does it: each round jolts it, and two or three in
+// quick succession drive it back a step, reeling. Each hit adds its force; the force drains away
+// with time, so shots spread out never add up. ELI5: pushing a swing; push in rhythm and it goes
+// higher, push now and then and it never gets going.
+struct Impact {
+    static constexpr float DRAIN = 0.6f;   // force lost a second
+    static constexpr float KNOCK = 2.4f;   // force that drives it back: 3 pistol rounds at the chest in quick succession, 2 at the head
+    float force = 0;
+    void tick(float dt) { force = std::max(0.0f, force - DRAIN * dt); }
+    // A hit of force `f` (a pistol round: 1, at the head 1.4; a shotgun pellet 0.35). True when it
+    // drives it back (and the force starts again from nothing).
+    bool hit(float f) {
+        force += f;
+        if (force < KNOCK) return false;
+        force = 0;
+        return true;
+    }
 };
 
 }  // namespace dw
