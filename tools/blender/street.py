@@ -149,13 +149,23 @@ def room_card(parent, u0, u1, v0, v1, n, room, strength, rng, span_u=0.08, span_
     ob["room_u"] = rng.random()
     ob["room_v"] = rng.uniform(0.32, 0.4)
     if shell is not None and shell > n:
+        # Outside, dark: what shows from the side or behind a house with no walls. Inside, the room's
+        # own light on its walls: what shows through the window at a slant (dark there, every lit
+        # window seen along a street went out).
         dark = M({"color": [0.03, 0.026, 0.022], "rough": 0.9, "noise": 0.2})
-        t = 0.02
+        t, e = 0.02, 0.002
         lbox(parent, "room_shell", (u0 - t, v0 - t, n - t), (u1 + t, v1 + t, n - 0.005), dark)   # behind the card
         lbox(parent, "room_shell", (u0 - t, v0 - t, n - t), (u0, v1 + t, shell), dark)           # its sides
         lbox(parent, "room_shell", (u1, v0 - t, n - t), (u1 + t, v1 + t, shell), dark)
         lbox(parent, "room_shell", (u0 - t, v0 - t, n - t), (u1 + t, v0, shell), dark)           # its floor and ceiling
         lbox(parent, "room_shell", (u0 - t, v1, n - t), (u1 + t, v1 + t, shell), dark)
+        glow = M({"emit": [1.0, 0.72, 0.46], "strength": 0.16 * strength})
+        a, b = u0 + e, u1 - e
+        lo, hi = v0 + e, v1 - e
+        inner = [((a, lo, n), (a, lo, shell), (a, hi, shell), (a, hi, n)), ((b, lo, n), (b, hi, n), (b, hi, shell), (b, lo, shell)),
+                 ((a, lo, n), (b, lo, n), (b, lo, shell), (a, lo, shell)), ((a, hi, n), (a, hi, shell), (b, hi, shell), (b, hi, n))]
+        for quad in inner:
+            kit.mesh("room_wall", list(quad), [(0, 1, 2, 3)], glow, parent)
     return ob
 
 
