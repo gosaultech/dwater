@@ -55,6 +55,9 @@ struct Enemy {
     float gurgle = 3, dead_t = 0, push_x = 0, push_z = 0, step = 0;
     float stumble = 0;            // overbalanced by a perfect dodge: its lunge still carrying it on
     Impact impact;                // the force of the shots it has taken (core.hpp): enough of it drives it back
+    bool wanders = false;         // on its own, it shuffles about where it was left (core.hpp, Wander); else it stands
+    Wander wander;
+    float last_x = 0, last_z = 0; // where it stood last frame (a wanderer stuck against something gives up)
     float speed = 0.85f, turn = 2.2f, reach = 1.7f, bite = 20;     // m/s, rad/s, m, and what a lunge takes off him
     bool pooled = false;          // blood has started spreading under it
     bool heard = false;           // a noise reached it this frame (a shot, a footstep)
@@ -91,6 +94,7 @@ public:
     // ways, walking and running; a line per try in `report`. Returns how many went wrong.
     int walkthrough(const std::string& report);
     int shoottest(const std::string& report, const std::string& room);   // (game_shoot.cpp) shots that miss a Drowned in plain sight
+    int wandertest(const std::string& report, const std::string& room);  // (game_shoot.cpp) the Drowned on their own for half a minute
     // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
     // only: a comma-separated list of subjects to render (empty: all).
     void model_sheet(const std::string& dir, const std::string& only = "");

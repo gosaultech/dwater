@@ -145,4 +145,49 @@ int Game::shoottest(const std::string& report, const std::string& room_id) {
     return shots - hits;
 }
 
+// The street on its own (--wandertest REPORT, with --room): him far off and out of sight, half a
+// minute played; for each Drowned there, whether it stands or shuffles about, how far it walked, how
+// far from where it was left it strayed, and whether it ever stood inside anything.
+int Game::wandertest(const std::string& report, const std::string& room_id) {
+    std::ofstream out(report);
+    constexpr float DT = 1.0f / 60;
+    title_ = paused_ = false;
+    end_t_ = -1;
+    banner_t_ = 0;
+    text_queue_.clear();
+    reset_fight();
+    if (room_index(room_id) < 0) { out << "no room " << room_id << "\n"; return 1; }
+    beat_room_ = room_id;
+    beat_spawn_ = "";
+    finish_beat();
+    player_.x += 400;   // far off: nothing sees or hears him
+    struct Track { float walked = 0, strayed = 0, lx = 0, lz = 0; bool inside = false; };
+    std::vector<Track> tr(enemies_.size());
+    for (size_t i = 0; i < enemies_.size(); ++i) { tr[i].lx = enemies_[i].a.x; tr[i].lz = enemies_[i].a.z; }
+    int bad = 0;
+    for (int f = 0; f < 60 * 30; ++f) {
+        staged_in_ = {};
+        update(DT);
+        for (size_t i = 0; i < enemies_.size(); ++i) {
+            const Enemy& e = enemies_[i];
+            if (!e.active) continue;
+            tr[i].walked += std::hypot(e.a.x - tr[i].lx, e.a.z - tr[i].lz);
+            tr[i].lx = e.a.x;
+            tr[i].lz = e.a.z;
+            tr[i].strayed = std::max(tr[i].strayed, std::hypot(e.a.x - e.wander.home_x, e.a.z - e.wander.home_z));
+            for (const auto& b : statics_) { float x = e.a.x, z = e.a.z; if (resolve_circle_obb(x, z, 0.2f, b)) tr[i].inside = true; }
+        }
+    }
+    for (size_t i = 0; i < enemies_.size(); ++i) {
+        const Enemy& e = enemies_[i];
+        if (!e.active) continue;
+        bad += tr[i].inside;
+        char line[200];
+        std::snprintf(line, sizeof line, "%-24s %-7s walked %5.1f m, strayed %4.1f m from its place%s", e.id.c_str(), e.wanders ? "wanders" : "stands",
+                      tr[i].walked, tr[i].strayed, tr[i].inside ? "  INSIDE SOMETHING" : "");
+        out << line << "\n";
+    }
+    return bad;
+}
+
 }  // namespace dw

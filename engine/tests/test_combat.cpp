@@ -370,3 +370,46 @@ TEST(Impact, KnockedBackItReelsWhateverItsImmunityButNotWhenDown) {
     down.knock_back(1.0f);
     EXPECT_EQ(down.state, EState::Floored);
 }
+
+// ── On its own: shuffling about (core.hpp, Wander) ───────────────────────────────
+TEST(Wander, ItWalksToAPointNearHomeStandsAWhileAndGoesOn) {
+    Wander w;
+    w.home_x = 10;
+    w.home_z = 5;
+    w.seed = 1234567u;
+    float x = 10, z = 5;
+    int points = 0, stands = 0;
+    bool was_walking = false;
+    for (int f = 0; f < 60 * 60; ++f) {   // a minute
+        bool needs = false;
+        const float dt = 1.0f / 60;
+        float moved = 0;
+        if (w.update(dt, x, z, Wander::SPEED * dt, needs)) {
+            const float d = std::hypot(w.to_x - x, w.to_z - z);
+            x += (w.to_x - x) / d * Wander::SPEED * dt;
+            z += (w.to_z - z) / d * Wander::SPEED * dt;
+            moved = Wander::SPEED * dt;
+        } else if (needs) {
+            float px, pz;
+            w.propose(x, z, px, pz);
+            EXPECT_LE(std::hypot(px - w.home_x, pz - w.home_z), Wander::RADIUS + 1e-4f);   // never far from home
+            w.go_to(px, pz);
+            ++points;
+        }
+        (void)moved;
+        if (was_walking && !w.walking) ++stands;
+        was_walking = w.walking;
+        EXPECT_LE(std::hypot(x - w.home_x, z - w.home_z), Wander::RADIUS + 0.5f);
+    }
+    EXPECT_GE(points, 4);   // it keeps going somewhere
+    EXPECT_GE(stands, 3);   // and stands a while between
+}
+
+TEST(Wander, BlockedItGivesUpOnThatPointAndStands) {
+    Wander w;
+    w.go_to(3, 0);
+    bool needs = false;
+    for (int f = 0; f < 90; ++f) w.update(1.0f / 60, 0, 0, 0.0f, needs);   // a wall in the way: no headway
+    EXPECT_FALSE(w.walking);
+    EXPECT_GT(w.pause, 0.0f);
+}

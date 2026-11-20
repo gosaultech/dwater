@@ -161,6 +161,17 @@ void Game::build_storey(int storey) {
             e.active = !e.submerged && (s.requires_flag.empty() || world_.has_flag(s.requires_flag));
             e.lying = s.lying && !e.submerged;
             if (e.lying) e.brain.go(EState::Floored);   // (held there: its floor timer doesn't run till it wakes)
+            // About half of them shuffle about where they were left; the rest stand. Which, decided
+            // by who they are, so a room is the same every time.
+            {
+                unsigned h = 2166136261u;
+                for (char ch : k) h = (h ^ unsigned(char(ch))) * 16777619u;
+                e.wanders = !e.lying && !e.submerged && (h >> 7) % 5 < 3;
+                e.wander.seed = h | 1u;
+                e.wander.home_x = s.pos.x;
+                e.wander.home_z = s.pos.z;
+                e.wander.pause = 0.5f + 3.0f * float((h >> 11) % 100) / 100.0f;
+            }
             e.gurgle = 2.0f + 3.0f * frand();
             e.body = Character::make(Kind::Drowned, e.variant);
             enemies_.push_back(std::move(e));

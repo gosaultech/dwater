@@ -47,6 +47,7 @@ Pose pose_for(const Enemy& e) {
     switch (b.state) {
         case EState::Pursuit:
         case EState::Retreat: return Pose::Shamble;
+        case EState::Idle: return e.a.speed > 0.05f ? Pose::Shamble : Pose::Idle;   // shuffling about on its own
         case EState::Attack: return b.t >= b.windup ? Pose::Strike : Pose::Windup;
         case EState::Stagger: return e.stumble > 0 ? Pose::Strike : Pose::Stagger;   // overbalanced: carried on by its lunge
         case EState::Floored: return Pose::Floored;
@@ -944,8 +945,28 @@ void Game::update_enemies(float dt) {
             }
             case EState::Stagger: v = e.crawling ? 0.0f : -0.9f; break;
             case EState::Alert: a.yaw = step_yaw(a.yaw, want, e.turn * 0.5f * dt); break;
+            case EState::Idle: {   // on its own: some shuffle about where they were left, the rest stand
+                if (!e.wanders || e.crawling) break;
+                bool needs = false;
+                const float moved = std::hypot(a.x - e.last_x, a.z - e.last_z);
+                if (e.wander.update(dt, a.x, a.z, moved, needs)) {
+                    const float go = yaw_towards(a.x, a.z, e.wander.to_x, e.wander.to_z);
+                    a.yaw = step_yaw(a.yaw, go, e.turn * 0.4f * dt);
+                    v = Wander::SPEED * std::clamp(std::cos(wrap_pi(go - a.yaw)), 0.0f, 1.0f);
+                } else if (needs) {   // somewhere it can walk to: in its room, nothing in the way
+                    float px, pz;
+                    e.wander.propose(a.x, a.z, px, pz);
+                    const bool ok = e.room >= 0 && house::room_at(rooms_, storey_, px, pz, e.room) == e.room &&
+                                    house::first_cross(statics_, a.x, a.z, px, pz) >= 1.0f && house::first_cross(sight_, a.x, a.z, px, pz) >= 1.0f;
+                    if (ok) e.wander.go_to(px, pz);
+                    else e.wander.rest();
+                }
+                break;
+            }
             default: break;
         }
+        e.last_x = a.x;
+        e.last_z = a.z;
         const V2 fw = forward_from_yaw(a.yaw);
         a.x += fw.x * v * dt;
         a.z += fw.z * v * dt;

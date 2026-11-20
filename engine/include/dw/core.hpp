@@ -169,6 +169,52 @@ struct EnemyBrain {
     float time_to_strike() const { return state == EState::Attack && !struck ? std::max(0.0f, windup - t) : -1.0f; }
 };
 
+// A Drowned on its own, not yet onto him: it shuffles about the place it was left, a few steps at
+// a time (a point within RADIUS of home, walked to slowly, then a stand of a few seconds), the way
+// RE's zombies wander a street. The game picks the points (it knows the walls) and walks it there;
+// this keeps the rhythm and says where to go next. ELI5: a dog on a long lead round its post.
+struct Wander {
+    static constexpr float RADIUS = 3.5f;   // m from home
+    static constexpr float SPEED = 0.4f;    // m/s: a shuffle
+    static constexpr float ARRIVE = 0.35f;  // m: there
+    float home_x = 0, home_z = 0, to_x = 0, to_z = 0;
+    float pause = 0;       // s left standing still
+    float stuck = 0;       // s it has made no headway (a wall, a car): give up on that point
+    unsigned seed = 1;
+    bool walking = false;
+    float rnd() { seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5; return float(seed & 0xFFFF) / 65535.0f; }
+    // A candidate next point: somewhere within RADIUS of home, not too near where it is.
+    void propose(float x, float z, float& px, float& pz) {
+        for (int k = 0; k < 4; ++k) {
+            const float a = rnd() * 6.2831853f, r = RADIUS * (0.35f + 0.65f * rnd());
+            px = home_x + std::cos(a) * r;
+            pz = home_z + std::sin(a) * r;
+            if (std::hypot(px - x, pz - z) > 1.0f) return;
+        }
+    }
+    // Each frame, standing at (x, z), having moved `moved` metres since the last: true while it
+    // should walk on toward (to_x, to_z). needs_point: it wants a new point (the game proposes one
+    // with propose() and accepts it with go_to() if the way is clear).
+    bool update(float dt, float x, float z, float moved, bool& needs_point) {
+        needs_point = false;
+        if (!walking) {
+            pause -= dt;
+            if (pause <= 0) needs_point = true;
+            return false;
+        }
+        stuck = moved < SPEED * dt * 0.3f ? stuck + dt : 0.0f;
+        if (std::hypot(to_x - x, to_z - z) < ARRIVE || stuck > 1.0f) {   // there (or can't get there): stand a while
+            walking = false;
+            stuck = 0;
+            pause = 1.5f + 3.0f * rnd();
+            return false;
+        }
+        return true;
+    }
+    void go_to(float px, float pz) { to_x = px; to_z = pz; walking = true; stuck = 0; }
+    void rest() { pause = 1.0f + 2.0f * rnd(); }   // (a point it couldn't reach: try again in a moment)
+};
+
 // The force of the shots it has taken, as RE2 does it: each round jolts it, and two or three in
 // quick succession drive it back a step, reeling. Each hit adds its force; the force drains away
 // with time, so shots spread out never add up. ELI5: pushing a swing; push in rhythm and it goes
