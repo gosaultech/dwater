@@ -149,10 +149,11 @@ def room_card(parent, u0, u1, v0, v1, n, room, strength, rng, span_u=0.08, span_
     ob["room_u"] = rng.random()
     ob["room_v"] = rng.uniform(0.32, 0.4)
     if shell is not None and shell > n:
-        # Outside, dark: what shows from the side or behind a house with no walls. Inside, the room's
-        # own light on its walls: what shows through the window at a slant (dark there, every lit
-        # window seen along a street went out).
-        dark = M({"color": [0.03, 0.026, 0.022], "rough": 0.9, "noise": 0.2})
+        # Outside, a dark brick party wall: what shows from the side or behind a house with no walls
+        # (flat black read as a hole cut in the night). Inside, the room's own light on its walls:
+        # what shows through the window at a slant (dark there, every lit window seen along a street
+        # went out).
+        dark = M({"ph": "dark_brick_wall", "tint": [0.5, 0.46, 0.43], "scale": 1.0})
         t, e = 0.02, 0.002
         lbox(parent, "room_shell", (u0 - t, v0 - t, n - t), (u1 + t, v1 + t, n - 0.005), dark)   # behind the card
         lbox(parent, "room_shell", (u0 - t, v0 - t, n - t), (u0, v1 + t, shell), dark)           # its sides
