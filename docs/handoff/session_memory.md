@@ -1,13 +1,33 @@
 <!-- damned_waters/docs/handoff/session_memory.md -->
 <!-- Purpose: the memory between sessions: where the work stands, how it is made, what was learned, what is open. Update it at the end of each session. -->
 
-# Where Damned Waters stands (last updated 2026-11-16, after the cast pass)
+# Where Damned Waters stands (last updated 2026-11-21, after the bug pass)
 
-**The cast pass (2026-11-16, evening) is done and pushed on `claude/bold-planck-j88j0x`, NOT merged:
-open the PR when the user asks to play it.** It was the brief in
-`docs/handoff/characters_session_prompt.md` (its status block says what is done and what is left).
-Dutch plates, abandoned cars and the bus's livery come after, in a session of their own (they need
-a re-render of about ten streets). The second look (below) is merged.
+**The cast pass is merged (PR #8). The bug pass (2026-11-21) is on `claude/bold-planck-j88j0x`:
+open the PR when the user asks to play it.** Dutch plates, abandoned cars and the bus's livery
+come after, in a session of their own.
+
+## The bug pass (2026-11-21: read this first)
+The user's list: "controls glitch and change direction between rooms, aimed shots don't register,
+shots need impact (pushed back after 2-3 pistol hits like RE2), enemies should patrol, he looks
+covered in static in the rain, a café interior picture floats outside, he walks through gates and
+bins". All fixed; each has a checker:
+- Controls: `HeldFrame` (`controls.hpp`) holds the old frame through 0.5 s re-grips and a re-press
+  within 1.5 s of a cut; rooms/shots have 0.35 m hysteresis. `--walkthrough`: 255 trials, 0 failed,
+  0 flips (was 65), 1-3 cuts a trial (JITTER if more than 4).
+- Shooting: a shot waits for him to be on target (`fire_wait_`), fast turn while off it, AIM_RANGE
+  25 m, re-lock while aiming. `--shoottest`: 100% hits (was 38%).
+- Impact: `Impact` meter (`core.hpp`), `EnemyBrain::knock_back`, `Character::flinch`. Pistol drives
+  them back on the 2nd-3rd hit (5-7 m measured by `--shoottest`).
+- Wander: `Wander` (`core.hpp`), 3 in 5 idle Drowned by hash of their key. `--wandertest`.
+- Rain static: `RAIN_FS` reads a copy of the finished frame (`scene_`), not the plate; specular
+  AA and drop AA in `CHAR_FS`; splats pulled toward the eye.
+- Collision: `solid_footprint` (`room_spec.cpp`) gives props boxes from the asset ledger
+  (`tools/assets/manifest.json`); never over a spawn/enemy. `tests/test_props.cpp`.
+- Backgrounds: `room_card(..., shell=)` in `street.py` boxes every window/shop card (dark outside,
+  warm inside); the Munttoren door is a card + glass + frame. Found by a contact sheet of all 181
+  street plates. Every street was rendered small (320x180, 8 samples) with the old and new builder
+  and only shots that changed (>=0.2% of pixels, max >= 80) re-rendered at 2048x1152.
 
 ## The cast pass (2026-11-16: read this first)
 All engine-side (no background re-rendered). The user saw the before/after sheets (survivor, the

@@ -96,7 +96,11 @@ dark, and a press goes back to the title screen. (Like a play's last scene: the 
   front of him and all the way down the street. The streaks are drawn by a shader (`RAIN_FS`): each
   column of drops at its own spacing and speed, leaned by the wind; a streak thinner than a pixel
   fades rather than shimmers; and rain shows where there's light behind it (over a lit window or a
-  lamp it glows, against a dark wall it all but vanishes), as it does at night. Where it lands, rings
+  lamp it glows, against a dark wall it all but vanishes), as it does at night. "What's behind"
+  is a copy of the finished frame (characters included), so rain over him is lit by him, not by
+  the empty painting behind him; reading the painting made his whole outline flicker like static.
+  His own wet sheen is filtered by how fast the surface turns within a pixel (specular
+  anti-aliasing), so the raindrops on his jacket glint instead of sparkling. Where it lands, rings
   spread here and there over the street (`SPLASH_FS`). Nine quads a frame and no particles, so
   nothing is allocated or simulated. It is heard too: the streets' ambience is rain
   (`amb_street_rain`, synthesized by `tools/audio/synth_sfx.py`). (It used to be a box of drops 18 m
@@ -467,6 +471,11 @@ Each room file is the single blueprint: Blender paints the plates from it, the g
 `python3 tools/pipeline/build_backgrounds.py --quality final --gpu` fetches the assets, renders
 every shot of every room and packs the plates into `game/assets/rooms/<room>/`.
 
+- **Pictures behind windows sit in boxes.** A lit window or shop front shows a photo card of a
+  room set back behind the glass (`room_card` in `tools/blender/street.py`). Each card sits in a
+  closed box, dark outside and faintly warm inside, so from behind a facade with no back wall (a
+  "stage flat") or from across a square you see a dark box, never the photo floating in the street.
+  ELI5: a diorama in a shoebox; look round the back and you see cardboard, not the painted scene.
 - **Modelled to match photos.** The director's reference photos set the look: a room is built to
   match a photo's architecture and furniture, and its main shot copies the photo's framing.
   `tools/photo/camera_match.py photo.jpg --overlay lines.png` finds the camera that took a photo
@@ -870,8 +879,30 @@ Movement is camera-relative, and a cut never turns you round (`HeldFrame` in `co
 for as long as the stick stays pushed, he goes by the camera you set off on, through any number
 of cuts and through a thumb correcting his line. Let go and the new camera's directions take over;
 a correction also takes them at once when the new camera looks within 45 degrees of the old one.
-A thumb slipping through the centre for a moment (a re-grip) doesn't count as letting go. ELI5: a
-driver steers by the road, not by whichever camera is filming the car.
+A thumb slipping through the centre for up to half a second (a re-grip) doesn't count as letting
+go, and pushing the same way again within 1.5 s of a cut keeps the old camera's directions, so a
+nervous thumb at a doorway can't send him back through it. Rooms and shots also hold on for 0.35 m
+past their edge (hysteresis), so standing on a boundary never flickers between two cameras. ELI5:
+a driver steers by the road, not by whichever camera is filming the car.
+
+**Shooting.** Aim locks on the nearest Drowned in front within 25 m (and re-locks while you hold
+aim if a nearer one steps in). A shot waits until his arms have actually turned onto the target
+(he turns fast, 14 rad/s, while off it), so a shot fired mid-turn is not wasted on air. `--shoottest`
+checks it: 6 distances × 5 bearings × 3 trigger timings × 3 aim styles, every one must hit.
+
+**Impact.** Each hit adds force to the Drowned's impact meter (pistol 1, head 1.4, a shotgun
+pellet 0.35), which drains at 0.6 a second. Every hit shoves it back a little and makes it flinch
+to the side it was hit; at 2.4 the meter tips over and it is driven back and reels for a moment,
+which with the pistol is the second or third quick hit. ELI5: pushing a stalled car; one push
+rocks it, three in a row get it rolling.
+
+**Wandering.** About three in five idle Drowned shuffle about their spot (within 3.5 m, at
+0.4 m/s, pausing 1.5–4.5 s), the rest stand; which ones is fixed per Drowned so a room plays the
+same each visit. They never walk into anything; `--wandertest` measures it.
+
+**Collision.** Besides the walls in the RoomSpec, every solid prop (bins, crates, railings, gates,
+barriers, cars) gets a box collider from its footprint in the asset ledger
+(`room_spec.cpp: solid_footprint`). A box that would cover a spawn point or an enemy is left out.
 
 **The walk-through** (`--walkthrough report.txt`, `src/game_walk.cpp`) checks this on every
 doorway, passage and staircase in the game: it holds the stick through each one both ways,
