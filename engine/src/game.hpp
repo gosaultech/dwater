@@ -95,6 +95,7 @@ public:
     int walkthrough(const std::string& report);
     int shoottest(const std::string& report, const std::string& room);   // (game_shoot.cpp) shots that miss a Drowned in plain sight
     int wandertest(const std::string& report, const std::string& room);  // (game_shoot.cpp) the Drowned on their own for half a minute
+    int doortest(const std::string& report);   // (game_walk.cpp) walk up to every door and press the button
     // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
     // only: a comma-separated list of subjects to render (empty: all).
     void model_sheet(const std::string& dir, const std::string& only = "");
@@ -327,6 +328,7 @@ private:
     bool shell_from_grip_ = true;                // the 870's next shell: the hand starts from the fore-end (else the port)
     unsigned rng_ = 0x9E3779B9u;
     Stats stats_;
+    int staged_hit_ = -1;                        // a test presses a button from code (an ACT_*), once
     bool staged_aim_ = false;                    // capture setups hold the aim and the stick from code
     Vector2 staged_in_{};
     std::vector<const Character*> casters_, gun_lit_;   // who casts shadows this frame (kept: no allocation per frame)

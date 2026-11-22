@@ -7,6 +7,7 @@
 //                                   (it opens on the title screen; --room id starts straight in that room)
 //   ./damned_waters --room id --shoottest r.txt   a Drowned at many distances and bearings, a shot at it
 //                                   each way players fire; a line per shot in r.txt; exit 3 if any missed
+//   ./damned_waters --doortest r.txt              walk up to every door and press the button
 //   ./damned_waters --room id --wandertest r.txt   the room's Drowned on their own for half a minute:
 //                                   who stands, who shuffles about and how far; exit 4 if one ended up in something
 //   --flashlight                    start with the flashlight on (also for --capture)
@@ -57,7 +58,7 @@
 #include "game.hpp"
 
 int main(int argc, char** argv) {
-    std::string capture, sheet, only, view, view_png, room = "gang", still, still_png, shot, walk, clip, clip_out, shoot, wander;
+    std::string doors, capture, sheet, only, view, view_png, room = "gang", still, still_png, shot, walk, clip, clip_out, shoot, wander;
     long max_frames = -1;
     bool chose_room = false;
     for (int i = 1; i + 1 < argc; ++i) {
@@ -66,6 +67,7 @@ int main(int argc, char** argv) {
         else if (a == "--walkthrough") walk = argv[++i];
         else if (a == "--shoottest") shoot = argv[++i];
         else if (a == "--wandertest") wander = argv[++i];
+        else if (a == "--doortest") doors = argv[++i];
         else if (a == "--sheet") sheet = argv[++i];
         else if (a == "--only") only = argv[++i];
         else if (a == "--view" && i + 2 < argc) { view = argv[++i]; view_png = argv[++i]; }
@@ -101,7 +103,9 @@ int main(int argc, char** argv) {
     double start = GetTime(), worst = 0;
     long frames = 0;
     int status = 0;
-    if (!wander.empty()) {
+    if (!doors.empty()) {   // walk up to every door and press the button: non-zero if one didn't answer
+        status = game.doortest(doors) > 0 ? 5 : 0;
+    } else if (!wander.empty()) {
         status = game.wandertest(wander, room) > 0 ? 4 : 0;
     } else if (!shoot.empty()) {
         status = game.shoottest(shoot, room) > 0 ? 3 : 0;

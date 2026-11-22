@@ -213,4 +213,97 @@ int Game::walkthrough(const std::string& report) {
     return fails;
 }
 
+// The doors (--doortest REPORT): at every door in the game he walks up to it the way players do
+// (straight at it and from 35 degrees either side, from 1.5 m and 3 m back) and, the stick still
+// held, presses the button (through the same input a pad's press takes). The door must answer:
+// swing, say it's locked, or take him up or down the stairs. NO SPOT: the press found nothing in
+// reach (something kept him off it, or he wasn't facing it); OTHER: it found something else first;
+// DEAD: it found the door and nothing happened.
+int Game::doortest(const std::string& report) {
+    std::ofstream out(report);
+    title_ = paused_ = false;
+    end_t_ = -1;
+    banner_t_ = 0;
+    reset_fight();
+    int fails = 0, n = 0;
+    for (size_t r = 0; r < rooms_.size(); ++r) {
+        for (size_t i = 0; i < rooms_[r].interactables.size(); ++i) {
+            const Interactable it = rooms_[r].interactables[i];
+            if (it.kind != "door") continue;
+            for (const float back : {1.5f, 3.0f})
+            for (const float turn : {0.0f, 35.0f, -35.0f}) {
+                if (rooms_[r].floor != storey_) build_storey(rooms_[r].floor);
+                shut_doors();
+                for (auto& e : enemies_) e.active = false;
+                text_queue_.clear();
+                status_.close();
+                beat_ = {};
+                // Which way the door is from its spot: the doorway's middle, else away from the room's middle.
+                const int di = doorway_of(int(r), it.id);
+                float fx, fz;
+                if (di >= 0) { fx = doorways_[size_t(di)].mid_x() - it.pos.x; fz = doorways_[size_t(di)].mid_z() - it.pos.z; }
+                else { const Rect2& b = rooms_[r].bounds; fx = it.pos.x - (b.x0 + b.x1) / 2; fz = it.pos.z - (b.z0 + b.z1) / 2; }
+                float l = std::hypot(fx, fz);
+                if (l < 1e-3f) { fx = 0; fz = -1; l = 1; }
+                fx /= l; fz /= l;
+                const float c = std::cos(turn * DEG2RAD), s = std::sin(turn * DEG2RAD);
+                const float ax = fx * c - fz * s, az = fx * s + fz * c;
+                float sx = it.pos.x - ax * back, sz = it.pos.z - az * back;
+                if (house::room_at(rooms_, rooms_[r].floor, sx, sz, int(r)) != int(r)) continue;   // (that start is outside the room)
+                bool clear = true;
+                { float x = sx, z = sz; collide(x, z, 0.28f); clear = std::hypot(x - sx, z - sz) < 1e-3f; }
+                if (!clear) continue;   // (that start is inside the furniture)
+                player_ = {sx, sz, yaw_towards(sx, sz, it.pos.x, it.pos.z)};
+                vel_ = {};
+                frame_ = {};
+                set_pmode(PMode::Normal);
+                enter_room(int(r));
+                hero_.settle();
+                // Walk at the spot, then on at the door itself, until he's at it or something stops him.
+                float best = 1e9f;
+                int still = 0;
+                const float tx = it.pos.x + fx * 0.6f, tz = it.pos.z + fz * 0.6f;
+                for (int f = 0; f < 60 * 5; ++f) {
+                    const bool near = std::hypot(it.pos.x - player_.x, it.pos.z - player_.z) < 0.35f;
+                    const float dx = (near ? tx : it.pos.x) - player_.x, dz = (near ? tz : it.pos.z) - player_.z, d = std::hypot(it.pos.x - player_.x, it.pos.z - player_.z);
+                    if (d < best - 0.01f) { best = d; still = 0; } else if (++still > 20) break;
+                    staged_in_ = stick_for(cam_, dx, dz, 1.0f);
+                    update(DT);
+                    if (std::getenv("DW_DOOR_TRACE") && it.id == std::getenv("DW_DOOR_TRACE") && f % 4 == 0)
+                        TraceLog(LOG_INFO, "DOOR f%d %s/%s at %.2f,%.2f yaw %.0f vel %.2f,%.2f stick %.2f,%.2f pmode %d", f, rooms_[size_t(room_)].id.c_str(),
+                                 shot_.c_str(), player_.x, player_.z, player_.yaw * RAD2DEG, vel_.x, vel_.y, staged_in_.x, staged_in_.y, int(pmode_));
+                    if (beat_.busy() || (di >= 0 && leaves_[size_t(di)].target != 0)) break;   // (walking into it opened it)
+                }
+                const float leaf0 = di >= 0 ? leaves_[size_t(di)].target : 0;
+                const bool by_walking = leaf0 != 0 || beat_.busy();
+                const auto [sr, ss] = spot_in_reach();
+                staged_hit_ = ACT_INTERACT;
+                update(DT);
+                for (int f = 0; f < 5; ++f) update(DT);
+                staged_in_ = {};
+                const bool answered = by_walking || beat_.busy() || !text_queue_.empty() || (di >= 0 && leaves_[size_t(di)].target != leaf0);
+                const char* verdict = answered ? "OK" : sr < 0 ? "NO SPOT" : (sr != int(r) || ss != int(i)) ? "OTHER" : "DEAD";
+                const bool ok = answered;
+                fails += !ok;
+                ++n;
+                char line[360];
+                std::snprintf(line, sizeof line, "%-8s %-22s %-18s from %.1f m at %+3.0f deg: got to %.2f m of it, facing it by %.0f deg%s",
+                              verdict, rooms_[r].id.c_str(), it.id.c_str(), back, turn,
+                              std::hypot(it.pos.x - player_.x, it.pos.z - player_.z),
+                              std::fabs(wrap_pi(yaw_towards(player_.x, player_.z, it.pos.x, it.pos.z) - player_.yaw)) * RAD2DEG,
+                              by_walking ? " (opened walking into it)" : "");
+                out << line;
+                if (sr >= 0 && !ok) out << "  (found " << rooms_[size_t(sr)].id << "/" << rooms_[size_t(sr)].interactables[size_t(ss)].id << ")";
+                out << "\n";
+                text_queue_.clear();
+                status_.close();
+                beat_ = {};
+            }
+        }
+    }
+    out << n << " tries, " << fails << " failed\n";
+    std::printf("%d tries, %d failed\n", n, fails);
+    return fails;
+}
+
 }  // namespace dw

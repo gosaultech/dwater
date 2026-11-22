@@ -453,6 +453,7 @@ void Game::update(float dt) {
     in_ = input_.poll();
     in_.move = {in_.move.x + staged_in_.x, in_.move.y + staged_in_.y};   // (capture setups hold the stick from code)
     in_.down[ACT_AIM] = in_.down[ACT_AIM] || staged_aim_;
+    if (staged_hit_ >= 0) { in_.pressed[staged_hit_] = in_.down[staged_hit_] = true; staged_hit_ = -1; }
     time_ += dt;
     banner_t_ -= dt;
     if (IsKeyPressed(KEY_F3)) debug = !debug;
