@@ -215,6 +215,16 @@ struct Wander {
     }
     void go_to(float px, float pz) { to_x = px; to_z = pz; walking = true; stuck = 0; }
     void rest() { pause = 1.0f + 2.0f * rnd(); }   // (a point it couldn't reach: try again in a moment)
+    // Doors stay clear: a shuffle from (x, z) to (tx, tz) never comes within DOOR_CLEAR of a doorway or
+    // a door's spot at (dx, dz). One standing in a doorway shut him out of the next room (the play-test:
+    // "the door opens but I can't go through"); one that starts that near a door just stands.
+    static constexpr float DOOR_CLEAR = 1.4f;
+    static float seg_dist(float px, float pz, float ax, float az, float bx, float bz) {
+        const float ux = bx - ax, uz = bz - az, l2 = ux * ux + uz * uz;
+        const float k = l2 > 1e-9f ? std::clamp(((px - ax) * ux + (pz - az) * uz) / l2, 0.0f, 1.0f) : 0.0f;
+        return std::hypot(px - (ax + ux * k), pz - (az + uz * k));
+    }
+    static bool clear_of(float x, float z, float tx, float tz, float dx, float dz) { return seg_dist(dx, dz, x, z, tx, tz) >= DOOR_CLEAR; }
 };
 
 // The force of the shots it has taken, as RE2 does it: each round jolts it, and two or three in

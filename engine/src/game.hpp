@@ -95,6 +95,7 @@ public:
     int walkthrough(const std::string& report);
     int shoottest(const std::string& report, const std::string& room);   // (game_shoot.cpp) shots that miss a Drowned in plain sight
     int wandertest(const std::string& report, const std::string& room);  // (game_shoot.cpp) the Drowned on their own for half a minute
+    bool wander_clear_of_doors(int room, float x, float z, float px, float pz) const;   // (game_combat.cpp)
     int doortest(const std::string& report);   // (game_walk.cpp) walk up to every door and press the button
     // Studio turnaround of the cast (no room): body and head from several angles -> PNGs in dir.
     // only: a comma-separated list of subjects to render (empty: all).

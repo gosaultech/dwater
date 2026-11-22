@@ -854,6 +854,15 @@ void Game::become_crawler(Enemy& e) {
     say(e, "enemy_alert", 0.9f);
 }
 
+// A shuffle from (x, z) to (px, pz) in room `room` keeps out of its doorways and away from its doors.
+bool Game::wander_clear_of_doors(int room, float x, float z, float px, float pz) const {
+    for (const auto& d : doorways_)
+        if ((d.a == room || d.b == room) && !Wander::clear_of(x, z, px, pz, d.mid_x(), d.mid_z())) return false;
+    for (const auto& it : rooms_[size_t(room)].interactables)
+        if (it.kind == "door" && !Wander::clear_of(x, z, px, pz, it.pos.x, it.pos.z)) return false;
+    return true;
+}
+
 void Game::update_enemies(float dt) {
     const bool player_alive = pmode_ != PMode::Dead;
     for (auto& e : enemies_) {
@@ -957,7 +966,8 @@ void Game::update_enemies(float dt) {
                     float px, pz;
                     e.wander.propose(a.x, a.z, px, pz);
                     const bool ok = e.room >= 0 && house::room_at(rooms_, storey_, px, pz, e.room) == e.room &&
-                                    house::first_cross(statics_, a.x, a.z, px, pz) >= 1.0f && house::first_cross(sight_, a.x, a.z, px, pz) >= 1.0f;
+                                    house::first_cross(statics_, a.x, a.z, px, pz) >= 1.0f && house::first_cross(sight_, a.x, a.z, px, pz) >= 1.0f &&
+                                    wander_clear_of_doors(e.room, a.x, a.z, px, pz);
                     if (ok) e.wander.go_to(px, pz);
                     else e.wander.rest();
                 }

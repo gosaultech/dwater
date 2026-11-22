@@ -24,6 +24,13 @@ bins". All fixed; each has a checker:
   AA and drop AA in `CHAR_FS`; splats pulled toward the eye.
 - Collision: `solid_footprint` (`room_spec.cpp`) gives props boxes from the asset ledger
   (`tools/assets/manifest.json`); never over a spawn/enemy. `tests/test_props.cpp`.
+- **Play-test after (2026-11-22): "the doors open but I can't go through" (hall and parlour,
+  keyboard).** The hall's Drowned that the thud wakes (`pieter`, `buurman`) stand about a metre
+  from the parlour door in a 2.1 m hallway; wandering, one shuffled into the doorway. Fixed:
+  `Wander::clear_of` (no wander point or path within 1.4 m of a doorway or door). Also found by ASan:
+  `ledger_sizes()` looped over `.items()` of a destroyed temporary (heap corruption, a crash at
+  exit; prop sizes possibly garbage). `--doortest` added (it had never been tested: the
+  walk-through stands doors open in advance).
 - Backgrounds: `room_card(..., shell=)` in `street.py` boxes every window/shop card (dark outside,
   warm inside); the Munttoren door is a card + glass + frame. Found by a contact sheet of all 181
   street plates. Every street was rendered small (320x180, 8 samples) with the old and new builder

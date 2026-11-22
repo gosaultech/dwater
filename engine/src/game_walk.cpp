@@ -234,7 +234,8 @@ int Game::doortest(const std::string& report) {
             for (const float turn : {0.0f, 35.0f, -35.0f}) {
                 if (rooms_[r].floor != storey_) build_storey(rooms_[r].floor);
                 shut_doors();
-                for (auto& e : enemies_) e.active = false;
+                const bool with_them = std::getenv("DW_DOOR_ENEMIES") != nullptr;   // (leave the Drowned where they are, shuffling about)
+                if (!with_them) for (auto& e : enemies_) e.active = false;
                 text_queue_.clear();
                 status_.close();
                 beat_ = {};
@@ -282,8 +283,49 @@ int Game::doortest(const std::string& report) {
                 for (int f = 0; f < 5; ++f) update(DT);
                 staged_in_ = {};
                 const bool answered = by_walking || beat_.busy() || !text_queue_.empty() || (di >= 0 && leaves_[size_t(di)].target != leaf0);
-                const char* verdict = answered ? "OK" : sr < 0 ? "NO SPOT" : (sr != int(r) || ss != int(i)) ? "OTHER" : "DEAD";
-                const bool ok = answered;
+                // Opened: then on through it, the stick held at the far side, as a player does.
+                bool through = true;
+                std::string stuck_at;
+                if (answered && di >= 0 && !beat_.busy() && !leaves_[size_t(di)].locked && text_queue_.empty()) {
+                    const auto& dw = doorways_[size_t(di)];
+                    const int far = dw.a == int(r) ? dw.b : dw.a;
+                    const float sgn = dw.a == int(r) ? 1.0f : -1.0f;
+                    const float gx = dw.mid_x() + dw.nx * sgn * 1.5f, gz = dw.mid_z() + dw.nz * sgn * 1.5f;
+                    const bool keys = std::getenv("DW_DOOR_KEYS") != nullptr;
+                    Vector2 held{};
+                    int gap = 0;
+                    for (int f = 0; f < 60 * 3 && room_ != far; ++f) {
+                        if (f < 50) { staged_in_ = {}; update(DT); continue; }   // (it swings open)
+                        const bool before = std::hypot(dw.mid_x() - player_.x, dw.mid_z() - player_.z) > 0.3f &&
+                                            ((player_.x - dw.mid_x()) * dw.nx + (player_.z - dw.mid_z()) * dw.nz) * sgn < 0;
+                        const float aimx = before ? dw.mid_x() : gx, aimz = before ? dw.mid_z() : gz;
+                        Vector2 want = stick_for(cam_, aimx - player_.x, aimz - player_.z, 1.0f);
+                        if (keys) {   // a keyboard: the nearest of eight directions, and a beat with no key down to change key
+                            const float a = std::round(std::atan2(want.y, want.x) / (kPi / 4)) * (kPi / 4);
+                            want = {std::round(std::cos(a)), std::round(std::sin(a))};
+                            if (gap > 0) { --gap; want = {}; }
+                            else if (held.x != want.x || held.y != want.y) { if (held.x != 0 || held.y != 0) { gap = 6; held = {}; want = {}; } else held = want; }
+                        }
+                        staged_in_ = want;
+                        update(DT);
+                    }
+                    staged_in_ = {};
+                    through = far < 0 || room_ == far;
+                    if (!through) {
+                        char b[120];
+                        std::snprintf(b, sizeof b, " STUCK at %.2f,%.2f in %s, leaf %.2f", player_.x, player_.z, rooms_[size_t(room_)].id.c_str(),
+                                      leaves_[size_t(di)].angle);
+                        stuck_at = b;
+                        for (const auto& e : enemies_)
+                            if (e.active && std::hypot(e.a.x - player_.x, e.a.z - player_.z) < 1.5f) {
+                                std::snprintf(b, sizeof b, "; %s %.2f m away, state %d, wanders %d", e.id.c_str(),
+                                              std::hypot(e.a.x - player_.x, e.a.z - player_.z), int(e.brain.state), int(e.wanders));
+                                stuck_at += b;
+                            }
+                    }
+                }
+                const char* verdict = !answered ? (sr < 0 ? "NO SPOT" : (sr != int(r) || ss != int(i)) ? "OTHER" : "DEAD") : through ? "OK" : "NO WAY";
+                const bool ok = answered && through;
                 fails += !ok;
                 ++n;
                 char line[360];
@@ -292,7 +334,7 @@ int Game::doortest(const std::string& report) {
                               std::hypot(it.pos.x - player_.x, it.pos.z - player_.z),
                               std::fabs(wrap_pi(yaw_towards(player_.x, player_.z, it.pos.x, it.pos.z) - player_.yaw)) * RAD2DEG,
                               by_walking ? " (opened walking into it)" : "");
-                out << line;
+                out << line << stuck_at;
                 if (sr >= 0 && !ok) out << "  (found " << rooms_[size_t(sr)].id << "/" << rooms_[size_t(sr)].interactables[size_t(ss)].id << ")";
                 out << "\n";
                 text_queue_.clear();

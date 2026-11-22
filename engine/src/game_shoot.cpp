@@ -7,6 +7,7 @@
 // ELI5: a coach at a firing range, ticking off every round that lands on the target.
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 
 #include "game.hpp"
@@ -157,34 +158,61 @@ int Game::wandertest(const std::string& report, const std::string& room_id) {
     text_queue_.clear();
     reset_fight();
     if (room_index(room_id) < 0) { out << "no room " << room_id << "\n"; return 1; }
+    if (const char* fl = std::getenv("DW_FLAGS")) {   // (the story so far: "heard_thud" wakes the hall's)
+        std::string s = fl;
+        for (size_t a = 0; a <= s.size();) {
+            const size_t b = std::min(s.find(',', a), s.size());
+            if (b > a) world_.flags.insert(s.substr(a, b - a));
+            a = b + 1;
+        }
+    }
     beat_room_ = room_id;
     beat_spawn_ = "";
     finish_beat();
+    if (std::getenv("DW_FLAGS")) build_storey(storey_);   // (the ones the story wakes)
     player_.x += 400;   // far off: nothing sees or hears him
-    struct Track { float walked = 0, strayed = 0, lx = 0, lz = 0; bool inside = false; };
+    // How near a door a Drowned that shuffled ever came (one in a doorway shuts him out).
+    auto door_d = [&](const Enemy& e) {
+        float d = 1e9f;
+        for (const auto& w : doorways_)
+            if (w.a == e.room || w.b == e.room) d = std::min(d, std::hypot(e.a.x - w.mid_x(), e.a.z - w.mid_z()));
+        if (e.room >= 0)
+            for (const auto& it : rooms_[size_t(e.room)].interactables)
+                if (it.kind == "door") d = std::min(d, std::hypot(e.a.x - it.pos.x, e.a.z - it.pos.z));
+        return d;
+    };
+    struct Track { float walked = 0, strayed = 0, lx = 0, lz = 0, door = 1e9f, door0 = 1e9f; bool inside = false; };
     std::vector<Track> tr(enemies_.size());
-    for (size_t i = 0; i < enemies_.size(); ++i) { tr[i].lx = enemies_[i].a.x; tr[i].lz = enemies_[i].a.z; }
+    for (size_t i = 0; i < enemies_.size(); ++i) { tr[i].lx = enemies_[i].a.x; tr[i].lz = enemies_[i].a.z; tr[i].door0 = door_d(enemies_[i]); }
     int bad = 0;
     for (int f = 0; f < 60 * 30; ++f) {
         staged_in_ = {};
         update(DT);
+        while (tr.size() < enemies_.size()) {   // (the streets nearby come in, with their Drowned)
+            const Enemy& e = enemies_[tr.size()];
+            tr.push_back({0, 0, e.a.x, e.a.z, 1e9f, door_d(e), false});
+        }
         for (size_t i = 0; i < enemies_.size(); ++i) {
             const Enemy& e = enemies_[i];
             if (!e.active) continue;
+            if (std::hypot(e.a.x - tr[i].lx, e.a.z - tr[i].lz) > 1.0f) { tr[i].lx = e.a.x; tr[i].lz = e.a.z; }   // (re-placed, not walked)
             tr[i].walked += std::hypot(e.a.x - tr[i].lx, e.a.z - tr[i].lz);
             tr[i].lx = e.a.x;
             tr[i].lz = e.a.z;
             tr[i].strayed = std::max(tr[i].strayed, std::hypot(e.a.x - e.wander.home_x, e.a.z - e.wander.home_z));
             for (const auto& b : statics_) { float x = e.a.x, z = e.a.z; if (resolve_circle_obb(x, z, 0.2f, b)) tr[i].inside = true; }
+            tr[i].door = std::min(tr[i].door, door_d(e));
         }
     }
-    for (size_t i = 0; i < enemies_.size(); ++i) {
+    for (size_t i = 0; i < enemies_.size() && i < tr.size(); ++i) {
         const Enemy& e = enemies_[i];
         if (!e.active) continue;
-        bad += tr[i].inside;
-        char line[200];
-        std::snprintf(line, sizeof line, "%-24s %-7s walked %5.1f m, strayed %4.1f m from its place%s", e.id.c_str(), e.wanders ? "wanders" : "stands",
-                      tr[i].walked, tr[i].strayed, tr[i].inside ? "  INSIDE SOMETHING" : "");
+        const bool doorway = tr[i].door < std::min(tr[i].door0, Wander::DOOR_CLEAR) - 0.05f;   // walked in nearer a door than it was left
+        bad += tr[i].inside || doorway;
+        char line[260];
+        std::snprintf(line, sizeof line, "%-24s %-7s walked %5.1f m, strayed %4.1f m from its place, nearest a door %.1f m (left %.1f m)%s%s",
+                      e.id.c_str(), e.wanders ? "wanders" : "stands", tr[i].walked, tr[i].strayed, tr[i].door, tr[i].door0,
+                      tr[i].inside ? "  INSIDE SOMETHING" : "", doorway ? "  BY A DOOR" : "");
         out << line << "\n";
     }
     return bad;

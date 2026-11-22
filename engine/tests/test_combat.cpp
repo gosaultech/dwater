@@ -413,3 +413,12 @@ TEST(Wander, BlockedItGivesUpOnThatPointAndStands) {
     EXPECT_FALSE(w.walking);
     EXPECT_GT(w.pause, 0.0f);
 }
+
+TEST(Wander, KeepsClearOfDoors) {
+    // A door at (0, 0): a shuffle that ends near it, or passes it on the way, is refused.
+    EXPECT_FALSE(Wander::clear_of(-3, 0.5f, -1.0f, 0.5f, 0, 0));   // ends 1.1 m from it
+    EXPECT_FALSE(Wander::clear_of(-3, 0.8f, 3, 0.8f, 0, 0));       // walks past it 0.8 m off
+    EXPECT_TRUE(Wander::clear_of(-3, 2.0f, 3, 2.0f, 0, 0));        // 2 m off all the way
+    EXPECT_FALSE(Wander::clear_of(0.5f, 1.0f, 3, 3, 0, 0));        // starts by it: it stays put
+    EXPECT_NEAR(Wander::seg_dist(0, 0, -1, 1, 1, 1), 1.0f, 1e-5f);
+}

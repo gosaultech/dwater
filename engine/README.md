@@ -898,7 +898,15 @@ rocks it, three in a row get it rolling.
 
 **Wandering.** About three in five idle Drowned shuffle about their spot (within 3.5 m, at
 0.4 m/s, pausing 1.5–4.5 s), the rest stand; which ones is fixed per Drowned so a room plays the
-same each visit. They never walk into anything; `--wandertest` measures it.
+same each visit. They never walk into anything, and never within 1.4 m of a doorway or a door (one
+standing in a doorway shut him out of the next room; one left that near a door just stands).
+`--wandertest` measures both (`DW_FLAGS=heard_thud` wakes the hall's).
+
+**The doors** (`--doortest report.txt`): at every door he walks up from straight ahead and 35
+degrees either side, from 1.5 m and 3 m back, presses the button through the same input a pad's
+press takes, and walks on through. Each try must open the door (or say it's locked, or take him
+up or down the stairs) and get him into the next room. `DW_DOOR_KEYS=1` steers like a keyboard
+(eight directions, a beat between keys); `DW_DOOR_ENEMIES=1` leaves the Drowned about.
 
 **Collision.** Besides the walls in the RoomSpec, every solid prop (bins, crates, railings, gates,
 barriers, cars) gets a box collider from its footprint in the asset ledger

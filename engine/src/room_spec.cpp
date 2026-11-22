@@ -26,7 +26,8 @@ const std::map<std::string, V3>& ledger_sizes() {
         if (!f) return m;
         try {
             const json d = json::parse(f);
-            for (const auto& [id, a] : d.value("assets", json::object()).items())
+            const json assets = d.value("assets", json::object());   // (held: items() of a temporary reads freed memory)
+            for (const auto& [id, a] : assets.items())
                 if (a.contains("dimensions_mm") && a["dimensions_mm"].size() == 3)
                     m[id] = {a["dimensions_mm"][0].get<float>() / 1000, a["dimensions_mm"][1].get<float>() / 1000,
                              a["dimensions_mm"][2].get<float>() / 1000};
